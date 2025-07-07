@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import 'package:flutter_application_1/controllers/map_controller.dart';
 import 'package:flutter_application_1/services/path_api_service.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
+import 'package:flutter_application_1/managers/location_manager.dart';
 
 class BuildingSearchBar extends StatelessWidget {
   final Function(Building) onBuildingSelected;
@@ -85,9 +86,29 @@ class BuildingSearchBar extends StatelessWidget {
           
           if (useCurrentLocation) {
             // 현재 위치에서 목적지로의 경로 계산
-            // 임시로 대학 중심 좌표 사용 (실제로는 LocationManager에서 가져와야 함)
-            final currentLocation = const NLatLng(36.338133, 127.446423); // 우송대학교 중심
-            pathCoordinates = await PathApiService.getRouteFromLocation(currentLocation, endBuilding);
+            try {
+              final locationManager = Provider.of<LocationManager>(context, listen: false);
+              
+              // LocationManager에서 현재 위치 가져오기
+              if (locationManager.hasValidLocation && locationManager.currentLocation != null) {
+                final currentLocation = NLatLng(
+                  locationManager.currentLocation!.latitude!,
+                  locationManager.currentLocation!.longitude!,
+                );
+                pathCoordinates = await PathApiService.getRouteFromLocation(currentLocation, endBuilding);
+                print('📍 LocationManager에서 현재 위치 사용: ${currentLocation.latitude}, ${currentLocation.longitude}');
+              } else {
+                // LocationManager에 위치가 없으면 기본 위치 사용
+                final defaultLocation = const NLatLng(36.338133, 127.446423); // 우송대학교 중심
+                pathCoordinates = await PathApiService.getRouteFromLocation(defaultLocation, endBuilding);
+                print('📍 기본 위치 사용: ${defaultLocation.latitude}, ${defaultLocation.longitude}');
+              }
+            } catch (e) {
+              print('❌ 현재 위치 가져오기 실패: $e');
+              // 오류시 기본 위치 사용
+              final defaultLocation = const NLatLng(36.338133, 127.446423);
+              pathCoordinates = await PathApiService.getRouteFromLocation(defaultLocation, endBuilding);
+            }
           } else if (startBuilding != null) {
             pathCoordinates = await PathApiService.getRoute(startBuilding, endBuilding);
           } else {
