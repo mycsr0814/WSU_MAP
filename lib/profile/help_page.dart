@@ -22,8 +22,8 @@ class _HelpPageState extends State<HelpPage> with TickerProviderStateMixin {
   late Animation<double> _fadeAnimation;
   
   final List<HelpItem> helpItems = [
-    HelpItem(assetPath: 'assets/help/help1.png', description: '첫 번째 설명'),
-    HelpItem(assetPath: 'assets/help/help2.png', description: '두 번째 설명'),
+    HelpItem(assetPath: 'asset/help/help1.png', description: '첫 번째 설명'),
+    HelpItem(assetPath: 'asset/help/help2.png', description: '두 번째 설명'),
   ];
 
   @override
