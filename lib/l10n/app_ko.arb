@@ -1,0 +1,415 @@
+{
+  "@@locale": "ko",
+  "appTitle": "Campus Navigator",
+  "subtitle": "스마트 캠퍼스 가이드",
+  "woosong": "우송",
+  "start": "시작하기",
+  "login": "로그인",
+  "logout": "로그아웃",
+  "guest": "게스트",
+  "student_professor": "학생/교수",
+  "admin": "관리자",
+  "student": "학생",
+  "professor": "교수",
+  "external_user": "외부인",
+  "username": "아이디",
+  "password": "비밀번호",
+  "confirm_password": "비밀번호 확인",
+  "remember_me": "로그인 정보 기억하기",
+  "remember_me_description": "다음에 자동으로 로그인됩니다",
+  "login_as_guest": "게스트로 둘러보기",
+  "login_failed": "로그인 실패",
+  "login_success": "로그인 성공",
+  "logout_success": "로그아웃 되었습니다",
+  "enter_username": "아이디를 입력하세요",
+  "enter_password": "비밀번호를 입력하세요",
+  "password_hint": "6자 이상 입력하세요",
+  "confirm_password_hint": "비밀번호를 다시 입력하세요",
+  "username_password_required": "아이디와 비밀번호를 모두 입력해주세요",
+  "login_error": "로그인에 실패했습니다",
+  "find_password": "비밀번호 찾기",
+  "find_username": "아이디 찾기",
+  "back": "뒤로가기",
+  "confirm": "확인",
+  "cancel": "취소",
+  "coming_soon": "준비 중",
+  "feature_coming_soon": "{feature} 기능은 준비 중입니다.\n빠른 시일 내에 추가될 예정입니다.",
+  "@feature_coming_soon": {
+    "placeholders": {
+      "feature": {
+        "type": "String"
+      }
+    }
+  },
+  "start_campus_exploration": "캠퍼스 탐색을 시작해보세요",
+  "woosong_university": "우송대학교",
+  "campus_navigator": "캠퍼스 네비게이터",
+  "user_info_not_found": "로그인 응답에서 사용자 정보를 찾을 수 없습니다",
+  "unexpected_login_error": "로그인 중 예상치 못한 오류가 발생했습니다",
+  "login_required": "로그인이 필요합니다",
+  "register": "회원가입",
+  "register_success": "회원가입이 완료되었습니다",
+  "register_success_message": "회원가입이 완료되었습니다!\n로그인 화면으로 이동합니다.",
+  "register_error": "회원가입 중 예상치 못한 오류가 발생했습니다",
+  "update_user_info": "회원정보 수정",
+  "update_success": "회원정보가 수정되었습니다",
+  "update_error": "회원정보 수정 중 예상치 못한 오류가 발생했습니다",
+  "delete_account": "회원 탈퇴",
+  "delete_success": "회원 탈퇴가 완료되었습니다",
+  "delete_error": "회원 탈퇴 중 예상치 못한 오류가 발생했습니다",
+  "name": "이름",
+  "phone": "전화번호",
+  "email": "이메일",
+  "student_number": "학번",
+  "user_type": "사용자 유형",
+  "optional": "선택사항",
+  "required_fields_empty": "모든 필수 항목을 입력해주세요",
+  "password_mismatch": "비밀번호가 일치하지 않습니다",
+  "password_too_short": "비밀번호는 6자 이상이어야 합니다",
+  "invalid_phone_format": "올바른 전화번호 형식을 입력해주세요 (예: 010-1234-5678)",
+  "invalid_email_format": "올바른 이메일 형식을 입력해주세요",
+  "required_fields_notice": "* 표시된 항목은 필수 입력 사항입니다",
+  "welcome_to_campus_navigator": "우송대 캠퍼스 네비게이터에 오신 것을 환영합니다",
+  "enter_real_name": "실명을 입력하세요",
+  "phone_format_hint": "010-1234-5678",
+  "enter_student_number": "학번 또는 교번을 입력하세요",
+  "email_hint": "example@woosong.org",
+  "create_account": "계정 만들기",
+  "loading": "로딩 중...",
+  "error": "오류",
+  "success": "성공",
+  "validation_error": "입력값을 확인해주세요",
+  "network_error": "네트워크 오류가 발생했습니다",
+  "server_error": "서버 오류가 발생했습니다",
+  "unknown_error": "알 수 없는 오류가 발생했습니다",
+  "select_auth_method": "인증 방법 선택",
+  "woosong_campus_guide_service": "우송대학교 캠퍼스 길안내 서비스",
+  "register_description": "새로운 계정을 만들어 모든 기능을 이용하세요",
+  "login_description": "기존 계정으로 로그인하여 서비스를 이용하세요",
+  "browse_as_guest": "게스트로 둘러보기",
+  "processing": "처리 중...",
+  "campus_navigator_version": "Campus Navigator v1.0",
+  "guest_mode": "게스트 모드",
+  "guest_mode_description": "게스트 모드에서는 기본적인 캠퍼스 정보만 확인할 수 있습니다.\n모든 기능을 이용하려면 회원가입 후 로그인해주세요.",
+  "continue_as_guest": "게스트로 계속",
+  "moved_to_my_location": "내 위치로 자동 이동했습니다",
+  "friends_screen_bottom_sheet": "친구 화면은 바텀 시트로 표시됩니다",
+  "finding_current_location": "현재 위치를 찾는 중...",
+  "home": "홈",
+  "timetable": "시간표",
+  "friends": "친구창",
+  "my_page": "MY",
+  "cafe": "카페",
+  "restaurant": "식당",
+  "library": "도서관",
+  "educational_facility": "교육시설",
+  "estimated_distance": "예상거리",
+  "estimated_time": "예상시간",
+  "calculating": "계산중...",
+  "calculating_route": "경로 계산 중...",
+  "finding_optimal_route": "서버에서 최적 경로를 찾고 있습니다",
+  "departure": "출발지",
+  "destination": "도착지",
+  "clear_route": "경로 초기화",
+  "location_permission_denied": "위치 권한이 거부되었습니다.\n설정에서 위치 권한을 허용해주세요.",
+  "finding_route_to_building": "{building}까지 경로를 찾는 중...",
+  "@finding_route_to_building": {
+    "placeholders": {
+      "building": {
+        "type": "String"
+      }
+    }
+  },
+  "route_displayed_to_building": "{building}까지 경로를 표시했습니다",
+  "@route_displayed_to_building": {
+    "placeholders": {
+      "building": {
+        "type": "String"
+      }
+    }
+  },
+  "set_as_departure": "{building}을(를) 출발지로 설정했습니다.",
+  "@set_as_departure": {
+    "placeholders": {
+      "building": {
+        "type": "String"
+      }
+    }
+  },
+  "set_as_destination": "{building}을(를) 도착지로 설정했습니다.",
+  "@set_as_destination": {
+    "placeholders": {
+      "building": {
+        "type": "String"
+      }
+    }
+  },
+  "woosong_library_w1": "우송도서관(W1)",
+  "woosong_library_info": "B2F\t주차장\nB1F\t소강당, 기관실, 전기실, 주차장\n1F\t취업지원센터(630-9976),대출실, 정보라운지\n2F\t일반열람실, 단체학습실\n3F\t일반열람실\n4F\t문학도서/서양도서",
+  "woosong_library_desc": "우송대학교 중앙도서관",
+  "sol_cafe": "솔카페",
+  "sol_cafe_info": "1F\t식당\n2F\t카페",
+  "sol_cafe_desc": "캠퍼스 내 카페",
+  "cheongun_1_dormitory": "청운1숙",
+  "cheongun_1_dormitory_info": "1F\t실습실\n2F\t학생식당\n2F\t청운1숙(여)(629-6542)\n2F\t생활관\n3~5F\t생활관",
+  "cheongun_1_dormitory_desc": "여학생 기숙사",
+  "industry_cooperation_w2": "산학협력단(W2)",
+  "industry_cooperation_info": "1F\t산학협력단\n2F\t건축공학전공(630-9720)\n3F\t우송대 융합기술연구소, 산학연총괄기업지원센터\n4F\t기업부설연구소, LG CNS강의실, 철도디젯아카데미 강의실",
+  "industry_cooperation_desc": "산학협력 및 연구시설",
+  "rotc_w2_1": "학군단(W2-1)",
+  "rotc_info": "\t학군단(630-4601)",
+  "rotc_desc": "학군단 시설",
+  "international_dormitory_w3": "유학생기숙사(W3)",
+  "international_dormitory_info": "1F\t유학생지원팀(629-6623)\n1F\t학생식당\n2F\t유학생기숙사(629-6655)\n2F\t보건실\n3~12F\t생활관",
+  "international_dormitory_desc": "유학생 전용 기숙사",
+  "railway_logistics_w4": "철도물류관(W4)",
+  "railway_logistics_info": "B1F\t실습실\n1F\t실습실\n2F\t철도건설시스템학부(629-6710)\n2F\t철도차량시스템학과(629-6780)\n3F\t강의실/실습실\n4F\t철도시스템학부(630-6730,9700)\n5F\t소방방재학과(629-6770)\n5F\t물류시스템학과(630-9330)",
+  "railway_logistics_desc": "철도 및 물류 관련 학과",
+  "health_medical_science_w5": "보건의료과학관(W5)",
+  "health_medical_science_info": "B1F\t주차장\n1F\t시청각실/주차장\n2F\t강의실\n2F\t스포츠건강재활학과(630-9840)\n3F\t응급구조학과(630-9280)\n3F\t간호학과(630-9290)\n4F\t작업치료학과(630-9820)\n4F\t언어치료청각재활학과(630-9220)\n5F\t물리치료학과(630-4620)\n5F\t보건의료경영학과(630-4610)\n5F\t강의실\n6F\t철도경영학과(630-9770)",
+  "health_medical_science_desc": "보건의료 관련 학과",
+  "liberal_arts_w6": "교양교육관(W6)",
+  "liberal_arts_info": "2F\t강의실\n3F\t강의실\n4F\t강의실\n5F\t강의실",
+  "liberal_arts_desc": "교양 강의실",
+  "woosong_hall_w7": "우송관(W7)",
+  "woosong_hall_info": "1F\t입학처(630-9627)\n1F\t교무처(630-9622)\n1F\t시설처(630-9970)\n1F\t관리팀(629-6658)\n1F\t산학협력단(630-4653)\n1F\t대외협력처(630-9636)\n2F\t전략기획처(630-9102)\n2F\t총무처-총무,구매(630-9653)\n2F\t기획처(630-9661)\n3F\t총장실(630-8501)\n3F\t국제교류처(630-9373)\n3F\t유아교육과(630-9360)\n3F\t경영학전공(629-6640)\n3F\t금융/부동산학전공(630-9350)\n4F\t대회의실\n5F\t회의실",
+  "woosong_hall_desc": "대학 본부 건물",
+  "woosong_kindergarten_w8": "우송유치원(W8)",
+  "woosong_kindergarten_info": "1F, 2F\t우송유치원(629~6750~1)",
+  "woosong_kindergarten_desc": "대학 부속 유치원",
+  "west_campus_culinary_w9": "서캠퍼스정례원(W9)",
+  "west_campus_culinary_info": "B1F\t실습실\n1F\t실습실\n2F\t실습실",
+  "west_campus_culinary_desc": "조리 실습 시설",
+  "social_welfare_w10": "사회복지융합관(W10)",
+  "social_welfare_info": "1F\t시청각실/실습실\n2F\t강의실/실습실\n3F\t사회복지학과(630-9830)\n3F\t글로벌아동교육학과(630-9260)\n4F\t강의실/실습실\n5F\t강의실/실습실",
+  "social_welfare_desc": "사회복지 관련 학과",
+  "gymnasium_w11": "체육관(W11)",
+  "gymnasium_info": "1F\t체력단련실\n2F~4F\t체육관",
+  "gymnasium_desc": "체육 시설",
+  "sica_w12": "SICA(W12)",
+  "sica_info": "B1F\t실습실\n1F\t스타리코카페\n2F~3F\t강의실\n5F\t글로벌조리학부(629-6860)",
+  "sica_desc": "국제조리학원",
+  "woosong_tower_w13": "우송타워(W13)",
+  "woosong_tower_info": "B1~1F\t주차장\n2F\t주차장, 솔파인 베이커리(629-6429)\n4F\t세미나실\n5F\t강의실\n6F\t외식조리영양학과(630-9380,9740)\n7F\t강의실\n8F\t외식,조리경영전공(630-9250)\n9F\t강의실/실습실\n10F\t외식조리전공(629-6821), 글로벌한식조리전공(629-6560)\n11F, 12F\t실습실\n13F\t솔파인레스토랑(629-6610)",
+  "woosong_tower_desc": "복합 교육시설",
+  "culinary_center_w14": "Culinary Center(W14)",
+  "culinary_center_info": "1F\t강의실/실습실\n2F\t강의실/실습실\n3F\t강의실/실습실\n4F\t강의실/실습실\n5F\t강의실/실습실",
+  "culinary_center_desc": "조리 전문 교육시설",
+  "food_architecture_w15": "식품건축관(W15)",
+  "food_architecture_info": "B1F\t실습실\n1F\t실습실\n2F\t강의실\n3F\t강의실\n4F\t강의실\n5F\t강의실",
+  "food_architecture_desc": "식품 및 건축 관련 학과",
+  "student_hall_w16": "학생회관(W16)",
+  "student_hall_info": "1F\t학생식당, 구내서점(629-6127)\n2F\t교직원식당\n3F\t동아리방\n3F\t학생복지처-학생팀(630-9641), 장학팀(630-9876)\n3F\t장애학생지원센터(630-9903)\n3F\t사회봉사단(630-9904)\n3F\t학생상담센터(630-9645)\n4F\t복학지원센터(630-9139)\n4F\t교수학습개발센터(630-9285)",
+  "student_hall_desc": "학생 복지 시설",
+  "media_convergence_w17": "미디어융합관(W17)",
+  "media_convergence_info": "B1F\t강의실/실습실\n1F\t미디어디자인/영상전공(630-9750)\n2F\t강의실/실습실\n3F\t게임멀티미디어전공(630-9270)\n5F\t강의실/실습실",
+  "media_convergence_desc": "미디어 관련 학과",
+  "woosong_arts_center_w18": "우송예술회관(W18)",
+  "woosong_arts_center_info": "B1F\t공연준비실\n1F\t우송예술회관(629-6363)\n2F\t실습실\n3F\t실습실\n4F\t실습실\n5F\t실습실",
+  "woosong_arts_center_desc": "예술 공연 시설",
+  "west_campus_andycut_w19": "서캠퍼스앤디컷빌딩(W19)",
+  "west_campus_andycut_info": "2F\t글로벌융합비즈니스학과(630-9249)\n2F\t자유전공학부(630-9390)\n2F\tAI/빅데이터학과(630-9807)\n2F\t글로벌호텔매니지먼트학과(630-9249)\n2F\t글로벌미디어영상학과(630-9346)\n2F\t글로벌의료서비스경영학과(630-9283)\n2F\t글로벌철도/교통물류학부(630-9347)\n2F\t글로벌외식창업학과(629-6860)",
+  "west_campus_andycut_desc": "글로벌 학과 건물",
+  "operating": "운영중",
+  "dormitory": "기숙사",
+  "military_facility": "군사시설",
+  "kindergarten": "유치원",
+  "sports_facility": "체육시설",
+  "complex_facility": "복합시설",
+  "search_campus_buildings": "학교 건물을 검색해주세요",
+  "no_search_results": "검색 결과가 없습니다",
+  "building_details": "세부 정보",
+  "parking": "주차",
+  "accessibility": "접근성",
+  "facilities": "시설",
+  "elevator": "엘리베이터",
+  "restroom": "화장실",
+  "navigate_from_current_location": "현재 위치에서 길찾기",
+  "edit_profile": "회원정보 수정",
+  "nameRequired": "이름을 입력하세요",
+  "emailRequired": "이메일을 입력하세요",
+  "save": "저장하기",
+  "saveSuccess": "회원정보가 변경되었습니다",
+  "app_info": "앱 정보",
+  "app_version": "앱 버전",
+  "developer": "개발자",
+  "developer_name": "이름: 홍길동",
+  "developer_email": "이메일: example@email.com",
+  "developer_github": "GitHub: github.com/yourid",
+  "help": "도움말",
+  "no_help_images": "도움말 이미지가 없습니다",
+  "image_load_error": "이미지를 불러올 수 없습니다",
+  "description_hint": "설명 입력",
+  "profile_updated": "프로필이 업데이트되었습니다",
+  "my_info": "내 정보",
+  "guest_user": "예질배 크루",
+  "guest_role": "정진영의 노예",
+  "user": "사용자",
+  "edit_profile_subtitle": "개인정보를 수정할 수 있습니다",
+  "help_subtitle": "앱 사용법을 확인할 수 있습니다",
+  "app_info_subtitle": "버전 정보 및 개발자 정보",
+  "delete_account_subtitle": "계정을 영구적으로 삭제합니다",
+  "login_message": "모든 기능을 이용하려면\n로그인하거나 회원가입해주세요",
+  "login_signup": "로그인 / 회원가입",
+  "delete_account_confirm": "회원 탈퇴",
+  "delete_account_message": "정말로 탈퇴하시겠습니까?",
+  "logout_confirm": "로그아웃",
+  "logout_message": "정말 로그아웃하시겠습니까?",
+  "yes": "예",
+  "no": "아니오",
+  "feature_in_progress": "기능은 준비 중입니다",
+  "delete_feature_in_progress": "회원 탈퇴 기능은 준비 중입니다",
+  "title": "회원정보 수정",
+  "email_required": "이메일을 입력하세요",
+  "name_required": "이름을 입력하세요",
+ "schedule": "시간표",
+  "winter_semester": "겨울학기",
+  "spring_semester": "1학기",
+  "summer_semester": "여름학기",
+  "fall_semester": "2학기",
+  "monday": "월",
+  "tuesday": "화",
+  "wednesday": "수",
+  "thursday": "목",
+  "friday": "금",
+  "time": "시간",
+  "add_class": "수업 추가",
+  "edit_class": "수업 수정",
+  "delete_class": "수업 삭제",
+  "class_name": "수업명",
+  "professor_name": "교수명",
+  "classroom": "강의실",
+  "day_of_week": "요일",
+  "start_time": "시작시간",
+  "end_time": "종료시간",
+  "color_selection": "색상 선택",
+  "monday_full": "월요일",
+  "tuesday_full": "화요일",
+  "wednesday_full": "수요일",
+  "thursday_full": "목요일",
+  "friday_full": "금요일",
+  "class_added": "수업이 추가되었습니다.",
+  "class_updated": "수업이 수정되었습니다.",
+  "class_deleted": "수업이 삭제되었습니다.",
+  "delete_class_confirm": "{className} 수업을 삭제하시겠습니까?",
+  "@delete_class_confirm": {
+    "placeholders": {
+      "className": {
+        "type": "String"
+      }
+    }
+  },
+  "view_on_map": "지도보기",
+  "location": "강의실",
+  "schedule_time": "시간",
+  "schedule_day": "요일",
+  "map_feature_coming_soon": "지도 기능은 추후 추가될 예정입니다.",
+  "current_year": "{year}년",
+  "@current_year": {
+    "placeholders": {
+      "year": {
+        "type": "int"
+      }
+    }
+  },
+  "my_friends": "내 친구들",
+  "online_friends": "총 {total}명 • 온라인 {online}명",
+  "@online_friends": {
+    "placeholders": {
+      "total": {
+        "type": "int"
+      },
+      "online": {
+        "type": "int"
+      }
+    }
+  },
+  "add_friend": "친구 추가",
+  "friend_name_or_id": "친구의 이름 또는 학번을 입력하세요",
+  "friend_request_sent": "친구 요청을 보냈습니다.",
+  "online": "온라인",
+  "offline": "오프라인",
+  "in_class": "수업 중",
+  "last_location": "마지막 위치: {location}",
+  "@last_location": {
+    "placeholders": {
+      "location": {
+        "type": "String"
+      }
+    }
+  },
+  "central_library": "중앙도서관",
+  "engineering_building": "공학관 201호",
+  "student_center": "학생회관",
+  "cafeteria": "카페테리아",
+  "message": "메시지",
+  "view_location": "위치 보기",
+  "call": "통화",
+  "start_chat_with": "{name}님과의 채팅을 시작합니다.",
+  "@start_chat_with": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "view_location_on_map": "{name}님의 위치를 지도에서 확인합니다.",
+  "@view_location_on_map": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "calling": "{name}님에게 전화를 겁니다.",
+  "@calling": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+"add": "추가",
+  "close": "닫기",
+  "edit": "편집",
+  "delete": "삭제",
+  "search": "검색",
+  "searchBuildings": "건물 검색...",
+  "myLocation": "내 위치",
+  "navigation": "길찾기",
+  "route": "경로",
+  "distance": "거리",
+  "minutes": "분",
+  "meters": "미터",
+  "findRoute": "경로 찾기",
+  "clearRoute": "경로 지우기",
+  "setAsStart": "출발지로 설정",
+  "setAsDestination": "목적지로 설정",
+  "navigateFromHere": "여기서 길찾기",
+  "buildingInfo": "건물 정보",
+  "category": "카테고리",
+  "locationPermissionRequired": "위치 권한이 필요합니다",
+  "enableLocationServices": "위치 서비스를 활성화해주세요",
+  "retry": "다시 시도",
+  "noResults": "검색 결과가 없습니다",
+  "settings": "설정",
+  "language": "언어",
+  "about": "정보",
+  "friends_count_status": "총 {total}명 • 온라인 {online}명",
+  "enter_friend_info": "친구의 이름 또는 학번을 입력하세요",
+  "show_location_on_map": "{name}님의 위치를 지도에서 확인합니다.",
+  "open_settings": "설정 열기",
+  "location_error": "위치를 찾을 수 없습니다.",
+  "view_floor_plan": "내부도면보기",
+  "floor_plan": "내부도면",
+  "floor_plan_title": "{buildingName} 내부도면",
+  "@floor_plan_title": {
+    "placeholders": {
+      "buildingName": {
+        "type": "String"
+      }
+    }
+  },
+  "floor_plan_not_available": "도면 이미지를 불러올 수 없습니다",
+  "floor_plan_default_text": "내부 도면"
+}

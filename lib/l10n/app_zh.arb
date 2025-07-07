@@ -1,0 +1,415 @@
+{
+  "@@locale": "zh",
+  "appTitle": "Campus Navigator",
+  "subtitle": "智能校园指南",
+  "woosong": "又松",
+  "start": "开始",
+  "login": "登录",
+  "logout": "注销",
+  "guest": "访客",
+  "student_professor": "学生/教授",
+  "admin": "管理员",
+  "student": "学生",
+  "professor": "教授",
+  "external_user": "外部用户",
+  "username": "用户名",
+  "password": "密码",
+  "confirm_password": "确认密码",
+  "remember_me": "记住登录信息",
+  "remember_me_description": "下次将自动登录",
+  "login_as_guest": "以访客身份浏览",
+  "login_failed": "登录失败",
+  "login_success": "登录成功",
+  "logout_success": "已成功注销",
+  "enter_username": "请输入用户名",
+  "enter_password": "请输入密码",
+  "password_hint": "请输入6位以上字符",
+  "confirm_password_hint": "请再次输入密码",
+  "username_password_required": "请输入用户名和密码",
+  "login_error": "登录失败",
+  "find_password": "找回密码",
+  "find_username": "找回用户名",
+  "back": "返回",
+  "confirm": "确认",
+  "cancel": "取消",
+  "coming_soon": "即将推出",
+  "feature_coming_soon": "{feature} 功能正在开发中。\n将很快添加。",
+  "@feature_coming_soon": {
+    "placeholders": {
+      "feature": {
+        "type": "String"
+      }
+    }
+  },
+  "start_campus_exploration": "开始探索校园",
+  "woosong_university": "又松大学",
+  "campus_navigator": "校园导航",
+  "user_info_not_found": "登录响应中未找到用户信息",
+  "unexpected_login_error": "登录过程中发生意外错误",
+  "login_required": "需要登录",
+  "register": "注册",
+  "register_success": "注册成功完成",
+  "register_success_message": "注册完成！\n正在跳转到登录页面。",
+  "register_error": "注册过程中发生意外错误",
+  "update_user_info": "更新用户信息",
+  "update_success": "用户信息更新成功",
+  "update_error": "更新用户信息时发生意外错误",
+  "delete_account": "删除账户",
+  "delete_success": "账户删除成功",
+  "delete_error": "删除账户时发生意外错误",
+  "name": "姓名",
+  "phone": "电话号码",
+  "email": "邮箱",
+  "student_number": "学号",
+  "user_type": "用户类型",
+  "optional": "可选",
+  "required_fields_empty": "请填写所有必填项",
+  "password_mismatch": "密码不匹配",
+  "password_too_short": "密码必须至少6个字符",
+  "invalid_phone_format": "请输入有效的电话号码格式 (例如: 010-1234-5678)",
+  "invalid_email_format": "请输入有效的邮箱格式",
+  "required_fields_notice": "* 标记的项目为必填项",
+  "welcome_to_campus_navigator": "欢迎使用又松大学校园导航",
+  "enter_real_name": "请输入真实姓名",
+  "phone_format_hint": "010-1234-5678",
+  "enter_student_number": "请输入学号或工号",
+  "email_hint": "example@woosong.org",
+  "create_account": "创建账户",
+  "loading": "加载中...",
+  "error": "错误",
+  "success": "成功",
+  "validation_error": "请检查您的输入",
+  "network_error": "发生网络错误",
+  "server_error": "发生服务器错误",
+  "unknown_error": "发生未知错误",
+  "select_auth_method": "选择认证方式",
+  "woosong_campus_guide_service": "又松大学校园导航服务",
+  "register_description": "创建新账户以使用所有功能",
+  "login_description": "使用现有账户登录以使用服务",
+  "browse_as_guest": "以访客身份浏览",
+  "processing": "处理中...",
+  "campus_navigator_version": "Campus Navigator v1.0",
+  "guest_mode": "访客模式",
+  "guest_mode_description": "在访客模式下，您只能查看基本的校园信息。\n请注册并登录以使用所有功能。",
+  "continue_as_guest": "继续作为访客",
+  "moved_to_my_location": "已自动移动到我的位置",
+  "friends_screen_bottom_sheet": "朋友界面显示为底部表单",
+  "finding_current_location": "正在查找当前位置...",
+  "home": "主页",
+  "timetable": "时间表",
+  "friends": "朋友",
+  "my_page": "我的",
+  "cafe": "咖啡厅",
+  "restaurant": "餐厅",
+  "library": "图书馆",
+  "educational_facility": "教育设施",
+  "estimated_distance": "预计距离",
+  "estimated_time": "预计时间",
+  "calculating": "计算中...",
+  "calculating_route": "正在计算路线...",
+  "finding_optimal_route": "服务器正在寻找最佳路线",
+  "departure": "出发地",
+  "destination": "目的地",
+  "clear_route": "清除路线",
+  "location_permission_denied": "位置权限被拒绝。\n请在设置中允许位置权限。",
+  "finding_route_to_building": "正在查找到{building}的路线...",
+  "@finding_route_to_building": {
+    "placeholders": {
+      "building": {
+        "type": "String"
+      }
+    }
+  },
+  "route_displayed_to_building": "已显示到{building}的路线",
+  "@route_displayed_to_building": {
+    "placeholders": {
+      "building": {
+        "type": "String"
+      }
+    }
+  },
+  "set_as_departure": "已将{building}设为出发地。",
+  "@set_as_departure": {
+    "placeholders": {
+      "building": {
+        "type": "String"
+      }
+    }
+  },
+  "set_as_destination": "已将{building}设为目的地。",
+  "@set_as_destination": {
+    "placeholders": {
+      "building": {
+        "type": "String"
+      }
+    }
+  },
+  "woosong_library_w1": "又松图书馆 (W1)",
+  "woosong_library_info": "B2F\t停车场\nB1F\t小礼堂、设备室、电气室、停车场\n1F\t就业支持中心 (630-9976)、借阅台、信息休息室\n2F\t普通阅览室、团体学习室\n3F\t普通阅览室\n4F\t文学图书/西方图书",
+  "woosong_library_desc": "又松大学中央图书馆",
+  "sol_cafe": "Sol咖啡厅",
+  "sol_cafe_info": "1F\t餐厅\n2F\t咖啡厅",
+  "sol_cafe_desc": "校园内咖啡厅",
+  "cheongun_1_dormitory": "青云1宿舍",
+  "cheongun_1_dormitory_info": "1F\t实习室\n2F\t学生餐厅\n2F\t青云1宿舍(女) (629-6542)\n2F\t生活馆\n3~5F\t生活馆",
+  "cheongun_1_dormitory_desc": "女学生宿舍",
+  "industry_cooperation_w2": "产学合作团 (W2)",
+  "industry_cooperation_info": "1F\t产学合作团\n2F\t建筑工程专业 (630-9720)\n3F\t又松大学融合技术研究所、产学研综合企业支持中心\n4F\t企业附设研究所、LG CNS教室、铁道数字学院教室",
+  "industry_cooperation_desc": "产学合作及研究设施",
+  "rotc_w2_1": "学军团 (W2-1)",
+  "rotc_info": "\t学军团 (630-4601)",
+  "rotc_desc": "学军团设施",
+  "international_dormitory_w3": "留学生宿舍 (W3)",
+  "international_dormitory_info": "1F\t留学生支持团队 (629-6623)\n1F\t学生餐厅\n2F\t留学生宿舍 (629-6655)\n2F\t保健室\n3~12F\t生活馆",
+  "international_dormitory_desc": "留学生专用宿舍",
+  "railway_logistics_w4": "铁道物流馆 (W4)",
+  "railway_logistics_info": "B1F\t实习室\n1F\t实习室\n2F\t铁道建设系统学部 (629-6710)\n2F\t铁道车辆系统学科 (629-6780)\n3F\t教室/实习室\n4F\t铁道系统学部 (630-6730,9700)\n5F\t消防防灾学科 (629-6770)\n5F\t物流系统学科 (630-9330)",
+  "railway_logistics_desc": "铁道及物流相关学科",
+  "health_medical_science_w5": "保健医疗科学馆 (W5)",
+  "health_medical_science_info": "B1F\t停车场\n1F\t视听室/停车场\n2F\t教室\n2F\t运动健康康复学科 (630-9840)\n3F\t急救学科 (630-9280)\n3F\t护理学科 (630-9290)\n4F\t作业治疗学科 (630-9820)\n4F\t语言治疗听觉康复学科 (630-9220)\n5F\t物理治疗学科 (630-4620)\n5F\t保健医疗经营学科 (630-4610)\n5F\t教室\n6F\t铁道经营学科 (630-9770)",
+  "health_medical_science_desc": "保健医疗相关学科",
+  "liberal_arts_w6": "教养教育馆 (W6)",
+  "liberal_arts_info": "2F\t教室\n3F\t教室\n4F\t教室\n5F\t教室",
+  "liberal_arts_desc": "教养教室",
+  "woosong_hall_w7": "又松馆 (W7)",
+  "woosong_hall_info": "1F\t入学处 (630-9627)\n1F\t教务处 (630-9622)\n1F\t设施处 (630-9970)\n1F\t管理团队 (629-6658)\n1F\t产学合作团 (630-4653)\n1F\t对外合作处 (630-9636)\n2F\t战略企划处 (630-9102)\n2F\t总务处-总务、采购 (630-9653)\n2F\t企划处 (630-9661)\n3F\t校长室 (630-8501)\n3F\t国际交流处 (630-9373)\n3F\t幼儿教育科 (630-9360)\n3F\t经营学专业 (629-6640)\n3F\t金融/房地产学专业 (630-9350)\n4F\t大会议室\n5F\t会议室",
+  "woosong_hall_desc": "大学本部建筑",
+  "woosong_kindergarten_w8": "又松幼儿园 (W8)",
+  "woosong_kindergarten_info": "1F, 2F\t又松幼儿园 (629~6750~1)",
+  "woosong_kindergarten_desc": "大学附属幼儿园",
+  "west_campus_culinary_w9": "西校区烹饪学院 (W9)",
+  "west_campus_culinary_info": "B1F\t实习室\n1F\t实习室\n2F\t实习室",
+  "west_campus_culinary_desc": "烹饪实习设施",
+  "social_welfare_w10": "社会福利融合馆 (W10)",
+  "social_welfare_info": "1F\t视听室/实习室\n2F\t教室/实习室\n3F\t社会福利学科 (630-9830)\n3F\t全球儿童教育学科 (630-9260)\n4F\t教室/实习室\n5F\t教室/实习室",
+  "social_welfare_desc": "社会福利相关学科",
+  "gymnasium_w11": "体育馆 (W11)",
+  "gymnasium_info": "1F\t体力锻炼室\n2F~4F\t体育馆",
+  "gymnasium_desc": "体育设施",
+  "sica_w12": "SICA (W12)",
+  "sica_info": "B1F\t实习室\n1F\tStarrico咖啡厅\n2F~3F\t教室\n5F\t全球烹饪学部 (629-6860)",
+  "sica_desc": "国际烹饪学院",
+  "woosong_tower_w13": "又松塔 (W13)",
+  "woosong_tower_info": "B1~1F\t停车场\n2F\t停车场、Solpine面包店 (629-6429)\n4F\t研讨室\n5F\t教室\n6F\t餐饮烹饪营养学科 (630-9380,9740)\n7F\t教室\n8F\t餐饮、烹饪经营专业 (630-9250)\n9F\t教室/实习室\n10F\t餐饮烹饪专业 (629-6821)、全球韩式烹饪专业 (629-6560)\n11F, 12F\t实习室\n13F\tSolpine餐厅 (629-6610)",
+  "woosong_tower_desc": "综合教育设施",
+  "culinary_center_w14": "烹饪中心 (W14)",
+  "culinary_center_info": "1F\t教室/实习室\n2F\t教室/实习室\n3F\t教室/实习室\n4F\t教室/实习室\n5F\t教室/实习室",
+  "culinary_center_desc": "烹饪专业教育设施",
+  "food_architecture_w15": "食品建筑馆 (W15)",
+  "food_architecture_info": "B1F\t实习室\n1F\t实习室\n2F\t教室\n3F\t教室\n4F\t教室\n5F\t教室",
+  "food_architecture_desc": "食品及建筑相关学科",
+  "student_hall_w16": "学生会馆 (W16)",
+  "student_hall_info": "1F\t学生餐厅、校内书店 (629-6127)\n2F\t教职员餐厅\n3F\t社团房\n3F\t学生福利处-学生团队 (630-9641)、奖学金团队 (630-9876)\n3F\t残疾学生支持中心 (630-9903)\n3F\t社会服务团 (630-9904)\n3F\t学生咨询中心 (630-9645)\n4F\t复学支持中心 (630-9139)\n4F\t教授学习开发中心 (630-9285)",
+  "student_hall_desc": "学生福利设施",
+  "media_convergence_w17": "媒体融合馆 (W17)",
+  "media_convergence_info": "B1F\t教室/实习室\n1F\t媒体设计/影像专业 (630-9750)\n2F\t教室/实习室\n3F\t游戏多媒体专业 (630-9270)\n5F\t教室/实习室",
+  "media_convergence_desc": "媒体相关学科",
+  "woosong_arts_center_w18": "又松艺术会馆 (W18)",
+  "woosong_arts_center_info": "B1F\t演出准备室\n1F\t又松艺术会馆 (629-6363)\n2F\t实习室\n3F\t实习室\n4F\t实习室\n5F\t实习室",
+  "woosong_arts_center_desc": "艺术演出设施",
+  "west_campus_andycut_w19": "西校区AndyCut建筑 (W19)",
+  "west_campus_andycut_info": "2F\t全球融合商务学科 (630-9249)\n2F\t自由专业学部 (630-9390)\n2F\tAI/大数据学科 (630-9807)\n2F\t全球酒店管理学科 (630-9249)\n2F\t全球媒体影像学科 (630-9346)\n2F\t全球医疗服务经营学科 (630-9283)\n2F\t全球铁道/交通物流学部 (630-9347)\n2F\t全球餐饮创业学科 (629-6860)",
+  "west_campus_andycut_desc": "全球学科建筑",
+  "operating": "运营中",
+  "dormitory": "宿舍",
+  "military_facility": "军事设施",
+  "kindergarten": "幼儿园",
+  "sports_facility": "体育设施",
+  "complex_facility": "综合设施",
+  "search_campus_buildings": "搜索校园建筑",
+  "no_search_results": "没有搜索结果",
+  "building_details": "详细信息",
+  "parking": "停车",
+  "accessibility": "无障碍",
+  "facilities": "设施",
+  "elevator": "电梯",
+  "restroom": "洗手间",
+  "navigate_from_current_location": "从当前位置导航",
+  "edit_profile": "编辑个人资料",
+  "nameRequired": "请输入姓名",
+  "emailRequired": "请输入邮箱",
+  "save": "保存",
+  "saveSuccess": "个人资料已更新",
+  "app_info": "应用信息",
+  "app_version": "应用版本",
+  "developer": "开发者",
+  "developer_name": "姓名: 홍길동",
+  "developer_email": "邮箱: example@email.com",
+  "developer_github": "GitHub: github.com/yourid",
+  "help": "帮助",
+  "no_help_images": "没有帮助图片",
+  "image_load_error": "无法加载图片",
+  "description_hint": "输入描述",
+  "profile_updated": "个人资料已更新",
+  "my_info": "我的信息",
+  "guest_user": "예질배 크루",
+  "guest_role": "정진영의 노예",
+  "user": "用户",
+  "edit_profile_subtitle": "您可以修改个人信息",
+  "help_subtitle": "查看应用使用方法",
+  "app_info_subtitle": "版本信息和开发者信息",
+  "delete_account_subtitle": "永久删除您的账户",
+  "login_message": "请登录或注册\n以使用所有功能",
+  "login_signup": "登录 / 注册",
+  "delete_account_confirm": "删除账户",
+  "delete_account_message": "您确定要删除账户吗？",
+  "logout_confirm": "注销",
+  "logout_message": "您确定要注销吗？",
+  "yes": "是",
+  "no": "否",
+  "feature_in_progress": "功能正在开发中",
+  "delete_feature_in_progress": "账户删除功能正在开发中",
+  "title": "编辑个人资料",
+    "email_required": "请输入邮箱",
+  "name_required": "请输入姓名",
+  "schedule": "课程表",
+  "winter_semester": "冬季学期",
+  "spring_semester": "春季学期",
+  "summer_semester": "夏季学期",
+  "fall_semester": "秋季学期",
+  "monday": "周一",
+  "tuesday": "周二",
+  "wednesday": "周三",
+  "thursday": "周四",
+  "friday": "周五",
+  "time": "时间",
+  "add_class": "添加课程",
+  "edit_class": "编辑课程",
+  "delete_class": "删除课程",
+  "class_name": "课程名称",
+  "professor_name": "教授姓名",
+  "classroom": "教室",
+  "day_of_week": "星期",
+  "start_time": "开始时间",
+  "end_time": "结束时间",
+  "color_selection": "选择颜色",
+  "monday_full": "星期一",
+  "tuesday_full": "星期二",
+  "wednesday_full": "星期三",
+  "thursday_full": "星期四",
+  "friday_full": "星期五",
+  "class_added": "课程已添加。",
+  "class_updated": "课程已更新。",
+  "class_deleted": "课程已删除。",
+  "delete_class_confirm": "您要删除{className}课程吗？",
+  "@delete_class_confirm": {
+    "placeholders": {
+      "className": {
+        "type": "String"
+      }
+    }
+  },
+  "view_on_map": "在地图上查看",
+  "location": "位置",
+  "schedule_time": "时间",
+  "schedule_day": "星期",
+  "map_feature_coming_soon": "地图功能将在以后添加。",
+  "current_year": "{year}年",
+  "@current_year": {
+    "placeholders": {
+      "year": {
+        "type": "int"
+      }
+    }
+  },
+  "my_friends": "我的朋友",
+  "online_friends": "总计{total}人 • 在线{online}人",
+  "@online_friends": {
+    "placeholders": {
+      "total": {
+        "type": "int"
+      },
+      "online": {
+        "type": "int"
+      }
+    }
+  },
+  "add_friend": "添加朋友",
+  "friend_name_or_id": "请输入朋友的姓名或学号",
+  "friend_request_sent": "好友请求已发送。",
+  "online": "在线",
+  "offline": "离线",
+  "in_class": "上课中",
+  "last_location": "最后位置：{location}",
+  "@last_location": {
+    "placeholders": {
+      "location": {
+        "type": "String"
+      }
+    }
+  },
+  "central_library": "中央图书馆",
+  "engineering_building": "工程楼201",
+  "student_center": "学生中心",
+  "cafeteria": "自助餐厅",
+  "message": "消息",
+  "view_location": "查看位置",
+  "call": "通话",
+  "start_chat_with": "开始与{name}聊天。",
+  "@start_chat_with": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "view_location_on_map": "在地图上查看{name}的位置。",
+  "@view_location_on_map": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "calling": "正在呼叫{name}。",
+  "@calling": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+"add": "添加",
+  "close": "关闭",
+  "edit": "编辑",
+  "delete": "删除",
+  "search": "搜索",
+  "searchBuildings": "搜索建筑...",
+  "myLocation": "我的位置",
+  "navigation": "导航",
+  "route": "路线",
+  "distance": "距离",
+  "minutes": "分钟",
+  "meters": "米",
+  "findRoute": "查找路线",
+  "clearRoute": "清除路线",
+  "setAsStart": "设为起点",
+  "setAsDestination": "设为终点",
+  "navigateFromHere": "从这里导航",
+  "buildingInfo": "建筑信息",
+  "category": "类别",
+  "locationPermissionRequired": "需要位置权限",
+  "enableLocationServices": "请启用位置服务",
+  "retry": "重试",
+  "noResults": "未找到结果",
+  "settings": "设置",
+  "language": "语言",
+  "about": "关于",
+  "friends_count_status": "总共 {total}人 • 在线 {online}人",
+  "enter_friend_info": "请输入朋友的姓名或学号",
+  "show_location_on_map": "在地图上显示{name}的位置。",
+  "open_settings": "打开设置",
+  "location_error": "无法获取您的位置。",
+  "view_floor_plan": "查看平面图",
+  "floor_plan": "平面图",
+  "floor_plan_title": "{buildingName} 平面图",
+  "@floor_plan_title": {
+    "placeholders": {
+      "buildingName": {
+        "type": "String"
+      }
+    }
+  },
+  "floor_plan_not_available": "无法加载平面图图像",
+  "floor_plan_default_text": "平面图"
+}

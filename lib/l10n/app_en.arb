@@ -1,0 +1,516 @@
+{
+  "@@locale": "en",
+  "appTitle": "Campus Navigator",
+  "subtitle": "Your smart campus guide",
+  "woosong": "Woosong",
+  "start": "Start",
+  "login": "Login",
+  "logout": "Logout",
+  "guest": "Guest",
+  "student_professor": "Student/Professor",
+  "admin": "Administrator",
+  "student": "Student",
+  "professor": "Professor",
+  "external_user": "External",
+  "username": "Username",
+  "password": "Password",
+  "confirm_password": "Confirm Password",
+  "remember_me": "Remember login info",
+  "remember_me_description": "You will be logged in automatically next time",
+  "login_as_guest": "Browse as Guest",
+  "login_failed": "Login Failed",
+  "login_success": "Login Successful",
+  "logout_success": "Logged out successfully",
+  "enter_username": "Enter your username",
+  "enter_password": "Enter your password",
+  "password_hint": "Enter 6+ characters",
+  "confirm_password_hint": "Re-enter your password",
+  "username_password_required": "Please enter both username and password",
+  "login_error": "Login failed",
+  "find_password": "Find Password",
+  "find_username": "Find Username",
+  "back": "Back",
+  "confirm": "Confirm",
+  "cancel": "Cancel",
+  "coming_soon": "Coming Soon",
+  "feature_coming_soon": "{feature} feature is under development.\nIt will be added soon.",
+  "@feature_coming_soon": {
+    "placeholders": {
+      "feature": {
+        "type": "String"
+      }
+    }
+  },
+  "start_campus_exploration": "Start exploring the campus",
+  "woosong_university": "Woosong University",
+  "campus_navigator": "Campus Navigator",
+  "user_info_not_found": "User information not found in login response",
+  "unexpected_login_error": "An unexpected error occurred during login",
+  "login_required": "Login required",
+  "register": "Register",
+  "register_success": "Registration completed successfully",
+  "register_success_message": "Registration completed!\nRedirecting to login screen.",
+  "register_error": "An unexpected error occurred during registration",
+  "update_user_info": "Update User Information",
+  "update_success": "User information updated successfully",
+  "update_error": "An unexpected error occurred while updating user information",
+  "delete_account": "Delete Account",
+  "delete_success": "Account deleted successfully",
+  "delete_error": "An unexpected error occurred while deleting account",
+  "name": "Name",
+  "phone": "Phone Number",
+  "email": "Email",
+  "student_number": "Student Number",
+  "user_type": "User Type",
+  "optional": "Optional",
+  "required_fields_empty": "Please fill in all required fields",
+  "password_mismatch": "Passwords do not match",
+  "password_too_short": "Password must be at least 6 characters",
+  "invalid_phone_format": "Please enter a valid phone number format (e.g., 010-1234-5678)",
+  "invalid_email_format": "Please enter a valid email format",
+  "required_fields_notice": "* marked fields are required",
+  "welcome_to_campus_navigator": "Welcome to Woosong Campus Navigator",
+  "enter_real_name": "Enter your real name",
+  "phone_format_hint": "010-1234-5678",
+  "enter_student_number": "Enter your student or employee number",
+  "email_hint": "example@woosong.org",
+  "create_account": "Create Account",
+  "loading": "Loading...",
+  "error": "Error",
+  "success": "Success",
+  "validation_error": "Please check your input",
+  "network_error": "Network error occurred",
+  "server_error": "Server error occurred",
+  "unknown_error": "Unknown error occurred",
+  "select_auth_method": "Select Authentication Method",
+  "woosong_campus_guide_service": "Woosong University Campus Navigation Service",
+  "register_description": "Create a new account to use all features",
+  "login_description": "Log in with your existing account to use the service",
+  "browse_as_guest": "Browse as Guest",
+  "processing": "Processing...",
+  "campus_navigator_version": "Campus Navigator v1.0",
+  "guest_mode": "Guest Mode",
+  "guest_mode_description": "In guest mode, you can only view basic campus information.\nPlease register and log in to use all features.",
+  "continue_as_guest": "Continue as Guest",
+  "moved_to_my_location": "Automatically moved to my location",
+  "friends_screen_bottom_sheet": "Friends screen is displayed as bottom sheet",
+  "finding_current_location": "Finding current location...",
+  "home": "Home",
+  "timetable": "Timetable",
+  "friends": "Friends",
+  "my_page": "MY",
+  "cafe": "Cafe",
+  "restaurant": "Restaurant",
+  "library": "Library",
+  "educational_facility": "Educational Facility",
+  "estimated_distance": "Est. Distance",
+  "estimated_time": "Est. Time",
+  "calculating": "Calculating...",
+  "calculating_route": "Calculating route...",
+  "finding_optimal_route": "Finding optimal route from server",
+  "departure": "Departure",
+  "destination": "Destination",
+  "clear_route": "Clear Route",
+  "location_permission_denied": "Location permission denied.\nPlease allow location permission in settings.",
+"finding_route_to_building": "Finding route to {building}...",
+"@finding_route_to_building": {
+  "placeholders": {
+    "building": {
+      "type": "String"
+    }
+  }
+},
+"route_displayed_to_building": "Route to {building} displayed",
+"@route_displayed_to_building": {
+  "placeholders": {
+    "building": {
+      "type": "String"
+    }
+  }
+},
+"set_as_departure": "Set {building} as departure.",
+"@set_as_departure": {
+  "placeholders": {
+    "building": {
+      "type": "String"
+    }
+  }
+},
+"set_as_destination": "Set {building} as destination.",
+"@set_as_destination": {
+  "placeholders": {
+    "building": {
+      "type": "String"
+    }
+  }
+},
+  "woosong_library_w1": "Woosong Library (W1)",
+  "woosong_library_info": "B2F\tParking\nB1F\tSmall auditorium, Equipment room, Electrical room, Parking\n1F\tCareer Support Center (630-9976), Loan desk, Information lounge\n2F\tGeneral reading room, Group study room\n3F\tGeneral reading room\n4F\tLiterature books/Western books",
+  "woosong_library_desc": "Woosong University Central Library",
+  "sol_cafe": "Sol Cafe",
+  "sol_cafe_info": "1F\tRestaurant\n2F\tCafe",
+  "sol_cafe_desc": "Campus cafe",
+  "cheongun_1_dormitory": "Cheongun 1 Dormitory",
+  "cheongun_1_dormitory_info": "1F\tPractice room\n2F\tStudent restaurant\n2F\tCheongun 1 Dormitory (Female) (629-6542)\n2F\tDormitory\n3~5F\tDormitory",
+  "cheongun_1_dormitory_desc": "Female dormitory",
+  "industry_cooperation_w2": "Industry-University Cooperation (W2)",
+  "industry_cooperation_info": "1F\tIndustry-University Cooperation\n2F\tArchitectural Engineering (630-9720)\n3F\tWoosong University Convergence Technology Research Institute, Industry-Academia-Research General Enterprise Support Center\n4F\tCorporate Research Institute, LG CNS Classroom, Railway Digital Academy Classroom",
+  "industry_cooperation_desc": "Industry-academia cooperation and research facilities",
+  "rotc_w2_1": "ROTC (W2-1)",
+  "rotc_info": "\tROTC (630-4601)",
+  "rotc_desc": "ROTC facilities",
+  "international_dormitory_w3": "International Student Dormitory (W3)",
+  "international_dormitory_info": "1F\tInternational Student Support Team (629-6623)\n1F\tStudent restaurant\n2F\tInternational Student Dormitory (629-6655)\n2F\tHealth center\n3~12F\tDormitory",
+  "international_dormitory_desc": "International student dormitory",
+  "railway_logistics_w4": "Railway Logistics Building (W4)",
+  "railway_logistics_info": "B1F\tPractice room\n1F\tPractice room\n2F\tRailway Construction System Department (629-6710)\n2F\tRailway Vehicle System Department (629-6780)\n3F\tClassroom/Practice room\n4F\tRailway System Department (630-6730,9700)\n5F\tFire and Disaster Prevention Department (629-6770)\n5F\tLogistics System Department (630-9330)",
+  "railway_logistics_desc": "Railway and logistics related departments",
+  "health_medical_science_w5": "Health and Medical Science Building (W5)",
+  "health_medical_science_info": "B1F\tParking\n1F\tAudiovisual room/Parking\n2F\tClassroom\n2F\tSports Health Rehabilitation Department (630-9840)\n3F\tEmergency Medical Services Department (630-9280)\n3F\tNursing Department (630-9290)\n4F\tOccupational Therapy Department (630-9820)\n4F\tSpeech Therapy and Audiology Department (630-9220)\n5F\tPhysical Therapy Department (630-4620)\n5F\tHealth and Medical Management Department (630-4610)\n5F\tClassroom\n6F\tRailway Management Department (630-9770)",
+  "health_medical_science_desc": "Health and medical related departments",
+  "liberal_arts_w6": "Liberal Arts Building (W6)",
+  "liberal_arts_info": "2F\tClassroom\n3F\tClassroom\n4F\tClassroom\n5F\tClassroom",
+  "liberal_arts_desc": "Liberal arts classrooms",
+  "woosong_hall_w7": "Woosong Hall (W7)",
+  "woosong_hall_info": "1F\tAdmissions Office (630-9627)\n1F\tAcademic Affairs Office (630-9622)\n1F\tFacilities Office (630-9970)\n1F\tManagement Team (629-6658)\n1F\tIndustry-University Cooperation (630-4653)\n1F\tExternal Cooperation Office (630-9636)\n2F\tStrategic Planning Office (630-9102)\n2F\tGeneral Affairs Office-General Affairs, Purchasing (630-9653)\n2F\tPlanning Office (630-9661)\n3F\tPresident's Office (630-8501)\n3F\tInternational Exchange Office (630-9373)\n3F\tEarly Childhood Education Department (630-9360)\n3F\tBusiness Administration Major (629-6640)\n3F\tFinance/Real Estate Major (630-9350)\n4F\tLarge conference room\n5F\tConference room",
+  "woosong_hall_desc": "University main building",
+  "woosong_kindergarten_w8": "Woosong Kindergarten (W8)",
+  "woosong_kindergarten_info": "1F, 2F\tWoosong Kindergarten (629~6750~1)",
+  "woosong_kindergarten_desc": "University affiliated kindergarten",
+  "west_campus_culinary_w9": "West Campus Culinary Institute (W9)",
+  "west_campus_culinary_info": "B1F\tPractice room\n1F\tPractice room\n2F\tPractice room",
+  "west_campus_culinary_desc": "Culinary practice facilities",
+  "social_welfare_w10": "Social Welfare Convergence Building (W10)",
+  "social_welfare_info": "1F\tAudiovisual room/Practice room\n2F\tClassroom/Practice room\n3F\tSocial Welfare Department (630-9830)\n3F\tGlobal Child Education Department (630-9260)\n4F\tClassroom/Practice room\n5F\tClassroom/Practice room",
+  "social_welfare_desc": "Social welfare related departments",
+  "gymnasium_w11": "Gymnasium (W11)",
+  "gymnasium_info": "1F\tFitness center\n2F~4F\tGymnasium",
+  "gymnasium_desc": "Sports facilities",
+  "sica_w12": "SICA (W12)",
+  "sica_info": "B1F\tPractice room\n1F\tStarrico Cafe\n2F~3F\tClassroom\n5F\tGlobal Culinary Department (629-6860)",
+  "sica_desc": "International Culinary Institute",
+  "woosong_tower_w13": "Woosong Tower (W13)",
+  "woosong_tower_info": "B1~1F\tParking\n2F\tParking, Solpine Bakery (629-6429)\n4F\tSeminar room\n5F\tClassroom\n6F\tFood Service Culinary Nutrition Department (630-9380,9740)\n7F\tClassroom\n8F\tFood Service, Culinary Management Major (630-9250)\n9F\tClassroom/Practice room\n10F\tFood Service Culinary Major (629-6821), Global Korean Culinary Major (629-6560)\n11F, 12F\tPractice room\n13F\tSolpine Restaurant (629-6610)",
+  "woosong_tower_desc": "Complex educational facility",
+  "culinary_center_w14": "Culinary Center (W14)",
+  "culinary_center_info": "1F\tClassroom/Practice room\n2F\tClassroom/Practice room\n3F\tClassroom/Practice room\n4F\tClassroom/Practice room\n5F\tClassroom/Practice room",
+  "culinary_center_desc": "Culinary specialized educational facility",
+  "food_architecture_w15": "Food Architecture Building (W15)",
+  "food_architecture_info": "B1F\tPractice room\n1F\tPractice room\n2F\tClassroom\n3F\tClassroom\n4F\tClassroom\n5F\tClassroom",
+  "food_architecture_desc": "Food and architecture related departments",
+  "student_hall_w16": "Student Hall (W16)",
+  "student_hall_info": "1F\tStudent restaurant, Campus bookstore (629-6127)\n2F\tFaculty restaurant\n3F\tClub rooms\n3F\tStudent Welfare Office-Student Team (630-9641), Scholarship Team (630-9876)\n3F\tDisabled Student Support Center (630-9903)\n3F\tSocial Service Corps (630-9904)\n3F\tStudent Counseling Center (630-9645)\n4F\tReturn to School Support Center (630-9139)\n4F\tCenter for Teaching and Learning Development (630-9285)",
+  "student_hall_desc": "Student welfare facilities",
+  "media_convergence_w17": "Media Convergence Building (W17)",
+  "media_convergence_info": "B1F\tClassroom/Practice room\n1F\tMedia Design/Video Major (630-9750)\n2F\tClassroom/Practice room\n3F\tGame Multimedia Major (630-9270)\n5F\tClassroom/Practice room",
+  "media_convergence_desc": "Media related departments",
+  "woosong_arts_center_w18": "Woosong Arts Center (W18)",
+  "woosong_arts_center_info": "B1F\tPerformance preparation room\n1F\tWoosong Arts Center (629-6363)\n2F\tPractice room\n3F\tPractice room\n4F\tPractice room\n5F\tPractice room",
+  "woosong_arts_center_desc": "Arts performance facility",
+  "west_campus_andycut_w19": "West Campus AndyCut Building (W19)",
+  "west_campus_andycut_info": "2F\tGlobal Convergence Business Department (630-9249)\n2F\tLiberal Arts Department (630-9390)\n2F\tAI/Big Data Department (630-9807)\n2F\tGlobal Hotel Management Department (630-9249)\n2F\tGlobal Media Video Department (630-9346)\n2F\tGlobal Medical Service Management Department (630-9283)\n2F\tGlobal Railway/Transportation Logistics Department (630-9347)\n2F\tGlobal Food Service Entrepreneurship Department (629-6860)",
+  "west_campus_andycut_desc": "Global departments building",
+  "operating": "Operating",
+  "dormitory": "Dormitory",
+  "military_facility": "Military Facility",
+  "kindergarten": "Kindergarten",
+  "sports_facility": "Sports Facility",
+  "complex_facility": "Complex Facility",
+  "search_campus_buildings": "Search campus buildings",
+  "no_search_results": "No search results",
+  "building_details": "Details",
+  "parking": "Parking",
+  "accessibility": "Accessibility",
+  "facilities": "Facilities", 
+  "elevator": "Elevator",
+  "restroom": "Restroom",
+  "navigate_from_current_location": "Navigate from current location",
+  "title": "Edit Profile",
+  "nameRequired": "Please enter your name",
+  "emailRequired": "Please enter your email",
+  "save": "Save",
+  "saveSuccess": "Profile has been updated.",
+  "my_info": "My Info",
+  "guest_user": "Yejilebae Crew",
+  "guest_role": "Slave of JinYoung Jung",
+  "user": "User",
+  "edit_profile": "Edit Profile",
+  "edit_profile_subtitle": "You can modify your personal information",
+  "help_subtitle": "Check how to use the app",
+  "app_info_subtitle": "Version info and developer info",
+  "delete_account_subtitle": "Permanently delete your account",
+  "login_message": "Please login or sign up\nto use all features",
+  "login_signup": "Login / Sign Up",
+  "delete_account_confirm": "Delete Account",
+  "delete_account_message": "Are you sure you want to delete your account?",
+  "logout_confirm": "Logout",
+  "logout_message": "Are you sure you want to logout?",
+  "yes": "Yes",
+  "no": "No",
+  "feature_in_progress": "feature is under development.",
+  "delete_feature_in_progress": "Account deletion feature is under development.",
+   "app_info": "App Info",
+  "app_version": "App Version", 
+  "developer": "Developer",
+  "developer_name": "Name: Hong Gil-dong",
+  "developer_email": "Email: example@email.com",
+  "developer_github": "GitHub: github.com/yourid",
+  "help": "Help",
+  "no_help_images": "No help images available",
+  "image_load_error": "Unable to load image",
+  "description_hint": "Enter description",
+  "email_required": "Please enter your email",
+  "name_required": "Please enter your name",
+  "profile_updated": "Profile has been updated",
+  "schedule": "Schedule",
+  "winter_semester": "Winter",
+  "spring_semester": "Spring",
+  "summer_semester": "Summer",
+  "fall_semester": "Fall",
+  "monday": "Mon",
+  "tuesday": "Tue",
+  "wednesday": "Wed",
+  "thursday": "Thu",
+  "friday": "Fri",
+  "time": "Time",
+  "add_class": "Add Class",
+  "edit_class": "Edit Class",
+  "delete_class": "Delete Class",
+  "class_name": "Class Name",
+  "professor_name": "Professor",
+  "classroom": "Classroom",
+  "day_of_week": "Day",
+  "start_time": "Start Time",
+  "end_time": "End Time",
+  "color_selection": "Select Color",
+  "monday_full": "Monday",
+  "tuesday_full": "Tuesday",
+  "wednesday_full": "Wednesday",
+  "thursday_full": "Thursday",
+  "friday_full": "Friday",
+  "class_added": "Class has been added.",
+  "class_updated": "Class has been updated.",
+  "class_deleted": "Class has been deleted.",
+  "delete_class_confirm": "Do you want to delete {className}?",
+  "@delete_class_confirm": {
+    "placeholders": {
+      "className": {
+        "type": "String"
+      }
+    }
+  },
+   "view_on_map": "View on Map",
+  "location": "Location",
+  "schedule_time": "Time",
+  "schedule_day": "Day",
+  "map_feature_coming_soon": "Map feature will be added later.",
+  "current_year": "{year}",
+  "@current_year": {
+    "placeholders": {
+      "year": {
+        "type": "int"
+      }
+    }
+  },
+  "my_friends": "My Friends",
+  "online_friends": "Total {total} • Online {online}",
+  "@online_friends": {
+    "placeholders": {
+      "total": {
+        "type": "int"
+      },
+      "online": {
+        "type": "int"
+      }
+    }
+  },
+  "add_friend": "Add Friend",
+  "friend_name_or_id": "Enter friend's name or student ID",
+  "friend_request_sent": "Friend request sent.",
+  "online": "Online",
+  "offline": "Offline",
+  "in_class": "In Class",
+  "last_location": "Last location: {location}",
+  "@last_location": {
+    "placeholders": {
+      "location": {
+        "type": "String"
+      }
+    }
+  },
+  "central_library": "Central Library",
+  "engineering_building": "Engineering Building 201",
+  "student_center": "Student Center",
+  "cafeteria": "Cafeteria",
+  "message": "Message",
+  "view_location": "View Location",
+  "call": "Call",
+  "start_chat_with": "Starting chat with {name}.",
+  "@start_chat_with": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "view_location_on_map": "View {name}'s location on map.",
+  "@view_location_on_map": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "calling": "Calling {name}.",
+  "@calling": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+"add": "Add",
+  "@add": {
+    "description": "Add button text"
+  },
+  "close": "Close",
+  "@close": {
+    "description": "Close button text"
+  },
+  "edit": "Edit",
+  "@edit": {
+    "description": "Edit button text"
+  },
+  "delete": "Delete",
+  "@delete": {
+    "description": "Delete button text"
+  },
+  "search": "Search",
+  "@search": {
+    "description": "Search button text"
+  },
+  "searchBuildings": "Search buildings...",
+  "@searchBuildings": {
+    "description": "Search buildings placeholder"
+  },
+  "myLocation": "My Location",
+  "@myLocation": {
+    "description": "My location button text"
+  },
+  "navigation": "Navigation",
+  "@navigation": {
+    "description": "Navigation text"
+  },
+  "route": "Route",
+  "@route": {
+    "description": "Route text"
+  },
+  "distance": "Distance",
+  "@distance": {
+    "description": "Distance text"
+  },
+  "minutes": "minutes",
+  "@minutes": {
+    "description": "Minutes unit"
+  },
+  "meters": "meters",
+  "@meters": {
+    "description": "Meters unit"
+  },
+  "findRoute": "Find Route",
+  "@findRoute": {
+    "description": "Find route button text"
+  },
+  "clearRoute": "Clear Route",
+  "@clearRoute": {
+    "description": "Clear route button text"
+  },
+  "setAsStart": "Set as Start",
+  "@setAsStart": {
+    "description": "Set as start point button"
+  },
+  "setAsDestination": "Set as Destination",
+  "@setAsDestination": {
+    "description": "Set as destination button"
+  },
+  "navigateFromHere": "Navigate from Here",
+  "@navigateFromHere": {
+    "description": "Navigate from current location button"
+  },
+  "buildingInfo": "Building Information",
+  "@buildingInfo": {
+    "description": "Building information title"
+  },
+  "category": "Category",
+  "@category": {
+    "description": "Category text"
+  },
+  "locationPermissionRequired": "Location permission is required",
+  "@locationPermissionRequired": {
+    "description": "Location permission required message"
+  },
+  "enableLocationServices": "Please enable location services",
+  "@enableLocationServices": {
+    "description": "Enable location services message"
+  },
+  "retry": "Retry",
+  "@retry": {
+    "description": "Retry button text"
+  },
+  "noResults": "No results found",
+  "@noResults": {
+    "description": "No search results message"
+  },
+  "settings": "Settings",
+  "@settings": {
+    "description": "Settings text"
+  },
+  "language": "Language",
+  "@language": {
+    "description": "Language setting"
+  },
+  "about": "About",
+  "@about": {
+    "description": "About text"
+  },
+  "friends_count_status": "Total {total} • Online {online}",
+  "@friends_count_status": {
+    "description": "Friends count and online status",
+    "placeholders": {
+      "total": {
+        "type": "int"
+      },
+      "online": {
+        "type": "int"
+      }
+    }
+  },
+  "enter_friend_info": "Enter friend's name or student ID",
+  "@enter_friend_info": {
+    "description": "Add friend input placeholder"
+  },
+  "show_location_on_map": "Showing {name}'s location on map.",
+  "@show_location_on_map": {
+    "description": "Show location message",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+
+  "open_settings": "Open Settings",
+  "location_error": "Unable to find your location.",
+  "view_floor_plan": "View Floor Plan",
+  "floor_plan": "Floor Plan",
+  "floor_plan_title": "{buildingName} Floor Plan",
+  "@floor_plan_title": {
+    "placeholders": {
+      "buildingName": {
+        "type": "String"
+      }
+    }
+  },
+  "floor_plan_not_available": "Unable to load floor plan image",
+  "floor_plan_default_text": "Floor Plan"
+}
