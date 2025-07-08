@@ -273,7 +273,7 @@ class BuildingInfoWindow extends StatelessWidget {
 }
 
 
-  // 내부도면보기 버튼으로 변경
+  // 내부도면보기 버튼으로 변경함.
   Widget _buildFloorPlanButton(AppLocalizations l10n) {
     return SizedBox(
       width: double.infinity,
