@@ -41,18 +41,18 @@ void initState() {
   
   // 건물 객체 검증
   if (_startBuilding != null) {
-    print('PresetStart 건물: ${_startBuilding!.name}');
-    print('좌표: ${_startBuilding!.lat}, ${_startBuilding!.lng}');
+    debugPrint('PresetStart 건물: ${_startBuilding!.name}');
+    debugPrint('좌표: ${_startBuilding!.lat}, ${_startBuilding!.lng}');
     
     // 좌표가 유효한지 확인
     if (_startBuilding!.lat == 0.0 && _startBuilding!.lng == 0.0) {
-      print('경고: 출발지 좌표가 (0,0)입니다');
+      debugPrint('경고: 출발지 좌표가 (0,0)입니다');
     }
   }
   
   if (_endBuilding != null) {
-    print('PresetEnd 건물: ${_endBuilding!.name}');
-    print('좌표: ${_endBuilding!.lat}, ${_endBuilding!.lng}');
+    debugPrint('PresetEnd 건물: ${_endBuilding!.name}');
+    debugPrint('좌표: ${_endBuilding!.lat}, ${_endBuilding!.lng}');
   }
   
   _recentSearches = [];
@@ -185,23 +185,38 @@ void initState() {
     }
   }
 
-  void _startNavigation() {
-    if (_startBuilding != null && _endBuilding != null) {
-      if (_startBuilding!.name == '내 위치') {
-        Navigator.pop(context, {
-          'start': null,
-          'end': _endBuilding,
-          'useCurrentLocation': true,
-        });
-      } else {
-        Navigator.pop(context, {
-          'start': _startBuilding,
-          'end': _endBuilding,
-          'useCurrentLocation': false,
-        });
-      }
-    }
+void _startNavigation() {
+  print('=== 경로 안내 시작 디버깅 ===');
+  print('출발지: ${_startBuilding?.name}');
+  print('출발지 좌표: ${_startBuilding?.lat}, ${_startBuilding?.lng}');
+  print('도착지: ${_endBuilding?.name}');
+  print('도착지 좌표: ${_endBuilding?.lat}, ${_endBuilding?.lng}');
+  
+  if (_startBuilding != null && _endBuilding != null) {
+    final navigationData = {
+      'start': _startBuilding!.name == '내 위치' ? null : _startBuilding,
+      'end': _endBuilding,
+      'useCurrentLocation': _startBuilding!.name == '내 위치',
+    };
+    
+    print('반환할 데이터: $navigationData');
+    
+    // 데이터 반환하고 DirectionsScreen 닫기
+    Navigator.pop(context, navigationData);
+  } else {
+    print('출발지 또는 도착지가 null입니다');
+    print('_startBuilding null 여부: ${_startBuilding == null}');
+    print('_endBuilding null 여부: ${_endBuilding == null}');
+    
+    // 오류 메시지 표시
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('출발지와 도착지를 모두 설정해주세요'),
+        backgroundColor: Colors.red,
+      ),
+    );
   }
+}
 
   void _cancelSearch() {
     setState(() {

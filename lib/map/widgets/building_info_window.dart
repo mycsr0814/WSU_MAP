@@ -9,9 +9,9 @@ class BuildingInfoWindow extends StatelessWidget {
   final Building building;
   final VoidCallback onClose;
   final Function(Building) onShowDetails;
-  final Function(Building)? onSetStart;
-  final Function(Building)? onSetEnd;
-  final Function(Building)? onShowFloorPlan; // 콜백 이름 변경
+  final Function(dynamic)? onSetStart; // Building에서 dynamic으로 변경
+  final Function(dynamic)? onSetEnd;   // Building에서 dynamic으로 변경
+  final Function(Building)? onShowFloorPlan;
 
   const BuildingInfoWindow({
     super.key,
@@ -20,7 +20,7 @@ class BuildingInfoWindow extends StatelessWidget {
     required this.onShowDetails,
     this.onSetStart,
     this.onSetEnd,
-    this.onShowFloorPlan, // 파라미터 이름 변경
+    this.onShowFloorPlan,
   });
 
   @override
@@ -308,7 +308,7 @@ class BuildingInfoWindow extends StatelessWidget {
     );
   }
 
-  Widget _buildActionButtons(AppLocalizations l10n, BuildContext context) {
+ Widget _buildActionButtons(AppLocalizations l10n, BuildContext context) {
   return Row(
     children: [
       // 출발 버튼
@@ -322,21 +322,24 @@ class BuildingInfoWindow extends StatelessWidget {
               // InfoWindow 먼저 닫기
               onClose();
               
-              // context가 여전히 유효한지 확인
-              if (!context.mounted) {
-                print('Context가 유효하지 않음');
-                return;
-              }
+              if (!context.mounted) return;
               
-              // Future.delayed 제거하고 즉시 이동
+              // DirectionsScreen으로 이동하고 결과 받기
               try {
-                await Navigator.push(
+                final result = await Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (context) => DirectionsScreen(presetStart: building),
                   ),
                 );
-                print('DirectionsScreen 이동 성공');
+                
+                print('DirectionsScreen 결과: $result');
+                
+                // 결과가 있으면 onSetStart 콜백 호출하여 상위로 전달
+                if (result != null && onSetStart != null) {
+                  // 실제 onSetStart 콜백 호출 (map_screen으로 데이터 전달)
+                  onSetStart!(result);
+                }
               } catch (e) {
                 print('DirectionsScreen 이동 실패: $e');
               }
@@ -378,21 +381,24 @@ class BuildingInfoWindow extends StatelessWidget {
               // InfoWindow 먼저 닫기
               onClose();
               
-              // context가 여전히 유효한지 확인
-              if (!context.mounted) {
-                print('Context가 유효하지 않음');
-                return;
-              }
+              if (!context.mounted) return;
               
-              // Future.delayed 제거하고 즉시 이동
+              // DirectionsScreen으로 이동하고 결과 받기
               try {
-                await Navigator.push(
+                final result = await Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (context) => DirectionsScreen(presetEnd: building),
                   ),
                 );
-                print('DirectionsScreen 이동 성공');
+                
+                print('DirectionsScreen 결과: $result');
+                
+                // 결과가 있으면 onSetEnd 콜백 호출하여 상위로 전달
+                if (result != null && onSetEnd != null) {
+                  // 실제 onSetEnd 콜백 호출 (map_screen으로 데이터 전달)
+                  onSetEnd!(result);
+                }
               } catch (e) {
                 print('DirectionsScreen 이동 실패: $e');
               }

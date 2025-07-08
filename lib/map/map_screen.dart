@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/friends/friends_screen.dart';
+import 'package:flutter_application_1/models/building.dart';
 import 'package:flutter_application_1/timetable/timetable_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_application_1/map/widgets/map_view.dart';
@@ -1017,6 +1018,7 @@ Widget _buildRightControls(MapScreenController controller) {
 
 Widget _buildBuildingInfoWindow(MapScreenController controller) {
   final l10n = AppLocalizations.of(context)!;
+  
   return OverlayPortal(
     controller: _infoWindowController,
     overlayChildBuilder: (context) {
@@ -1028,105 +1030,25 @@ Widget _buildBuildingInfoWindow(MapScreenController controller) {
         building: controller.selectedBuilding!,
         onClose: () => controller.closeInfoWindow(_infoWindowController),
         onShowDetails: (building) => BuildingDetailSheet.show(context, building),
-        // 내부도면보기 콜백
         onShowFloorPlan: (building) {
-          // FloorPlanDialog.show(context, building); // 필요시 구현
+          // FloorPlanDialog.show(context, building);
         },
-        onSetStart: (building) async {
-          _controller.setStartBuilding(building);
-          _infoWindowController.hide();
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(l10n.set_as_departure(building.name)),
-                backgroundColor: const Color(0xFF10B981),
-                duration: const Duration(seconds: 2),
-              ),
-            );
-            // 도착지도 설정되어 있으면 자동으로 경로 계산
-            if (controller.endBuilding != null) {
-              await _controller.calculateRoute();
-            }
+        onSetStart: (result) {
+          // DirectionsScreen에서 반환된 결과를 Map으로 캐스팅
+          if (result is Map<String, dynamic>) {
+            print('길찾기 결과 받음 (출발지): $result');
+            _handleDirectionsResult(result);
+          } else {
+            print('잘못된 결과 타입: $result');
           }
         },
-        // 🔥 핵심 수정: onSetEnd 콜백 로직 변경
-        onSetEnd: (building) async {
-          _infoWindowController.hide();
-          
-          if (mounted) {
-            // 🔥 출발지가 설정되어 있으면 출발지-도착지 경로 계산
-            if (controller.startBuilding != null) {
-              debugPrint('🏢 출발지-도착지 경로: ${controller.startBuilding!.name} → ${building.name}');
-              
-              _controller.setEndBuilding(building);
-              
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(l10n.set_as_destination(building.name)),
-                  backgroundColor: const Color(0xFFEF4444),
-                  duration: const Duration(seconds: 2),
-                ),
-              );
-              
-              // 출발지-도착지 경로 계산
-              await _controller.calculateRoute();
-              
-            } else {
-              // 🔥 출발지가 없으면 현재 위치에서 길찾기 실행
-              debugPrint('📍 현재 위치에서 길찾기: 내 위치 → ${building.name}');
-              
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Row(
-                    children: [
-                      const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(
-                          color: Colors.white,
-                          strokeWidth: 2,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Text(l10n.finding_route_to_building(building.name)),
-                    ],
-                  ),
-                  backgroundColor: const Color(0xFF1E3A8A),
-                  duration: const Duration(seconds: 3),
-                  behavior: SnackBarBehavior.floating,
-                  margin: const EdgeInsets.all(16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-              );
-              
-              // 현재 위치에서 길찾기 실행
-              await _controller.navigateFromCurrentLocation(building);
-              
-              // 성공 알림
-              if (mounted) {
-                ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Row(
-                      children: [
-                        const Icon(Icons.navigation, color: Colors.white, size: 20),
-                        const SizedBox(width: 8),
-                        Text(l10n.route_displayed_to_building(building.name)),
-                      ],
-                    ),
-                    backgroundColor: const Color(0xFF10B981),
-                    duration: const Duration(seconds: 2),
-                    behavior: SnackBarBehavior.floating,
-                    margin: const EdgeInsets.all(16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                );
-              }
-            }
+        onSetEnd: (result) {
+          // DirectionsScreen에서 반환된 결과를 Map으로 캐스팅
+          if (result is Map<String, dynamic>) {
+            print('길찾기 결과 받음 (도착지): $result');
+            _handleDirectionsResult(result);
+          } else {
+            print('잘못된 결과 타입: $result');
           }
         },
       );
@@ -1134,4 +1056,65 @@ Widget _buildBuildingInfoWindow(MapScreenController controller) {
   );
 }
 
+// 길찾기 결과 처리 메서드 추가
+// 길찾기 결과 처리 메서드
+void _handleDirectionsResult(Map<String, dynamic> result) {
+  final startBuilding = result['start'] as Building?;
+  final endBuilding = result['end'] as Building?;
+  final useCurrentLocation = result['useCurrentLocation'] as bool? ?? false;
+  
+  debugPrint('=== 경로 안내 결과 처리 ===');
+  debugPrint('출발지: ${startBuilding?.name ?? '내 위치'}');
+  debugPrint('도착지: ${endBuilding?.name}');
+  debugPrint('현재 위치 사용: $useCurrentLocation');
+  
+  // 실제 경로 안내 시작
+  _startNavigation(startBuilding, endBuilding, useCurrentLocation);
+}
+
+// 경로 안내 시작 메서드
+void _startNavigation(Building? start, Building? end, bool useCurrentLocation) {
+  if (end == null) {
+    debugPrint('도착지가 설정되지 않았습니다');
+    return;
+  }
+  
+  debugPrint('🚀 경로 안내 시작!');
+  
+  // MapController를 통해 경로 계산 및 표시
+  if (useCurrentLocation) {
+    debugPrint('현재 위치에서 ${end.name}까지 경로 계산');
+    _controller.navigateFromCurrentLocation(end);
+  } else if (start != null) {
+    debugPrint('${start.name}에서 ${end.name}까지 경로 계산');
+    _controller.setStartBuilding(start);
+    _controller.setEndBuilding(end);
+    _controller.calculateRoute();
+  }
+  
+  // 성공 알림 표시
+  if (mounted) {
+    final l10n = AppLocalizations.of(context)!;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.navigation, color: Colors.white, size: 20),
+            const SizedBox(width: 8),
+            Text(useCurrentLocation 
+              ? '${end.name}까지 경로가 표시되었습니다'
+              : '${start?.name}에서 ${end.name}까지 경로가 표시되었습니다'),
+          ],
+        ),
+        backgroundColor: const Color(0xFF10B981),
+        duration: const Duration(seconds: 3),
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.all(16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+      ),
+    );
+  }
+}
 }
