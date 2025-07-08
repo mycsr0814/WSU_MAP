@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/models/building.dart';
 import '../../generated/app_localizations.dart';
+import 'package:flutter_application_1/map/widgets/directions_screen.dart';
 
 class BuildingInfoWindow extends StatelessWidget {
   final Building building;
@@ -73,27 +74,28 @@ class BuildingInfoWindow extends StatelessWidget {
   }
 
   Widget _buildContent(BuildContext context, AppLocalizations l10n) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildHeader(),
-          const SizedBox(height: 12),
-          _buildLocationInfo(l10n),
-          const SizedBox(height: 16),
-          _buildStatusAndHours(l10n),
-          const SizedBox(height: 20),
-          _buildActionIcons(l10n),
-          const SizedBox(height: 20),
-          _buildFloorPlanButton(l10n), // 메서드 이름 변경
-          const SizedBox(height: 16),
-          _buildActionButtons(l10n),
-          const SizedBox(height: 20),
-        ],
-      ),
-    );
-  }
+  return Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildHeader(),
+        const SizedBox(height: 12),
+        _buildLocationInfo(l10n),
+        const SizedBox(height: 16),
+        _buildStatusAndHours(l10n),
+        const SizedBox(height: 20),
+        _buildActionIcons(l10n),
+        const SizedBox(height: 20),
+        _buildFloorPlanButton(l10n),
+        const SizedBox(height: 16),
+        _buildActionButtons(l10n, context), // context 매개변수 추가
+        const SizedBox(height: 20),
+      ],
+    ),
+  );
+}
+
 
   Widget _buildHeader() {
     return Row(
@@ -238,37 +240,38 @@ class BuildingInfoWindow extends StatelessWidget {
     );
   }
 
-  Widget _buildActionIcon({
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: 24,
-              color: Colors.indigo.shade400,
+ Widget _buildActionIcon({
+  required IconData icon,
+  required String label,
+  required VoidCallback onTap,
+}) {
+  return InkWell(
+    onTap: onTap,
+    borderRadius: BorderRadius.circular(8),
+    child: Padding(  // 이 부분이 누락되었을 수 있습니다
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            size: 24,
+            color: Colors.indigo.shade400,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              color: Colors.grey.shade600,
             ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 11,
-                color: Colors.grey.shade600,
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
-    );
-  }
+    ),
+  );
+}
+
 
   // 내부도면보기 버튼으로 변경
   Widget _buildFloorPlanButton(AppLocalizations l10n) {
@@ -305,75 +308,121 @@ class BuildingInfoWindow extends StatelessWidget {
     );
   }
 
-  Widget _buildActionButtons(AppLocalizations l10n) {
-    return Row(
-      children: [
-        // 출발 버튼
-        Expanded(
-          child: SizedBox(
-            height: 50,
-            child: ElevatedButton(
-              onPressed: onSetStart != null ? () => onSetStart!(building) : null,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF10B981),
-                foregroundColor: Colors.white,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.play_arrow, size: 18),
-                  const SizedBox(width: 6),
-                  Text(
-                    l10n.departure,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
+  Widget _buildActionButtons(AppLocalizations l10n, BuildContext context) {
+  return Row(
+    children: [
+      // 출발 버튼
+      Expanded(
+        child: SizedBox(
+          height: 50,
+          child: ElevatedButton(
+            onPressed: onSetStart != null ? () async {
+              print('출발지 버튼 클릭됨: ${building.name}');
+              
+              // InfoWindow 먼저 닫기
+              onClose();
+              
+              // context가 여전히 유효한지 확인
+              if (!context.mounted) {
+                print('Context가 유효하지 않음');
+                return;
+              }
+              
+              // Future.delayed 제거하고 즉시 이동
+              try {
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => DirectionsScreen(presetStart: building),
                   ),
-                ],
+                );
+                print('DirectionsScreen 이동 성공');
+              } catch (e) {
+                print('DirectionsScreen 이동 실패: $e');
+              }
+            } : null,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF10B981),
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
               ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.play_arrow, size: 18),
+                const SizedBox(width: 6),
+                Text(
+                  l10n.departure,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
             ),
           ),
         ),
-        
-        const SizedBox(width: 12),
-        
-        // 도착 버튼 (현재 위치에서 길찾기 기능 통합)
-        Expanded(
-          child: SizedBox(
-            height: 50,
-            child: ElevatedButton(
-              onPressed: onSetEnd != null ? () => onSetEnd!(building) : null,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFEF4444),
-                foregroundColor: Colors.white,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.flag, size: 18),
-                  const SizedBox(width: 6),
-                  Text(
-                    l10n.destination,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
+      ),
+      const SizedBox(width: 12),
+      // 도착 버튼
+      Expanded(
+        child: SizedBox(
+          height: 50,
+          child: ElevatedButton(
+            onPressed: onSetEnd != null ? () async {
+              print('도착지 버튼 클릭됨: ${building.name}');
+              
+              // InfoWindow 먼저 닫기
+              onClose();
+              
+              // context가 여전히 유효한지 확인
+              if (!context.mounted) {
+                print('Context가 유효하지 않음');
+                return;
+              }
+              
+              // Future.delayed 제거하고 즉시 이동
+              try {
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => DirectionsScreen(presetEnd: building),
                   ),
-                ],
+                );
+                print('DirectionsScreen 이동 성공');
+              } catch (e) {
+                print('DirectionsScreen 이동 실패: $e');
+              }
+            } : null,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFEF4444),
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
               ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.flag, size: 18),
+                const SizedBox(width: 6),
+                Text(
+                  l10n.destination,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
             ),
           ),
         ),
-      ],
-    );
-  }
+      ),
+    ],
+  );
+}
 }

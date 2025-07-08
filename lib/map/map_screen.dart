@@ -14,7 +14,7 @@ import 'package:flutter_application_1/profile/profile_screen.dart';
 import '../generated/app_localizations.dart';
 import 'package:app_settings/app_settings.dart';
 import 'package:location/location.dart' as loc;
-import 'package:flutter_application_1/map/widgets/floor_plan_dialog.dart';
+import 'package:flutter_application_1/map/widgets/directions_screen.dart';
 
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
@@ -49,6 +49,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     _controller.dispose();
     super.dispose();
   }
+  
 
  // 🔥 안전한 위치 권한 체크 및 요청
   Future<void> _checkAndRequestLocation() async {

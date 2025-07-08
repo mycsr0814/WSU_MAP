@@ -1,10 +1,17 @@
-// building_detail_sheet.dart - 개선된 버전
+// lib/map/widgets/building_detail_sheet.dart - 길찾기 연동된 완전한 건물 상세 정보 시트
 
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/models/building.dart';
+import 'package:provider/provider.dart';
+import 'package:flutter_application_1/controllers/map_controller.dart';
+import 'package:flutter_application_1/services/path_api_service.dart';
+import 'package:flutter_application_1/managers/location_manager.dart';
+import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:http/http.dart' as http;
 import 'dart:typed_data';
-import 'dart:convert';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_application_1/map/building_data.dart';
+import 'package:flutter_application_1/map/widgets/directions_screen.dart';
 
 class BuildingDetailSheet extends StatelessWidget {
   final Building building;
@@ -17,353 +24,620 @@ class BuildingDetailSheet extends StatelessWidget {
   static void show(BuildContext context, Building building) {
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
       isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (context) => BuildingDetailSheet(building: building),
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final floorInfos = _parseFloorInfo(building.info);
-
-    return DraggableScrollableSheet(
-      expand: false,
-      initialChildSize: 0.6,
-      minChildSize: 0.4,
-      maxChildSize: 0.95,
-      builder: (_, controller) => Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            children: [
-              _buildHandle(),
-              const SizedBox(height: 20),
-              _buildHeader(),
-              const SizedBox(height: 24),
-              _buildFloorList(context, floorInfos, controller),
-            ],
-          ),
-        ),
+  // 출발지로 설정 - DirectionsScreen으로 이동
+  void _setAsStartLocation(BuildContext context) async {
+    Navigator.pop(context); // DetailSheet 닫기
+    
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => DirectionsScreen(presetStart: building),
       ),
     );
+    
+    // 길찾기 결과 처리
+    if (result != null) {
+      _handleDirectionsResult(context, result);
+    }
   }
 
-  // 🆕 서버 연결 테스트 함수
-  Future<void> _testServerConnection(BuildContext context, String floor) async {
-    final floorNumber = _extractFloorNumber(floor);
-    final buildingCode = _extractBuildingCode(building.name);
+  // 도착지로 설정 - DirectionsScreen으로 이동
+  void _setAsEndLocation(BuildContext context) async {
+    Navigator.pop(context); // DetailSheet 닫기
     
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        title: const Text('서버 연결 테스트'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const CircularProgressIndicator(),
-            const SizedBox(height: 16),
-            Text('서버 연결을 확인하는 중...'),
-          ],
-        ),
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => DirectionsScreen(presetEnd: building),
       ),
     );
+    
+    // 길찾기 결과 처리
+    if (result != null) {
+      _handleDirectionsResult(context, result);
+    }
+  }
 
+  // 현재 위치에서 이 건물까지 바로 길찾기
+  void _navigateHere(BuildContext context) async {
+    Navigator.pop(context); // DetailSheet 닫기
+    
     try {
-      // 1단계: 기본 서버 연결 테스트
-      debugPrint('🔍 1단계: 기본 서버 연결 테스트');
-      final baseResponse = await http.get(
-        Uri.parse('http://13.55.76.216:3000/'),
-      ).timeout(const Duration(seconds: 5));
+      // 로딩 표시
+      if (!context.mounted) return;
       
-      debugPrint('✅ 기본 서버 응답: ${baseResponse.statusCode}');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 2,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text('현재 위치에서 ${building.name}으로 길찾기를 시작합니다...'),
+              ),
+            ],
+          ),
+          backgroundColor: const Color(0xFF1E3A8A),
+          duration: const Duration(seconds: 5),
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.all(16),
+        ),
+      );
 
-      // 2단계: 특정 도면 URL 테스트
-      final testUrl = 'http://13.55.76.216:3000/floor/$floorNumber/$buildingCode';
-      debugPrint('🔍 2단계: 도면 URL 테스트 - $testUrl');
-      
-      final response = await http.head(Uri.parse(testUrl)).timeout(const Duration(seconds: 5));
-      debugPrint('✅ 도면 URL 응답: ${response.statusCode}');
-      debugPrint('📋 헤더 정보: ${response.headers}');
+
+      // LocationManager에서 현재 위치 가져오기
+        final locationManager = Provider.of<LocationManager>(context, listen: false);
+      NLatLng currentLocation;
+
+      if (locationManager.hasValidLocation && locationManager.currentLocation != null) {
+        currentLocation = NLatLng(
+          locationManager.currentLocation!.latitude!,
+          locationManager.currentLocation!.longitude!,
+        );
+        debugPrint('✅ 기존 위치 사용: ${currentLocation.latitude}, ${currentLocation.longitude}');
+      } else {
+        // 새로운 위치 요청
+        debugPrint('📍 새로운 위치 요청...');
+        await locationManager.requestLocation();
+        await Future.delayed(const Duration(milliseconds: 500));
+        
+        if (locationManager.hasValidLocation && locationManager.currentLocation != null) {
+          currentLocation = NLatLng(
+            locationManager.currentLocation!.latitude!,
+            locationManager.currentLocation!.longitude!,
+          );
+          debugPrint('✅ 위치 획득 성공: ${currentLocation.latitude}, ${currentLocation.longitude}');
+        } else {
+          // 위치가 없으면 기본 위치 사용
+          currentLocation = const NLatLng(36.338133, 127.446423); // 우송대학교 중심
+          debugPrint('⚠️ 기본 위치 사용');
+        }
+      }
+
+      // PathApiService를 통해 경로 계산 (에러 처리 개선)
+      final pathCoordinates = await PathApiService.getRouteFromLocation(currentLocation, building);
+
+      // MapController를 통해 경로 표시
+      if (!context.mounted) return;
+      final mapController = Provider.of<MapScreenController>(context, listen: false);
+      await mapController.navigateFromCurrentLocation(building);
 
       if (context.mounted) {
-        Navigator.pop(context); // 로딩 다이얼로그 닫기
-        
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('연결 테스트 결과'),
-            content: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text('🌐 서버 기본 연결: ${baseResponse.statusCode == 200 ? "성공" : "실패 (${baseResponse.statusCode})"}'),
-                  const SizedBox(height: 8),
-                  Text('🎯 도면 URL 상태: ${response.statusCode}'),
-                  const SizedBox(height: 8),
-                  Text('📍 요청 URL: $testUrl'),
-                  const SizedBox(height: 8),
-                  Text('📋 Content-Type: ${response.headers['content-type'] ?? "없음"}'),
-                  const SizedBox(height: 8),
-                  Text('📦 Content-Length: ${response.headers['content-length'] ?? "없음"}'),
-                  const SizedBox(height: 16),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade100,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('해석:', style: TextStyle(fontWeight: FontWeight.bold)),
-                        const SizedBox(height: 4),
-                        if (response.statusCode == 200)
-                          Text('✅ 도면이 존재합니다. 정상적으로 로드되어야 합니다.', style: TextStyle(color: Colors.green))
-                        else if (response.statusCode == 404)
-                          Text('❌ 해당 층의 도면이 서버에 없습니다.', style: TextStyle(color: Colors.red))
-                        else
-                          Text('⚠️ 서버 오류가 발생했습니다. (${response.statusCode})', style: TextStyle(color: Colors.orange)),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('확인'),
-              ),
-              if (response.statusCode == 200)
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    _showFloorPlan(context, floor, '');
-                  },
-                  child: const Text('도면 다시 시도'),
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.navigation, color: Colors.white, size: 20),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text('${building.name}까지의 경로가 표시되었습니다'),
                 ),
-            ],
+              ],
+            ),
+            backgroundColor: const Color(0xFF10B981),
+            duration: const Duration(seconds: 3),
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.all(16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
           ),
         );
       }
     } catch (e) {
-      debugPrint('❌ 연결 테스트 실패: $e');
+      debugPrint('❌ 길찾기 오류: $e');
+      
       if (context.mounted) {
-        Navigator.pop(context);
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('연결 테스트 실패'),
-            content: Text('서버에 연결할 수 없습니다.\n\n오류: $e'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('확인'),
-              ),
-            ],
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.error, color: Colors.white, size: 20),
+                const SizedBox(width: 8),
+                Text('길찾기 중 오류가 발생했습니다: ${e.toString()}'),
+              ],
+            ),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.all(16),
           ),
         );
       }
     }
   }
 
-  // 층 정보 파싱 개선
-  List<Map<String, String>> _parseFloorInfo(String info) {
-    final floorInfos = <Map<String, String>>[];
-    final lines = info.split('\n');
-    
-    for (String line in lines) {
-      if (line.trim().isEmpty) continue;
+  // 길찾기 결과 처리
+  void _handleDirectionsResult(BuildContext context, dynamic result) {
+    if (result is Map<String, dynamic>) {
+      final startBuilding = result['start'] as Building?;
+      final endBuilding = result['end'] as Building?;
+      final useCurrentLocation = result['useCurrentLocation'] as bool? ?? false;
       
-      final parts = line.split('\t');
-      if (parts.length >= 2) {
-        floorInfos.add({
-          'floor': parts[0].trim(),
-          'detail': parts[1].trim(),
-        });
-      } else if (parts.length == 1 && parts[0].trim().isNotEmpty) {
-        // 탭이 없는 경우도 처리
-        floorInfos.add({
-          'floor': parts[0].trim(),
-          'detail': '',
-        });
-      }
-    }
-    
-    // 층 정렬 (지하층을 아래로, 일반층을 위로)
-    floorInfos.sort((a, b) {
-      final floorA = a['floor']!;
-      final floorB = b['floor']!;
-      
-      final numA = _extractFloorNumber(floorA);
-      final numB = _extractFloorNumber(floorB);
-      
-      // 지하층과 일반층 구분
-      final isBasementA = floorA.toUpperCase().startsWith('B');
-      final isBasementB = floorB.toUpperCase().startsWith('B');
-      
-      if (isBasementA && !isBasementB) return -1;
-      if (!isBasementA && isBasementB) return 1;
-      
-      if (isBasementA && isBasementB) {
-        // 지하층끼리는 숫자가 큰 것이 아래 (B2가 B1보다 아래)
-        return int.tryParse(numB)?.compareTo(int.tryParse(numA) ?? 0) ?? 0;
+      if (endBuilding != null) {
+        // 실제 경로 계산 및 표시 로직 실행
+        _executeDirections(context, startBuilding, endBuilding, useCurrentLocation);
       } else {
-        // 일반층끼리는 숫자가 작은 것이 아래
-        return int.tryParse(numA)?.compareTo(int.tryParse(numB) ?? 0) ?? 0;
+        debugPrint('⚠️ 도착지 정보가 없습니다');
       }
-    });
-    
-    return floorInfos;
+    } else {
+      debugPrint('⚠️ 잘못된 길찾기 결과 형식');
+    }
   }
 
-  Widget _buildHandle() {
-    return Container(
-      width: 50,
-      height: 5,
-      decoration: BoxDecoration(
-        color: Colors.grey[300],
-        borderRadius: BorderRadius.circular(10),
+  // 실제 길찾기 실행 (개선된 에러 처리)
+  Future<void> _executeDirections(
+    BuildContext context, 
+    Building? startBuilding, 
+    Building endBuilding, 
+    bool useCurrentLocation
+  ) async {
+    if (!context.mounted) return;
+    
+    try {
+      final mapController = Provider.of<MapScreenController>(context, listen: false);
+
+      if (useCurrentLocation) {
+        // 현재 위치에서 길찾기
+        await mapController.navigateFromCurrentLocation(endBuilding);
+      } else if (startBuilding != null) {
+        // 건물 간 길찾기
+        mapController.setStartBuilding(startBuilding);
+        mapController.setEndBuilding(endBuilding);
+        await mapController.calculateRoute();
+      } else {
+        debugPrint('⚠️ 출발지 정보가 없습니다');
+        return;
+      }
+
+      String message;
+      if (useCurrentLocation) {
+        message = '현재 위치에서 ${endBuilding.name}으로 경로를 표시합니다';
+      } else {
+        message = '${startBuilding?.name}에서 ${endBuilding.name}으로 경로를 표시합니다';
+      }
+      
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(message),
+            backgroundColor: const Color(0xFF10B981),
+            duration: const Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.all(16),
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('❌ 경로 실행 오류: $e');
+      
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('경로 계산 중 오류가 발생했습니다: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.all(16),
+          ),
+        );
+      }
+    }
+  }
+
+   @override
+  Widget build(BuildContext context) {
+    final floorInfos = _parseFloorInfo(building.info);
+
+    return DraggableScrollableSheet(
+      initialChildSize: 0.7,
+      minChildSize: 0.5,
+      maxChildSize: 0.9,
+      builder: (context, scrollController) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(20),
+              topRight: Radius.circular(20),
+            ),
+          ),
+          child: Column(
+            children: [
+              // 드래그 핸들
+              Container(
+                margin: const EdgeInsets.only(top: 12),
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              
+              // 헤더
+              _buildHeader(context),
+              
+              // 길찾기 버튼들
+              _buildDirectionsButtons(context),
+              
+              // 내용
+              Expanded(
+                child: SingleChildScrollView(
+                  controller: scrollController,
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 16),
+                      
+                      // 기본 정보
+                      _buildBasicInfo(),
+                      
+                      const SizedBox(height: 20),
+                      
+                      // 층별 도면
+                      if (floorInfos.isNotEmpty) ...[
+                        _buildFloorPlanSection(context, floorInfos),
+                        const SizedBox(height: 20),
+                      ],
+                      
+                      const SizedBox(height: 100), // 하단 여백
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildHeader(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.apartment,
+                  color: Colors.blue.shade700,
+                  size: 28,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      building.name,
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${building.category} • 우송대학교',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              IconButton(
+                onPressed: () => Navigator.pop(context),
+                icon: Icon(
+                  Icons.close,
+                  color: Colors.grey.shade600,
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildHeader() {
-    return Column(
-      children: [
-        Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.blue.shade50,
-                borderRadius: BorderRadius.circular(12),
+  Widget _buildDirectionsButtons(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Colors.blue.shade50, Colors.indigo.shade50],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.blue.shade100),
+      ),
+      child: Column(
+        children: [
+          // 제목
+          Row(
+            children: [
+              Icon(
+                Icons.directions,
+                color: Colors.indigo.shade600,
+                size: 20,
               ),
-              child: Icon(
-                Icons.apartment,
-                color: Colors.blue.shade700,
-                size: 28,
+              const SizedBox(width: 8),
+              Text(
+                '길찾기',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.indigo.shade800,
+                ),
               ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    building.name,
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
+            ],
+          ),
+          const SizedBox(height: 12),
+          
+          // 버튼들
+          Row(
+            children: [
+              // 여기까지 오기 버튼
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () => _navigateHere(context),
+                  icon: const Icon(Icons.near_me, size: 18),
+                  label: const Text('여기까지'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF1E3A8A),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    elevation: 2,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              
+              // 출발지로 설정 버튼
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () => _setAsStartLocation(context),
+                  icon: const Icon(Icons.play_arrow, size: 18),
+                  label: const Text('출발지'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFF10B981),
+                    side: const BorderSide(color: Color(0xFF10B981)),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${building.category} • 우송대학교',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey.shade600,
+                ),
+              ),
+              const SizedBox(width: 8),
+              
+              // 도착지로 설정 버튼
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () => _setAsEndLocation(context),
+                  icon: const Icon(Icons.flag, size: 18),
+                  label: const Text('도착지'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFFEF4444),
+                    side: const BorderSide(color: Color(0xFFEF4444)),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
                     ),
                   ),
-                ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBasicInfo() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.info_outline,
+                color: Colors.grey.shade600,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '기본 정보',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey.shade800,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          
+          _buildInfoRow(Icons.category, '분류', building.category),
+          _buildInfoRow(Icons.info, '상태', building.baseStatus),
+          if (building.hours.isNotEmpty)
+            _buildInfoRow(Icons.access_time, '운영시간', building.hours),
+          if (building.phone.isNotEmpty)
+            _buildInfoRow(Icons.phone, '전화번호', building.phone),
+          _buildInfoRow(Icons.gps_fixed, '좌표', 
+            '${building.lat.toStringAsFixed(6)}, ${building.lng.toStringAsFixed(6)}'),
+          
+          if (building.description.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            const Divider(),
+            const SizedBox(height: 8),
+            Text(
+              building.description,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey.shade700,
+                height: 1.4,
               ),
             ),
           ],
-        ),
-        const SizedBox(height: 16),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(IconData icon, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            icon,
+            size: 16,
+            color: Colors.grey.shade600,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            '$label: ',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              color: Colors.grey.shade700,
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontSize: 13,
+                color: Colors.black87,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFloorPlanSection(BuildContext context, List<Map<String, String>> floorInfos) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
         Container(
           width: double.infinity,
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: [Colors.blue.shade50, Colors.indigo.shade50],
+              colors: [Colors.purple.shade50, Colors.indigo.shade50],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.blue.shade100),
+            border: Border.all(color: Colors.purple.shade100),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                '층별 도면 보기',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.blue.shade800,
-                ),
+              Row(
+                children: [
+                  Icon(
+                    Icons.architecture,
+                    color: Colors.purple.shade600,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '층별 도면 보기',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.purple.shade800,
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 4),
               Text(
                 '각 층을 선택하여 상세 도면을 확인하세요',
                 style: TextStyle(
                   fontSize: 13,
-                  color: Colors.blue.shade600,
+                  color: Colors.purple.shade600,
                 ),
               ),
             ],
           ),
         ),
-      ],
-    );
-  }
-
-  Widget _buildFloorList(
-    BuildContext context,
-    List<Map<String, String>> floorInfos,
-    ScrollController controller,
-  ) {
-    if (floorInfos.isEmpty) {
-      return Expanded(
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.info_outline,
-                size: 48,
-                color: Colors.grey.shade400,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                '층 정보가 없습니다',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.grey.shade600,
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    return Expanded(
-      child: ListView.builder(
-        controller: controller,
-        itemCount: floorInfos.length,
-        itemBuilder: (context, index) {
-          final floorInfo = floorInfos[index];
+        const SizedBox(height: 16),
+        
+        // 층별 카드들
+        ...floorInfos.map((floorInfo) {
           final floor = floorInfo['floor']!;
           final detail = floorInfo['detail']!;
-
           return Padding(
             padding: const EdgeInsets.only(bottom: 12),
             child: _buildFloorCard(context, floor, detail),
           );
-        },
-      ),
+        }).toList(),
+      ],
     );
   }
 
@@ -472,6 +746,52 @@ class BuildingDetailSheet extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  // 층 정보 파싱
+  List<Map<String, String>> _parseFloorInfo(String info) {
+    final floorInfos = <Map<String, String>>[];
+    final lines = info.split('\n');
+    
+    for (String line in lines) {
+      if (line.trim().isEmpty) continue;
+      
+      final parts = line.split('\t');
+      if (parts.length >= 2) {
+        floorInfos.add({
+          'floor': parts[0].trim(),
+          'detail': parts[1].trim(),
+        });
+      } else if (parts.length == 1 && parts[0].trim().isNotEmpty) {
+        floorInfos.add({
+          'floor': parts[0].trim(),
+          'detail': '',
+        });
+      }
+    }
+    
+    // 층 정렬
+    floorInfos.sort((a, b) {
+      final floorA = a['floor']!;
+      final floorB = b['floor']!;
+      
+      final numA = _extractFloorNumber(floorA);
+      final numB = _extractFloorNumber(floorB);
+      
+      final isBasementA = floorA.toUpperCase().startsWith('B');
+      final isBasementB = floorB.toUpperCase().startsWith('B');
+      
+      if (isBasementA && !isBasementB) return -1;
+      if (!isBasementA && isBasementB) return 1;
+      
+      if (isBasementA && isBasementB) {
+        return int.tryParse(numB)?.compareTo(int.tryParse(numA) ?? 0) ?? 0;
+      } else {
+        return int.tryParse(numA)?.compareTo(int.tryParse(numB) ?? 0) ?? 0;
+      }
+    });
+    
+    return floorInfos;
   }
 
   void _showFloorDetail(BuildContext context, String floor, String detail) {
@@ -609,8 +929,8 @@ class BuildingDetailSheet extends StatelessWidget {
                         height: 56,
                         child: ElevatedButton.icon(
                           onPressed: () {
-                            Navigator.pop(context); // 현재 다이얼로그 닫기
-                            _showFloorPlan(context, floor, detail); // 도면 보기
+                            Navigator.pop(context);
+                            _showFloorPlan(context, floor, detail);
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.indigo.shade600,
@@ -630,33 +950,6 @@ class BuildingDetailSheet extends StatelessWidget {
                           ),
                         ),
                       ),
-                      const SizedBox(height: 12),
-                      // 🆕 디버그 테스트 버튼 추가
-                      SizedBox(
-                        width: double.infinity,
-                        height: 48,
-                        child: OutlinedButton.icon(
-                          onPressed: () {
-                            Navigator.pop(context);
-                            _testServerConnection(context, floor);
-                          },
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: Colors.grey.shade700,
-                            side: BorderSide(color: Colors.grey.shade300),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          icon: const Icon(Icons.bug_report, size: 18),
-                          label: const Text(
-                            '연결 테스트',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                      ),
                     ],
                   ),
                 ),
@@ -667,7 +960,7 @@ class BuildingDetailSheet extends StatelessWidget {
       ),
     );
   }
-
+// 서버에서 도면 가져오기
   Future<void> _showFloorPlan(BuildContext context, String floor, String detail) async {
     final floorNumber = _extractFloorNumber(floor);
     final buildingCode = _extractBuildingCode(building.name);
@@ -678,78 +971,57 @@ class BuildingDetailSheet extends StatelessWidget {
     debugPrint('🏢 건물: ${building.name} → $buildingCode');
     debugPrint('🌐 API URL: $apiUrl');
 
-    // 로딩 다이얼로그 표시 (더 빠른 취소 가능)
+    // 로딩 다이얼로그 표시
     bool isLoading = true;
-    DateTime startTime = DateTime.now();
     
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => WillPopScope(
-        onWillPop: () async => false,
-        child: Container(
-          color: Colors.black54,
-          child: Center(
-            child: Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const CircularProgressIndicator(),
-                  const SizedBox(height: 16),
-                  Text(
-                    '$floor 도면을 불러오는 중...',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey.shade700,
-                    ),
+      builder: (context) => Container(
+        color: Colors.black54,
+        child: Center(
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const CircularProgressIndicator(),
+                const SizedBox(height: 16),
+                Text(
+                  '$floor 도면을 불러오는 중...',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.grey.shade700,
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    '서버: $buildingCode/$floorNumber',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey.shade500,
-                    ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '서버: $buildingCode/$floorNumber',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey.shade500,
                   ),
-                  const SizedBox(height: 8),
-                  // 🆕 실시간 타이머 추가
-                  StreamBuilder<int>(
-                    stream: Stream.periodic(const Duration(seconds: 1), (i) => i + 1),
-                    builder: (context, snapshot) {
-                      final seconds = snapshot.data ?? 0;
-                      return Text(
-                        '경과 시간: $seconds초',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: seconds > 5 ? Colors.red : Colors.grey.shade500,
-                          fontWeight: seconds > 5 ? FontWeight.bold : FontWeight.normal,
-                        ),
-                      );
-                    },
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () {
+                    if (context.mounted && isLoading) {
+                      Navigator.pop(context);
+                      isLoading = false;
+                      debugPrint('⏹️ 사용자가 로딩을 취소함');
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red.shade400,
+                    foregroundColor: Colors.white,
                   ),
-                  const SizedBox(height: 16),
-                  // 취소 버튼 (5초 후 더 눈에 띄게)
-                  ElevatedButton(
-                    onPressed: () {
-                      if (context.mounted && isLoading) {
-                        Navigator.pop(context);
-                        isLoading = false;
-                        debugPrint('⏹️ 사용자가 로딩을 취소함');
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red.shade400,
-                      foregroundColor: Colors.white,
-                    ),
-                    child: const Text('취소'),
-                  ),
-                ],
-              ),
+                  child: const Text('취소'),
+                ),
+              ],
             ),
           ),
         ),
@@ -758,37 +1030,28 @@ class BuildingDetailSheet extends StatelessWidget {
 
     try {
       debugPrint('🌐 HTTP 요청 시작: $apiUrl');
-      final requestStartTime = DateTime.now();
       
-      // 🆕 청크 단위로 데이터 수신 (스트리밍 방식)
       final request = http.Request('GET', Uri.parse(apiUrl));
       request.headers.addAll({
         'Accept': 'image/*',
         'User-Agent': 'Flutter-App/1.0',
         'Cache-Control': 'no-cache',
         'Connection': 'close',
-        'Accept-Encoding': 'identity', // 압축 비활성화
       });
-      
-      debugPrint('📤 요청 헤더: ${request.headers}');
       
       final streamedResponse = await request.send().timeout(
         const Duration(seconds: 10),
         onTimeout: () {
-          final elapsed = DateTime.now().difference(requestStartTime).inSeconds;
-          debugPrint('⏰ 스트림 요청 타임아웃 ($elapsed초 경과)');
-          throw Exception('서버 응답 시간 초과 (10초)\n스트리밍 요청이 실패했습니다.');
+          debugPrint('⏰ 요청 타임아웃');
+          throw Exception('서버 응답 시간 초과 (10초)');
         },
       );
       
-      debugPrint('📡 스트림 응답 시작 - 상태: ${streamedResponse.statusCode}');
-      debugPrint('📡 응답 헤더: ${streamedResponse.headers}');
+      debugPrint('📡 응답 상태: ${streamedResponse.statusCode}');
       
       if (streamedResponse.statusCode != 200) {
-        final responseTime = DateTime.now().difference(requestStartTime).inMilliseconds;
-        debugPrint('❌ HTTP 오류: ${streamedResponse.statusCode} (${responseTime}ms)');
+        debugPrint('❌ HTTP 오류: ${streamedResponse.statusCode}');
         
-        // 로딩 다이얼로그 닫기
         if (context.mounted && isLoading) {
           Navigator.pop(context);
           isLoading = false;
@@ -797,46 +1060,19 @@ class BuildingDetailSheet extends StatelessWidget {
         if (context.mounted) {
           _showErrorDialog(context, 'HTTP 오류가 발생했습니다.\n\n'
               '상태 코드: ${streamedResponse.statusCode}\n'
-              'URL: $apiUrl\n'
-              '응답 시간: ${responseTime}ms');
+              'URL: $apiUrl');
         }
         return;
       }
       
-      // 🆕 스트림에서 바이트 데이터 수집
+      // 스트림에서 바이트 데이터 수집
       final bytes = <int>[];
-      int receivedBytes = 0;
-      final contentLength = int.tryParse(streamedResponse.headers['content-length'] ?? '0') ?? 0;
-      
-      debugPrint('📦 예상 파일 크기: $contentLength bytes (${(contentLength / 1024).toStringAsFixed(1)} KB)');
-      
       await for (List<int> chunk in streamedResponse.stream) {
         bytes.addAll(chunk);
-        receivedBytes += chunk.length;
-        
-        // 진행률 로깅 (10KB마다)
-        if (receivedBytes % 10240 == 0 || receivedBytes == contentLength) {
-          final progress = contentLength > 0 ? (receivedBytes / contentLength * 100) : 0;
-          debugPrint('📥 수신 중: $receivedBytes/$contentLength bytes (${progress.toStringAsFixed(1)}%)');
-        }
       }
       
-      final responseTime = DateTime.now().difference(requestStartTime).inMilliseconds;
-      debugPrint('📊 스트림 완료 (${responseTime}ms)');
-      debugPrint('📊 총 수신: ${bytes.length} bytes');
-      
-      // Uint8List로 변환
       final response = http.Response.bytes(Uint8List.fromList(bytes), streamedResponse.statusCode, 
           headers: streamedResponse.headers);
-
-      // 🆕 응답 속도 분석
-      if (responseTime > 5000) {
-        debugPrint('🐌 느린 응답: ${responseTime}ms (5초 이상)');
-      } else if (responseTime > 2000) {
-        debugPrint('⚠️ 보통 응답: ${responseTime}ms (2-5초)');
-      } else {
-        debugPrint('⚡ 빠른 응답: ${responseTime}ms (2초 미만)');
-      }
 
       // 로딩 다이얼로그 닫기
       if (context.mounted && isLoading) {
@@ -853,11 +1089,7 @@ class BuildingDetailSheet extends StatelessWidget {
           return;
         }
 
-        // 🆕 파일 크기 체크
-        final sizeInKB = response.bodyBytes.length / 1024;
-        debugPrint('📏 실제 파일 크기: ${sizeInKB.toStringAsFixed(1)} KB');
-        
-        // 🆕 이미지 헤더 검증 (PNG/JPEG 매직 바이트)
+        // 이미지 유효성 검사
         bool isValidImage = false;
         if (response.bodyBytes.length >= 8) {
           final header = response.bodyBytes.take(8).toList();
@@ -870,51 +1102,22 @@ class BuildingDetailSheet extends StatelessWidget {
           else if (header[0] == 0xFF && header[1] == 0xD8 && header[2] == 0xFF) {
             debugPrint('✅ 유효한 JPEG 파일 확인');
             isValidImage = true;
-          } else {
-            debugPrint('⚠️ 알 수 없는 이미지 형식: ${header.map((b) => b.toRadixString(16).padLeft(2, '0')).join(' ')}');
           }
         }
 
-        // Content-Type도 확인
         final contentType = response.headers['content-type'] ?? '';
-        debugPrint('🖼️ Content-Type: $contentType');
         
-        if (isValidImage || contentType.startsWith('image/') || contentType.contains('jpeg') || contentType.contains('png')) {
-          debugPrint('✅ 이미지 데이터 확인됨, 다이얼로그 표시 시작');
+        if (isValidImage || contentType.startsWith('image/')) {
+          debugPrint('✅ 이미지 데이터 확인됨');
           if (context.mounted) {
-            try {
-              debugPrint('🖼️ 다이얼로그 생성 시작...');
-              _showFloorPlanDialog(context, floor, detail, response.bodyBytes);
-              debugPrint('🖼️ 다이얼로그 생성 완료');
-            } catch (e, stackTrace) {
-              debugPrint('❌ 다이얼로그 생성 실패: $e');
-              debugPrint('📍 스택 트레이스: $stackTrace');
-              _showErrorDialog(context, '이미지 표시 중 오류가 발생했습니다.\n\n오류: $e');
-            }
+            _showFloorPlanDialog(context, floor, detail, response.bodyBytes);
           }
         } else {
-          // 이미지가 아닌 경우
-          String responseText;
-          try {
-            responseText = utf8.decode(response.bodyBytes);
-          } catch (e) {
-            try {
-              responseText = String.fromCharCodes(response.bodyBytes);
-            } catch (e2) {
-              responseText = 'Binary data (${response.bodyBytes.length} bytes)';
-            }
-          }
-          
-          debugPrint('❌ 이미지가 아닌 응답: $contentType');
-          debugPrint('📄 응답 내용 (첫 200자): ${responseText.length > 200 ? responseText.substring(0, 200) : responseText}');
-          
+          debugPrint('❌ 이미지가 아닌 응답');
           if (context.mounted) {
             _showErrorDialog(context, '서버에서 이미지가 아닌 데이터를 반환했습니다.\n'
                 'Content-Type: $contentType\n'
-                'URL: $apiUrl\n'
-                '응답 크기: ${response.bodyBytes.length} bytes\n'
-                '응답 시간: ${responseTime}ms\n'
-                '유효한 이미지: ${isValidImage ? "예" : "아니오"}');
+                'URL: $apiUrl');
           }
         }
       } else if (response.statusCode == 404) {
@@ -922,40 +1125,12 @@ class BuildingDetailSheet extends StatelessWidget {
         if (context.mounted) {
           _showErrorDialog(context, '해당 층의 도면을 찾을 수 없습니다.\n\n'
               '건물: ${building.name} ($buildingCode)\n'
-              '층: $floor ($floorNumber)\n'
-              'URL: $apiUrl\n'
-              '응답 시간: ${responseTime}ms');
-        }
-      } else {
-        debugPrint('❌ HTTP 오류: ${response.statusCode}');
-        
-        String responseText;
-        try {
-          responseText = utf8.decode(response.bodyBytes);
-        } catch (e) {
-          try {
-            responseText = String.fromCharCodes(response.bodyBytes);
-          } catch (e2) {
-            responseText = 'Binary data (${response.bodyBytes.length} bytes)';
-          }
-        }
-        
-        debugPrint('📄 오류 응답: ${responseText.length > 100 ? responseText.substring(0, 100) : responseText}');
-        
-        if (context.mounted) {
-          _showErrorDialog(context, '서버 오류가 발생했습니다.\n\n'
-              '상태 코드: ${response.statusCode}\n'
-              'URL: $apiUrl\n'
-              '응답 시간: ${responseTime}ms\n'
-              '응답: ${responseText.length > 50 ? "${responseText.substring(0, 50)}..." : responseText}');
+              '층: $floor ($floorNumber)');
         }
       }
-    } catch (e, stackTrace) {
-      final totalTime = DateTime.now().difference(startTime).inSeconds;
-      debugPrint('❌ 예외 발생 ($totalTime초 후): $e');
-      debugPrint('📍 스택 트레이스: $stackTrace');
+    } catch (e) {
+      debugPrint('❌ 예외 발생: $e');
       
-      // 로딩 다이얼로그 닫기
       if (context.mounted && isLoading) {
         Navigator.pop(context);
         isLoading = false;
@@ -965,28 +1140,11 @@ class BuildingDetailSheet extends StatelessWidget {
         String errorMessage = '네트워크 오류가 발생했습니다.\n\n';
         
         if (e.toString().contains('시간 초과') || e.toString().contains('timeout')) {
-          errorMessage += '⏰ 서버 응답 시간이 초과되었습니다 (10초).\n'
-              '가능한 원인:\n'
-              '• 서버가 느리거나 과부하 상태\n'
-              '• 도면 파일이 너무 큼\n'
-              '• 네트워크 연결이 불안정\n\n'
-              '해결 방법:\n'
-              '• 잠시 후 다시 시도\n'
-              '• 다른 층의 도면 먼저 시도\n'
-              '• 네트워크 연결 확인';
-        } else if (e.toString().contains('SocketException') || e.toString().contains('Network')) {
-          errorMessage += '🌐 네트워크 연결 문제가 발생했습니다.\n'
-              '• 인터넷 연결을 확인해주세요\n'
-              '• Wi-Fi 또는 모바일 데이터 상태 확인\n'
-              '• 서버에 연결할 수 없습니다';
-        } else if (e.toString().contains('HandshakeException')) {
-          errorMessage += '🔒 SSL 연결 오류가 발생했습니다.\n'
-              '서버 보안 설정을 확인해주세요.';
+          errorMessage += '⏰ 서버 응답 시간이 초과되었습니다.\n'
+              '잠시 후 다시 시도해주세요.';
         } else {
-          errorMessage += '❓ 알 수 없는 오류: ${e.toString()}';
+          errorMessage += '오류: ${e.toString()}';
         }
-        
-        errorMessage += '\n\nURL: $apiUrl\n총 소요 시간: $totalTime초';
         
         _showErrorDialog(context, errorMessage);
       }
@@ -994,272 +1152,188 @@ class BuildingDetailSheet extends StatelessWidget {
   }
 
   String _extractBuildingCode(String buildingName) {
-    // 건물명에서 코드 부분 추출 (예: "우송도서관(W1)" -> "W1")
     final RegExp regex = RegExp(r'\(([^)]+)\)');
     final match = regex.firstMatch(buildingName);
     if (match != null) {
       return match.group(1)!;
     }
-    
-    // 괄호가 없는 경우 건물명 그대로 사용
     return buildingName.replaceAll(' ', '');
   }
 
   String _extractFloorNumber(String floor) {
-    // 다양한 층 형식을 처리: "1F", "2F", "B1F", "B2F", "3층" 등
     floor = floor.trim().toUpperCase();
     
-    // 지하층 처리 (B1F, B2F 등)
     if (floor.startsWith('B')) {
       final RegExp regex = RegExp(r'B(\d+)');
       final match = regex.firstMatch(floor);
       if (match != null) {
-        return 'B${match.group(1)}'; // B1, B2 형태로 반환
+        return 'B${match.group(1)}';
       }
     }
     
-    // 일반층 처리 (1F, 2F, 3층 등)
     final RegExp regex = RegExp(r'(\d+)');
     final match = regex.firstMatch(floor);
     return match?.group(1) ?? '1';
   }
 
   void _showFloorPlanDialog(BuildContext context, String floor, String detail, Uint8List imageBytes) {
-    debugPrint('🎨 _showFloorPlanDialog 시작 - 이미지 크기: ${imageBytes.length} bytes');
+    debugPrint('🎨 도면 다이얼로그 표시');
     
-    try {
-      debugPrint('🎨 다이얼로그 showDialog 호출...');
-      showDialog(
-        context: context,
-        builder: (context) {
-          debugPrint('🎨 다이얼로그 builder 실행됨');
-          return Dialog(
-            backgroundColor: Colors.transparent,
-            child: Container(
-              constraints: BoxConstraints(
-                maxHeight: MediaQuery.of(context).size.height * 0.9,
-                maxWidth: MediaQuery.of(context).size.width * 0.95,
-              ),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
-                    blurRadius: 20,
-                    offset: const Offset(0, 10),
-                  ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // 헤더
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [Colors.indigo.shade600, Colors.blue.shade500],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(20),
-                        topRight: Radius.circular(20),
-                      ),
+    showDialog(
+      context: context,
+      builder: (context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          child: Container(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.9,
+              maxWidth: MediaQuery.of(context).size.width * 0.95,
+            ),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.2),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // 헤더
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Colors.indigo.shade600, Colors.blue.shade500],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.architecture,
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(20),
+                      topRight: Radius.circular(20),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.architecture,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '$floor 도면',
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                            Text(
+                              building.name,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: Colors.white70,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(
+                          Icons.close,
                           color: Colors.white,
                           size: 24,
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                '$floor 도면',
-                                style: const TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                              ),
-                              Text(
-                                building.name,
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.white70,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        IconButton(
-                          onPressed: () {
-                            debugPrint('🎨 닫기 버튼 클릭됨');
-                            Navigator.pop(context);
-                          },
-                          icon: const Icon(
-                            Icons.close,
-                            color: Colors.white,
-                            size: 24,
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                  // 도면 이미지
-                  Flexible(
-                    child: Container(
-                      padding: const EdgeInsets.all(20),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: _buildImageWidget(imageBytes),
+                ),
+                // 도면 이미지
+                Flexible(
+                  child: Container(
+                    padding: const EdgeInsets.all(20),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: InteractiveViewer(
+                        panEnabled: true,
+                        boundaryMargin: const EdgeInsets.all(20),
+                        minScale: 0.5,
+                        maxScale: 4.0,
+                        child: Image.memory(
+                          imageBytes,
+                          fit: BoxFit.contain,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              height: 200,
+                              width: double.infinity,
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade100,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.error_outline,
+                                      size: 48,
+                                      color: Colors.red.shade300,
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      '이미지를 표시할 수 없습니다',
+                                      style: TextStyle(
+                                        color: Colors.grey.shade700,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
                       ),
                     ),
                   ),
-                  // 하단 안내
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.touch_app,
-                          size: 16,
+                ),
+                // 하단 안내
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.touch_app,
+                        size: 16,
+                        color: Colors.grey.shade600,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        '핀치하여 확대/축소, 드래그하여 이동',
+                        style: TextStyle(
+                          fontSize: 12,
                           color: Colors.grey.shade600,
                         ),
-                        const SizedBox(width: 8),
-                        Text(
-                          '핀치하여 확대/축소, 드래그하여 이동',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey.shade600,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            ),
-          );
-        },
-      );
-      debugPrint('🎨 showDialog 완료');
-    } catch (e, stackTrace) {
-      debugPrint('❌ showDialog 실패: $e');
-      debugPrint('📍 스택 트레이스: $stackTrace');
-      rethrow;
-    }
-  }
-
-  // 🆕 이미지 위젯을 별도 함수로 분리
-  Widget _buildImageWidget(Uint8List imageBytes) {
-    debugPrint('🖼️ 이미지 위젯 생성 시작...');
-    
-    return InteractiveViewer(
-      panEnabled: true,
-      boundaryMargin: const EdgeInsets.all(20),
-      minScale: 0.5,
-      maxScale: 4.0,
-      child: Container(
-        decoration: BoxDecoration(
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.shade300,
-              blurRadius: 10,
-              offset: const Offset(0, 5),
-            ),
-          ],
-        ),
-        child: Image.memory(
-          imageBytes,
-          fit: BoxFit.contain,
-          frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
-            debugPrint('🖼️ 이미지 프레임 로드: frame=$frame, sync=$wasSynchronouslyLoaded');
-            if (wasSynchronouslyLoaded) {
-              debugPrint('✅ 이미지 동기 렌더링 성공');
-              return child;
-            }
-            if (frame != null) {
-              debugPrint('✅ 이미지 비동기 렌더링 성공 (프레임: $frame)');
-              return child;
-            }
-            debugPrint('⏳ 이미지 로딩 중... (프레임 대기)');
-            return Container(
-              height: 200,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    CircularProgressIndicator(),
-                    SizedBox(height: 8),
-                    Text('이미지 로딩 중...'),
-                  ],
                 ),
-              ),
-            );
-          },
-          errorBuilder: (context, error, stackTrace) {
-            debugPrint('❌ 이미지 렌더링 오류: $error');
-            debugPrint('📍 이미지 오류 스택: $stackTrace');
-            return Container(
-              height: 200,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.error_outline,
-                      size: 48,
-                      color: Colors.red.shade300,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      '이미지를 표시할 수 없습니다',
-                      style: TextStyle(
-                        color: Colors.grey.shade700,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: Text(
-                        error.toString(),
-                        style: TextStyle(
-                          color: Colors.red.shade600,
-                          fontSize: 10,
-                        ),
-                        textAlign: TextAlign.center,
-                        maxLines: 3,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        ),
-      ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -1280,68 +1354,11 @@ class BuildingDetailSheet extends StatelessWidget {
             const Text('도면 로딩 실패'),
           ],
         ),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(message),
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade100,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '문제 해결 방법:',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.grey.shade700,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      '• 네트워크 연결을 확인해주세요\n'
-                      '• 잠시 후 다시 시도해주세요\n'
-                      '• 다른 층의 도면을 먼저 시도해보세요\n'
-                      '• 문제가 지속되면 관리자에게 문의하세요',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey.shade600,
-                        height: 1.4,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
+        content: Text(message),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('확인'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              // 디버그 정보 복사하기 위한 스낵바 표시
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: const Text('개발자 도구에서 상세 로그를 확인하세요'),
-                  action: SnackBarAction(
-                    label: '확인',
-                    onPressed: () {},
-                  ),
-                ),
-              );
-            },
-            child: const Text('재시도'),
           ),
         ],
       ),

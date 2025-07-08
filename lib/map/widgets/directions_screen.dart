@@ -1,4 +1,4 @@
-// lib/map/widgets/directions_screen.dart - 완성된 길찾기 화면
+// lib/map/widgets/directions_screen.dart - 수정된 길찾기 화면
 
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/models/building.dart';
@@ -7,7 +7,15 @@ import 'package:flutter_application_1/managers/location_manager.dart';
 import 'package:provider/provider.dart';
 
 class DirectionsScreen extends StatefulWidget {
-  const DirectionsScreen({super.key});
+  // preset 매개변수 추가
+  final Building? presetStart;
+  final Building? presetEnd;
+
+  const DirectionsScreen({
+    super.key,
+    this.presetStart,
+    this.presetEnd,
+  });
 
   @override
   State<DirectionsScreen> createState() => _DirectionsScreenState();
@@ -21,37 +29,51 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
   List<Building> _searchResults = [];
   bool _isSearching = false;
   String? _searchType; // 'start' or 'end'
-  List<Building> _recentSearches = [
-    // 샘플 최근 검색 데이터
-  ];
+  List<Building> _recentSearches = [];
 
-  @override
-  void initState() {
-    super.initState();
-    // initState에서 BuildingDataProvider 호출하지 않음
-    _recentSearches = [];
+@override
+void initState() {
+  super.initState();
+  
+  // preset 값들로 초기화
+  _startBuilding = widget.presetStart;
+  _endBuilding = widget.presetEnd;
+  
+  // 건물 객체 검증
+  if (_startBuilding != null) {
+    print('PresetStart 건물: ${_startBuilding!.name}');
+    print('좌표: ${_startBuilding!.lat}, ${_startBuilding!.lng}');
+    
+    // 좌표가 유효한지 확인
+    if (_startBuilding!.lat == 0.0 && _startBuilding!.lng == 0.0) {
+      print('경고: 출발지 좌표가 (0,0)입니다');
+    }
   }
+  
+  if (_endBuilding != null) {
+    print('PresetEnd 건물: ${_endBuilding!.name}');
+    print('좌표: ${_endBuilding!.lat}, ${_endBuilding!.lng}');
+  }
+  
+  _recentSearches = [];
+}
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // 여기서 BuildingDataProvider 초기화
     _initializeSampleData();
   }
 
   void _initializeSampleData() {
-    // 샘플 건물 데이터를 실제 건물 데이터에서 가져오기
     try {
       final buildings = BuildingDataProvider.getBuildingData(context);
-      if (buildings.isNotEmpty) {
-        // 첫 번째 건물을 샘플로 사용하되, 안전하게 처리
+      if (buildings.isNotEmpty && mounted) {
         setState(() {
           _recentSearches = [buildings.first];
         });
       }
     } catch (e) {
-      print('샘플 데이터 초기화 오류: $e');
-      // 오류시 빈 리스트로 초기화
+      debugPrint('샘플 데이터 초기화 오류: $e');
       if (mounted) {
         setState(() {
           _recentSearches = [];
@@ -88,7 +110,6 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
     final lowercaseQuery = query.toLowerCase();
     
     try {
-      // BuildingDataProvider를 사용하여 건물 데이터 가져오기
       final buildings = BuildingDataProvider.getBuildingData(context);
       
       return buildings.where((building) {
@@ -100,8 +121,7 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
         return nameMatch || infoMatch || categoryMatch || descriptionMatch;
       }).toList();
     } catch (e) {
-      print('BuildingDataProvider 오류: $e');
-      // 오류시 빈 리스트 반환
+      debugPrint('BuildingDataProvider 오류: $e');
       return [];
     }
   }
@@ -127,7 +147,6 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
   }
 
   void _onBuildingSelected(Building building) {
-    // 최근 검색에 추가
     setState(() {
       _recentSearches.removeWhere((b) => b.name == building.name);
       _recentSearches.insert(0, building);
@@ -168,34 +187,19 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
 
   void _startNavigation() {
     if (_startBuilding != null && _endBuilding != null) {
-      // "내 위치"인 경우와 일반 건물인 경우를 구분해서 처리
       if (_startBuilding!.name == '내 위치') {
-        // 현재 위치에서 목적지로의 길찾기
         Navigator.pop(context, {
-          'start': null, // null이면 현재 위치 사용
+          'start': null,
           'end': _endBuilding,
           'useCurrentLocation': true,
         });
       } else {
-        // 일반 건물 간 길찾기
         Navigator.pop(context, {
           'start': _startBuilding,
           'end': _endBuilding,
           'useCurrentLocation': false,
         });
       }
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            _startBuilding!.name == '내 위치' 
-                ? '현재 위치에서 ${_endBuilding!.name}으로 길찾기를 시작합니다'
-                : '${_startBuilding!.name}에서 ${_endBuilding!.name}으로 길찾기를 시작합니다'
-          ),
-          backgroundColor: const Color(0xFF1E3A8A),
-          duration: const Duration(seconds: 2),
-        ),
-      );
     }
   }
 
@@ -220,7 +224,6 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
 
   PreferredSizeWidget _buildAppBar() {
     if (_searchType != null) {
-      // 검색 모드일 때의 앱바
       return AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
@@ -274,7 +277,6 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
         ),
       );
     } else {
-      // 일반 모드일 때의 앱바
       return AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
@@ -305,7 +307,6 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 최근 검색
         if (_recentSearches.isNotEmpty && !_isSearching) ...[
           const SizedBox(height: 16),
           Padding(
@@ -340,8 +341,6 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
           ),
           const SizedBox(height: 8),
         ],
-
-        // 검색 결과 또는 최근 검색 목록
         Expanded(
           child: _isSearching ? _buildSearchResults() : _buildRecentSearches(),
         ),
@@ -382,9 +381,9 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
   Widget _buildSearchResultItem(Building building, {bool isRecent = false}) {
     return Container(
       margin: const EdgeInsets.only(bottom: 1),
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(0),
+        borderRadius: BorderRadius.zero,
       ),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -474,102 +473,145 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
   }
 
   Widget _buildDirectionsView() {
-    return Column(
+    return Stack(
       children: [
-        const SizedBox(height: 16),
-        
-        // 출발지 입력
-        _buildLocationInput(
-          icon: Icons.my_location,
-          iconColor: const Color(0xFF10B981),
-          hint: '출발지를 입력해주세요',
-          selectedBuilding: _startBuilding,
-          onTap: _selectStartLocation,
-        ),
-        
-        // 교환 버튼
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Row(
-            children: [
-              const SizedBox(width: 56), // 아이콘 공간만큼 들여쓰기
+        Column(
+          children: [
+            const SizedBox(height: 16),
+            
+            // preset 알림 메시지 추가
+            if (widget.presetStart != null || widget.presetEnd != null) ...[
               Container(
-                width: 32,
-                height: 32,
+                margin: const EdgeInsets.symmetric(horizontal: 16),
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.grey.shade300),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
+                  color: Colors.blue.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.blue.shade200),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.info_outline,
+                      color: Colors.blue.shade600,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        widget.presetStart != null 
+                            ? '${widget.presetStart!.name}이 출발지로 설정되었습니다'
+                            : '${widget.presetEnd!.name}이 도착지로 설정되었습니다',
+                        style: TextStyle(
+                          color: Colors.blue.shade700,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
                     ),
                   ],
                 ),
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(16),
-                    onTap: _swapLocations,
-                    child: Icon(
-                      Icons.swap_vert,
-                      color: Colors.grey.shade600,
-                      size: 20,
+              ),
+              const SizedBox(height: 16),
+            ],
+            
+            // 출발지 입력
+            _buildLocationInput(
+              icon: Icons.my_location,
+              iconColor: const Color(0xFF10B981),
+              hint: '출발지를 입력해주세요',
+              selectedBuilding: _startBuilding,
+              onTap: _selectStartLocation,
+            ),
+            
+            // 교환 버튼
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Row(
+                children: [
+                  const SizedBox(width: 56),
+                  Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.grey.shade300),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(16),
+                        onTap: _swapLocations,
+                        child: Icon(
+                          Icons.swap_vert,
+                          color: Colors.grey.shade600,
+                          size: 20,
+                        ),
+                      ),
                     ),
                   ),
-                ),
+                ],
               ),
-            ],
-          ),
-        ),
-        
-        // 도착지 입력
-        _buildLocationInput(
-          icon: Icons.location_on,
-          iconColor: const Color(0xFFEF4444),
-          hint: '도착지를 입력해주세요',
-          selectedBuilding: _endBuilding,
-          onTap: _selectEndLocation,
-        ),
-        
-        const Spacer(),
-        
-        // 안내 메시지
-        Container(
-          margin: const EdgeInsets.all(16),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.shade200),
-          ),
-          child: Row(
-            children: [
-              Icon(
-                Icons.info_outline,
-                color: Colors.grey.shade600,
-                size: 20,
+            ),
+            
+            // 도착지 입력
+            _buildLocationInput(
+              icon: Icons.location_on,
+              iconColor: const Color(0xFFEF4444),
+              hint: '도착지를 입력해주세요',
+              selectedBuilding: _endBuilding,
+              onTap: _selectEndLocation,
+            ),
+            
+            const Spacer(),
+            
+            // 안내 메시지
+            Container(
+              margin: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey.shade200),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  '출발지와 도착지를 설정해주세요',
-                  style: TextStyle(
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.info_outline,
                     color: Colors.grey.shade600,
-                    fontSize: 14,
+                    size: 20,
                   ),
-                ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      '출발지와 도착지를 설정해주세요',
+                      style: TextStyle(
+                        color: Colors.grey.shade600,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+            
+            SizedBox(height: MediaQuery.of(context).padding.bottom + 80),
+          ],
         ),
         
-        // 길찾기 시작 버튼
-        Container(
-          width: double.infinity,
-          margin: const EdgeInsets.all(16),
+        // 하단 고정 버튼
+        Positioned(
+          left: 16,
+          right: 16,
+          bottom: MediaQuery.of(context).padding.bottom + 16,
           child: ElevatedButton(
             onPressed: (_startBuilding != null && _endBuilding != null) 
                 ? _startNavigation 
@@ -583,7 +625,7 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
-              elevation: 0,
+              elevation: 2,
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -610,8 +652,6 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
             ),
           ),
         ),
-        
-        SizedBox(height: MediaQuery.of(context).padding.bottom + 16),
       ],
     );
   }
@@ -623,7 +663,6 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
     required Building? selectedBuilding,
     required VoidCallback onTap,
   }) {
-    // 출발지인 경우 "내 위치" 옵션 표시
     final bool isStartLocation = hint.contains('출발지');
     
     return Container(
@@ -719,40 +758,35 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
               color: Colors.transparent,
               child: InkWell(
                 onTap: () async {
-                  // LocationManager를 통해 실제 현재 위치 가져오기
                   try {
-                    // 로딩 상태 표시
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Row(
-                            children: [
-                              SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(
-                                  color: Colors.white,
-                                  strokeWidth: 2,
-                                ),
+                    if (!mounted) return;
+                    
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Row(
+                          children: [
+                            SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
                               ),
-                              SizedBox(width: 12),
-                              Text('현재 위치를 가져오는 중...'),
-                            ],
-                          ),
-                          backgroundColor: Color(0xFF2196F3),
-                          duration: Duration(seconds: 5),
-                          behavior: SnackBarBehavior.floating,
-                          margin: EdgeInsets.all(16),
+                            ),
+                            SizedBox(width: 12),
+                            Text('현재 위치를 가져오는 중...'),
+                          ],
                         ),
-                      );
-                    }
+                        backgroundColor: Color(0xFF2196F3),
+                        duration: Duration(seconds: 5),
+                        behavior: SnackBarBehavior.floating,
+                        margin: EdgeInsets.all(16),
+                      ),
+                    );
                     
                     final locationManager = Provider.of<LocationManager>(context, listen: false);
                     
-                    // 이미 최근 위치가 있는지 확인
                     if (locationManager.hasValidLocation && locationManager.currentLocation != null) {
-                      print('✅ 기존 위치 사용: ${locationManager.currentLocation!.latitude}, ${locationManager.currentLocation!.longitude}');
-                      
                       final myLocationBuilding = Building(
                         name: '내 위치',
                         info: '현재 위치에서 출발',
@@ -791,111 +825,58 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
                           ),
                         );
                       }
-                      return;
-                    }
-                    
-                    // 새로운 위치 요청
-                    print('📍 새로운 위치 요청...');
-                    
-                    // LocationManager의 onLocationFound 콜백 설정
-                    locationManager.onLocationFound = (locationData) {
-                      print('✅ 위치 획득 성공: ${locationData.latitude}, ${locationData.longitude}');
+                    } else {
+                      await locationManager.requestLocation();
+                      await Future.delayed(const Duration(milliseconds: 500));
                       
-                      final myLocationBuilding = Building(
-                        name: '내 위치',
-                        info: '현재 위치에서 출발',
-                        lat: locationData.latitude!,
-                        lng: locationData.longitude!,
-                        category: '현재위치',
-                        baseStatus: '사용가능',
-                        hours: '',
-                        phone: '',
-                        imageUrl: '',
-                        description: '현재 위치에서 길찾기를 시작합니다',
-                      );
-                      
-                      if (mounted) {
-                        setState(() {
-                          _startBuilding = myLocationBuilding;
-                        });
-                        
-                        ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Row(
-                              children: [
-                                const Icon(Icons.my_location, color: Colors.white, size: 16),
-                                const SizedBox(width: 8),
-                                const Text('현재 위치가 출발지로 설정되었습니다'),
-                              ],
-                            ),
-                            backgroundColor: const Color(0xFF10B981),
-                            duration: const Duration(seconds: 2),
-                            behavior: SnackBarBehavior.floating,
-                            margin: const EdgeInsets.all(16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                          ),
+                      if (locationManager.hasValidLocation && locationManager.currentLocation != null) {
+                        final myLocationBuilding = Building(
+                          name: '내 위치',
+                          info: '현재 위치에서 출발',
+                          lat: locationManager.currentLocation!.latitude!,
+                          lng: locationManager.currentLocation!.longitude!,
+                          category: '현재위치',
+                          baseStatus: '사용가능',
+                          hours: '',
+                          phone: '',
+                          imageUrl: '',
+                          description: '현재 위치에서 길찾기를 시작합니다',
                         );
+                        
+                        if (mounted) {
+                          setState(() {
+                            _startBuilding = myLocationBuilding;
+                          });
+                          
+                          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Row(
+                                children: [
+                                  const Icon(Icons.my_location, color: Colors.white, size: 16),
+                                  const SizedBox(width: 8),
+                                  const Text('현재 위치가 출발지로 설정되었습니다'),
+                                ],
+                              ),
+                              backgroundColor: const Color(0xFF10B981),
+                              duration: const Duration(seconds: 2),
+                              behavior: SnackBarBehavior.floating,
+                              margin: const EdgeInsets.all(16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                          );
+                        }
+                      } else {
+                        throw Exception('위치를 가져올 수 없습니다');
                       }
-                    };
-                    
-                    // 위치 요청 실행
-                    await locationManager.requestLocation();
-                    
-                    // 10초 후에도 위치를 못 가져왔으면 기본 위치 사용
-                    await Future.delayed(const Duration(seconds: 10));
-                    
-                    if (mounted && _startBuilding?.name != '내 위치') {
-                      print('⚠️ 위치 획득 타임아웃, 기본 위치 사용');
-                      
-                      final myLocationBuilding = Building(
-                        name: '내 위치',
-                        info: '현재 위치에서 출발 (기본 위치)',
-                        lat: 36.338133, // 우송대학교 중심
-                        lng: 127.446423,
-                        category: '현재위치',
-                        baseStatus: '사용가능',
-                        hours: '',
-                        phone: '',
-                        imageUrl: '',
-                        description: '현재 위치에서 길찾기를 시작합니다',
-                      );
-                      
-                      setState(() {
-                        _startBuilding = myLocationBuilding;
-                      });
-                      
-                      ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Row(
-                            children: [
-                              const Icon(Icons.warning, color: Colors.white, size: 16),
-                              const SizedBox(width: 8),
-                              const Text('위치를 가져올 수 없어 기본 위치를 사용합니다'),
-                            ],
-                          ),
-                          backgroundColor: Colors.orange,
-                          duration: const Duration(seconds: 2),
-                          behavior: SnackBarBehavior.floating,
-                          margin: const EdgeInsets.all(16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                      );
                     }
-                    
                   } catch (e) {
-                    print('❌ 위치 가져오기 실패: $e');
-                    
-                    // 오류 발생시 기본 위치로 설정
                     final myLocationBuilding = Building(
                       name: '내 위치',
                       info: '현재 위치에서 출발 (기본 위치)',
-                      lat: 36.338133, // 우송대학교 중심
+                      lat: 36.338133,
                       lng: 127.446423,
                       category: '현재위치',
                       baseStatus: '사용가능',
@@ -915,18 +896,13 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
                         SnackBar(
                           content: Row(
                             children: [
-                              const Icon(Icons.error, color: Colors.white, size: 16),
+                              const Icon(Icons.warning, color: Colors.white, size: 16),
                               const SizedBox(width: 8),
-                              const Text('위치 서비스를 사용할 수 없어 기본 위치를 사용합니다'),
+                              const Text('기본 위치를 사용합니다'),
                             ],
                           ),
-                          backgroundColor: Colors.red,
-                          duration: const Duration(seconds: 3),
-                          behavior: SnackBarBehavior.floating,
-                          margin: const EdgeInsets.all(16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
+                          backgroundColor: Colors.orange,
+                          duration: const Duration(seconds: 2),
                         ),
                       );
                     }
