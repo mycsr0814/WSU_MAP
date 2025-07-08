@@ -57,3 +57,8 @@ flutter:
     - lib/resource/ws17.jpg
     - lib/resource/ws18.jpg
     - lib/resource/ws19.jpg
+
+assets:
+  - assets/W19_1.svg
+  - assets/W19_2.svg
+  - assets/W19_3.svg

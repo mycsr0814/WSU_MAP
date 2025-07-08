@@ -1,167 +1,254 @@
-// lib/map/widgets/floor_plan_dialog.dart - 새로 생성
+// lib/map/widgets/floor_plan_dialog.dart - 전체 페이지로 변경
 
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/models/building.dart';
 import '../../generated/app_localizations.dart';
 
-class FloorPlanDialog {
+class FloorPlanDialog extends StatelessWidget {
+  final Building building;
+
+  const FloorPlanDialog({
+    super.key,
+    required this.building,
+  });
+
+  // 새로운 페이지로 네비게이션
   static void show(BuildContext context, Building building) {
-    final l10n = AppLocalizations.of(context)!;
-    
-    showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (BuildContext context) {
-        return Dialog(
-          backgroundColor: Colors.transparent,
-          child: Container(
-            constraints: BoxConstraints(
-              maxHeight: MediaQuery.of(context).size.height * 0.8,
-              maxWidth: MediaQuery.of(context).size.width * 0.9,
-            ),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.2),
-                  blurRadius: 20,
-                  offset: const Offset(0, 10),
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // 헤더
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF7C3AED),
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(16),
-                      topRight: Radius.circular(16),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.map_outlined,
-                        color: Colors.white,
-                        size: 24,
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          '${building.name} ${l10n.floor_plan}',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        icon: const Icon(
-                          Icons.close,
-                          color: Colors.white,
-                          size: 24,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                
-                // 도면 이미지
-                Flexible(
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    child: _buildFloorPlanImage(building),
-                  ),
-                ),
-                
-                // 하단 버튼
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed: () => Navigator.of(context).pop(),
-                          icon: const Icon(Icons.close, size: 18),
-                          label: Text(l10n.close),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.grey.shade600,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => FloorPlanDialog(building: building),
+      ),
     );
   }
 
-  static Widget _buildFloorPlanImage(Building building) {
-    // 건물별 도면 이미지 경로 설정
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          onPressed: () => Navigator.pop(context),
+          icon: const Icon(
+            Icons.arrow_back_ios,
+            color: Colors.black87,
+            size: 24,
+          ),
+        ),
+        title: Text(
+          '${building.name} ${l10n?.floor_plan ?? '도면보기'}',
+          style: const TextStyle(
+            color: Colors.black87,
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        centerTitle: false,
+      ),
+      body: Stack(
+        children: [
+          // 도면 이미지 영역 (전체 화면)
+          Container(
+            width: double.infinity,
+            height: double.infinity,
+            padding: const EdgeInsets.all(16),
+            child: _buildFloorPlanImage(building),
+          ),
+          
+          // 왼쪽 아래 층 선택 버튼들
+          Positioned(
+            left: 16,
+            bottom: 16,
+            child: _buildFloorSelector(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFloorPlanImage(Building building) {
     String imagePath = _getFloorPlanImagePath(building);
     
     return Container(
+      width: double.infinity,
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.shade300),
-        borderRadius: BorderRadius.circular(8),
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade200),
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(8),
-        child: Image.asset(
-          imagePath,
-          fit: BoxFit.contain,
-          errorBuilder: (context, error, stackTrace) {
-            return Container(
-              height: 300,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.image_not_supported_outlined,
-                    size: 64,
-                    color: Colors.grey.shade400,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    '도면 이미지를 불러올 수 없습니다',
-                    style: TextStyle(
-                      color: Colors.grey.shade600,
-                      fontSize: 16,
+        borderRadius: BorderRadius.circular(12),
+        child: InteractiveViewer(
+          panEnabled: true,
+          boundaryMargin: const EdgeInsets.all(20),
+          minScale: 0.5,
+          maxScale: 4.0,
+          child: Image.asset(
+            imagePath,
+            fit: BoxFit.contain,
+            errorBuilder: (context, error, stackTrace) {
+              return Container(
+                height: 400,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.image_not_supported_outlined,
+                      size: 64,
+                      color: Colors.grey.shade400,
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    '${building.name} 내부 도면',
-                    style: TextStyle(
-                      color: Colors.grey.shade500,
-                      fontSize: 14,
+                    const SizedBox(height: 16),
+                    Text(
+                      '도면 이미지를 불러올 수 없습니다',
+                      style: TextStyle(
+                        color: Colors.grey.shade600,
+                        fontSize: 16,
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            );
-          },
+                    const SizedBox(height: 8),
+                    Text(
+                      '${building.name} 내부 도면',
+                      style: TextStyle(
+                        color: Colors.grey.shade500,
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    // 예시 층별 표시 (세로로 배치)
+                    Container(
+                      padding: const EdgeInsets.all(40),
+                      child: Column(
+                        children: _getAvailableFloors(building).map((floor) =>
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                            child: _buildFloorIndicator(floor, floor == '4'),
+                          ),
+                        ).toList(),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFloorIndicator(String floor, bool isSelected) {
+    return Container(
+      width: 60,
+      height: 60,
+      decoration: BoxDecoration(
+        color: isSelected ? Colors.red.shade100 : Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(30),
+        border: Border.all(
+          color: isSelected ? Colors.red.shade300 : Colors.grey.shade300,
+          width: 2,
+        ),
+      ),
+      child: Center(
+        child: Text(
+          floor,
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: isSelected ? Colors.red.shade700 : Colors.grey.shade600,
+          ),
+        ),
+      ),
+    );
+  }
+
+  // 층 정보를 자동으로 가져와서 버튼 생성
+  List<String> _getAvailableFloors(Building building) {
+    // 건물별로 사용 가능한 층 정보를 반환
+    // 실제로는 building 객체나 API에서 층 정보를 가져와야 함
+    switch (building.name) {
+      case '본관':
+        return ['B1', '1', '2', '3', '4', '5'];
+      case '공학관':
+        return ['1', '2', '3', '4'];
+      case '도서관':
+        return ['1', '2', '3'];
+      case '학생회관':
+        return ['B1', '1', '2'];
+      default:
+        return ['1', '2', '3', '4']; // 기본값
+    }
+  }
+
+  Widget _buildFloorSelector() {
+    final availableFloors = _getAvailableFloors(building);
+    
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.9),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: availableFloors.map((floor) => 
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 2),
+            child: _buildFloorButton(floor, isSelected: floor == '4'), // 기본 선택층
+          ),
+        ).toList(),
+      ),
+    );
+  }
+
+  Widget _buildFloorButton(String floor, {bool isSelected = false}) {
+    return GestureDetector(
+      onTap: () {
+        print('$floor층 선택됨');
+        // 층 선택 로직 추가 - 여기서 해당 층의 도면을 로드
+      },
+      child: Container(
+        width: 50,
+        height: 50,
+        margin: const EdgeInsets.symmetric(vertical: 2),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.red.shade100 : Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(25),
+          border: Border.all(
+            color: isSelected ? Colors.red.shade300 : Colors.grey.shade300,
+            width: 2,
+          ),
+          boxShadow: isSelected ? [
+            BoxShadow(
+              color: Colors.red.shade200,
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ] : null,
+        ),
+        child: Center(
+          child: Text(
+            floor,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: isSelected ? Colors.red.shade700 : Colors.grey.shade600,
+            ),
+          ),
         ),
       ),
     );
@@ -169,18 +256,15 @@ class FloorPlanDialog {
 
   // 건물별 도면 이미지 경로 반환
   static String _getFloorPlanImagePath(Building building) {
-    // 건물 이름이나 ID에 따라 해당하는 도면 이미지 경로 반환
     switch (building.name) {
       case '본관':
-        return 'asset/images/floor_plans/main_building.png';
+        return 'assets/W19_1.svg';
       case '공학관':
-        return 'asset/images/floor_plans/engineering_building.png';
+        return 'assets/W19_2.svg';
       case '도서관':
-        return 'asset/images/floor_plans/library.png';
-      case '학생회관':
-        return 'asset/images/floor_plans/student_center.png';
+        return 'assets/W19_3.svg';
       default:
-        return 'asset/images/floor_plans/default_floor_plan.png';
+        return 'assets/W19_1.svg';
     }
   }
 }

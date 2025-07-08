@@ -1,6 +1,7 @@
 // lib/map/widgets/building_info_window.dart - 내부도면보기 버튼으로 수정
 
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/map/widgets/floor_plan_dialog.dart';
 import 'package:flutter_application_1/models/building.dart';
 import '../../generated/app_localizations.dart';
 import 'package:flutter_application_1/map/widgets/directions_screen.dart';
@@ -87,7 +88,7 @@ class BuildingInfoWindow extends StatelessWidget {
         const SizedBox(height: 20),
         _buildActionIcons(l10n),
         const SizedBox(height: 20),
-        _buildFloorPlanButton(l10n),
+        _buildFloorPlanButton(l10n, context),
         const SizedBox(height: 16),
         _buildActionButtons(l10n, context), // context 매개변수 추가
         const SizedBox(height: 20),
@@ -274,16 +275,19 @@ class BuildingInfoWindow extends StatelessWidget {
 
 
   // 내부도면보기 버튼으로 변경
-  Widget _buildFloorPlanButton(AppLocalizations l10n) {
+  Widget _buildFloorPlanButton(AppLocalizations l10n, BuildContext context) {
     return SizedBox(
       width: double.infinity,
       height: 50,
       child: ElevatedButton(
-        onPressed: onShowFloorPlan != null 
-            ? () => onShowFloorPlan!(building) 
-            : null,
+        onPressed: () {
+          print('🔘 내부도면보기 버튼 클릭됨: ${building.name}'); // 디버깅용
+          
+          // FloorPlanDialog 직접 호출
+          FloorPlanDialog.show(context, building);
+        },
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF7C3AED), // 보라색으로 변경
+          backgroundColor: const Color(0xFF7C3AED), // 보라색
           foregroundColor: Colors.white,
           elevation: 0,
           shape: RoundedRectangleBorder(
@@ -293,10 +297,10 @@ class BuildingInfoWindow extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.map_outlined, size: 20), // 아이콘 변경
+            const Icon(Icons.map_outlined, size: 20),
             const SizedBox(width: 8),
             Text(
-              l10n.view_floor_plan, // 다국어 키 변경 필요
+              l10n.view_floor_plan ?? '내부도면보기', // null 체크 추가
               style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
@@ -308,6 +312,7 @@ class BuildingInfoWindow extends StatelessWidget {
     );
   }
 
+
  Widget _buildActionButtons(AppLocalizations l10n, BuildContext context) {
   return Row(
     children: [
@@ -317,7 +322,7 @@ class BuildingInfoWindow extends StatelessWidget {
           height: 50,
           child: ElevatedButton(
             onPressed: onSetStart != null ? () async {
-              print('출발지 버튼 클릭됨: ${building.name}');
+              debugPrint('출발지 버튼 클릭됨: ${building.name}');
               
               // InfoWindow 먼저 닫기
               onClose();
@@ -333,7 +338,7 @@ class BuildingInfoWindow extends StatelessWidget {
                   ),
                 );
                 
-                print('DirectionsScreen 결과: $result');
+                debugPrint('DirectionsScreen 결과: $result');
                 
                 // 결과가 있으면 onSetStart 콜백 호출하여 상위로 전달
                 if (result != null && onSetStart != null) {
@@ -341,7 +346,7 @@ class BuildingInfoWindow extends StatelessWidget {
                   onSetStart!(result);
                 }
               } catch (e) {
-                print('DirectionsScreen 이동 실패: $e');
+                debugPrint('DirectionsScreen 이동 실패: $e');
               }
             } : null,
             style: ElevatedButton.styleFrom(
@@ -376,7 +381,7 @@ class BuildingInfoWindow extends StatelessWidget {
           height: 50,
           child: ElevatedButton(
             onPressed: onSetEnd != null ? () async {
-              print('도착지 버튼 클릭됨: ${building.name}');
+              debugPrint('도착지 버튼 클릭됨: ${building.name}');
               
               // InfoWindow 먼저 닫기
               onClose();
@@ -392,7 +397,7 @@ class BuildingInfoWindow extends StatelessWidget {
                   ),
                 );
                 
-                print('DirectionsScreen 결과: $result');
+                debugPrint('DirectionsScreen 결과: $result');
                 
                 // 결과가 있으면 onSetEnd 콜백 호출하여 상위로 전달
                 if (result != null && onSetEnd != null) {
@@ -400,7 +405,7 @@ class BuildingInfoWindow extends StatelessWidget {
                   onSetEnd!(result);
                 }
               } catch (e) {
-                print('DirectionsScreen 이동 실패: $e');
+                debugPrint('DirectionsScreen 이동 실패: $e');
               }
             } : null,
             style: ElevatedButton.styleFrom(
