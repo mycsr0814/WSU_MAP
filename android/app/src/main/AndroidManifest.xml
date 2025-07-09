@@ -1,23 +1,31 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.flutter_application_1">
 
-    <!-- 인터넷 권한 -->
+    <!-- =========== 권한 설정 =========== -->
+    <!-- [공통] 인터넷 사용 권한 -->
     <uses-permission android:name="android.permission.INTERNET" />
-    <!-- 위치 권한 추가 -->
+    
+    <!-- [핵심 추가] GPS를 이용한 정확한 위치 권한 (앱 충돌 방지) -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    
+    <!-- [권장 추가] 네트워크 기반의 대략적인 위치 권한 -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
+
+    <!-- =========== 애플리케이션 설정 =========== -->
     <application
         android:label="Campus Navigator"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:usesCleartextTraffic="true"
-        android:theme="@style/NormalTheme"> <!-- ✅ AppCompat 기반 테마로 수정 -->
+        android:theme="@style/NormalTheme">
 
-        <!-- ✅ 네이버 지도 클라이언트 ID 설정 -->
+        <!-- [핵심 추가] 네이버 지도 연동을 위한 클라이언트 ID -->
         <meta-data
             android:name="com.naver.maps.map.NCP_KEY_ID"
             android:value="gxa5mf6swg" />
 
+        <!-- [공통] 메인 액티비티 설정 -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -43,12 +51,15 @@
             android:value="2" />
     </application>
 
-    <!-- 다른 앱 실행 허용 -->
+
+    <!-- =========== 외부 앱 연동 설정 =========== -->
     <queries>
+        <!-- [공통] 텍스트 처리 앱 조회 허용 -->
         <intent>
             <action android:name="android.intent.action.PROCESS_TEXT" />
             <data android:mimeType="text/plain" />
         </intent>
+        <!-- [핵심 추가] 네이버 지도 앱 조회 허용 -->
         <intent>
             <action android:name="android.intent.action.VIEW" />
             <data android:scheme="nmap" />
