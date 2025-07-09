@@ -1,17 +1,16 @@
 import 'dart:async';
 import 'dart:math';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:http/http.dart' as http;
 
 import 'api_service.dart';
 import 'svg_data_parser.dart';
+import 'room_info.dart';
 import 'room_info_sheet.dart';
 import 'room_shape_painter.dart';
 import 'path_painter.dart';
-import 'room_info.dart';
-
-
 
 class BuildingMapPage extends StatefulWidget {
   final String buildingName;
@@ -181,42 +180,48 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
     }
   }
 
-  /// [수정] 방 클릭 시 서버에서 설명 받아오기
+  /// GET 방식으로 방 설명 받아오기
   void _showRoomInfoSheet(BuildContext context, String roomId) async {
-    setState(() => _selectedRoomId = roomId);
+  setState(() => _selectedRoomId = roomId);
 
-    String roomDesc = '';
-    try {
-      roomDesc = await _apiService.fetchRoomDescription(
-        buildingName: widget.buildingName,
-        floorNumber: _selectedFloor?['Floor_Number'],
-        roomName: roomId,
-      );
-    } catch (e) {
-      roomDesc = '설명을 불러오지 못했습니다.';
-    }
+  // R이 앞에 붙어있으면 제거
+  String roomIdNoR = roomId.startsWith('R') ? roomId.substring(1) : roomId;
 
-    await showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) => RoomInfoSheet(
-        roomInfo: RoomInfo(id: roomId, name: roomId, desc: roomDesc),
-        onDeparture: () {
-          setState(() => _startPoint = {"floorId": _selectedFloor?['Floor_Id'], "roomId": roomId});
-          if (_endPoint != null) _findAndDrawPath();
-          Navigator.pop(context);
-        },
-        onArrival: () {
-          setState(() => _endPoint = {"floorId": _selectedFloor?['Floor_Id'], "roomId": roomId});
-          if (_startPoint != null) _findAndDrawPath();
-          Navigator.pop(context);
-        },
-      ),
+  String roomDesc = '';
+  print('방 설명 요청: buildingName=${widget.buildingName}, floorNumber=${_selectedFloor?['Floor_Number']}, roomName=$roomIdNoR');
+  print('방 설명 요청 URL: http://3.106.229.163:3000/desc/${widget.buildingName}/${_selectedFloor?['Floor_Number']}/$roomIdNoR');
+  print('${widget.buildingName}');
+  try {
+    roomDesc = await _apiService.fetchRoomDescription(
+      buildingName: widget.buildingName,
+      floorNumber: _selectedFloor?['Floor_Number'],
+      roomName: roomIdNoR, // 서버에도 R을 뺀 값으로 전달
     );
-    if (mounted) setState(() => _selectedRoomId = null);
+  } catch (e) {
+    print(e);
+    roomDesc = '설명을 불러오지 못했습니다. $e';
   }
 
-  // --- UI 빌드 메서드 ---
+  await showModalBottomSheet(
+    context: context,
+    backgroundColor: Colors.transparent,
+    builder: (context) => RoomInfoSheet(
+      roomInfo: RoomInfo(id: roomId, name: roomIdNoR, desc: roomDesc), // 화면에도 R 뺀 값으로 표시
+      onDeparture: () {
+        setState(() => _startPoint = {"floorId": _selectedFloor?['Floor_Id'], "roomId": roomId});
+        if (_endPoint != null) _findAndDrawPath();
+        Navigator.pop(context);
+      },
+      onArrival: () {
+        setState(() => _endPoint = {"floorId": _selectedFloor?['Floor_Id'], "roomId": roomId});
+        if (_startPoint != null) _findAndDrawPath();
+        Navigator.pop(context);
+      },
+    ),
+  );
+  if (mounted) setState(() => _selectedRoomId = null);
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -319,9 +324,15 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
                 return Positioned.fromRect(
                   rect: scaledRect,
                   child: GestureDetector(
-                    onTap: () => _showRoomInfoSheet(context, id),
+                    onTap: () {
+                      print('강의실 버튼 클릭됨: $id');
+                      _showRoomInfoSheet(context, id);
+                    },
                     child: CustomPaint(
                       painter: RoomShapePainter(isSelected: _selectedRoomId == id),
+                      child: Container(
+                        color: Colors.transparent,
+                      ),
                     ),
                   ),
                 );

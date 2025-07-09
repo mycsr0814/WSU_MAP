@@ -4,7 +4,6 @@ import 'package:http/http.dart' as http;
 class ApiService {
   final String _baseUrl = "http://3.106.229.163:3000";
 
-  /// 서버에서 선택 가능한 모든 건물 목록을 가져오는 함수
   Future<List<String>> fetchBuildingList() async {
     final response = await http.get(Uri.parse('$_baseUrl/buildings'));
     if (response.statusCode == 200) {
@@ -16,7 +15,6 @@ class ApiService {
     }
   }
 
-  /// 특정 건물의 층 목록을 가져오는 함수
   Future<List<dynamic>> fetchFloorList(String buildingName) async {
     final response = await http.get(Uri.parse('$_baseUrl/floor/$buildingName'));
     if (response.statusCode == 200) {
@@ -27,7 +25,6 @@ class ApiService {
     }
   }
 
-  /// 서버에 길찾기를 요청하는 함수
   Future<Map<String, dynamic>> findPath({
     required String fromBuilding,
     int? fromFloor,
@@ -55,21 +52,22 @@ class ApiService {
     }
   }
 
-  /// [추가] 방 설명을 서버에서 받아오는 함수
+  /// GET 방식으로 방 설명 받아오기 (일관성 있게 작성)
   Future<String> fetchRoomDescription({
     required String buildingName,
-    required int floorNumber,
+    required String floorNumber,
     required String roomName,
   }) async {
-    final url = Uri.parse('$_baseUrl/desc/$buildingName/$floorNumber');
-    final response = await http.post(
-      url,
-      headers: {'Content-Type': 'application/json'},
-      body: json.encode({'room_name': roomName}),
+    print('$buildingName,$floorNumber,$roomName');
+    final response = await http.get(
+      Uri.parse('$_baseUrl/room/desc/${Uri.encodeComponent(buildingName)}/$floorNumber/${Uri.encodeComponent(roomName)}')
     );
+    print('fuckyou');
     if (response.statusCode == 200) {
       final data = json.decode(utf8.decode(response.bodyBytes));
       return data['Room_Description'] ?? '설명 없음';
+    } else if (response.statusCode == 404) {
+      return '설명 없음';
     } else {
       throw Exception('방 설명을 불러오지 못했습니다.');
     }

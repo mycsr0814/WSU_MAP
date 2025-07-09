@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'room_info.dart';
 
-
 class RoomInfoSheet extends StatelessWidget {
   final RoomInfo roomInfo;
   final VoidCallback? onDeparture;
