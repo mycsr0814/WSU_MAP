@@ -54,7 +54,6 @@ class _CategoryChipsState extends State<CategoryChips> {
       setState(() {
         _error = e.toString();
         _isLoading = false;
-        // 에러 발생시 빈 리스트로 설정
         _categories = [];
       });
       debugPrint('카테고리 로딩 실패: $e');
@@ -71,10 +70,18 @@ class _CategoryChipsState extends State<CategoryChips> {
     try {
       debugPrint('카테고리 선택: $category');
       
+      // 로딩 상태 표시를 위해 먼저 빈 리스트로 콜백 호출
+      widget.onCategorySelected(category, []);
+      
       // 해당 카테고리의 건물 위치들을 조회
       final buildings = await CategoryApiService.getCategoryBuildings(category);
       
       debugPrint('카테고리 $category의 건물 위치 ${buildings.length}개 조회됨');
+      
+      // 조회된 건물들을 로그로 출력하여 디버깅
+      for (var building in buildings) {
+        debugPrint('건물: ${building.buildingName}, 위치: (${building.location.x}, ${building.location.y})');
+      }
       
       // 부모 위젯에 카테고리명과 건물 위치 정보 전달
       widget.onCategorySelected(category, buildings);
@@ -83,6 +90,17 @@ class _CategoryChipsState extends State<CategoryChips> {
       debugPrint('카테고리 건물 조회 실패: $e');
       // 에러 발생 시 빈 리스트로 전달
       widget.onCategorySelected(category, []);
+      
+      // 에러 메시지 표시
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('카테고리 정보를 불러오는데 실패했습니다: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
     }
   }
 
