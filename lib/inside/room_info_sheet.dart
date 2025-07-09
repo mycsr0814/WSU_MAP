@@ -49,8 +49,8 @@ class RoomInfoSheet extends StatelessWidget {
                     icon: const Icon(Icons.play_arrow, size: 18),
                     label: const Text('출발지'),
                     style: ElevatedButton.styleFrom(
-                      foregroundColor: const Color(0xFF10B981),
-                      side: const BorderSide(color: Color(0xFF10B981)),
+                      backgroundColor: const Color(0xFF10B981), // 초록색 배경
+                      foregroundColor: Colors.white,            // 흰색 글자/아이콘
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
@@ -68,8 +68,8 @@ class RoomInfoSheet extends StatelessWidget {
                     icon: const Icon(Icons.flag, size: 18),
                     label: const Text('도착지'),
                     style: ElevatedButton.styleFrom(
-                      foregroundColor: const Color(0xFFEF4444),
-                      side: const BorderSide(color: Color(0xFFEF4444)),
+                      backgroundColor: const Color(0xFFEF4444), // 빨간색 배경
+                      foregroundColor: Colors.white,            // 흰색 글자/아이콘
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
