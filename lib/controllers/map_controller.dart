@@ -9,6 +9,8 @@ import 'package:flutter_application_1/services/path_api_service.dart';
 import 'package:flutter_application_1/managers/location_manager.dart';
 import 'package:flutter_application_1/models/building.dart';
 import 'dart:math' as math;
+import 'package:flutter_application_1/models/category.dart';
+import 'package:flutter_application_1/services/category_api_service.dart';
 
 class MapScreenController extends ChangeNotifier {
   MapService? _mapService;
@@ -688,10 +690,270 @@ Future<void> calculateRoute() async {
 
   @override
   void dispose() {
+
+    clearCategorySelection();
     // 위치 추적 중지
     _locationManager?.stopLocationTracking();
     _locationManager?.removeListener(_onLocationUpdate);
     _mapService?.dispose();
     super.dispose();
+  }
+
+  // 카테고리 관련 상태 (기존 필드들 아래에 추가)
+  String? _selectedCategory;
+  List<CategoryBuilding> _categoryBuildings = [];
+  bool _isCategoryLoading = false;
+  String? _categoryError;
+
+  // 카테고리 마커들을 저장할 Set
+  final Set<String> _categoryMarkerIds = {};
+
+  // 카테고리 관련 Getters (기존 getters 아래에 추가)
+  String? get selectedCategory => _selectedCategory;
+  List<CategoryBuilding> get categoryBuildings => _categoryBuildings;
+  bool get isCategoryLoading => _isCategoryLoading;
+  String? get categoryError => _categoryError;
+
+  // 카테고리 선택/해제 토글 메서드
+  Future<void> selectCategory(String category) async {
+    debugPrint('=== 카테고리 선택 요청: $category ===');
+    debugPrint('현재 선택된 카테고리: $_selectedCategory');
+
+    // 같은 카테고리를 다시 선택하면 해제
+    if (_selectedCategory == category) {
+      debugPrint('같은 카테고리 재선택 → 해제');
+      clearCategorySelection();
+      return;
+    }
+
+    // 이전 카테고리가 있다면 먼저 정리
+    if (_selectedCategory != null) {
+      debugPrint('이전 카테고리($_selectedCategory) 정리');
+      await _clearCategoryMarkersFromMap();
+    }
+
+    try {
+      // 로딩 상태 시작
+      _isCategoryLoading = true;
+      _selectedCategory = category;
+      _categoryError = null;
+      notifyListeners();
+
+      debugPrint('서버에서 $category 카테고리 데이터 요청...');
+
+      // 서버에서 카테고리별 건물 위치 가져오기
+      final buildings = await CategoryApiService.getCategoryBuildings(category);
+      
+      _categoryBuildings = buildings;
+      _isCategoryLoading = false;
+      notifyListeners();
+
+      debugPrint('✅ $category 카테고리에서 ${buildings.length}개 건물 발견');
+
+      // 각 건물 위치 로그 출력
+      for (int i = 0; i < buildings.length; i++) {
+        final building = buildings[i];
+        debugPrint('  ${i + 1}. ${building.buildingName}: (${building.location.x}, ${building.location.y})');
+      }
+
+      // 지도에 마커 표시
+      await _showCategoryMarkersOnMap();
+
+    } catch (e) {
+      debugPrint('❌ 카테고리 선택 실패: $e');
+      _categoryError = e.toString();
+      _isCategoryLoading = false;
+      _selectedCategory = null; // 실패시 선택 해제
+      notifyListeners();
+    }
+  }
+
+  // 카테고리 선택 해제
+  void clearCategorySelection() {
+    debugPrint('=== 카테고리 선택 해제 ===');
+    
+    if (_selectedCategory != null) {
+      debugPrint('선택 해제할 카테고리: $_selectedCategory');
+      _clearCategoryMarkersFromMap();
+    }
+
+    _selectedCategory = null;
+    _categoryBuildings.clear();
+    _categoryError = null;
+    _isCategoryLoading = false;
+    notifyListeners();
+
+    debugPrint('✅ 카테고리 선택 해제 완료');
+  }
+
+  // 지도에 카테고리 마커 표시
+  Future<void> _showCategoryMarkersOnMap() async {
+    if (_categoryBuildings.isEmpty) {
+      debugPrint('표시할 카테고리 건물이 없음');
+      return;
+    }
+
+    debugPrint('=== 지도에 카테고리 마커 표시 시작 ===');
+    debugPrint('표시할 마커 수: ${_categoryBuildings.length}');
+
+    try {
+      final controller = await _mapService?.getController();
+      if (controller == null) {
+        debugPrint('❌ 지도 컨트롤러가 없음');
+        return;
+      }
+
+      // 기존 카테고리 마커들 제거
+      await _clearCategoryMarkersFromMap();
+
+      // 새로운 카테고리 마커들 추가
+      for (int i = 0; i < _categoryBuildings.length; i++) {
+        final building = _categoryBuildings[i];
+        final markerId = 'category_${building.buildingName}_${_selectedCategory}';
+        
+        debugPrint('마커 추가: $markerId at (${building.location.x}, ${building.location.y})');
+        
+        // Naver Maps 마커 생성 (좌표 x,y → lat,lng 변환)
+        final marker = NMarker(
+          id: markerId,
+          position: NLatLng(building.location.y, building.location.x), // y=lat, x=lng
+          caption: NOverlayCaption(
+            text: building.buildingName,
+            color: _getCategoryColor(_selectedCategory!),
+            textSize: 12,
+          ),
+        );
+
+        // 마커 추가
+        controller.addOverlay(marker);
+        _categoryMarkerIds.add(markerId);
+        
+        // 마커 클릭 이벤트 등록
+        marker.setOnTapListener((NMarker marker) {
+          debugPrint('카테고리 마커 클릭: ${building.buildingName}');
+          // 원하는 동작 수행 (예: 건물 정보 표시)
+        });
+      }
+
+      debugPrint('✅ 카테고리 마커 표시 완료');
+
+      // 마커들이 모두 보이도록 지도 영역 조정
+      if (_categoryBuildings.length > 1) {
+        await _fitMapToCategoryBuildings();
+      } else if (_categoryBuildings.length == 1) {
+        // 단일 마커인 경우 해당 위치로 이동
+        final building = _categoryBuildings.first;
+        debugPrint('단일 마커로 지도 이동: ${building.buildingName}');
+        await _mapService?.moveCamera(
+          NLatLng(building.location.y, building.location.x),
+          zoom: 17,
+        );
+      }
+
+    } catch (e) {
+      debugPrint('❌ 카테고리 마커 표시 실패: $e');
+    }
+  }
+
+  // 지도에서 카테고리 마커 제거
+  Future<void> _clearCategoryMarkersFromMap() async {
+    if (_categoryMarkerIds.isEmpty) {
+      debugPrint('제거할 카테고리 마커가 없음');
+      return;
+    }
+
+    debugPrint('=== 지도에서 카테고리 마커 제거 시작 ===');
+    debugPrint('제거할 마커 수: ${_categoryMarkerIds.length}');
+
+    try {
+      final controller = await _mapService?.getController();
+      if (controller == null) return;
+
+      for (final markerId in List.from(_categoryMarkerIds)) {
+        debugPrint('마커 제거: $markerId');
+        
+        try {
+          controller.deleteOverlay(NOverlayInfo(
+            type: NOverlayType.marker,
+            id: markerId,
+          ));
+          await Future.delayed(const Duration(milliseconds: 10)); // 안전한 제거를 위한 지연
+        } catch (e) {
+          debugPrint('개별 마커 제거 실패: $markerId - $e');
+        }
+      }
+
+      _categoryMarkerIds.clear();
+      debugPrint('✅ 카테고리 마커 제거 완료');
+
+    } catch (e) {
+      debugPrint('❌ 카테고리 마커 제거 실패: $e');
+    }
+  }
+
+  // 카테고리 건물들이 모두 보이도록 지도 영역 조정
+  Future<void> _fitMapToCategoryBuildings() async {
+    if (_categoryBuildings.isEmpty) return;
+
+    debugPrint('=== 지도 영역을 카테고리 건물들에 맞춰 조정 ===');
+
+    try {
+      // 모든 카테고리 건물의 좌표 범위 계산
+      double minLat = _categoryBuildings.first.location.y;
+      double maxLat = _categoryBuildings.first.location.y;
+      double minLng = _categoryBuildings.first.location.x;
+      double maxLng = _categoryBuildings.first.location.x;
+
+      for (final building in _categoryBuildings) {
+        if (building.location.y < minLat) minLat = building.location.y;
+        if (building.location.y > maxLat) maxLat = building.location.y;
+        if (building.location.x < minLng) minLng = building.location.x;
+        if (building.location.x > maxLng) maxLng = building.location.x;
+      }
+
+      // 여백 추가
+      const padding = 0.001;
+      minLat -= padding;
+      maxLat += padding;
+      minLng -= padding;
+      maxLng += padding;
+
+      debugPrint('계산된 영역: ($minLng, $minLat) ~ ($maxLng, $maxLat)');
+
+      // 지도 영역 조정
+      final controller = await _mapService?.getController();
+      if (controller != null) {
+        await controller.updateCamera(
+          NCameraUpdate.fitBounds(
+            NLatLngBounds(
+              southWest: NLatLng(minLat, minLng),
+              northEast: NLatLng(maxLat, maxLng),
+            ),
+            padding: const EdgeInsets.all(80),
+          ),
+        );
+      }
+
+      debugPrint('✅ 지도 영역 조정 완료');
+
+    } catch (e) {
+      debugPrint('❌ 지도 영역 조정 실패: $e');
+    }
+  }
+
+  // 카테고리별 색상 정의
+  Color _getCategoryColor(String category) {
+    switch (category) {
+      case '카페':
+        return const Color(0xFFFF9800); // 오렌지
+      case '식당':
+        return const Color(0xFFE91E63); // 핑크
+      case '편의점':
+        return const Color(0xFF4CAF50); // 그린
+      case '자판기':
+        return const Color(0xFF2196F3); // 블루
+      default:
+        return const Color(0xFF9C27B0); // 퍼플
+    }
   }
 }

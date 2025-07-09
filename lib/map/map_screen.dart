@@ -16,6 +16,9 @@ import '../generated/app_localizations.dart';
 import 'package:app_settings/app_settings.dart';
 import 'package:location/location.dart' as loc;
 import 'package:flutter_application_1/map/widgets/directions_screen.dart';
+import 'package:flutter_application_1/widgets/category_chips.dart';
+import 'package:flutter_application_1/models/category.dart';
+import 'package:flutter_application_1/services/category_api_service.dart';
 
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
@@ -57,6 +60,11 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     _controller.dispose();
     super.dispose();
   }
+
+  String? _selectedCategory;
+  List<CategoryBuilding> _categoryBuildings = [];
+  bool _isCategoryLoading = false;
+
   
   // 🔥 안전한 위치 권한 체크 및 요청
   Future<void> _checkAndRequestLocation() async {
@@ -268,7 +276,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     );
   }
 
-  Widget _buildMapScreen(MapScreenController controller) {
+    Widget _buildMapScreen(MapScreenController controller) {
     if (controller.selectedBuilding != null &&
         !_infoWindowController.isShowing &&
         mounted) {
@@ -295,16 +303,43 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
 
         if (!_hasFoundInitialLocation) _buildInitialLocationLoading(),
 
+        // 카테고리 로딩 상태 표시
+        if (_controller.isCategoryLoading) _buildCategoryLoadingIndicator(),
+
+        // 검색바와 카테고리 칩들
         Positioned(
           top: MediaQuery.of(context).padding.top + 10,
           left: 16,
           right: 16,
-          child: BuildingSearchBar(
-            onBuildingSelected: (building) {
-              _controller.selectBuilding(building);
-              if (mounted) _infoWindowController.show();
-            },
-            onSearchFocused: () => _controller.closeInfoWindow(_infoWindowController),
+          child: Column(
+            children: [
+              // 기존 검색바
+              BuildingSearchBar(
+                onBuildingSelected: (building) {
+                  // 카테고리 선택 해제 (검색으로 건물 선택시)
+                  if (_controller.selectedCategory != null) {
+                    _controller.clearCategorySelection();
+                  }
+                  _controller.selectBuilding(building);
+                  if (mounted) _infoWindowController.show();
+                },
+                onSearchFocused: () => _controller.closeInfoWindow(_infoWindowController),
+              ),
+              
+              const SizedBox(height: 12),
+              
+              // 카테고리 칩들
+              CategoryChips(
+                selectedCategory: _controller.selectedCategory,
+                onCategorySelected: (category) {
+                  debugPrint('카테고리 선택: $category');
+                  // 인포윈도우가 열려있다면 닫기
+                  _controller.closeInfoWindow(_infoWindowController);
+                  // 카테고리 선택/해제 토글
+                  _controller.selectCategory(category);
+                },
+              ),
+            ],
           ),
         ),
 
@@ -313,7 +348,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
           Positioned(
             left: 0,
             right: 0,
-            bottom: 65, // 네비게이션 바 높이와 정확히 맞춤
+            bottom: 27, // 네비게이션 바 높이와 정확히 맞춤
             child: Center(
               child: Container(
                 width: MediaQuery.of(context).size.width * 0.7, // 전체 너비의 70%로 축소
@@ -331,18 +366,18 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
         if (controller.hasLocationPermissionError)
           _buildLocationError(),
 
-        // 경로 초기화 버튼 - 네비게이션 상태가 있을 때만 표시하고 우측에만 표시
+        // 경로 초기화 버튼 - 네비게이션 상태가 없을 때만 표시하고 네비게이션바 아주 살짝 위
         if (controller.hasActiveRoute && !_showNavigationStatus)
           Positioned(
             left: 16,
             right: 100,
-            bottom: 90,
+            bottom: 30, // 네비게이션바 아주 살짝 위
             child: _buildClearNavigationButton(controller),
           ),
 
         Positioned(
           right: 16,
-          bottom: _showNavigationStatus ? 200 : 75, // 네비게이션 상태가 있으면 위로, 없으면 네비게이션바 바로 위
+          bottom: 27, // 네비게이션 상태와 관계없이 항상 네비게이션바 아주 살짝 위에 고정
           child: _buildRightControls(controller),
         ),
 
@@ -350,6 +385,8 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
       ],
     );
   }
+
+// 3. _buildCategoryLoadingIndicator 메서드를 _buildInitialLocationLoading 바로 뒤에 추가:
 
   /// 초기 위치 로딩 인디케이터
   Widget _buildInitialLocationLoading() {
@@ -397,6 +434,54 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
       ),
     );
   }
+
+  /// 카테고리 로딩 인디케이터 - _buildInitialLocationLoading 바로 뒤에 추가
+  Widget _buildCategoryLoadingIndicator() {
+    return Positioned(
+      top: MediaQuery.of(context).padding.top + 170,
+      left: 16,
+      right: 16,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: const Color(0xFF2196F3),
+          borderRadius: BorderRadius.circular(30),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF2196F3).withOpacity(0.3),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(
+                color: Colors.white,
+                strokeWidth: 2,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              '${_controller.selectedCategory} 위치를 검색 중...',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+
 
   // 우측 컨트롤 버튼들 - 내 위치 버튼 색상 수정
   Widget _buildRightControls(MapScreenController controller) {
@@ -678,23 +763,23 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     );
   }
 
-  // 🔥 네비게이션 상태 카드 위젯 - 크기 축소 및 컴팩트하게 수정
+  // 🔥 네비게이션 상태 카드 위젯 - 더 컴팩트하게 수정하여 우측 버튼과 겹치지 않도록
   Widget _buildNavigationStatusCard() {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 8),
-      padding: const EdgeInsets.all(12), // 패딩 축소
+      margin: const EdgeInsets.symmetric(horizontal: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8), // 더 컴팩트한 패딩
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [Color(0xFF1E3A8A), Color(0xFF3B82F6)],
         ),
-        borderRadius: BorderRadius.circular(16), // 둥글기 축소
+        borderRadius: BorderRadius.circular(12), // 더 작은 둥글기
         boxShadow: [
           BoxShadow(
             color: const Color(0xFF1E3A8A).withOpacity(0.3),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
@@ -703,19 +788,19 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
         children: [
           // 예상 시간과 거리 표시 - 더 컴팩트하게
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               _buildCompactInfoItem(Icons.straighten, '거리', _estimatedDistance.isNotEmpty ? _estimatedDistance : '계산중'),
               Container(
                 width: 1,
-                height: 24, // 높이 축소
+                height: 20, // 높이 더 축소
                 color: Colors.white.withOpacity(0.2),
               ),
               _buildCompactInfoItem(Icons.access_time, '시간', _estimatedTime.isNotEmpty ? _estimatedTime : '계산중'),
             ],
           ),
           
-          const SizedBox(height: 12), // 간격 축소
+          const SizedBox(height: 8), // 간격 더 축소
           
           // 길 안내 시작 버튼과 경로 초기화 버튼을 나란히 배치
           Row(
@@ -730,21 +815,21 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF10B981),
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 8), // 패딩 축소
+                    padding: const EdgeInsets.symmetric(vertical: 6), // 더 작은 패딩
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8), // 둥글기 축소
+                      borderRadius: BorderRadius.circular(6), // 더 작은 둥글기
                     ),
-                    elevation: 2,
+                    elevation: 1,
                   ),
                   child: const Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.navigation, size: 14), // 아이콘 크기 축소
-                      SizedBox(width: 4),
+                      Icon(Icons.navigation, size: 12), // 더 작은 아이콘
+                      SizedBox(width: 3),
                       Text(
                         '길 안내',
                         style: TextStyle(
-                          fontSize: 12, // 폰트 크기 축소
+                          fontSize: 11, // 더 작은 폰트
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -753,7 +838,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                 ),
               ),
               
-              const SizedBox(width: 8),
+              const SizedBox(width: 6),
               
               // 경로 초기화 버튼 (50%)
               Expanded(
@@ -772,21 +857,21 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFEF4444),
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 8), // 패딩 축소
+                    padding: const EdgeInsets.symmetric(vertical: 6), // 더 작은 패딩
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8), // 둥글기 축소
+                      borderRadius: BorderRadius.circular(6), // 더 작은 둥글기
                     ),
-                    elevation: 2,
+                    elevation: 1,
                   ),
                   child: const Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.clear, size: 14), // 아이콘 크기 축소
-                      SizedBox(width: 4),
+                      Icon(Icons.clear, size: 12), // 더 작은 아이콘
+                      SizedBox(width: 3),
                       Text(
                         '초기화',
                         style: TextStyle(
-                          fontSize: 12, // 폰트 크기 축소
+                          fontSize: 11, // 더 작은 폰트
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -801,7 +886,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     );
   }
 
-  // 컴팩트한 정보 아이템 위젯
+  // 컴팩트한 정보 아이템 위젯 - 더 작게
   Widget _buildCompactInfoItem(IconData icon, String label, String value) {
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -809,23 +894,22 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
         Icon(
           icon,
           color: Colors.white,
-          size: 16, // 아이콘 크기 축소
+          size: 14, // 더 작은 아이콘
         ),
-        const SizedBox(height: 2),
+        const SizedBox(height: 1),
         Text(
           label,
           style: const TextStyle(
             color: Colors.white70,
-            fontSize: 10, // 폰트 크기 축소
+            fontSize: 9, // 더 작은 폰트
             fontWeight: FontWeight.w500,
           ),
         ),
-        const SizedBox(height: 1),
         Text(
           value,
           style: const TextStyle(
             color: Colors.white,
-            fontSize: 12, // 폰트 크기 축소
+            fontSize: 10, // 더 작은 폰트
             fontWeight: FontWeight.w600,
           ),
         ),

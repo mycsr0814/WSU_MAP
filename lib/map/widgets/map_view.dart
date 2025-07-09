@@ -22,6 +22,8 @@ class MapView extends StatelessWidget {
         options: const NaverMapViewOptions(
           initialCameraPosition: MapConstants.initialCameraPosition,
           locationButtonEnable: false,
+          logoMargin: EdgeInsets.only(right: 100, left: 8, bottom: 8), // 로고 마진 조정
+          scaleBarEnable: false,
         ),
         onMapReady: onMapReady,
       ),

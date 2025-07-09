@@ -1,6 +1,7 @@
-// lib/services/map_service.dart - 내 위치 이동 문제 수정
+// lib/services/map_service.dart - 카메라 이동 문제 완전 해결
 
 import 'dart:math';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/map/building_data.dart';
 import 'package:flutter_application_1/services/building_data_service.dart';
@@ -28,6 +29,10 @@ class MapService {
 
   // Context 저장 (다국어 지원을 위해)
   BuildContext? _context;
+
+  // 카메라 이동 관련 상태 관리
+  bool _isCameraMoving = false;
+  Timer? _cameraDelayTimer;
 
   // Getters
   bool get buildingMarkersVisible => _buildingMarkersVisible;
@@ -192,7 +197,7 @@ class MapService {
     ];
   }
 
-  /// 카메라 이동 (단일 좌표) - 수정됨
+  /// 안전한 카메라 이동 (메인 스레드 블로킹 방지) - 수정됨
   Future<void> moveCamera(NLatLng location, {double zoom = 15}) async {
     debugPrint('[MapService] moveCamera 호출 - 위치: (${location.latitude}, ${location.longitude}), zoom: $zoom');
     
@@ -201,48 +206,91 @@ class MapService {
       return;
     }
 
+    // 카메라 이동 중복 방지
+    if (_isCameraMoving) {
+      debugPrint('[MapService] moveCamera: 이미 카메라 이동 중...');
+      return;
+    }
+
+    _isCameraMoving = true;
+
     try {
+      // 메인 스레드 보호를 위한 지연
+      await Future.delayed(const Duration(milliseconds: 200));
+      
       final cameraUpdate = NCameraUpdate.scrollAndZoomTo(
         target: location,
         zoom: zoom,
       );
       
-      await _mapController!.updateCamera(cameraUpdate);
+      // 타임아웃을 적용하여 안전하게 카메라 이동
+      await _mapController!.updateCamera(cameraUpdate).timeout(
+        const Duration(seconds: 5),
+        onTimeout: () {
+          debugPrint('[MapService] moveCamera: 카메라 이동 타임아웃');
+          throw TimeoutException('카메라 이동 타임아웃', const Duration(seconds: 5));
+        },
+      );
+      
       debugPrint('[MapService] moveCamera 완료: ${location.latitude}, ${location.longitude}');
     } catch (e) {
       debugPrint('[MapService] moveCamera 오류: $e');
+      
+      // 오류 발생 시 재시도 (한 번만)
+      try {
+        await Future.delayed(const Duration(milliseconds: 500));
+        final retryUpdate = NCameraUpdate.scrollAndZoomTo(
+          target: location,
+          zoom: zoom,
+        );
+        await _mapController!.updateCamera(retryUpdate).timeout(
+          const Duration(seconds: 3),
+        );
+        debugPrint('[MapService] moveCamera 재시도 성공');
+      } catch (retryError) {
+        debugPrint('[MapService] moveCamera 재시도 실패: $retryError');
+      }
+    } finally {
+      _isCameraMoving = false;
     }
   }
 
-  /// 내 위치 표시 및 카메라 이동 (파란색 원으로) - 수정됨
- Future<void> showMyLocation(NLatLng location, {double? accuracy, bool shouldMoveCamera = true}) async {
-  debugPrint('[MapService] showMyLocation 호출 - 위치: (${location.latitude}, ${location.longitude}), accuracy: $accuracy, moveCamera: $shouldMoveCamera');
-  
-  if (_mapController == null) {
-    debugPrint('[MapService] showMyLocation: _mapController가 null입니다!');
-    return;
-  }
-  
-  try {
-    // 기존 마커 제거
-    await _removeMyLocationMarker();
+  /// 내 위치 표시 및 카메라 이동 (안전한 버전) - 수정됨
+  Future<void> showMyLocation(NLatLng location, {double? accuracy, bool shouldMoveCamera = true}) async {
+    debugPrint('[MapService] showMyLocation 호출 - 위치: (${location.latitude}, ${location.longitude}), accuracy: $accuracy, moveCamera: $shouldMoveCamera');
     
-    // 새 위치 마커 추가
-    await _addMyLocationCircle(location);
-    
-    // 카메라를 내 위치로 이동 (옵션)
-    if (shouldMoveCamera) {
-      debugPrint('[MapService] showMyLocation: 카메라 이동 시작');
-      await moveCamera(location, zoom: 16);  // 이제 정상 작동
-      debugPrint('[MapService] showMyLocation: 카메라 이동 완료');
+    if (_mapController == null) {
+      debugPrint('[MapService] showMyLocation: _mapController가 null입니다!');
+      return;
     }
     
-    debugPrint('[MapService] showMyLocation 완료');
-  } catch (e) {
-    debugPrint('[MapService] showMyLocation 오류: $e');
+    try {
+      // 1. 먼저 내 위치 마커 표시
+      await _removeMyLocationMarker();
+      await _addMyLocationCircle(location);
+      
+      // 2. 카메라 이동은 별도로 처리 (약간의 지연 후)
+      if (shouldMoveCamera) {
+        debugPrint('[MapService] showMyLocation: 카메라 이동 예약...');
+        
+        // 카메라 이동을 별도 타이머로 처리하여 메인 스레드 블로킹 방지
+        _cameraDelayTimer?.cancel();
+        _cameraDelayTimer = Timer(const Duration(milliseconds: 800), () async {
+          try {
+            debugPrint('[MapService] showMyLocation: 지연된 카메라 이동 시작');
+            await moveCamera(location, zoom: 16);
+            debugPrint('[MapService] showMyLocation: 지연된 카메라 이동 완료');
+          } catch (e) {
+            debugPrint('[MapService] showMyLocation: 지연된 카메라 이동 오류: $e');
+          }
+        });
+      }
+      
+      debugPrint('[MapService] showMyLocation 마커 표시 완료');
+    } catch (e) {
+      debugPrint('[MapService] showMyLocation 오류: $e');
+    }
   }
-}
-
 
   /// 내 위치를 파란색 원으로 표시 (더 작은 크기)
   Future<void> _addMyLocationCircle(NLatLng location) async {
@@ -287,38 +335,44 @@ class MapService {
     }
   }
 
-  /// 내 위치 업데이트 (기존 마커 이동, 카메라 이동 없음) - 수정됨
-Future<void> updateMyLocation(NLatLng location, {bool shouldMoveCamera = false}) async {
-  debugPrint('[MapService] updateMyLocation 호출 - 위치: (${location.latitude}, ${location.longitude}), moveCamera: $shouldMoveCamera');
-  
-  if (_mapController == null) {
-    debugPrint('[MapService] updateMyLocation: _mapController가 null입니다!');
-    return;
-  }
-  
-  try {
-    if (_myLocationAccuracyCircle != null) {
-      // 기존 원형 마커의 위치만 업데이트
-      _myLocationAccuracyCircle!.setCenter(location);
-      debugPrint('[MapService] updateMyLocation: 기존 원형 마커 위치만 이동');
-      
-      // 필요한 경우 카메라도 이동
-      if (shouldMoveCamera) {
-        await moveCamera(location, zoom: 16);
-        debugPrint('[MapService] updateMyLocation: 카메라 이동 완료');
+  /// 내 위치 업데이트 (기존 마커 이동, 카메라 이동 제어) - 수정됨
+  Future<void> updateMyLocation(NLatLng location, {bool shouldMoveCamera = false}) async {
+    debugPrint('[MapService] updateMyLocation 호출 - 위치: (${location.latitude}, ${location.longitude}), moveCamera: $shouldMoveCamera');
+    
+    if (_mapController == null) {
+      debugPrint('[MapService] updateMyLocation: _mapController가 null입니다!');
+      return;
+    }
+    
+    try {
+      if (_myLocationAccuracyCircle != null) {
+        // 기존 원형 마커의 위치만 업데이트
+        _myLocationAccuracyCircle!.setCenter(location);
+        debugPrint('[MapService] updateMyLocation: 기존 원형 마커 위치만 이동');
+        
+        // 필요한 경우에만 카메라 이동 (지연 적용)
+        if (shouldMoveCamera) {
+          _cameraDelayTimer?.cancel();
+          _cameraDelayTimer = Timer(const Duration(milliseconds: 500), () async {
+            try {
+              await moveCamera(location, zoom: 16);
+              debugPrint('[MapService] updateMyLocation: 지연된 카메라 이동 완료');
+            } catch (e) {
+              debugPrint('[MapService] updateMyLocation: 지연된 카메라 이동 오류: $e');
+            }
+          });
+        }
+      } else {
+        // 원형 마커가 없으면 새로 생성
+        debugPrint('[MapService] updateMyLocation: 원형 마커 없음, showMyLocation 호출');
+        await showMyLocation(location, shouldMoveCamera: shouldMoveCamera);
       }
-    } else {
-      // 원형 마커가 없으면 새로 생성
-      debugPrint('[MapService] updateMyLocation: 원형 마커 없음, showMyLocation 호출');
+    } catch (e) {
+      debugPrint('[MapService] updateMyLocation 오류: $e');
+      // 오류 발생 시 새로 생성
       await showMyLocation(location, shouldMoveCamera: shouldMoveCamera);
     }
-  } catch (e) {
-    debugPrint('[MapService] updateMyLocation 오류: $e');
-    // 오류 발생 시 새로 생성
-    await showMyLocation(location, shouldMoveCamera: shouldMoveCamera);
   }
-}
-
 
   /// 내 위치로 카메라 이동만 (마커 표시 없이) - 수정됨
   Future<void> moveToMyLocation(NLatLng location) async {
@@ -330,10 +384,18 @@ Future<void> updateMyLocation(NLatLng location, {bool shouldMoveCamera = false})
     }
     
     try {
-      await moveCamera(location, zoom: 16);
-      debugPrint('[MapService] moveToMyLocation 완료');
+      // 지연을 두고 카메라 이동
+      _cameraDelayTimer?.cancel();
+      _cameraDelayTimer = Timer(const Duration(milliseconds: 300), () async {
+        try {
+          await moveCamera(location, zoom: 16);
+          debugPrint('[MapService] moveToMyLocation 완료');
+        } catch (e) {
+          debugPrint('[MapService] moveToMyLocation 오류: $e');
+        }
+      });
     } catch (e) {
-      debugPrint('[MapService] moveToMyLocation 오류: $e');
+      debugPrint('[MapService] moveToMyLocation 설정 오류: $e');
     }
   }
 
@@ -608,16 +670,6 @@ Future<void> updateMyLocation(NLatLng location, {bool shouldMoveCamera = false})
     return allBuildings.where((building) => building.baseStatus == '운영종료' || building.baseStatus == '임시휴무').toList();
   }
 
-  // MapService 정리
-  void dispose() {
-    _buildingMarkers.clear();
-    _pathOverlayIds.clear();
-    _routeMarkerIds.clear();
-    _myLocationMarker = null;
-    _myLocationAccuracyCircle = null;
-    debugPrint('MapService 정리 완료');
-  }
-
   // map_service.dart의 drawPath 메서드를 다음과 같이 수정
   Future<void> drawPath(List<NLatLng> pathCoordinates) async {
     if (_mapController == null || pathCoordinates.isEmpty) return;
@@ -646,139 +698,157 @@ Future<void> updateMyLocation(NLatLng location, {bool shouldMoveCamera = false})
     }
   }
 
-// Context 없이 간단한 마커 추가
-Future<void> _addSimpleRouteMarkers(List<NLatLng> path) async {
-  if (path.length < 2) return;
-  
-  try {
-    final timestamp = DateTime.now().millisecondsSinceEpoch;
+  // Context 없이 간단한 마커 추가
+  Future<void> _addSimpleRouteMarkers(List<NLatLng> path) async {
+    if (path.length < 2) return;
     
-    // 출발점 마커
-    final startMarkerId = 'route_start_$timestamp';
-    final startMarker = NMarker(
-      id: startMarkerId,
-      position: path.first,
-      caption: NOverlayCaption(
-        text: '출발',
-        color: Colors.white,
-        haloColor: const Color(0xFF10B981),
-        textSize: 12,
-      ),
-    );
-    
-    // 도착점 마커
-    final endMarkerId = 'route_end_$timestamp';
-    final endMarker = NMarker(
-      id: endMarkerId,
-      position: path.last,
-      caption: NOverlayCaption(
-        text: '도착',
-        color: Colors.white,
-        haloColor: const Color(0xFFEF4444),
-        textSize: 12,
-      ),
-    );
-    
-    await _mapController!.addOverlay(startMarker);
-    await _mapController!.addOverlay(endMarker);
-    
-    _routeMarkerIds.add(startMarkerId);
-    _routeMarkerIds.add(endMarkerId);
-    
-  } catch (e) {
-    debugPrint('경로 마커 추가 오류: $e');
-  }
-}
-
-
-
-  /// 카메라를 경로에 맞춰 이동
-Future<void> moveCameraToPath(List<NLatLng> pathCoordinates) async {
-  debugPrint('[MapService] moveCameraToPath 호출 - 좌표 개수: ${pathCoordinates.length}');
-  if (_mapController == null) {
-    debugPrint('[MapService] moveCameraToPath: _mapController가 null입니다!');
-    return;
-  }
-  if (pathCoordinates.isEmpty) {
-    debugPrint('[MapService] moveCameraToPath: pathCoordinates가 비어 있습니다!');
-    return;
-  }
-
-  try {
-    if (pathCoordinates.length == 1) {
-      debugPrint('[MapService] moveCameraToPath: 단일 좌표 (${pathCoordinates.first.latitude}, ${pathCoordinates.first.longitude})');
-      await moveCamera(pathCoordinates.first, zoom: 16);
-    } else {
-      // 여러 좌표인 경우 경계 계산
-      double minLat = pathCoordinates.first.latitude;
-      double maxLat = pathCoordinates.first.latitude;
-      double minLng = pathCoordinates.first.longitude;
-      double maxLng = pathCoordinates.first.longitude;
-
-      for (final coord in pathCoordinates) {
-        minLat = min(minLat, coord.latitude);
-        maxLat = max(maxLat, coord.latitude);
-        minLng = min(minLng, coord.longitude);
-        maxLng = max(maxLng, coord.longitude);
-      }
-
-      debugPrint('[MapService] moveCameraToPath: 경계 - minLat: $minLat, maxLat: $maxLat, minLng: $minLng, maxLng: $maxLng');
-
-      // 경계에 여유 공간 추가
-      final latPadding = (maxLat - minLat) * 0.1;
-      final lngPadding = (maxLng - minLng) * 0.1;
-
-      final bounds = NLatLngBounds(
-        southWest: NLatLng(minLat - latPadding, minLng - lngPadding),
-        northEast: NLatLng(maxLat + latPadding, maxLng + lngPadding),
+    try {
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      
+      // 출발점 마커
+      final startMarkerId = 'route_start_$timestamp';
+      final startMarker = NMarker(
+        id: startMarkerId,
+        position: path.first,
+        caption: NOverlayCaption(
+          text: '출발',
+          color: Colors.white,
+          haloColor: const Color(0xFF10B981),
+          textSize: 12,
+        ),
       );
-
-      debugPrint('[MapService] moveCameraToPath: bounds - SW(${bounds.southWest.latitude}, ${bounds.southWest.longitude}), NE(${bounds.northEast.latitude}, ${bounds.northEast.longitude})');
-
-      await _mapController!.updateCamera(
-        NCameraUpdate.fitBounds(bounds, padding: const EdgeInsets.all(50)),
+      
+      // 도착점 마커
+      final endMarkerId = 'route_end_$timestamp';
+      final endMarker = NMarker(
+        id: endMarkerId,
+        position: path.last,
+        caption: NOverlayCaption(
+          text: '도착',
+          color: Colors.white,
+          haloColor: const Color(0xFFEF4444),
+          textSize: 12,
+        ),
       );
+      
+      await _mapController!.addOverlay(startMarker);
+      await _mapController!.addOverlay(endMarker);
+      
+      _routeMarkerIds.add(startMarkerId);
+      _routeMarkerIds.add(endMarkerId);
+      
+    } catch (e) {
+      debugPrint('경로 마커 추가 오류: $e');
+    }
+  }
+
+  /// 카메라를 경로에 맞춰 이동 (안전한 버전)
+  Future<void> moveCameraToPath(List<NLatLng> pathCoordinates) async {
+    debugPrint('[MapService] moveCameraToPath 호출 - 좌표 개수: ${pathCoordinates.length}');
+    if (_mapController == null) {
+      debugPrint('[MapService] moveCameraToPath: _mapController가 null입니다!');
+      return;
+    }
+    if (pathCoordinates.isEmpty) {
+      debugPrint('[MapService] moveCameraToPath: pathCoordinates가 비어 있습니다!');
+      return;
     }
 
-    debugPrint('[MapService] moveCameraToPath 완료: ${pathCoordinates.length}개 좌표');
-  } catch (e) {
-    debugPrint('[MapService] moveCameraToPath 오류: $e');
+    try {
+      if (pathCoordinates.length == 1) {
+        debugPrint('[MapService] moveCameraToPath: 단일 좌표 (${pathCoordinates.first.latitude}, ${pathCoordinates.first.longitude})');
+        await moveCamera(pathCoordinates.first, zoom: 16);
+      } else {
+        // 여러 좌표인 경우 경계 계산
+        double minLat = pathCoordinates.first.latitude;
+        double maxLat = pathCoordinates.first.latitude;
+        double minLng = pathCoordinates.first.longitude;
+        double maxLng = pathCoordinates.first.longitude;
+
+        for (final coord in pathCoordinates) {
+          minLat = min(minLat, coord.latitude);
+          maxLat = max(maxLat, coord.latitude);
+          minLng = min(minLng, coord.longitude);
+          maxLng = max(maxLng, coord.longitude);
+        }
+
+        debugPrint('[MapService] moveCameraToPath: 경계 - minLat: $minLat, maxLat: $maxLat, minLng: $minLng, maxLng: $maxLng');
+
+        // 경계에 여유 공간 추가
+        final latPadding = (maxLat - minLat) * 0.1;
+        final lngPadding = (maxLng - minLng) * 0.1;
+
+        final bounds = NLatLngBounds(
+          southWest: NLatLng(minLat - latPadding, minLng - lngPadding),
+          northEast: NLatLng(maxLat + latPadding, maxLng + lngPadding),
+        );
+
+        debugPrint('[MapService] moveCameraToPath: bounds - SW(${bounds.southWest.latitude}, ${bounds.southWest.longitude}), NE(${bounds.northEast.latitude}, ${bounds.northEast.longitude})');
+
+        // 지연을 두고 카메라 이동
+        _cameraDelayTimer?.cancel();
+        _cameraDelayTimer = Timer(const Duration(milliseconds: 500), () async {
+          try {
+            await _mapController!.updateCamera(
+              NCameraUpdate.fitBounds(bounds, padding: const EdgeInsets.all(50)),
+            ).timeout(const Duration(seconds: 5));
+            debugPrint('[MapService] moveCameraToPath 지연된 이동 완료');
+          } catch (e) {
+            debugPrint('[MapService] moveCameraToPath 지연된 이동 오류: $e');
+          }
+        });
+      }
+
+      debugPrint('[MapService] moveCameraToPath 설정 완료: ${pathCoordinates.length}개 좌표');
+    } catch (e) {
+      debugPrint('[MapService] moveCameraToPath 오류: $e');
+    }
   }
-}
 
   /// 경로 제거
-Future<void> clearPath() async {
-  if (_mapController == null) return;
-  
-  try {
-    // 폴리라인 오버레이 제거 (올바른 타입 사용)
-    for (final overlayId in _pathOverlayIds) {
-      try {
-        await _mapController!.deleteOverlay(NOverlayInfo(
-          type: NOverlayType.polylineOverlay, // pathOverlay 대신
-          id: overlayId,
-        ));
-      } catch (e) {
-        debugPrint('폴리라인 제거 오류 (무시): $overlayId - $e');
-      }
-    }
-    _pathOverlayIds.clear();
+  Future<void> clearPath() async {
+    if (_mapController == null) return;
     
-    // 마커 제거
-    for (final markerId in _routeMarkerIds) {
-      try {
-        await _mapController!.deleteOverlay(NOverlayInfo(
-          type: NOverlayType.marker,
-          id: markerId,
-        ));
-      } catch (e) {
-        debugPrint('경로 마커 제거 오류 (무시): $markerId - $e');
+    try {
+      // 폴리라인 오버레이 제거 (올바른 타입 사용)
+      for (final overlayId in _pathOverlayIds) {
+        try {
+          await _mapController!.deleteOverlay(NOverlayInfo(
+            type: NOverlayType.polylineOverlay, // pathOverlay 대신
+            id: overlayId,
+          ));
+        } catch (e) {
+          debugPrint('폴리라인 제거 오류 (무시): $overlayId - $e');
+        }
       }
+      _pathOverlayIds.clear();
+      
+      // 마커 제거
+      for (final markerId in _routeMarkerIds) {
+        try {
+          await _mapController!.deleteOverlay(NOverlayInfo(
+            type: NOverlayType.marker,
+            id: markerId,
+          ));
+        } catch (e) {
+          debugPrint('경로 마커 제거 오류 (무시): $markerId - $e');
+        }
+      }
+      _routeMarkerIds.clear();
+      
+    } catch (e) {
+      debugPrint('경로 제거 중 오류: $e');
     }
-    _routeMarkerIds.clear();
-    
-  } catch (e) {
-    debugPrint('경로 제거 중 오류: $e');
   }
-}  
+
+  // MapService 정리
+  void dispose() {      
+    _cameraDelayTimer?.cancel();
+    _buildingMarkers.clear();
+    _pathOverlayIds.clear();
+    _routeMarkerIds.clear();
+    _myLocationMarker = null;
+    _myLocationAccuracyCircle = null;
+    debugPrint('MapService 정리 완료');
+  }
 }
