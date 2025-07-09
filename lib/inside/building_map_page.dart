@@ -1,5 +1,3 @@
-// lib/building_map_page.dart (수정된 최종 코드)
-
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
@@ -8,10 +6,12 @@ import 'package:http/http.dart' as http;
 
 import 'api_service.dart';
 import 'svg_data_parser.dart';
-import 'room_info.dart';
 import 'room_info_sheet.dart';
 import 'room_shape_painter.dart';
 import 'path_painter.dart';
+import 'room_info.dart';
+
+
 
 class BuildingMapPage extends StatefulWidget {
   final String buildingName;
@@ -22,19 +22,16 @@ class BuildingMapPage extends StatefulWidget {
 }
 
 class _BuildingMapPageState extends State<BuildingMapPage> {
-  // --- 상태 변수 ---
   List<dynamic> _floorList = [];
   Map<String, dynamic>? _selectedFloor;
   String? _svgUrl;
   List<Map<String, dynamic>> _buttonData = [];
   Map<String, Offset> _navNodes = {};
 
-  // 길찾기 관련 상태
   Map<String, dynamic>? _startPoint;
   Map<String, dynamic>? _endPoint;
   List<Offset> _shortestPath = [];
 
-  // 로딩 및 에러 상태 관리
   bool _isFloorListLoading = true;
   bool _isMapLoading = false;
   String? _error;
@@ -132,7 +129,6 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
     _loadMapData(newFloor); 
   }
 
-  // [핵심 수정] 길찾기 API 호출 시 서버 요구사항에 맞춰 Room ID의 'R' 접두사 제거
   Future<void> _findAndDrawPath() async {
     if (_startPoint == null || _endPoint == null) return;
     
@@ -146,7 +142,6 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
     setState(() => _isMapLoading = true);
 
     try {
-      // 서버 API로 보낼 ID 가공: 'R' 접두사 제거
       String fromRoomId = _startPoint!['roomId'];
       if (fromRoomId.startsWith('R')) {
         fromRoomId = fromRoomId.substring(1);
@@ -160,10 +155,10 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
       final response = await _apiService.findPath(
         fromBuilding: widget.buildingName,
         fromFloor: _startPoint!['floorId'],
-        fromRoom: fromRoomId, // 'R'이 제거된 ID 사용
+        fromRoom: fromRoomId,
         toBuilding: widget.buildingName,
         toFloor: _endPoint!['floorId'],
-        toRoom: toRoomId, // 'R'이 제거된 ID 사용
+        toRoom: toRoomId,
       );
       
       if (response['type'] == 'room-room' && response['result']?['arrival_indoor']?['path']?['path'] != null) {
@@ -186,17 +181,26 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
     }
   }
 
+  /// [수정] 방 클릭 시 서버에서 설명 받아오기
   void _showRoomInfoSheet(BuildContext context, String roomId) async {
-    final roomInfo = roomInfos[roomId];
-    if (roomInfo == null) return;
-
     setState(() => _selectedRoomId = roomId);
+
+    String roomDesc = '';
+    try {
+      roomDesc = await _apiService.fetchRoomDescription(
+        buildingName: widget.buildingName,
+        floorNumber: _selectedFloor?['Floor_Number'],
+        roomName: roomId,
+      );
+    } catch (e) {
+      roomDesc = '설명을 불러오지 못했습니다.';
+    }
 
     await showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (context) => RoomInfoSheet(
-        roomInfo: roomInfo,
+        roomInfo: RoomInfo(id: roomId, name: roomId, desc: roomDesc),
         onDeparture: () {
           setState(() => _startPoint = {"floorId": _selectedFloor?['Floor_Id'], "roomId": roomId});
           if (_endPoint != null) _findAndDrawPath();
