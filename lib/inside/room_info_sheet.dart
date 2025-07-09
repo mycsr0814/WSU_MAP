@@ -24,36 +24,58 @@ class RoomInfoSheet extends StatelessWidget {
       ),
       padding: const EdgeInsets.all(24),
       child: Column(
-        mainAxisSize: MainAxisSize.min, // 내용만큼만 높이
+        mainAxisSize: MainAxisSize.min,
         children: [
-          // 방 이름(예: 401)
+          // 방 이름
           Text(
             roomInfo.name,
             style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
-          // 방 설명(서버에서 받아온 값)
+          // 방 설명
           Text(
             roomInfo.desc,
             style: const TextStyle(fontSize: 16),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 20),
-          // 출발지/도착지 버튼 (각 콜백이 있을 때만 표시)
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
+              // 출발지 버튼
               if (onDeparture != null)
-                ElevatedButton.icon(
-                  icon: const Icon(Icons.flag),
-                  label: const Text("출발지로"),
-                  onPressed: onDeparture,
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: onDeparture,
+                    icon: const Icon(Icons.play_arrow, size: 18),
+                    label: const Text('출발지'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFF10B981),
+                      side: const BorderSide(color: Color(0xFF10B981)),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
                 ),
+              if (onDeparture != null && onArrival != null)
+                const SizedBox(width: 8),
+              // 도착지 버튼
               if (onArrival != null)
-                ElevatedButton.icon(
-                  icon: const Icon(Icons.location_on),
-                  label: const Text("도착지로"),
-                  onPressed: onArrival,
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: onArrival,
+                    icon: const Icon(Icons.flag, size: 18),
+                    label: const Text('도착지'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFFEF4444),
+                      side: const BorderSide(color: Color(0xFFEF4444)),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
                 ),
             ],
           ),

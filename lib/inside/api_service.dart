@@ -76,7 +76,6 @@ class ApiService {
     final response = await http.get(
       Uri.parse('$_baseUrl/room/desc/${Uri.encodeComponent(buildingName)}/$floorNumber/${Uri.encodeComponent(roomName)}')
     );
-    print('fuckyou'); // (디버깅용 로그, 실제 서비스에서는 삭제 권장)
     if (response.statusCode == 200) {
       // 서버 응답에서 Room_Description 추출
       final data = json.decode(utf8.decode(response.bodyBytes));

@@ -371,7 +371,7 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
         child: Column(
-          children: _floorList.map((floor) {
+          children: _floorList.reversed.map((floor) {
             final bool isSelected = _selectedFloor?['Floor_Id'] == floor['Floor_Id'];
             return GestureDetector(
               onTap: () => _onFloorChanged(floor),
