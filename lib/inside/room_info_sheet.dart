@@ -44,11 +44,11 @@ class RoomInfoSheet extends StatelessWidget {
               // 출발지 버튼
               if (onDeparture != null)
                 Expanded(
-                  child: OutlinedButton.icon(
+                  child: ElevatedButton.icon(
                     onPressed: onDeparture,
                     icon: const Icon(Icons.play_arrow, size: 18),
                     label: const Text('출발지'),
-                    style: OutlinedButton.styleFrom(
+                    style: ElevatedButton.styleFrom(
                       foregroundColor: const Color(0xFF10B981),
                       side: const BorderSide(color: Color(0xFF10B981)),
                       padding: const EdgeInsets.symmetric(vertical: 12),
@@ -63,11 +63,11 @@ class RoomInfoSheet extends StatelessWidget {
               // 도착지 버튼
               if (onArrival != null)
                 Expanded(
-                  child: OutlinedButton.icon(
+                  child: ElevatedButton.icon(
                     onPressed: onArrival,
                     icon: const Icon(Icons.flag, size: 18),
                     label: const Text('도착지'),
-                    style: OutlinedButton.styleFrom(
+                    style: ElevatedButton.styleFrom(
                       foregroundColor: const Color(0xFFEF4444),
                       side: const BorderSide(color: Color(0xFFEF4444)),
                       padding: const EdgeInsets.symmetric(vertical: 12),
