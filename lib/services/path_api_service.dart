@@ -7,7 +7,7 @@ import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:flutter_application_1/models/building.dart';
 
 class PathApiService {
-  static const String baseUrl = 'http://13.55.76.216:3000';
+  static const String baseUrl = 'http://3.106.229.163:3000';
 
   /// MapController에서 사용하는 메인 메서드 (Building 간 경로)
   static Future<List<NLatLng>> getRoute(Building startBuilding, Building endBuilding) async {

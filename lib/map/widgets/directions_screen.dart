@@ -1,10 +1,11 @@
-// lib/map/widgets/directions_screen.dart - 수정된 길찾기 화면
+// lib/map/widgets/directions_screen.dart - 길찾기 화면 (네비게이션 상태 추가)
 
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/models/building.dart';
 import 'package:flutter_application_1/map/building_data.dart';
 import 'package:flutter_application_1/managers/location_manager.dart';
 import 'package:provider/provider.dart';
+import 'dart:math' as math;
 
 class DirectionsScreen extends StatefulWidget {
   // preset 매개변수 추가
@@ -30,6 +31,11 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
   bool _isSearching = false;
   String? _searchType; // 'start' or 'end'
   List<Building> _recentSearches = [];
+  
+  // 네비게이션 상태 관련
+  bool _isNavigationActive = false;
+  String _estimatedDistance = '';
+  String _estimatedTime = '';
 
 @override
 void initState() {
@@ -41,18 +47,18 @@ void initState() {
   
   // 건물 객체 검증
   if (_startBuilding != null) {
-    print('PresetStart 건물: ${_startBuilding!.name}');
-    print('좌표: ${_startBuilding!.lat}, ${_startBuilding!.lng}');
+    debugPrint('PresetStart 건물: ${_startBuilding!.name}');
+    debugPrint('좌표: ${_startBuilding!.lat}, ${_startBuilding!.lng}');
     
     // 좌표가 유효한지 확인
     if (_startBuilding!.lat == 0.0 && _startBuilding!.lng == 0.0) {
-      print('경고: 출발지 좌표가 (0,0)입니다');
+      debugPrint('경고: 출발지 좌표가 (0,0)입니다');
     }
   }
   
   if (_endBuilding != null) {
-    print('PresetEnd 건물: ${_endBuilding!.name}');
-    print('좌표: ${_endBuilding!.lat}, ${_endBuilding!.lng}');
+    debugPrint('PresetEnd 건물: ${_endBuilding!.name}');
+    debugPrint('좌표: ${_endBuilding!.lat}, ${_endBuilding!.lng}');
   }
   
   _recentSearches = [];
@@ -185,23 +191,93 @@ void initState() {
     }
   }
 
-  void _startNavigation() {
+  // 거리 계산 함수 (Haversine 공식)
+  double _calculateDistance(double lat1, double lon1, double lat2, double lon2) {
+    const double earthRadius = 6371000; // 지구 반지름 (미터)
+    
+    double dLat = (lat2 - lat1) * (math.pi / 180);
+    double dLon = (lon2 - lon1) * (math.pi / 180);
+    
+    double a = math.sin(dLat / 2) * math.sin(dLat / 2) +
+        math.cos(lat1 * (math.pi / 180)) * math.cos(lat2 * (math.pi / 180)) *
+        math.sin(dLon / 2) * math.sin(dLon / 2);
+    
+    double c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a));
+    
+    return earthRadius * c; // 미터 단위
+  }
+
+  // 예상 시간과 거리 계산
+  void _calculateRouteEstimates() {
     if (_startBuilding != null && _endBuilding != null) {
-      if (_startBuilding!.name == '내 위치') {
-        Navigator.pop(context, {
-          'start': null,
-          'end': _endBuilding,
-          'useCurrentLocation': true,
-        });
+      double distance = _calculateDistance(
+        _startBuilding!.lat,
+        _startBuilding!.lng,
+        _endBuilding!.lat,
+        _endBuilding!.lng,
+      );
+      
+      // 거리 포맷팅
+      if (distance < 1000) {
+        _estimatedDistance = '${distance.round()}m';
       } else {
-        Navigator.pop(context, {
-          'start': _startBuilding,
-          'end': _endBuilding,
-          'useCurrentLocation': false,
-        });
+        _estimatedDistance = '${(distance / 1000).toStringAsFixed(1)}km';
+      }
+      
+      // 예상 시간 계산 (평균 도보 속도 4km/h 기준)
+      double walkingSpeedKmh = 4.0;
+      double timeInHours = distance / 1000 / walkingSpeedKmh;
+      int timeInMinutes = (timeInHours * 60).round();
+      
+      if (timeInMinutes < 60) {
+        _estimatedTime = '도보 ${timeInMinutes}분';
+      } else {
+        int hours = timeInMinutes ~/ 60;
+        int minutes = timeInMinutes % 60;
+        _estimatedTime = '도보 ${hours}시간 ${minutes}분';
       }
     }
   }
+
+void _startNavigation() {
+  print('=== 경로 안내 시작 디버깅 ===');
+  print('출발지: ${_startBuilding?.name}');
+  print('출발지 좌표: ${_startBuilding?.lat}, ${_startBuilding?.lng}');
+  print('도착지: ${_endBuilding?.name}');
+  print('도착지 좌표: ${_endBuilding?.lat}, ${_endBuilding?.lng}');
+  
+  if (_startBuilding != null && _endBuilding != null) {
+    // 예상 시간과 거리 계산
+    _calculateRouteEstimates();
+    
+    // 바로 map_screen으로 데이터 전달하고 DirectionsScreen 닫기
+    final navigationData = {
+      'start': _startBuilding!.name == '내 위치' ? null : _startBuilding,
+      'end': _endBuilding,
+      'useCurrentLocation': _startBuilding!.name == '내 위치',
+      'estimatedDistance': _estimatedDistance,
+      'estimatedTime': _estimatedTime,
+      'showNavigationStatus': true, // 네비게이션 상태 표시 플래그
+    };
+    
+    print('map_screen으로 전달할 데이터: $navigationData');
+    
+    // 데이터 반환하고 DirectionsScreen 닫기
+    Navigator.pop(context, navigationData);
+  } else {
+    print('출발지 또는 도착지가 null입니다');
+    print('_startBuilding null 여부: ${_startBuilding == null}');
+    print('_endBuilding null 여부: ${_endBuilding == null}');
+    
+    // 오류 메시지 표시
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('출발지와 도착지를 모두 설정해주세요'),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+}
 
   void _cancelSearch() {
     setState(() {
@@ -211,6 +287,22 @@ void initState() {
       _searchController.clear();
     });
     _focusNode.unfocus();
+  }
+
+  void _stopNavigation() {
+    setState(() {
+      _isNavigationActive = false;
+      _estimatedDistance = '';
+      _estimatedTime = '';
+    });
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('길찾기가 종료되었습니다'),
+        backgroundColor: Colors.grey,
+        duration: Duration(seconds: 2),
+      ),
+    );
   }
 
   @override
@@ -284,14 +376,20 @@ void initState() {
           onPressed: () => Navigator.pop(context),
           icon: const Icon(Icons.arrow_back, color: Colors.black87),
         ),
-        title: const Text(
-          '길찾기',
-          style: TextStyle(
+        title: Text(
+          _isNavigationActive ? '길찾기 진행중' : '길찾기',
+          style: const TextStyle(
             color: Colors.black87,
             fontSize: 18,
             fontWeight: FontWeight.w600,
           ),
         ),
+        actions: _isNavigationActive ? [
+          IconButton(
+            onPressed: _stopNavigation,
+            icon: const Icon(Icons.close, color: Colors.black87),
+          ),
+        ] : null,
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
           child: Container(
@@ -573,39 +671,51 @@ void initState() {
             
             const Spacer(),
             
-            // 안내 메시지
-            Container(
-              margin: const EdgeInsets.all(16),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey.shade200),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.info_outline,
-                    color: Colors.grey.shade600,
-                    size: 20,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      '출발지와 도착지를 설정해주세요',
-                      style: TextStyle(
-                        color: Colors.grey.shade600,
-                        fontSize: 14,
+            // 안내 메시지 (네비게이션이 활성화되지 않은 경우에만 표시)
+            if (!_isNavigationActive) ...[
+              Container(
+                margin: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey.shade200),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.info_outline,
+                      color: Colors.grey.shade600,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        '출발지와 도착지를 설정해주세요',
+                        style: TextStyle(
+                          color: Colors.grey.shade600,
+                          fontSize: 14,
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
+            ],
             
-            SizedBox(height: MediaQuery.of(context).padding.bottom + 80),
+            SizedBox(height: MediaQuery.of(context).padding.bottom + (_isNavigationActive ? 160 : 80)),
           ],
         ),
+        
+        // 네비게이션 상태 표시 (활성화된 경우)
+        if (_isNavigationActive) ...[
+          Positioned(
+            left: 16,
+            right: 16,
+            bottom: MediaQuery.of(context).padding.bottom + 80,
+            child: _buildNavigationStatus(),
+          ),
+        ],
         
         // 하단 고정 버튼
         Positioned(
@@ -639,7 +749,7 @@ void initState() {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  '길찾기 시작',
+                  _isNavigationActive ? '길 안내' : '길찾기 시작',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -650,6 +760,72 @@ void initState() {
                 ),
               ],
             ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // 네비게이션 상태 표시 위젯
+  Widget _buildNavigationStatus() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 4),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF1E3A8A), Color(0xFF3B82F6)],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF1E3A8A).withOpacity(0.3),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          _buildInfoItem(Icons.straighten, '예상 거리', _estimatedDistance.isNotEmpty ? _estimatedDistance : '계산중'),
+          Container(
+            width: 1,
+            height: 30,
+            color: Colors.white.withOpacity(0.2),
+          ),
+          _buildInfoItem(Icons.access_time, '예상 시간', _estimatedTime.isNotEmpty ? _estimatedTime : '계산중'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoItem(IconData icon, String label, String value) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(
+          icon,
+          color: Colors.white,
+          size: 20,
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: const TextStyle(
+            color: Colors.white70,
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          value,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
           ),
         ),
       ],

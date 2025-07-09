@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
 class AuthService {
-  static const String baseUrl = 'http://13.55.76.216:3001/user';
+  static const String baseUrl = 'http://3.106.229.163:3001/user';
   
   /// 회원가입 API 호출
   static Future<AuthResult> register({

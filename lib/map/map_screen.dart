@@ -1,7 +1,8 @@
-// lib/map/map_screen.dart - 수정된 지도 화면
+// lib/map/map_screen.dart - 네비게이션 상태 UI가 포함된 지도 화면
 
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/friends/friends_screen.dart';
+import 'package:flutter_application_1/models/building.dart';
 import 'package:flutter_application_1/timetable/timetable_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_application_1/map/widgets/map_view.dart';
@@ -34,6 +35,13 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
   // 🔥 중복 요청 방지를 위한 플래그들 추가
   bool _isRequestingLocation = false;
   bool _isInitializing = false;
+  
+  // 🔥 네비게이션 상태 관련 변수들 추가
+  bool _showNavigationStatus = false;
+  String _estimatedDistance = '';
+  String _estimatedTime = '';
+  Building? _navigationStart;
+  Building? _navigationEnd;
 
   @override
   void initState() {
@@ -50,8 +58,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     super.dispose();
   }
   
-
- // 🔥 안전한 위치 권한 체크 및 요청
+  // 🔥 안전한 위치 권한 체크 및 요청
   Future<void> _checkAndRequestLocation() async {
     if (_isRequestingLocation) {
       debugPrint('⚠️ 이미 위치 요청 중입니다.');
@@ -93,35 +100,34 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
   }
 
   Future<void> _initializeController() async {
-  if (_isInitializing) return;
+    if (_isInitializing) return;
 
-  try {
-    _isInitializing = true;
-    debugPrint('🚀 MapScreen 초기화 시작...');
+    try {
+      _isInitializing = true;
+      debugPrint('🚀 MapScreen 초기화 시작...');
 
-    final locationManager = Provider.of<LocationManager>(context, listen: false);
-    _controller.setLocationManager(locationManager);
+      final locationManager = Provider.of<LocationManager>(context, listen: false);
+      _controller.setLocationManager(locationManager);
 
-    // 여기서 콜백 연결!
-    locationManager.onLocationFound = (loc.LocationData locationData) {
-      // 필요하다면 중복 이동 방지 플래그도 사용
-      if (!_hasTriedAutoMove) {
-        _controller.moveToMyLocation();
-        _hasTriedAutoMove = true;
-      }
-    };
+      // 여기서 콜백 연결!
+      locationManager.onLocationFound = (loc.LocationData locationData) {
+        // 필요하다면 중복 이동 방지 플래그도 사용
+        if (!_hasTriedAutoMove) {
+          _controller.moveToMyLocation();
+          _hasTriedAutoMove = true;
+        }
+      };
 
-    await _controller.initialize();
-    _requestInitialLocationSafely(locationManager);
+      await _controller.initialize();
+      _requestInitialLocationSafely(locationManager);
 
-    debugPrint('✅ MapScreen 초기화 완료');
-  } catch (e) {
-    debugPrint('❌ MapScreen 초기화 오류: $e');
-  } finally {
-    _isInitializing = false;
+      debugPrint('✅ MapScreen 초기화 완료');
+    } catch (e) {
+      debugPrint('❌ MapScreen 초기화 오류: $e');
+    } finally {
+      _isInitializing = false;
+    }
   }
-}
-
 
   /// 🔥 안전한 초기 위치 요청 (Future already completed 오류 방지)
   Future<void> _requestInitialLocationSafely(LocationManager locationManager) async {
@@ -185,7 +191,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
   }
 
   /// 지도와 위치가 모두 준비되면 자동 이동
-void _checkAndAutoMove() {
+  void _checkAndAutoMove() {
     debugPrint('🎯 자동 이동 조건 체크...');
     debugPrint('_isMapReady: $_isMapReady');
     debugPrint('_hasFoundInitialLocation: $_hasFoundInitialLocation');
@@ -255,7 +261,6 @@ void _checkAndAutoMove() {
               ],
             ),
             bottomNavigationBar: _buildBottomNavigationBar(),
-            // 🔥 FloatingActionButton 수정 - 안전한 위치 요청 사용
             floatingActionButton: null,
           );
         },
@@ -263,7 +268,7 @@ void _checkAndAutoMove() {
     );
   }
 
-   Widget _buildMapScreen(MapScreenController controller) {
+  Widget _buildMapScreen(MapScreenController controller) {
     if (controller.selectedBuilding != null &&
         !_infoWindowController.isShowing &&
         mounted) {
@@ -303,14 +308,20 @@ void _checkAndAutoMove() {
           ),
         ),
 
-// 🔥 경로 초기화 버튼 표시 조건 수정
-if (controller.hasActiveRoute)
+        // 🔥 네비게이션 상태 표시 (활성화된 경우) - 네비게이션 바 진짜 바로 위로
+        if (_showNavigationStatus) ...[
           Positioned(
-            top: MediaQuery.of(context).padding.top + 110,
-            left: 16,
-            right: 16,
-            child: _buildNavigationStatus(controller),
+            left: 0,
+            right: 0,
+            bottom: 65, // 네비게이션 바 높이와 정확히 맞춤
+            child: Center(
+              child: Container(
+                width: MediaQuery.of(context).size.width * 0.7, // 전체 너비의 70%로 축소
+                child: _buildNavigationStatusCard(),
+              ),
+            ),
           ),
+        ],
 
         if (controller.isLoading &&
             controller.startBuilding != null &&
@@ -319,8 +330,9 @@ if (controller.hasActiveRoute)
 
         if (controller.hasLocationPermissionError)
           _buildLocationError(),
-// 🔥 경로 초기화 버튼 표시 조건 수정
-if (controller.hasActiveRoute)
+
+        // 경로 초기화 버튼 - 네비게이션 상태가 있을 때만 표시하고 우측에만 표시
+        if (controller.hasActiveRoute && !_showNavigationStatus)
           Positioned(
             left: 16,
             right: 100,
@@ -330,18 +342,9 @@ if (controller.hasActiveRoute)
 
         Positioned(
           right: 16,
-          bottom: 75,
+          bottom: _showNavigationStatus ? 200 : 75, // 네비게이션 상태가 있으면 위로, 없으면 네비게이션바 바로 위
           child: _buildRightControls(controller),
         ),
-
-// 🔥 경로 초기화 버튼 표시 조건 수정
-if (controller.hasActiveRoute)
-          Positioned(
-            top: MediaQuery.of(context).padding.top + 160,
-            left: 16,
-            right: 16,
-            child: _buildRouteStatus(controller),
-          ),
 
         _buildBuildingInfoWindow(controller),
       ],
@@ -349,7 +352,7 @@ if (controller.hasActiveRoute)
   }
 
   /// 초기 위치 로딩 인디케이터
-Widget _buildInitialLocationLoading() {
+  Widget _buildInitialLocationLoading() {
     final l10n = AppLocalizations.of(context)!;
     return Positioned(
       top: MediaQuery.of(context).padding.top + 120,
@@ -396,31 +399,28 @@ Widget _buildInitialLocationLoading() {
   }
 
   // 우측 컨트롤 버튼들 - 내 위치 버튼 색상 수정
-Widget _buildRightControls(MapScreenController controller) {
-  return Consumer<LocationManager>(
-    builder: (context, locationManager, child) {
-      return Column(
-        mainAxisSize: MainAxisSize.min,
-       children: [
-  _buildCompactControlButton(
-    onPressed: () => _controller.toggleBuildingMarkers(),
-    icon: controller.buildingMarkersVisible ? Icons.location_on : Icons.location_off,
-    color: controller.buildingMarkersVisible
-        ? const Color(0xFF1E3A8A)
-        : Colors.grey.shade500,
-  ),
-  const SizedBox(height: 12),
-  _buildMyLocationButton(locationManager),
-],
+  Widget _buildRightControls(MapScreenController controller) {
+    return Consumer<LocationManager>(
+      builder: (context, locationManager, child) {
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildCompactControlButton(
+              onPressed: () => _controller.toggleBuildingMarkers(),
+              icon: controller.buildingMarkersVisible ? Icons.location_on : Icons.location_off,
+              color: controller.buildingMarkersVisible
+                  ? const Color(0xFF1E3A8A)
+                  : Colors.grey.shade500,
+            ),
+            const SizedBox(height: 12),
+            _buildMyLocationButton(locationManager),
+          ],
+        );
+      },
+    );
+  }
 
-      );
-    },
-  );
-}
-
-
-
-   /// 🔥 안전한 내 위치로 이동
+  /// 🔥 안전한 내 위치로 이동
   Future<void> _moveToMyLocationSafely() async {
     if (_isRequestingLocation) {
       debugPrint('⚠️ 이미 위치 요청 중입니다.');
@@ -479,7 +479,7 @@ Widget _buildRightControls(MapScreenController controller) {
     }
   }
 
-   // 🔥 내 위치 버튼 수정 - 안전한 위치 요청 사용
+  // 🔥 내 위치 버튼 수정 - 안전한 위치 요청 사용
   Widget _buildMyLocationButton(LocationManager locationManager) {
     final bool isLoading = _isRequestingLocation || locationManager.isRequestingLocation;
     final bool hasLocation = locationManager.hasValidLocation;
@@ -678,67 +678,258 @@ Widget _buildRightControls(MapScreenController controller) {
     );
   }
 
-
-
-  Widget _buildNavigationStatus(MapScreenController controller) {
-    final l10n = AppLocalizations.of(context)!;
+  // 🔥 네비게이션 상태 카드 위젯 - 크기 축소 및 컴팩트하게 수정
+  Widget _buildNavigationStatusCard() {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 4),
-      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.symmetric(horizontal: 8),
+      padding: const EdgeInsets.all(12), // 패딩 축소
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [Color(0xFF1E3A8A), Color(0xFF3B82F6)],
         ),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16), // 둥글기 축소
         boxShadow: [
           BoxShadow(
             color: const Color(0xFF1E3A8A).withOpacity(0.3),
-            blurRadius: 15,
-            offset: const Offset(0, 8),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
+      child: Column(
+        mainAxisSize: MainAxisSize.min, // 필요한 최소 크기만 사용
         children: [
-          _buildInfoItem(Icons.straighten, l10n.estimated_distance, l10n.calculating),
-          Container(
-            width: 1,
-            height: 30,
-            color: Colors.white.withOpacity(0.2),
+          // 예상 시간과 거리 표시 - 더 컴팩트하게
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildCompactInfoItem(Icons.straighten, '거리', _estimatedDistance.isNotEmpty ? _estimatedDistance : '계산중'),
+              Container(
+                width: 1,
+                height: 24, // 높이 축소
+                color: Colors.white.withOpacity(0.2),
+              ),
+              _buildCompactInfoItem(Icons.access_time, '시간', _estimatedTime.isNotEmpty ? _estimatedTime : '계산중'),
+            ],
           ),
-          _buildInfoItem(Icons.access_time, l10n.estimated_time, l10n.calculating),
+          
+          const SizedBox(height: 12), // 간격 축소
+          
+          // 길 안내 시작 버튼과 경로 초기화 버튼을 나란히 배치
+          Row(
+            children: [
+              // 길 안내 시작 버튼 (50%)
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () {
+                    // 실제 길 안내 시작
+                    _startActualNavigation();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF10B981),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 8), // 패딩 축소
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8), // 둥글기 축소
+                    ),
+                    elevation: 2,
+                  ),
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.navigation, size: 14), // 아이콘 크기 축소
+                      SizedBox(width: 4),
+                      Text(
+                        '길 안내',
+                        style: TextStyle(
+                          fontSize: 12, // 폰트 크기 축소
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              
+              const SizedBox(width: 8),
+              
+              // 경로 초기화 버튼 (50%)
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () {
+                    _controller.clearNavigation();
+                    // 네비게이션 상태도 함께 초기화
+                    setState(() {
+                      _showNavigationStatus = false;
+                      _estimatedDistance = '';
+                      _estimatedTime = '';
+                      _navigationStart = null;
+                      _navigationEnd = null;
+                    });
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFEF4444),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 8), // 패딩 축소
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8), // 둥글기 축소
+                    ),
+                    elevation: 2,
+                  ),
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.clear, size: 14), // 아이콘 크기 축소
+                      SizedBox(width: 4),
+                      Text(
+                        '초기화',
+                        style: TextStyle(
+                          fontSize: 12, // 폰트 크기 축소
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
   }
 
+  // 컴팩트한 정보 아이템 위젯
+  Widget _buildCompactInfoItem(IconData icon, String label, String value) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(
+          icon,
+          color: Colors.white,
+          size: 16, // 아이콘 크기 축소
+        ),
+        const SizedBox(height: 2),
+        Text(
+          label,
+          style: const TextStyle(
+            color: Colors.white70,
+            fontSize: 10, // 폰트 크기 축소
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(height: 1),
+        Text(
+          value,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 12, // 폰트 크기 축소
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildInfoItem(IconData icon, String label, String value) {
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 16, color: Colors.white.withOpacity(0.8)),
+        Icon(
+          icon,
+          color: Colors.white,
+          size: 20,
+        ),
         const SizedBox(height: 4),
         Text(
           label,
-          style: TextStyle(
-            fontSize: 11,
+          style: const TextStyle(
+            color: Colors.white70,
+            fontSize: 12,
             fontWeight: FontWeight.w500,
-            color: Colors.white.withOpacity(0.7),
           ),
         ),
         const SizedBox(height: 2),
         Text(
           value,
           style: const TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
             color: Colors.white,
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
           ),
         ),
       ],
     );
+  }
+
+  // 🔥 실제 길 안내 시작 메서드 - 이때 경로를 표시하고 UI는 유지
+  void _startActualNavigation() {
+    if (_navigationEnd == null) {
+      debugPrint('도착지가 설정되지 않았습니다');
+      return;
+    }
+    
+    debugPrint('🚀 길 안내 시작 - 경로 표시!');
+    debugPrint('출발지: ${_navigationStart?.name ?? "현재 위치"}');
+    debugPrint('도착지: ${_navigationEnd!.name}');
+    
+    // 🔥 이제 실제로 경로를 표시
+    try {
+      if (_navigationStart == null) {
+        // 현재 위치에서 출발
+        debugPrint('현재 위치에서 ${_navigationEnd!.name}까지 경로 표시');
+        _controller.navigateFromCurrentLocation(_navigationEnd!);
+      } else {
+        // 특정 건물에서 출발
+        debugPrint('${_navigationStart!.name}에서 ${_navigationEnd!.name}까지 경로 표시');
+        _controller.setStartBuilding(_navigationStart!);
+        _controller.setEndBuilding(_navigationEnd!);
+        _controller.calculateRoute();
+      }
+      
+      // 네비게이션 상태는 유지 (UI 그대로 둠)
+      
+      // 성공 알림 표시
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.navigation, color: Colors.white, size: 20),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    _navigationStart == null 
+                      ? '${_navigationEnd!.name}까지 경로가 표시되었습니다'
+                      : '${_navigationStart!.name}에서 ${_navigationEnd!.name}까지 경로가 표시되었습니다',
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: const Color(0xFF10B981),
+            duration: const Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.all(16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('❌ 경로 표시 실패: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('경로 표시에 실패했습니다. 다시 시도해주세요.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   Widget _buildRouteLoadingIndicator() {
@@ -794,89 +985,6 @@ Widget _buildRightControls(MapScreenController controller) {
     );
   }
 
-  Widget _buildRouteStatus(MapScreenController controller) {
-    final l10n = AppLocalizations.of(context)!;
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 4),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          if (controller.startBuilding != null)
-            _buildRouteStatusItem(
-              l10n.departure,
-              controller.startBuilding!.name,
-              const Color(0xFF10B981),
-              Icons.play_arrow,
-            ),
-          if (controller.startBuilding != null && controller.endBuilding != null)
-            Container(
-              margin: const EdgeInsets.symmetric(vertical: 8),
-              height: 1,
-              color: Colors.grey.shade200,
-            ),
-          if (controller.endBuilding != null)
-            _buildRouteStatusItem(
-              l10n.destination,
-              controller.endBuilding!.name,
-              const Color(0xFFEF4444),
-              Icons.flag,
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildRouteStatusItem(String label, String buildingName, Color color, IconData icon) {
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(6),
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Icon(icon, size: 16, color: color),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 11,
-                  color: Colors.grey[600],
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              Text(
-                buildingName,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.black87,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _buildClearNavigationButton(MapScreenController controller) {
     final l10n = AppLocalizations.of(context)!;
     return Center(
@@ -885,7 +993,17 @@ Widget _buildRightControls(MapScreenController controller) {
         child: Material(
           color: Colors.transparent,
           child: InkWell(
-            onTap: () => _controller.clearNavigation(),
+            onTap: () {
+              _controller.clearNavigation();
+              // 네비게이션 상태도 함께 초기화
+              setState(() {
+                _showNavigationStatus = false;
+                _estimatedDistance = '';
+                _estimatedTime = '';
+                _navigationStart = null;
+                _navigationEnd = null;
+              });
+            },
             borderRadius: BorderRadius.circular(25),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -930,7 +1048,6 @@ Widget _buildRightControls(MapScreenController controller) {
     );
   }
 
- // 4. 기존 _buildLocationError() 메서드를 아래 내용으로 완전히 교체
   Widget _buildLocationError() {
     final l10n = AppLocalizations.of(context)!;
     
@@ -1015,123 +1132,113 @@ Widget _buildRightControls(MapScreenController controller) {
     );
   }
 
-Widget _buildBuildingInfoWindow(MapScreenController controller) {
-  final l10n = AppLocalizations.of(context)!;
-  return OverlayPortal(
-    controller: _infoWindowController,
-    overlayChildBuilder: (context) {
-      if (controller.selectedBuilding == null) {
-        return const SizedBox.shrink();
-      }
+  Widget _buildBuildingInfoWindow(MapScreenController controller) {
+    final l10n = AppLocalizations.of(context)!;
+    
+    return OverlayPortal(
+      controller: _infoWindowController,
+      overlayChildBuilder: (context) {
+        if (controller.selectedBuilding == null) {
+          return const SizedBox.shrink();
+        }
 
-      return BuildingInfoWindow(
-        building: controller.selectedBuilding!,
-        onClose: () => controller.closeInfoWindow(_infoWindowController),
-        onShowDetails: (building) => BuildingDetailSheet.show(context, building),
-        // 내부도면보기 콜백
-        onShowFloorPlan: (building) {
-          // FloorPlanDialog.show(context, building); // 필요시 구현
-        },
-        onSetStart: (building) async {
-          _controller.setStartBuilding(building);
-          _infoWindowController.hide();
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(l10n.set_as_departure(building.name)),
-                backgroundColor: const Color(0xFF10B981),
-                duration: const Duration(seconds: 2),
-              ),
-            );
-            // 도착지도 설정되어 있으면 자동으로 경로 계산
-            if (controller.endBuilding != null) {
-              await _controller.calculateRoute();
-            }
-          }
-        },
-        // 🔥 핵심 수정: onSetEnd 콜백 로직 변경
-        onSetEnd: (building) async {
-          _infoWindowController.hide();
-          
-          if (mounted) {
-            // 🔥 출발지가 설정되어 있으면 출발지-도착지 경로 계산
-            if (controller.startBuilding != null) {
-              debugPrint('🏢 출발지-도착지 경로: ${controller.startBuilding!.name} → ${building.name}');
-              
-              _controller.setEndBuilding(building);
-              
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(l10n.set_as_destination(building.name)),
-                  backgroundColor: const Color(0xFFEF4444),
-                  duration: const Duration(seconds: 2),
-                ),
-              );
-              
-              // 출발지-도착지 경로 계산
-              await _controller.calculateRoute();
-              
+        return BuildingInfoWindow(
+          building: controller.selectedBuilding!,
+          onClose: () => controller.closeInfoWindow(_infoWindowController),
+          onShowDetails: (building) => BuildingDetailSheet.show(context, building),
+          onShowFloorPlan: (building) {
+            // FloorPlanDialog.show(context, building);
+          },
+          onSetStart: (result) {
+            // DirectionsScreen에서 반환된 결과를 Map으로 캐스팅
+            if (result is Map<String, dynamic>) {
+              print('길찾기 결과 받음 (출발지): $result');
+              _handleDirectionsResult(result);
             } else {
-              // 🔥 출발지가 없으면 현재 위치에서 길찾기 실행
-              debugPrint('📍 현재 위치에서 길찾기: 내 위치 → ${building.name}');
-              
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Row(
-                    children: [
-                      const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(
-                          color: Colors.white,
-                          strokeWidth: 2,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Text(l10n.finding_route_to_building(building.name)),
-                    ],
+              print('잘못된 결과 타입: $result');
+            }
+          },
+          onSetEnd: (result) {
+            // DirectionsScreen에서 반환된 결과를 Map으로 캐스팅
+            if (result is Map<String, dynamic>) {
+              print('길찾기 결과 받음 (도착지): $result');
+              _handleDirectionsResult(result);
+            } else {
+              print('잘못된 결과 타입: $result');
+            }
+          },
+        );
+      },
+    );
+  }
+
+  // 길찾기 결과 처리 메서드
+  void _handleDirectionsResult(Map<String, dynamic> result) {
+    final startBuilding = result['start'] as Building?;
+    final endBuilding = result['end'] as Building?;
+    final useCurrentLocation = result['useCurrentLocation'] as bool? ?? false;
+    final estimatedDistance = result['estimatedDistance'] as String? ?? '';
+    final estimatedTime = result['estimatedTime'] as String? ?? '';
+    final showNavigationStatus = result['showNavigationStatus'] as bool? ?? false;
+    
+    debugPrint('=== 경로 안내 결과 처리 ===');
+    debugPrint('출발지: ${startBuilding?.name ?? '내 위치'}');
+    debugPrint('도착지: ${endBuilding?.name}');
+    debugPrint('현재 위치 사용: $useCurrentLocation');
+    debugPrint('예상 거리: $estimatedDistance');
+    debugPrint('예상 시간: $estimatedTime');
+    debugPrint('네비게이션 상태 표시: $showNavigationStatus');
+    
+    // 네비게이션 상태 업데이트
+    setState(() {
+      _showNavigationStatus = showNavigationStatus;
+      _estimatedDistance = estimatedDistance;
+      _estimatedTime = estimatedTime;
+      _navigationStart = useCurrentLocation ? null : startBuilding;
+      _navigationEnd = endBuilding;
+    });
+    
+    // 성공 알림 표시
+    if (mounted && showNavigationStatus) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.info, color: Colors.white, size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      '${endBuilding?.name}까지의 경로 정보가 준비되었습니다',
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
                   ),
-                  backgroundColor: const Color(0xFF1E3A8A),
-                  duration: const Duration(seconds: 3),
-                  behavior: SnackBarBehavior.floating,
-                  margin: const EdgeInsets.all(16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
+                ],
+              ),
+              if (estimatedDistance.isNotEmpty && estimatedTime.isNotEmpty) ...[
+                const SizedBox(height: 4),
+                Text(
+                  '$estimatedDistance • $estimatedTime',
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: Colors.white70,
                   ),
                 ),
-              );
-              
-              // 현재 위치에서 길찾기 실행
-              await _controller.navigateFromCurrentLocation(building);
-              
-              // 성공 알림
-              if (mounted) {
-                ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Row(
-                      children: [
-                        const Icon(Icons.navigation, color: Colors.white, size: 20),
-                        const SizedBox(width: 8),
-                        Text(l10n.route_displayed_to_building(building.name)),
-                      ],
-                    ),
-                    backgroundColor: const Color(0xFF10B981),
-                    duration: const Duration(seconds: 2),
-                    behavior: SnackBarBehavior.floating,
-                    margin: const EdgeInsets.all(16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                );
-              }
-            }
-          }
-        },
+              ],
+            ],
+          ),
+          backgroundColor: const Color(0xFF2196F3),
+          duration: const Duration(seconds: 3),
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.all(16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
       );
-    },
-  );
-}
-
+    }
+  }
 }
