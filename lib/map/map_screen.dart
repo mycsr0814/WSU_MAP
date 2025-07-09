@@ -276,115 +276,118 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     );
   }
 
-    Widget _buildMapScreen(MapScreenController controller) {
-    if (controller.selectedBuilding != null &&
-        !_infoWindowController.isShowing &&
-        mounted) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted && !_infoWindowController.isShowing) {
-          _infoWindowController.show();
-        }
-      });
-    }
+  // MapScreen(_MapScreenState)에서는 selectCategory 메서드를 제거하고
+// 오직 _buildMapScreen 메서드만 유지해야 합니다.
 
-    return Stack(
-      children: [
-        MapView(
-          onMapReady: (mapController) async {
-            await _controller.onMapReady(mapController);
-            debugPrint('🗺️ 지도 준비 완료!');
-            setState(() {
-              _isMapReady = true;
-            });
-            _checkAndAutoMove();
-          },
-          onTap: () => _controller.closeInfoWindow(_infoWindowController),
+Widget _buildMapScreen(MapScreenController controller) {
+  if (controller.selectedBuilding != null &&
+      !_infoWindowController.isShowing &&
+      mounted) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && !_infoWindowController.isShowing) {
+        _infoWindowController.show();
+      }
+    });
+  }
+
+  return Stack(
+    children: [
+      MapView(
+        onMapReady: (mapController) async {
+          await _controller.onMapReady(mapController);
+          debugPrint('🗺️ 지도 준비 완료!');
+          setState(() {
+            _isMapReady = true;
+          });
+          _checkAndAutoMove();
+        },
+        onTap: () => _controller.closeInfoWindow(_infoWindowController),
+      ),
+
+      if (!_hasFoundInitialLocation) _buildInitialLocationLoading(),
+
+      // 카테고리 로딩 상태 표시
+      if (_controller.isCategoryLoading) _buildCategoryLoadingIndicator(),
+
+      // 검색바와 카테고리 칩들
+      Positioned(
+        top: MediaQuery.of(context).padding.top + 10,
+        left: 16,
+        right: 16,
+        child: Column(
+          children: [
+            // 기존 검색바
+            BuildingSearchBar(
+              onBuildingSelected: (building) {
+                // 카테고리 선택 해제 (검색으로 건물 선택시)
+                if (_controller.selectedCategory != null) {
+                  _controller.clearCategorySelection();
+                }
+                _controller.selectBuilding(building);
+                if (mounted) _infoWindowController.show();
+              },
+              onSearchFocused: () => _controller.closeInfoWindow(_infoWindowController),
+            ),
+            
+            const SizedBox(height: 12),
+            
+            // 카테고리 칩들 - 올바른 콜백 시그니처 사용
+            CategoryChips(
+              selectedCategory: _controller.selectedCategory,
+              onCategorySelected: (category, buildings) {
+                debugPrint('카테고리 선택: $category, 건물 수: ${buildings.length}');
+                // 인포윈도우가 열려있다면 닫기
+                _controller.closeInfoWindow(_infoWindowController);
+                // 카테고리 선택/해제 토글 (건물 리스트도 함께 전달)
+                _controller.selectCategory(category, buildings);
+              },
+            ),
+          ],
         ),
+      ),
 
-        if (!_hasFoundInitialLocation) _buildInitialLocationLoading(),
-
-        // 카테고리 로딩 상태 표시
-        if (_controller.isCategoryLoading) _buildCategoryLoadingIndicator(),
-
-        // 검색바와 카테고리 칩들
+      // 🔥 네비게이션 상태 표시 (활성화된 경우) - 네비게이션 바 진짜 바로 위로
+      if (_showNavigationStatus) ...[
         Positioned(
-          top: MediaQuery.of(context).padding.top + 10,
-          left: 16,
-          right: 16,
-          child: Column(
-            children: [
-              // 기존 검색바
-              BuildingSearchBar(
-                onBuildingSelected: (building) {
-                  // 카테고리 선택 해제 (검색으로 건물 선택시)
-                  if (_controller.selectedCategory != null) {
-                    _controller.clearCategorySelection();
-                  }
-                  _controller.selectBuilding(building);
-                  if (mounted) _infoWindowController.show();
-                },
-                onSearchFocused: () => _controller.closeInfoWindow(_infoWindowController),
-              ),
-              
-              const SizedBox(height: 12),
-              
-              // 카테고리 칩들
-              CategoryChips(
-                selectedCategory: _controller.selectedCategory,
-                onCategorySelected: (category) {
-                  debugPrint('카테고리 선택: $category');
-                  // 인포윈도우가 열려있다면 닫기
-                  _controller.closeInfoWindow(_infoWindowController);
-                  // 카테고리 선택/해제 토글
-                  _controller.selectCategory(category);
-                },
-              ),
-            ],
-          ),
-        ),
-
-        // 🔥 네비게이션 상태 표시 (활성화된 경우) - 네비게이션 바 진짜 바로 위로
-        if (_showNavigationStatus) ...[
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 27, // 네비게이션 바 높이와 정확히 맞춤
-            child: Center(
-              child: Container(
-                width: MediaQuery.of(context).size.width * 0.7, // 전체 너비의 70%로 축소
-                child: _buildNavigationStatusCard(),
-              ),
+          left: 0,
+          right: 0,
+          bottom: 27, // 네비게이션 바 높이와 정확히 맞춤
+          child: Center(
+            child: Container(
+              width: MediaQuery.of(context).size.width * 0.7, // 전체 너비의 70%로 축소
+              child: _buildNavigationStatusCard(),
             ),
           ),
-        ],
+        ),
+      ],
 
-        if (controller.isLoading &&
-            controller.startBuilding != null &&
-            controller.endBuilding != null)
-          _buildRouteLoadingIndicator(),
+      if (controller.isLoading &&
+          controller.startBuilding != null &&
+          controller.endBuilding != null)
+        _buildRouteLoadingIndicator(),
 
-        if (controller.hasLocationPermissionError)
-          _buildLocationError(),
+      if (controller.hasLocationPermissionError)
+        _buildLocationError(),
 
-        // 경로 초기화 버튼 - 네비게이션 상태가 없을 때만 표시하고 네비게이션바 아주 살짝 위
-        if (controller.hasActiveRoute && !_showNavigationStatus)
-          Positioned(
-            left: 16,
-            right: 100,
-            bottom: 30, // 네비게이션바 아주 살짝 위
-            child: _buildClearNavigationButton(controller),
-          ),
-
+      // 경로 초기화 버튼 - 네비게이션 상태가 없을 때만 표시하고 네비게이션바 아주 살짝 위
+      if (controller.hasActiveRoute && !_showNavigationStatus)
         Positioned(
-          right: 16,
-          bottom: 27, // 네비게이션 상태와 관계없이 항상 네비게이션바 아주 살짝 위에 고정
-          child: _buildRightControls(controller),
+          left: 16,
+          right: 100,
+          bottom: 30, // 네비게이션바 아주 살짝 위
+          child: _buildClearNavigationButton(controller),
         ),
 
-        _buildBuildingInfoWindow(controller),
-      ],
-    );
-  }
+      Positioned(
+        right: 16,
+        bottom: 27, // 네비게이션 상태와 관계없이 항상 네비게이션바 아주 살짝 위에 고정
+        child: _buildRightControls(controller),
+      ),
+
+      _buildBuildingInfoWindow(controller),
+    ],
+  );
+}
 
 // 3. _buildCategoryLoadingIndicator 메서드를 _buildInitialLocationLoading 바로 뒤에 추가:
 

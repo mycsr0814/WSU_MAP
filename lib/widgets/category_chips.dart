@@ -4,7 +4,7 @@ import 'package:flutter_application_1/models/category.dart';
 import 'package:flutter_application_1/services/category_api_service.dart';
 
 class CategoryChips extends StatefulWidget {
-  final Function(String) onCategorySelected;
+  final Function(String, List<CategoryBuilding>) onCategorySelected;
   final String? selectedCategory;
 
   const CategoryChips({
@@ -64,6 +64,26 @@ class _CategoryChipsState extends State<CategoryChips> {
   // 카테고리 새로고침 (외부에서 호출 가능)
   void refresh() {
     _loadCategories();
+  }
+
+  // 카테고리 선택 시 해당 카테고리의 건물 위치들을 조회
+  Future<void> _onCategoryTap(String category) async {
+    try {
+      debugPrint('카테고리 선택: $category');
+      
+      // 해당 카테고리의 건물 위치들을 조회
+      final buildings = await CategoryApiService.getCategoryBuildings(category);
+      
+      debugPrint('카테고리 $category의 건물 위치 ${buildings.length}개 조회됨');
+      
+      // 부모 위젯에 카테고리명과 건물 위치 정보 전달
+      widget.onCategorySelected(category, buildings);
+      
+    } catch (e) {
+      debugPrint('카테고리 건물 조회 실패: $e');
+      // 에러 발생 시 빈 리스트로 전달
+      widget.onCategorySelected(category, []);
+    }
   }
 
   @override
@@ -163,10 +183,7 @@ class _CategoryChipsState extends State<CategoryChips> {
     IconData icon = _getCategoryIcon(category);
 
     return InkWell(
-      onTap: () {
-        debugPrint('카테고리 칩 클릭: $category (현재 선택: ${widget.selectedCategory})');
-        widget.onCategorySelected(category);
-      },
+      onTap: () => _onCategoryTap(category),
       borderRadius: BorderRadius.circular(20),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
@@ -222,6 +239,40 @@ class _CategoryChipsState extends State<CategoryChips> {
   }
 
   IconData _getCategoryIcon(String category) {
+    switch (category) {
+      case '카페':
+        return Icons.local_cafe;
+      case '식당':
+        return Icons.restaurant;
+      case '편의점':
+        return Icons.store;
+      case '자판기':
+        return Icons.local_drink;
+      case '화장실':
+        return Icons.wc;
+      case '프린터':
+        return Icons.print;
+      case '복사기':
+        return Icons.content_copy;
+      case 'ATM':
+      case '은행':
+        return Icons.atm;
+      case '의료':
+      case '보건소':
+        return Icons.local_hospital;
+      case '도서관':
+        return Icons.local_library;
+      case '체육관':
+        return Icons.fitness_center;
+      case '주차장':
+        return Icons.local_parking;
+      default:
+        return Icons.category;
+    }
+  }
+
+  // 카테고리 아이콘을 가져오는 static 메서드 (외부에서 사용 가능)
+  static IconData getCategoryIcon(String category) {
     switch (category) {
       case '카페':
         return Icons.local_cafe;

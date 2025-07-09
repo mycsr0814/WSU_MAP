@@ -1,4 +1,4 @@
-// lib/services/map_service.dart - 카메라 이동 문제 완전 해결
+// lib/services/map_service.dart - 수정된 버전
 
 import 'dart:math';
 import 'dart:async';
@@ -34,8 +34,15 @@ class MapService {
   bool _isCameraMoving = false;
   Timer? _cameraDelayTimer;
 
+  // 건물 마커 ID들을 저장할 Set
+  final Set<String> _buildingMarkerIds = {};
+
+  // 마커 클릭 콜백 저장
+  Function(NMarker, Building)? _onBuildingMarkerTap;
+
   // Getters
   bool get buildingMarkersVisible => _buildingMarkersVisible;
+  BuildContext? get context => _context;
 
   void setController(NaverMapController controller) {
     _mapController = controller;
@@ -54,7 +61,7 @@ class MapService {
 
   Future<void> loadMarkerIcons() async {
     try {
-      _blueBuildingIcon = NOverlayImage.fromAssetImage(
+      _blueBuildingIcon = const NOverlayImage.fromAssetImage(
         'lib/asset/building_marker_blue.png'
       );
       
@@ -195,6 +202,17 @@ class MapService {
         description: '임시휴무 중인 시설',
       ),
     ];
+  }
+
+  /// 건물 마커 아이콘 가져오기
+  NOverlayImage? _getBuildingMarkerIcon(Building building) {
+    return _blueBuildingIcon;
+  }
+
+  /// 현지화된 건물 이름 가져오기
+  String _getLocalizedBuildingName(Building building) {
+    // 간단한 구현 - 실제로는 다국어 처리 로직 필요
+    return building.name;
   }
 
   /// 안전한 카메라 이동 (메인 스레드 블로킹 방지) - 수정됨
@@ -374,31 +392,6 @@ class MapService {
     }
   }
 
-  /// 내 위치로 카메라 이동만 (마커 표시 없이) - 수정됨
-  Future<void> moveToMyLocation(NLatLng location) async {
-    debugPrint('[MapService] moveToMyLocation 호출 - 위치: (${location.latitude}, ${location.longitude})');
-    
-    if (_mapController == null) {
-      debugPrint('[MapService] moveToMyLocation: _mapController가 null입니다!');
-      return;
-    }
-    
-    try {
-      // 지연을 두고 카메라 이동
-      _cameraDelayTimer?.cancel();
-      _cameraDelayTimer = Timer(const Duration(milliseconds: 300), () async {
-        try {
-          await moveCamera(location, zoom: 16);
-          debugPrint('[MapService] moveToMyLocation 완료');
-        } catch (e) {
-          debugPrint('[MapService] moveToMyLocation 오류: $e');
-        }
-      });
-    } catch (e) {
-      debugPrint('[MapService] moveToMyLocation 설정 오류: $e');
-    }
-  }
-
   /// 내 위치 숨기기
   Future<void> hideMyLocation() async {
     await _removeMyLocationMarker();
@@ -420,122 +413,115 @@ class MapService {
       }
       
       _buildingMarkers.clear();
+      _buildingMarkerIds.clear();
       debugPrint('건물 마커 제거 완료');
     } catch (e) {
       debugPrint('건물 마커 제거 중 오류: $e');
     }
   }
 
-  Future<void> addBuildingMarkers(
-    Function(NMarker, Building) onMarkerTap,
-  ) async {
-    if (_mapController == null) {
-      debugPrint('MapController가 null입니다');
-      return;
-    }
-
+  /// 건물 마커 추가 (수정됨)
+  Future<void> addBuildingMarkers(Function(NMarker, Building) onTap) async {
     try {
-      debugPrint('서버에서 건물 데이터 로딩 시작...');
-      
-      // 서버에서 건물 데이터 로드
-      await _buildingDataService.loadBuildings();
-      
-      if (_buildingDataService.hasData) {
-        debugPrint('서버에서 ${_buildingDataService.buildings.length}개 건물 데이터 수신');
-        
-        // 서버 데이터에 자동 운영상태 적용
-        final buildingsWithAutoStatus = _buildingDataService.buildings.map((building) {
-          final autoStatus = _getAutoOperatingStatus(building.baseStatus);
-          return building.copyWith(baseStatus: autoStatus);
-        }).toList();
-        
-        // 서버 데이터로 마커 생성
-        await _createMarkersFromData(buildingsWithAutoStatus, onMarkerTap, '서버');
-        
-      } else {
-        debugPrint('서버에서 건물 데이터를 받아오지 못했습니다');
-        
-        // 서버 데이터 로딩 실패 시 로컬 데이터 사용 (fallback)
-        debugPrint('로컬 데이터로 fallback 시도...');
-        await _addLocalBuildingMarkers(onMarkerTap);
+      if (_mapController == null) {
+        debugPrint('❌ 지도 컨트롤러가 없음');
+        return;
       }
-    } catch (e) {
-      debugPrint('서버 기반 마커 추가 오류: $e');
+
+      // 콜백 함수 저장
+      _onBuildingMarkerTap = onTap;
+
+      // 현재 건물 데이터 가져오기
+      final buildings = _getCurrentBuildingData();
+      if (buildings.isEmpty) {
+        debugPrint('❌ 건물 데이터가 없음');
+        return;
+      }
       
-      // 오류 발생 시 로컬 데이터 사용
-      debugPrint('오류로 인한 로컬 데이터 fallback...');
-      await _addLocalBuildingMarkers(onMarkerTap);
+      debugPrint('건물 마커 추가 시작: ${buildings.length}개');
+      
+      // 기존 마커 제거
+      await clearBuildingMarkers();
+      
+      for (final building in buildings) {
+        final markerId = 'building_${building.hashCode}';
+        
+        // 마커 생성
+        final marker = NMarker(
+          id: markerId,
+          position: NLatLng(building.lat, building.lng),
+          icon: _getBuildingMarkerIcon(building),
+          caption: NOverlayCaption(
+            text: _getLocalizedBuildingName(building),
+            color: Colors.blue,
+            textSize: 12,
+          ),
+        );
+        
+        // 마커 클릭 이벤트 등록
+        marker.setOnTapListener((NMarker marker) => onTap(marker, building));
+        
+        // 지도에 마커 추가
+        await _mapController!.addOverlay(marker);
+        
+        // 마커 저장
+        _buildingMarkers.add(marker);
+        _buildingMarkerIds.add(markerId);
+        
+        await Future.delayed(const Duration(milliseconds: 10));
+      }
+      
+      _buildingMarkersVisible = true;
+      debugPrint('✅ 건물 마커 추가 완료: ${_buildingMarkers.length}개');
+    } catch (e) {
+      debugPrint('❌ 건물 마커 추가 실패: $e');
     }
   }
 
-  // 공통 마커 생성 메서드 - 운영상태 정보 로깅 추가
-  Future<void> _createMarkersFromData(
-    List<Building> buildings,
-    Function(NMarker, Building) onMarkerTap,
-    String dataSource,
-  ) async {
-    // 기존 마커 제거
-    await clearBuildingMarkers();
-
-    // 현재 시간 로깅
-    final now = DateTime.now();
-    debugPrint('🕐 현재 시간: ${now.hour}:${now.minute.toString().padLeft(2, '0')}');
-
-    // 데이터로 마커 생성
-    for (var building in buildings) {
-      // 현재 운영상태 로깅
-      debugPrint('🏢 ${building.name}: ${building.baseStatus} (기본: ${building.baseStatus})');
+  /// 모든 건물 마커 숨기기
+  Future<void> hideAllBuildingMarkers() async {
+    try {
+      if (_mapController == null) return;
       
-      final marker = NMarker(
-        id: 'building_${building.name}',
-        position: NLatLng(building.lat, building.lng),
-        icon: _blueBuildingIcon,
-      );
-
-      marker.setOnTapListener((_) {
-        debugPrint('건물 마커 탭 ($dataSource): ${building.name} - ${building.baseStatus}');
-        onMarkerTap(marker, building);
-        return true;
-      });
-
-      _buildingMarkers.add(marker);
+      debugPrint('모든 건물 마커 숨기기 시작...');
       
-      if (_buildingMarkersVisible) {
+      for (final markerId in _buildingMarkerIds) {
         try {
-          await _mapController?.addOverlay(marker);
+          final overlayInfo = NOverlayInfo(
+            type: NOverlayType.marker,
+            id: markerId,
+          );
+          await _mapController!.deleteOverlay(overlayInfo);
+          await Future.delayed(const Duration(milliseconds: 5));
         } catch (e) {
-          debugPrint('건물 마커 추가 실패: ${building.name} - $e');
+          debugPrint('건물 마커 숨기기 실패: $markerId - $e');
         }
       }
+      
+      _buildingMarkersVisible = false;
+      debugPrint('✅ 모든 건물 마커 숨기기 완료');
+    } catch (e) {
+      debugPrint('❌ 건물 마커 숨기기 실패: $e');
     }
-    
-    debugPrint('$dataSource 기반 건물 마커 ${_buildingMarkers.length}개 추가 완료');
   }
 
-  // 로컬 데이터로 마커 추가 (fallback 용도)
-  Future<void> _addLocalBuildingMarkers(
-    Function(NMarker, Building) onMarkerTap,
-  ) async {
+  /// 모든 건물 마커 다시 표시하기
+  Future<void> showAllBuildingMarkers() async {
     try {
-      // 현재 언어로 건물 데이터 가져오기 (자동 운영상태 적용됨)
-      final localBuildings = _getCurrentBuildingData();
+      if (_mapController == null) return;
       
-      if (localBuildings.isNotEmpty) {
-        await _createMarkersFromData(localBuildings, onMarkerTap, '로컬(현재언어)');
-      } else {
-        debugPrint('로컬 데이터도 비어있습니다');
+      debugPrint('모든 건물 마커 다시 표시 시작...');
+      
+      // 건물 마커들을 다시 생성하여 표시
+      if (_onBuildingMarkerTap != null) {
+        await addBuildingMarkers(_onBuildingMarkerTap!);
       }
       
+      _buildingMarkersVisible = true;
+      debugPrint('✅ 모든 건물 마커 다시 표시 완료');
     } catch (e) {
-      debugPrint('로컬 마커 추가 실패: $e');
+      debugPrint('❌ 건물 마커 표시 실패: $e');
     }
-  }
-
-  // 서버에서 건물 데이터 새로고침
-  Future<void> refreshBuildingData() async {
-    debugPrint('건물 데이터 새로고침 시작...');
-    await _buildingDataService.refresh();
-    debugPrint('건물 데이터 새로고침 완료');
   }
 
   // 건물 검색 (서버 데이터 우선, fallback은 로컬)
@@ -627,50 +613,7 @@ class MapService {
     }
   }
 
-  // 경로 관련 오버레이 모두 제거
-  Future<void> clearPathOverlays() async {
-    if (_mapController == null) return;
-    
-    try {
-      // 경로 오버레이 제거
-      for (final overlayId in _pathOverlayIds) {
-        try {
-          await _mapController!.deleteOverlay(NOverlayInfo(type: NOverlayType.pathOverlay, id: overlayId));
-        } catch (e) {
-          debugPrint('경로 오버레이 제거 오류 (무시): $overlayId - $e');
-        }
-      }
-      _pathOverlayIds.clear();
-      
-      // 경로 마커 제거
-      for (final markerId in _routeMarkerIds) {
-        try {
-          await _mapController!.deleteOverlay(NOverlayInfo(type: NOverlayType.marker, id: markerId));
-        } catch (e) {
-          debugPrint('경로 마커 제거 오류 (무시): $markerId - $e');
-        }
-      }
-      _routeMarkerIds.clear();
-      
-      debugPrint('모든 경로 관련 오버레이 제거 완료');
-    } catch (e) {
-      debugPrint('경로 오버레이 제거 중 오류: $e');
-    }
-  }
-
-  // 현재 운영중인 건물만 필터링
-  List<Building> getOperatingBuildings() {
-    final allBuildings = getAllBuildings();
-    return allBuildings.where((building) => building.baseStatus == '운영중' || building.baseStatus == '24시간').toList();
-  }
-
-  // 현재 운영종료된 건물만 필터링
-  List<Building> getClosedBuildings() {
-    final allBuildings = getAllBuildings();
-    return allBuildings.where((building) => building.baseStatus == '운영종료' || building.baseStatus == '임시휴무').toList();
-  }
-
-  // map_service.dart의 drawPath 메서드를 다음과 같이 수정
+  // map_service.dart의 drawPath 메서드
   Future<void> drawPath(List<NLatLng> pathCoordinates) async {
     if (_mapController == null || pathCoordinates.isEmpty) return;
     
@@ -841,14 +784,35 @@ class MapService {
     }
   }
 
+  // 서버에서 건물 데이터 새로고침
+  Future<void> refreshBuildingData() async {
+    debugPrint('건물 데이터 새로고침 시작...');
+    await _buildingDataService.refresh();
+    debugPrint('건물 데이터 새로고침 완료');
+  }
+
+  // 현재 운영중인 건물만 필터링
+  List<Building> getOperatingBuildings() {
+    final allBuildings = getAllBuildings();
+    return allBuildings.where((building) => building.baseStatus == '운영중' || building.baseStatus == '24시간').toList();
+  }
+
+  // 현재 운영종료된 건물만 필터링
+  List<Building> getClosedBuildings() {
+    final allBuildings = getAllBuildings();
+    return allBuildings.where((building) => building.baseStatus == '운영종료' || building.baseStatus == '임시휴무').toList();
+  }
+
   // MapService 정리
   void dispose() {      
     _cameraDelayTimer?.cancel();
     _buildingMarkers.clear();
+    _buildingMarkerIds.clear();
     _pathOverlayIds.clear();
     _routeMarkerIds.clear();
     _myLocationMarker = null;
     _myLocationAccuracyCircle = null;
+    _onBuildingMarkerTap = null;
     debugPrint('MapService 정리 완료');
   }
 }
