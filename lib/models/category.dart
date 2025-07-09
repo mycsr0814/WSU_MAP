@@ -56,16 +56,19 @@ class CategoryLocation {
 class CategoryBuilding {
   final String buildingName;
   final CategoryLocation location;
+  final String? categoryName; // 카테고리 정보 추가
 
   CategoryBuilding({
     required this.buildingName,
     required this.location,
+    this.categoryName,
   });
 
   factory CategoryBuilding.fromJson(Map<String, dynamic> json) {
     return CategoryBuilding(
       buildingName: json['Building_Name'] ?? '',
       location: CategoryLocation.fromJson(json['Location']),
+      categoryName: json['Category_Name'],
     );
   }
 
@@ -73,6 +76,28 @@ class CategoryBuilding {
     return {
       'Building_Name': buildingName,
       'Location': location.toJson(),
+      'Category_Name': categoryName,
     };
+  }
+}
+
+// 카테고리 마커 정보를 위한 클래스
+class CategoryMarker {
+  final String buildingName;
+  final String categoryName;
+  final CategoryLocation location;
+
+  CategoryMarker({
+    required this.buildingName,
+    required this.categoryName,
+    required this.location,
+  });
+
+  factory CategoryMarker.fromCategoryBuilding(CategoryBuilding building, String category) {
+    return CategoryMarker(
+      buildingName: building.buildingName,
+      categoryName: category,
+      location: building.location,
+    );
   }
 }
