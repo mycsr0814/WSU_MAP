@@ -277,41 +277,45 @@ class BuildingInfoWindow extends StatelessWidget {
 
   // 내부도면보기 버튼으로 변경
   Widget _buildFloorPlanButton(AppLocalizations l10n, BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      height: 50,
-      child: ElevatedButton(
-        onPressed: () {
-          print('🔘 내부도면보기 버튼 클릭됨: ${building.name}'); // 디버깅용
-          
-          // FloorPlanDialog 직접 호출
-          FloorPlanDialog.show(context, building);
-        },
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF7C3AED), // 보라색
-          foregroundColor: Colors.white,
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
+  return SizedBox(
+    width: double.infinity,
+    height: 50,
+    child: ElevatedButton(
+      onPressed: () {
+        print('🔘 내부도면보기 버튼 클릭됨: ${building.name}');
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => BuildingMapPage(buildingName: building.name),
           ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.map_outlined, size: 20),
-            const SizedBox(width: 8),
-            Text(
-              l10n.view_floor_plan ?? '내부도면보기', // null 체크 추가
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
+        );
+      },
+      style: ElevatedButton.styleFrom(
+        backgroundColor: const Color(0xFF7C3AED),
+        foregroundColor: Colors.white,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
         ),
       ),
-    );
-  }
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.map_outlined, size: 20),
+          const SizedBox(width: 8),
+          Text(
+            l10n.view_floor_plan ?? '내부도면보기',
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
 
 
  Widget _buildActionButtons(AppLocalizations l10n, BuildContext context) {

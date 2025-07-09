@@ -51,7 +51,7 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
   @override
   void initState() {
     super.initState();
-    _loadFloorList(widget.buildingName);
+    _loadFloorList(widget.buildingName); // 페이지 진입 시 층 목록 불러오기
   }
 
   @override
@@ -62,6 +62,7 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
     super.dispose();
   }
 
+  /// 서버에서 해당 건물의 층 목록을 불러오는 함수
   Future<void> _loadFloorList(String buildingName) async {
     setState(() { _isFloorListLoading = true; _error = null; });
     try {
@@ -69,7 +70,7 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
       if (mounted) {
         setState(() { _floorList = floors; _isFloorListLoading = false; });
         if (_floorList.isNotEmpty) {
-          _onFloorChanged(_floorList.first);
+          _onFloorChanged(_floorList.first); // 첫 번째 층 자동 선택
         } else {
           setState(() => _error = "이 건물의 층 정보를 찾을 수 없습니다.");
         }
@@ -79,6 +80,7 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
     }
   }
 
+  /// SVG 도면 및 방 버튼 데이터 등 층별 지도 데이터 불러오기
   Future<void> _loadMapData(Map<String, dynamic> floorInfo) async {
     setState(() => _isMapLoading = true);
     try {
@@ -96,6 +98,8 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
       if (mounted) { setState(() { _isMapLoading = false; _error = '지도 데이터를 불러오는 데 실패했습니다: $e'; }); }
     }
   }
+  
+  /// 층을 변경할 때 호출
 
   void _onFloorChanged(Map<String, dynamic> newFloor) {
     if (_selectedFloor?['Floor_Id'] == newFloor['Floor_Id'] && _error == null) return;
@@ -128,6 +132,7 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
     });
   }
 
+  /// 출발/도착 방이 모두 지정되면 서버에 길찾기 요청
   Future<void> _findAndDrawPath() async {
     if (_startPoint == null || _endPoint == null) return;
     setState(() { _isMapLoading = true; _departurePath = []; _arrivalPath = []; _currentShortestPath = []; _transitionInfo = null; });
@@ -274,6 +279,7 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
     );
   }
 
+  /// 층 목록, 에러, 로딩 등 상태에 따라 본문 빌드
   Widget _buildBodyContent() {
     if (_isFloorListLoading) return const Center(child: Text('층 목록을 불러오는 중...'));
     if (_error != null) return Center(child: Padding( padding: const EdgeInsets.all(16.0), child: Text(_error!, textAlign: TextAlign.center, style: const TextStyle(color: Colors.red, fontSize: 16),),));
@@ -282,6 +288,7 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
     return _buildMapView();
   }
 
+  /// SVG 도면, 방 버튼, 경로 등 지도 UI 빌드
   Widget _buildMapView() {
     const double svgWidth = 210, svgHeight = 297;
     return LayoutBuilder(builder: (context, constraints) {
@@ -300,6 +307,7 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
           child: Stack(
             alignment: Alignment.center,
             children: [
+              // SVG 도면 표시
               Positioned(
                 left: leftOffset, top: topOffset,
                 child: ColorFiltered(
@@ -363,7 +371,7 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
     return Card( elevation: 4, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding( padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
         child: Column(
-          children: _floorList.map((floor) {
+          children: _floorList.reversed.map((floor) {
             final bool isSelected = _selectedFloor?['Floor_Id'] == floor['Floor_Id'];
             return GestureDetector( onTap: () => _onFloorChanged(floor),
               child: Container(
@@ -378,6 +386,7 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
     );
   }
 
+  /// 출발/도착 정보 표시 UI
   Widget _buildPathInfo() {
     return Positioned( bottom: 16, left: 16, right: 16,
       child: Card( elevation: 6, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -394,6 +403,7 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
     );
   }
 
+  /// 출발/도착 방 정보 표시용 위젯
   Widget _buildPointInfo(String title, String? id, Color color) {
     return Column(
       children: [
@@ -404,6 +414,7 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
     );
   }
   
+  /// 지도 확대/축소 후 일정 시간 지나면 원래 위치로 복귀
   void _resetScaleAfterDelay() {
     _resetTimer?.cancel();
     _resetTimer = Timer(const Duration(seconds: 3), () { if (mounted) { _transformationController.value = Matrix4.identity(); } });
