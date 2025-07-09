@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:math';
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:http/http.dart' as http;
@@ -21,6 +20,7 @@ class BuildingMapPage extends StatefulWidget {
 }
 
 class _BuildingMapPageState extends State<BuildingMapPage> {
+  // 층 목록, 선택된 층, SVG 도면 URL, 방 버튼 데이터 등 상태 변수
   List<dynamic> _floorList = [];
   Map<String, dynamic>? _selectedFloor;
   String? _svgUrl;
@@ -44,7 +44,7 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
   @override
   void initState() {
     super.initState();
-    _loadFloorList(widget.buildingName);
+    _loadFloorList(widget.buildingName); // 페이지 진입 시 층 목록 불러오기
   }
 
   @override
@@ -54,6 +54,7 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
     super.dispose();
   }
 
+  /// 서버에서 해당 건물의 층 목록을 불러오는 함수
   Future<void> _loadFloorList(String buildingName) async {
     setState(() {
       _isFloorListLoading = true;
@@ -67,7 +68,7 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
           _isFloorListLoading = false;
         });
         if (_floorList.isNotEmpty) {
-          _onFloorChanged(_floorList.first);
+          _onFloorChanged(_floorList.first); // 첫 번째 층 자동 선택
         } else {
           setState(() => _error = "이 건물의 층 정보를 찾을 수 없습니다.");
         }
@@ -82,6 +83,7 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
     }
   }
 
+  /// SVG 도면 및 방 버튼 데이터 등 층별 지도 데이터 불러오기
   Future<void> _loadMapData(Map<String, dynamic> floorInfo) async {
     try {
       final String? svgUrl = floorInfo['File'];
@@ -91,8 +93,8 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
       if (svgResponse.statusCode != 200) throw Exception('SVG 파일을 다운로드할 수 없습니다 (Status: ${svgResponse.statusCode})');
       final svgContent = svgResponse.body;
       
-      final buttons = SvgDataParser.parseButtonData(svgContent);
-      final nodes = SvgDataParser.parseNavigationNodes(svgContent);
+      final buttons = SvgDataParser.parseButtonData(svgContent); // 방 버튼 정보 파싱
+      final nodes = SvgDataParser.parseNavigationNodes(svgContent); // 네비게이션 노드 파싱
 
       if (mounted) {
         setState(() {
@@ -112,6 +114,7 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
     }
   }
   
+  /// 층을 변경할 때 호출
   void _onFloorChanged(Map<String, dynamic> newFloor) {
     if (_selectedFloor?['Floor_Id'] == newFloor['Floor_Id'] && _error == null) return;
     
@@ -128,6 +131,7 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
     _loadMapData(newFloor); 
   }
 
+  /// 출발/도착 방이 모두 지정되면 서버에 길찾기 요청
   Future<void> _findAndDrawPath() async {
     if (_startPoint == null || _endPoint == null) return;
     
@@ -143,12 +147,12 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
     try {
       String fromRoomId = _startPoint!['roomId'];
       if (fromRoomId.startsWith('R')) {
-        fromRoomId = fromRoomId.substring(1);
+        fromRoomId = fromRoomId.substring(1); // R 제거
       }
 
       String toRoomId = _endPoint!['roomId'];
       if (toRoomId.startsWith('R')) {
-        toRoomId = toRoomId.substring(1);
+        toRoomId = toRoomId.substring(1); // R 제거
       }
 
       final response = await _apiService.findPath(
@@ -180,49 +184,48 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
     }
   }
 
-  /// GET 방식으로 방 설명 받아오기
+  /// 방 버튼 클릭 시 서버에서 설명 받아와서 RoomInfoSheet(모달)로 표시
   void _showRoomInfoSheet(BuildContext context, String roomId) async {
-  setState(() => _selectedRoomId = roomId);
+    setState(() => _selectedRoomId = roomId);
 
-  // R이 앞에 붙어있으면 제거
-  String roomIdNoR = roomId.startsWith('R') ? roomId.substring(1) : roomId;
+    // R이 앞에 붙어있으면 제거 (서버 요청과 화면 표시 모두에 사용)
+    String roomIdNoR = roomId.startsWith('R') ? roomId.substring(1) : roomId;
 
-  String roomDesc = '';
-  print('방 설명 요청: buildingName=${widget.buildingName}, floorNumber=${_selectedFloor?['Floor_Number']}, roomName=$roomIdNoR');
-  print('방 설명 요청 URL: http://3.106.229.163:3000/desc/${widget.buildingName}/${_selectedFloor?['Floor_Number']}/$roomIdNoR');
-  print('${widget.buildingName}');
-  try {
-    roomDesc = await _apiService.fetchRoomDescription(
-      buildingName: widget.buildingName,
-      floorNumber: _selectedFloor?['Floor_Number'],
-      roomName: roomIdNoR, // 서버에도 R을 뺀 값으로 전달
+    String roomDesc = '';
+    try {
+      // 서버에서 방 설명 받아오기 (GET)
+      roomDesc = await _apiService.fetchRoomDescription(
+        buildingName: widget.buildingName,
+        floorNumber: _selectedFloor?['Floor_Number'],
+        roomName: roomIdNoR, // 서버에도 R을 뺀 값으로 전달
+      );
+    } catch (e) {
+      print(e);
+      roomDesc = '설명을 불러오지 못했습니다.';
+    }
+
+    // RoomInfoSheet 모달로 방 정보 표시 (name에 R 뺀 값)
+    await showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => RoomInfoSheet(
+        roomInfo: RoomInfo(id: roomId, name: roomIdNoR, desc: roomDesc),
+        onDeparture: () {
+          setState(() => _startPoint = {"floorId": _selectedFloor?['Floor_Id'], "roomId": roomId});
+          if (_endPoint != null) _findAndDrawPath();
+          Navigator.pop(context);
+        },
+        onArrival: () {
+          setState(() => _endPoint = {"floorId": _selectedFloor?['Floor_Id'], "roomId": roomId});
+          if (_startPoint != null) _findAndDrawPath();
+          Navigator.pop(context);
+        },
+      ),
     );
-  } catch (e) {
-    print(e);
-    roomDesc = '설명을 불러오지 못했습니다. $e';
+    if (mounted) setState(() => _selectedRoomId = null);
   }
 
-  await showModalBottomSheet(
-    context: context,
-    backgroundColor: Colors.transparent,
-    builder: (context) => RoomInfoSheet(
-      roomInfo: RoomInfo(id: roomId, name: roomIdNoR, desc: roomDesc), // 화면에도 R 뺀 값으로 표시
-      onDeparture: () {
-        setState(() => _startPoint = {"floorId": _selectedFloor?['Floor_Id'], "roomId": roomId});
-        if (_endPoint != null) _findAndDrawPath();
-        Navigator.pop(context);
-      },
-      onArrival: () {
-        setState(() => _endPoint = {"floorId": _selectedFloor?['Floor_Id'], "roomId": roomId});
-        if (_startPoint != null) _findAndDrawPath();
-        Navigator.pop(context);
-      },
-    ),
-  );
-  if (mounted) setState(() => _selectedRoomId = null);
-}
-
-
+  /// 전체 Scaffold 및 UI 빌드
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -255,6 +258,7 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
     );
   }
 
+  /// 층 목록, 에러, 로딩 등 상태에 따라 본문 빌드
   Widget _buildBodyContent() {
     if (_isFloorListLoading) {
       return const Text('층 목록을 불러오는 중...');
@@ -278,6 +282,7 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
     return _buildMapView();
   }
 
+  /// SVG 도면, 방 버튼, 경로 등 지도 UI 빌드
   Widget _buildMapView() {
     const double svgWidth = 210, svgHeight = 297;
     return LayoutBuilder(builder: (context, constraints) {
@@ -299,6 +304,7 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
           child: Stack(
             alignment: Alignment.center,
             children: [
+              // SVG 도면 표시
               Positioned(
                 left: leftOffset,
                 top: topOffset,
@@ -312,6 +318,7 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
                   ),
                 ),
               ),
+              // 방 버튼 표시
               ..._buttonData.map((button) {
                 final Rect rect = button['rect'];
                 final String id = button['id'];
@@ -337,6 +344,7 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
                   ),
                 );
               }).toList(),
+              // 경로 표시
               if (_shortestPath.isNotEmpty)
                 Positioned(
                   left: leftOffset,
@@ -355,6 +363,7 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
     });
   }
 
+  /// 층 선택 UI
   Widget _buildFloorSelector() {
     return Card(
       elevation: 4,
@@ -389,6 +398,7 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
     );
   }
 
+  /// 출발/도착 정보 표시 UI
   Widget _buildPathInfo() {
     return Positioned(
       bottom: 16,
@@ -412,6 +422,7 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
     );
   }
 
+  /// 출발/도착 방 정보 표시용 위젯
   Widget _buildPointInfo(String title, String? id, Color color) {
     return Column(
       children: [
@@ -425,6 +436,7 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
     );
   }
   
+  /// 지도 확대/축소 후 일정 시간 지나면 원래 위치로 복귀
   void _resetScaleAfterDelay() {
     _resetTimer?.cancel();
     _resetTimer = Timer(const Duration(seconds: 3), () {

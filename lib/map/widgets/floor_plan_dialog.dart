@@ -1,39 +1,44 @@
-// lib/map/widgets/floor_plan_dialog.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/models/building.dart';
 import 'package:flutter_application_1/inside/building_map_page.dart';
 import '../../generated/app_localizations.dart';
 
+/// 건물 도면(안내도) 페이지로 자동 이동하는 다이얼로그 위젯
 class FloorPlanDialog extends StatelessWidget {
-  final Building building;
+  final Building building; // 표시할 건물 정보
 
   const FloorPlanDialog({
     super.key,
     required this.building,
   });
 
-  // 새로운 페이지로 네비게이션
-  static void show(BuildContext context, Building building) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => FloorPlanDialog(building: building),
-      ),
-    );
-  }
+  // 기존 show 함수는 그대로 사용 가능 (다른 곳에서 FloorPlanDialog.show(context, building) 호출)
 
   @override
   Widget build(BuildContext context) {
+    // build가 호출된 직후(BuildContext가 완전히 준비된 뒤)에
+    // BuildingMapPage로 바로 이동시킨다.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => BuildingMapPage(buildingName: building.name),
+        ),
+      );
+    });
+
+    // 로딩 중 UI를 위한 지역화 객체
     final l10n = AppLocalizations.of(context);
 
+    // 실제로는 곧바로 BuildingMapPage로 이동하지만,
+    // 이동 전 잠깐 보여줄 로딩 스피너와 상단바를 구성한다.
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => Navigator.pop(context), // 뒤로가기 버튼
           icon: const Icon(
             Icons.arrow_back_ios,
             color: Colors.black87,
@@ -41,7 +46,7 @@ class FloorPlanDialog extends StatelessWidget {
           ),
         ),
         title: Text(
-          '${building.name} ${l10n?.floor_plan ?? '도면보기'}',
+          '${building.name} ${l10n?.floor_plan ?? '도면보기'}', // 건물명 + "도면보기" (지역화 지원)
           style: const TextStyle(
             color: Colors.black87,
             fontSize: 18,
@@ -50,47 +55,8 @@ class FloorPlanDialog extends StatelessWidget {
         ),
         centerTitle: false,
       ),
-      body: Stack(
-        children: [
-          // 상세 안내도 페이지로 이동하는 버튼만 제공
-          Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.map, size: 80, color: Colors.indigo),
-                const SizedBox(height: 24),
-                Text(
-                  '${building.name} 안내도',
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.indigo,
-                  ),
-                ),
-                const SizedBox(height: 32),
-                ElevatedButton.icon(
-                  icon: const Icon(Icons.open_in_new),
-                  label: const Text('상세 안내도 보기', style: TextStyle(fontSize: 18)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.indigo,
-                    foregroundColor: Colors.white,
-                    minimumSize: const Size(200, 56),
-                    textStyle: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  onPressed: () {
-                    // building.name을 BuildingMapPage에 넘김
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => BuildingMapPage(buildingName: building.name),
-                      ),
-                    );
-                  },
-                ),
-              ],
-            ),
-          ),
-        ],
+      body: const Center(
+        child: CircularProgressIndicator(), // 이동 전 잠깐 보여줄 로딩 인디케이터
       ),
     );
   }

@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'room_info.dart';
 
+/// 강의실(방) 정보와 출발/도착 버튼을 표시하는 하단 시트 위젯
 class RoomInfoSheet extends StatelessWidget {
-  final RoomInfo roomInfo;
-  final VoidCallback? onDeparture;
-  final VoidCallback? onArrival;
+  final RoomInfo roomInfo;        // 방 정보(이름, 설명 등)
+  final VoidCallback? onDeparture; // 출발지로 버튼 콜백 (null이면 버튼 안 보임)
+  final VoidCallback? onArrival;   // 도착지로 버튼 콜백 (null이면 버튼 안 보임)
 
   const RoomInfoSheet({
     Key? key,
@@ -16,25 +17,29 @@ class RoomInfoSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      // 하단 시트 스타일: 흰 배경, 위쪽만 둥근 모서리
       decoration: const BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: const EdgeInsets.all(24),
       child: Column(
-        mainAxisSize: MainAxisSize.min,
+        mainAxisSize: MainAxisSize.min, // 내용만큼만 높이
         children: [
+          // 방 이름(예: 401)
           Text(
             roomInfo.name,
             style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
+          // 방 설명(서버에서 받아온 값)
           Text(
             roomInfo.desc,
             style: const TextStyle(fontSize: 16),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 20),
+          // 출발지/도착지 버튼 (각 콜백이 있을 때만 표시)
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [

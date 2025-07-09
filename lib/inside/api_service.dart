@@ -1,12 +1,16 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
+/// 서버와 통신하는 API 서비스 클래스
 class ApiService {
   final String _baseUrl = "http://3.106.229.163:3000";
 
+  /// 서버에서 건물 목록을 받아오는 함수
   Future<List<String>> fetchBuildingList() async {
+    // GET /buildings 요청
     final response = await http.get(Uri.parse('$_baseUrl/buildings'));
     if (response.statusCode == 200) {
+      // 서버 응답을 디코딩하여 buildingList 추출
       final data = json.decode(utf8.decode(response.bodyBytes));
       final List<dynamic> buildingList = data['buildings'];
       return buildingList.cast<String>();
@@ -15,9 +19,12 @@ class ApiService {
     }
   }
 
+  /// 특정 건물의 층 목록을 받아오는 함수
   Future<List<dynamic>> fetchFloorList(String buildingName) async {
+    // GET /floor/{buildingName} 요청
     final response = await http.get(Uri.parse('$_baseUrl/floor/$buildingName'));
     if (response.statusCode == 200) {
+      // 서버 응답을 디코딩하여 floorList 추출
       final List<dynamic> floorList = json.decode(utf8.decode(response.bodyBytes));
       return floorList;
     } else {
@@ -25,6 +32,7 @@ class ApiService {
     }
   }
 
+  /// 길찾기(경로 탐색) 요청 함수
   Future<Map<String, dynamic>> findPath({
     required String fromBuilding,
     int? fromFloor,
@@ -33,6 +41,7 @@ class ApiService {
     int? toFloor,
     String? toRoom,
   }) async {
+    // POST /path 요청 (JSON body 포함)
     final response = await http.post(
       Uri.parse('$_baseUrl/path'),
       headers: {'Content-Type': 'application/json'},
@@ -46,24 +55,30 @@ class ApiService {
       }),
     );
     if (response.statusCode == 200) {
+      // 서버 응답을 디코딩하여 반환
       return json.decode(utf8.decode(response.bodyBytes));
     } else {
       throw Exception('Failed to find path');
     }
   }
 
-  /// GET 방식으로 방 설명 받아오기 (일관성 있게 작성)
+  /// GET 방식으로 방(강의실) 설명을 받아오는 함수
+  /// buildingName: 건물 이름
+  /// floorNumber: 층 번호 (String, 예: '4')
+  /// roomName: 방 이름 (예: '401')
   Future<String> fetchRoomDescription({
     required String buildingName,
     required String floorNumber,
     required String roomName,
   }) async {
-    print('$buildingName,$floorNumber,$roomName');
+    // GET /room/desc/{buildingName}/{floorNumber}/{roomName} 요청
+    // buildingName, roomName에 한글/특수문자 있을 수 있으니 encodeComponent로 인코딩
     final response = await http.get(
       Uri.parse('$_baseUrl/room/desc/${Uri.encodeComponent(buildingName)}/$floorNumber/${Uri.encodeComponent(roomName)}')
     );
-    print('fuckyou');
+    print('fuckyou'); // (디버깅용 로그, 실제 서비스에서는 삭제 권장)
     if (response.statusCode == 200) {
+      // 서버 응답에서 Room_Description 추출
       final data = json.decode(utf8.decode(response.bodyBytes));
       return data['Room_Description'] ?? '설명 없음';
     } else if (response.statusCode == 404) {
