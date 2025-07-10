@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 import '../models/category.dart';
 
 class CategoryApiService {
-  static const String baseUrl = 'http://3.106.229.163:3000/category';
+  static const String baseUrl = 'http://3.24.110.21:3000/category';
   
   // 카테고리 목록 조회
   static Future<List<Category>> getCategories() async {
