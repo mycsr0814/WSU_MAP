@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../components/woosong_button.dart';
@@ -5,6 +7,8 @@ import '../components/woosong_button.dart';
 import '../generated/app_localizations.dart'; // 생성된 localization 파일 import
 import '../auth/user_auth.dart';
 import 'providers/app_language_provider.dart';
+import 'package:flutter_application_1/managers/location_manager.dart'; // 🔥 추가
+import 'package:location/location.dart' as loc; // 🔥 추가
 
 enum AppLanguage { korean, chinese, english }
 
@@ -60,13 +64,16 @@ class _WelcomeViewState extends State<WelcomeView>
   late Animation<double> _floatingAnimation;
   late AppLanguage _selectedLanguage;
 
+  // 🔥 위치 준비 관련 변수들 추가
+  bool _isPreparingLocation = false;
+  bool _locationPrepared = false;
+
   @override
   void initState() {
     super.initState();
     final locale = Provider.of<AppLanguageProvider>(context, listen: false).locale;
-  _selectedLanguage = localeToAppLanguage(locale);
+    _selectedLanguage = localeToAppLanguage(locale);
 
-    
     _fadeController = AnimationController(
       duration: const Duration(milliseconds: 1500),
       vsync: this,
@@ -97,6 +104,9 @@ class _WelcomeViewState extends State<WelcomeView>
     _fadeController.forward();
     _slideController.forward();
     _floatingController.repeat(reverse: true);
+
+    // 🔥 Welcome 화면 진입 시 백그라운드에서 위치 미리 준비
+    _prepareLocationInBackground();
   }
 
   @override
@@ -106,6 +116,81 @@ class _WelcomeViewState extends State<WelcomeView>
     _floatingController.dispose();
     super.dispose();
   }
+
+/// 🔥 백그라운드에서 위치 미리 준비 (단순화 최종 버전)
+Future<void> _prepareLocationInBackground() async {
+  if (_isPreparingLocation || _locationPrepared) return;
+  
+  try {
+    _isPreparingLocation = true;
+    debugPrint('🔄 Welcome 화면에서 위치 미리 준비 시작...');
+    
+    // 애니메이션이 어느 정도 진행된 후에 위치 요청 시작
+    await Future.delayed(const Duration(milliseconds: 1500));
+    
+    final locationManager = Provider.of<LocationManager>(context, listen: false);
+    
+    // LocationManager 초기화 대기
+    int retries = 0;
+    while (!locationManager.isInitialized && retries < 30) {
+      await Future.delayed(const Duration(milliseconds: 100));
+      retries++;
+    }
+    
+    if (locationManager.isInitialized) {
+      debugPrint('🔍 Welcome에서 위치 권한 확인 중...');
+      
+      // 권한 상태 확인
+      await Future.delayed(const Duration(milliseconds: 300));
+      await locationManager.recheckPermissionStatus();
+      
+      // 백그라운드 권한 확인이 완료될 때까지 대기
+      int permissionRetries = 0;
+      while (locationManager.permissionStatus == null && permissionRetries < 15) {
+        await Future.delayed(const Duration(milliseconds: 100));
+        permissionRetries++;
+      }
+      
+      debugPrint('🔍 최종 권한 상태: ${locationManager.permissionStatus}');
+      
+      // 🔥 권한이 있든 없든 위치 요청 시도 (짧은 시간만)
+      debugPrint('✅ Welcome에서 간단한 위치 요청 시작...');
+      
+      try {
+        // 🔥 타임아웃을 3초로 단축 (Welcome에서는 빠르게)
+        await locationManager.requestLocation().timeout(
+          const Duration(seconds: 3),
+          onTimeout: () {
+            debugPrint('⏰ Welcome 위치 요청 타임아웃 (3초) - 정상 진행');
+            throw TimeoutException('Welcome 위치 타임아웃', const Duration(seconds: 3));
+          },
+        );
+        
+        if (locationManager.hasValidLocation && mounted) {
+          debugPrint('✅ Welcome 화면에서 위치 준비 완료!');
+          debugPrint('   위도: ${locationManager.currentLocation?.latitude}');
+          debugPrint('   경도: ${locationManager.currentLocation?.longitude}');
+          
+          setState(() {
+            _locationPrepared = true;
+          });
+        } else {
+          debugPrint('⚠️ Welcome 화면에서 위치 준비 실패 - Map에서 재시도');
+          // 실패해도 정상 진행
+        }
+      } catch (e) {
+        debugPrint('⚠️ Welcome 위치 요청 실패: $e - Map에서 재시도');
+        // 실패해도 정상 진행 (Map에서 재시도)
+      }
+    } else {
+      debugPrint('❌ Welcome 화면에서 LocationManager 초기화 실패');
+    }
+  } catch (e) {
+    debugPrint('⚠️ Welcome 화면 위치 준비 오류: $e');
+  } finally {
+    _isPreparingLocation = false;
+  }
+}
 
   // 기본 텍스트 반환 함수들 (localization이 없을 때 사용)
   String _getAppTitle() {
@@ -163,40 +248,37 @@ class _WelcomeViewState extends State<WelcomeView>
     }
   }
 
-void _showLanguageDialog() async {
-  final result = await showDialog<AppLanguage>(
-    context: context,
-    builder: (context) {
-      return AlertDialog(
-        title: Text(_getLanguageText()),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: AppLanguage.values.map((lang) {
-            return RadioListTile<AppLanguage>(
-              value: lang,
-              groupValue: _selectedLanguage,
-              title: Text(languageToString(lang)),
-              onChanged: (value) {
-                Navigator.of(context).pop(value);
-              },
-            );
-          }).toList(),
-        ),
-      );
-    },
-  );
+  void _showLanguageDialog() async {
+    final result = await showDialog<AppLanguage>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(_getLanguageText()),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: AppLanguage.values.map((lang) {
+              return RadioListTile<AppLanguage>(
+                value: lang,
+                groupValue: _selectedLanguage,
+                title: Text(languageToString(lang)),
+                onChanged: (value) {
+                  Navigator.of(context).pop(value);
+                },
+              );
+            }).toList(),
+          ),
+        );
+      },
+    );
 
-  if (result != null && result != _selectedLanguage) {
-    setState(() {
-      _selectedLanguage = result;
-    });
-    Provider.of<AppLanguageProvider>(context, listen: false)
-        .setLocale(appLanguageToLocale(result));
+    if (result != null && result != _selectedLanguage) {
+      setState(() {
+        _selectedLanguage = result;
+      });
+      Provider.of<AppLanguageProvider>(context, listen: false)
+          .setLocale(appLanguageToLocale(result));
+    }
   }
-}
-
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -334,6 +416,37 @@ void _showLanguageDialog() async {
                       ),
                       
                       const Spacer(flex: 3),
+
+                      // 🔥 위치 준비 상태 표시 (선택적)
+                      if (_locationPrepared)
+                        Container(
+                          margin: const EdgeInsets.only(bottom: 16),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: Colors.green.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: Colors.green.withOpacity(0.3)),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.location_on, color: Colors.green, size: 16),
+                              const SizedBox(width: 6),
+                              Text(
+                                _selectedLanguage == AppLanguage.korean 
+                                  ? '위치 서비스 준비 완료'
+                                  : _selectedLanguage == AppLanguage.chinese
+                                    ? '位置服务已准备就绪'
+                                    : 'Location service ready',
+                                style: const TextStyle(
+                                  color: Colors.green,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       
                       // 시작 버튼
                       AnimatedBuilder(
