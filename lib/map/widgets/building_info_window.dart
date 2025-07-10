@@ -11,15 +11,21 @@ import 'package:flutter_application_1/inside/building_map_page.dart';
 
 String getImageForBuilding(String name) {
   final lower = name.toLowerCase();
-  if (lower.contains('w17-동관')) return 'lib/resource/ws17.jpg';
-  if (lower.contains('w15')) return 'lib/resource/ws15.jpg';
-  if (lower.contains('카페')) return 'assets/images/cafe.jpg';
-  if (lower.contains('식당')) return 'assets/images/restaurant.jpg';
-  if (lower.contains('체육관')) return 'assets/images/gym.jpg';
-  if (lower.contains('유치원')) return 'assets/images/kindergarten.jpg';
-  if (lower.contains('학군단')) return 'assets/images/military.jpg';
-  if (lower.contains('타워')) return 'assets/images/tower.jpg';
-  if (lower.contains('회관')) return 'assets/images/center.jpg';
+  if (lower.contains('w1')) return 'lib/asset/w1.jpeg';
+  if (lower.contains('w6')) return 'lib/asset/w6.jpeg';
+  if (lower.contains('w7')) return 'lib/asset/w7.jpeg';
+  if (lower.contains('w9')) return 'lib/asset/w9.jpeg';
+  if (lower.contains('w10')) return 'lib/asset/w10.jpeg';
+  if (lower.contains('w11')) return 'lib/asset/w11.jpeg';
+  if (lower.contains('w12')) return 'lib/asset/w12.jpeg';
+  if (lower.contains('w13')) return 'lib/asset/w13.jpeg';
+  if (lower.contains('w14')) return 'lib/asset/w14.jpeg';
+  if (lower.contains('w15')) return 'lib/asset/w15.jpeg';
+  if (lower.contains('w16')) return 'lib/asset/w16.jpeg';
+  if (lower.contains('w17-서관')) return 'lib/asset/w17-서관.png';
+  if (lower.contains('w18')) return 'lib/asset/w18.jpeg';
+  if (lower.contains('w19')) return 'lib/asset/w19.jpeg';
+  
   return 'error.jpg'; // 기본 이미지
 }
 
