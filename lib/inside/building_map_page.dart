@@ -267,35 +267,45 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
     }
   }
 
-  /// 사용자가 지도 위의 방(버튼)을 눌렀을 때 정보 시트를 표시하는 함수
+    /// 방 버튼 클릭 시 서버에서 설명 받아와서 RoomInfoSheet(모달)로 표시
   void _showRoomInfoSheet(BuildContext context, String roomId) async {
-    setState(() => _selectedRoomId = roomId); // 선택된 방 테두리 표시
-    if (_selectedFloor == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('오류: 층 정보가 선택되지 않았습니다.')));
-      return;
-    }
-    String roomIdNoR = roomId.startsWith('R') ? roomId.substring(1) : roomId;
-    String roomDesc = '설명을 불러오는 중...';
+    setState(() => _selectedRoomId = roomId);
 
-    showModalBottomSheet(
-      context: context, backgroundColor: Colors.transparent, isScrollControlled: true,
+    // R이 앞에 붙어있으면 제거 (서버 요청과 화면 표시 모두에 사용)
+    String roomIdNoR = roomId.startsWith('R') ? roomId.substring(1) : roomId;
+
+    String roomDesc = '';
+    try {
+      // 서버에서 방 설명 받아오기 (GET)
+      roomDesc = await _apiService.fetchRoomDescription(
+        buildingName: widget.buildingName,
+        floorNumber: _selectedFloor?['Floor_Number'],
+        roomName: roomIdNoR, // 서버에도 R을 뺀 값으로 전달
+      );
+    } catch (e) {
+      print(e);
+      roomDesc = '설명을 불러오지 못했습니다.';
+    }
+
+    // RoomInfoSheet 모달로 방 정보 표시 (name에 R 뺀 값)
+    await showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
       builder: (context) => RoomInfoSheet(
         roomInfo: RoomInfo(id: roomId, name: roomIdNoR, desc: roomDesc),
-        // [핵심 개선] 출발/도착 모두 _setPoint 함수를 호출하여 로직을 일관되게 처리합니다.
-        onDeparture: () => _setPoint('start', roomId),
-        onArrival: () => _setPoint('end', roomId),
+        onDeparture: () {
+          setState(() => _startPoint = {"floorId": _selectedFloor?['Floor_Id'], "roomId": roomId});
+          if (_endPoint != null) _findAndDrawPath();
+          Navigator.pop(context);
+        },
+        onArrival: () {
+          setState(() => _endPoint = {"floorId": _selectedFloor?['Floor_Id'], "roomId": roomId});
+          if (_startPoint != null) _findAndDrawPath();
+          Navigator.pop(context);
+        },
       ),
-    ).whenComplete(() => { if (mounted) setState(() => _selectedRoomId = null) });
-
-    try {
-      // 비동기적으로 방 설명을 불러옵니다 (UI는 이미 표시된 상태).
-      final fetchedDesc = await _apiService.fetchRoomDescription(
-        buildingName: widget.buildingName,
-        floorNumber: _selectedFloor!['Floor_Number'].toString(),
-        roomName: roomIdNoR,
-      );
-      // TODO: 받아온 설명으로 BottomSheet UI를 업데이트하는 로직 (필요 시)
-    } catch (e) { /* 오류 처리 */ }
+    );
+    if (mounted) setState(() => _selectedRoomId = null);
   }
 
   /// 층간 이동 안내 메시지를 표시하고, 몇 초 뒤 자동으로 사라지게 하는 함수
