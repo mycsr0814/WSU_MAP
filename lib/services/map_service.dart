@@ -12,6 +12,7 @@ import 'package:flutter_application_1/models/building.dart';
 class MapService {
   NaverMapController? _mapController;
   NOverlayImage? _blueBuildingIcon;
+  NMarker? _selectedMarker;
   
   // 건물 마커만 관리
   final List<NMarker> _buildingMarkers = [];
@@ -467,7 +468,7 @@ Future<void> addBuildingMarkers(Function(NMarker, Building) onTap) async {
         position: NLatLng(building.lat, building.lng),
         icon: _getBuildingMarkerIcon(building),
         caption: NOverlayCaption(
-          text: _getLocalizedBuildingName(building),
+          text: '',
           color: Colors.blue,
           textSize: 12,
         ),
@@ -824,5 +825,37 @@ Future<void> refreshBuildingData() async {
     _onBuildingMarkerTap = null;
     debugPrint('MapService 정리 완료');
   }
+
+
+  /// 선택된 건물 마커 강조
+  Future<void> highlightBuildingMarker(NMarker marker) async {
+    await resetAllBuildingMarkers();
+
+    marker.setIcon(const NOverlayImage.fromAssetImage('lib/asset/building_marker_blue.png'));
+    marker.setCaption(NOverlayCaption(
+      text: '', // 건물이름과 별 없이 빈 문자열
+      color: Colors.deepOrange, // 색상은 원하는 대로
+      textSize: 16,
+      haloColor: Colors.white,
+    ));
+    marker.setSize(const Size(110,110));
+    _selectedMarker = marker;
+  }
+
+  /// 모든 건물 마커 스타일 초기화
+  Future<void> resetAllBuildingMarkers() async {
+    for (final marker in _buildingMarkers) {
+      marker.setIcon(_blueBuildingIcon);
+      marker.setCaption(NOverlayCaption(
+        text: '', // 항상 빈 문자열
+        color: Colors.blue,
+        textSize: 12,
+        haloColor: Colors.white,
+      ));
+      marker.setSize(const Size(40, 40));
+    }
+    _selectedMarker = null;
+  }
+
   
 }
