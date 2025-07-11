@@ -10,7 +10,6 @@ import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:http/http.dart' as http;
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_application_1/map/building_data.dart';
 import 'package:flutter_application_1/map/widgets/directions_screen.dart';
 
 class BuildingDetailSheet extends StatelessWidget {

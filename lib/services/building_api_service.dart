@@ -1,12 +1,13 @@
 // lib/services/building_api_service.dart - 디버그 로그 정리된 버전
 
 import 'dart:convert';
+import 'package:flutter_application_1/config/api_config.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import '../models/building.dart';
 
 class BuildingApiService {
-  static const String baseUrl = 'http://13.211.150.88:3000/building';
+  static final String baseUrl = ApiConfig.buildingBase;
   
   /// 모든 건물 데이터 가져오기
   static Future<List<Building>> getAllBuildings() async {

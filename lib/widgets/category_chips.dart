@@ -1,4 +1,4 @@
-// lib/map/widgets/category_chips.dart
+// lib/map/widgets/category_chips.dart - mounted 체크 추가
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/models/category.dart';
 import 'package:flutter_application_1/services/category_api_service.dart';
@@ -28,8 +28,12 @@ class _CategoryChipsState extends State<CategoryChips> {
     _loadCategories();
   }
 
+  /// 🔥 mounted 체크 추가된 카테고리 로딩
   Future<void> _loadCategories() async {
     try {
+      // 🔥 mounted 체크 추가
+      if (!mounted) return;
+      
       setState(() {
         _isLoading = true;
         _error = null;
@@ -44,6 +48,9 @@ class _CategoryChipsState extends State<CategoryChips> {
           .toSet()
           .toList();
 
+      // 🔥 mounted 체크 추가
+      if (!mounted) return;
+
       setState(() {
         _categories = categoryNames;
         _isLoading = false;
@@ -51,6 +58,9 @@ class _CategoryChipsState extends State<CategoryChips> {
 
       debugPrint('카테고리 로딩 완료: $_categories');
     } catch (e) {
+      // 🔥 mounted 체크 추가
+      if (!mounted) return;
+      
       setState(() {
         _error = e.toString();
         _isLoading = false;
@@ -62,19 +72,28 @@ class _CategoryChipsState extends State<CategoryChips> {
 
   // 카테고리 새로고침 (외부에서 호출 가능)
   void refresh() {
-    _loadCategories();
+    // 🔥 mounted 체크 추가
+    if (mounted) {
+      _loadCategories();
+    }
   }
 
-  // 카테고리 선택 시 해당 카테고리의 건물 위치들을 조회
+  /// 🔥 안전한 카테고리 선택 처리
   Future<void> _onCategoryTap(String category) async {
     try {
       debugPrint('카테고리 선택: $category');
+      
+      // 🔥 mounted 체크 추가
+      if (!mounted) return;
       
       // 로딩 상태 표시를 위해 먼저 빈 리스트로 콜백 호출
       widget.onCategorySelected(category, []);
       
       // 해당 카테고리의 건물 위치들을 조회
       final buildings = await CategoryApiService.getCategoryBuildings(category);
+      
+      // 🔥 mounted 체크 추가 (비동기 작업 후)
+      if (!mounted) return;
       
       debugPrint('카테고리 $category의 건물 위치 ${buildings.length}개 조회됨');
       
@@ -88,10 +107,14 @@ class _CategoryChipsState extends State<CategoryChips> {
       
     } catch (e) {
       debugPrint('카테고리 건물 조회 실패: $e');
+      
+      // 🔥 mounted 체크 추가
+      if (!mounted) return;
+      
       // 에러 발생 시 빈 리스트로 전달
       widget.onCategorySelected(category, []);
       
-      // 에러 메시지 표시
+      // 에러 메시지 표시 (이미 mounted 체크가 있음)
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -146,7 +169,12 @@ class _CategoryChipsState extends State<CategoryChips> {
               ),
               const SizedBox(width: 8),
               InkWell(
-                onTap: _loadCategories,
+                onTap: () {
+                  // 🔥 mounted 체크 추가
+                  if (mounted) {
+                    _loadCategories();
+                  }
+                },
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
@@ -201,7 +229,12 @@ class _CategoryChipsState extends State<CategoryChips> {
     IconData icon = _getCategoryIcon(category);
 
     return InkWell(
-      onTap: () => _onCategoryTap(category),
+      onTap: () {
+        // 🔥 mounted 체크 추가
+        if (mounted) {
+          _onCategoryTap(category);
+        }
+      },
       borderRadius: BorderRadius.circular(20),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
@@ -316,5 +349,12 @@ class _CategoryChipsState extends State<CategoryChips> {
       default:
         return Icons.category;
     }
+  }
+
+  /// 🔥 dispose 메서드 추가 (안전한 정리)
+  @override
+  void dispose() {
+    debugPrint('🧹 CategoryChips dispose');
+    super.dispose();
   }
 }
