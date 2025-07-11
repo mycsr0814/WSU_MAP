@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 
 /// 서버와 통신하는 API 서비스 클래스
 class ApiService {
-  final String _baseUrl = "http://3.24.110.21:3000";
+  final String _baseUrl = "http://13.211.150.88:3000";
 
   /// 서버에서 건물 목록을 받아오는 함수
   Future<List<String>> fetchBuildingList() async {

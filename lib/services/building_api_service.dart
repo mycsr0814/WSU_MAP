@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import '../models/building.dart';
 
 class BuildingApiService {
-  static const String baseUrl = 'http://3.24.110.21:3000/building';
+  static const String baseUrl = 'http://13.211.150.88:3000/building';
   
   /// 모든 건물 데이터 가져오기
   static Future<List<Building>> getAllBuildings() async {

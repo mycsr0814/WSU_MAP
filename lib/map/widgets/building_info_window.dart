@@ -17,7 +17,8 @@ bool containsExactWord(String text, String word) {
 
 String getImageForBuilding(String name) {
   final lower = name.toLowerCase();
-  if (containsExactWord(lower, 'w17-서관')) return 'lib/asset/w17-서관.png';
+  if (containsExactWord(lower, 'w17-서관')) return 'lib/asset/w17-서관.jpeg';
+  if (containsExactWord(lower, 'w17-서관')) return 'lib/asset/w17-동관.jpeg';
   if (containsExactWord(lower, 'w19')) return 'lib/asset/w19.jpeg';
   if (containsExactWord(lower, 'w18')) return 'lib/asset/w18.jpeg';
   if (containsExactWord(lower, 'w16')) return 'lib/asset/w16.jpeg';

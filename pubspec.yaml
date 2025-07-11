@@ -81,7 +81,8 @@ flutter:
     - lib/asset/w13.jpeg
     - lib/asset/w14.jpeg
     - lib/asset/w15.jpeg
-    - lib/asset/w17-서관.png
+    - lib/asset/w17-서관.jpeg
+    - lib/asset/w17-동관.jpeg
     - lib/asset/w18.jpeg
     - lib/asset/w19.jpeg
 
