@@ -1,10 +1,12 @@
-// lib/map/widgets/category_chips.dart
+// lib/map/widgets/category_chips.dart - 수정된 버전
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/models/category.dart';
 import 'package:flutter_application_1/services/category_api_service.dart';
+import 'package:http/http.dart' as http;
 
 class CategoryChips extends StatefulWidget {
-  final Function(String, List<CategoryBuilding>) onCategorySelected;
+  final Function(String, List<String>) onCategorySelected; // CategoryBuilding → String으로 변경
   final String? selectedCategory;
 
   const CategoryChips({
@@ -21,15 +23,34 @@ class _CategoryChipsState extends State<CategoryChips> {
   List<String> _categories = [];
   bool _isLoading = true;
   String? _error;
+  bool _isApiCalling = false; // 🔥 API 호출 중복 방지 플래그
+  String? _selectedCategory; // 🔥 추가: 선택된 카테고리 상태 변수
+  
+  // 🔥 CategoryApiService에서 baseUrl 가져오기
+  // static const String baseUrl = 'https://your-api-server.com'; // 제거
 
   @override
   void initState() {
     super.initState();
+    _selectedCategory = widget.selectedCategory; // 🔥 초기값 설정
     _loadCategories();
+  }
+
+  @override
+  void didUpdateWidget(CategoryChips oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // 🔥 부모에서 전달된 selectedCategory가 변경되면 업데이트
+    if (widget.selectedCategory != oldWidget.selectedCategory) {
+      setState(() {
+        _selectedCategory = widget.selectedCategory;
+      });
+    }
   }
 
   Future<void> _loadCategories() async {
     try {
+      if (!mounted) return;
+      
       setState(() {
         _isLoading = true;
         _error = null;
@@ -44,6 +65,8 @@ class _CategoryChipsState extends State<CategoryChips> {
           .toSet()
           .toList();
 
+      if (!mounted) return;
+
       setState(() {
         _categories = categoryNames;
         _isLoading = false;
@@ -51,6 +74,8 @@ class _CategoryChipsState extends State<CategoryChips> {
 
       debugPrint('카테고리 로딩 완료: $_categories');
     } catch (e) {
+      if (!mounted) return;
+      
       setState(() {
         _error = e.toString();
         _isLoading = false;
@@ -60,47 +85,141 @@ class _CategoryChipsState extends State<CategoryChips> {
     }
   }
 
-  // 카테고리 새로고침 (외부에서 호출 가능)
   void refresh() {
-    _loadCategories();
+    if (mounted) {
+      _loadCategories();
+    }
   }
 
-  // 카테고리 선택 시 해당 카테고리의 건물 위치들을 조회
-  Future<void> _onCategoryTap(String category) async {
+  /// 🔥 카테고리 선택 시 건물 이름 목록만 반환
+  void _onCategoryTap(String? category) async {
+    debugPrint('🎯 카테고리 탭: $category');
+    
+    // 🔥 이미 API 호출 중이면 무시
+    if (_isApiCalling) {
+      debugPrint('⚠️ API 호출 중이므로 무시');
+      return;
+    }
+    
+    if (category == null) {
+      // 카테고리 해제
+      setState(() {
+        _selectedCategory = null;
+      });
+      widget.onCategorySelected('', []); // 빈 카테고리로 해제
+      return;
+    }
+
+    if (_selectedCategory == category) {
+      // 같은 카테고리 클릭 시 해제
+      setState(() {
+        _selectedCategory = null;
+      });
+      widget.onCategorySelected('', []);
+      return;
+    }
+
+    // 🔥 API 호출 시작
+    _isApiCalling = true;
+    
+    setState(() {
+      _selectedCategory = category;
+      _isLoading = true;
+    });
+
     try {
-      debugPrint('카테고리 선택: $category');
+      debugPrint('📡 API 호출 시작: $category');
       
-      // 로딩 상태 표시를 위해 먼저 빈 리스트로 콜백 호출
-      widget.onCategorySelected(category, []);
+      // 🔥 한 번만 호출
+      final buildingNames = await _getCategoryBuildingNames(category);
       
-      // 해당 카테고리의 건물 위치들을 조회
-      final buildings = await CategoryApiService.getCategoryBuildings(category);
+      debugPrint('📡 API 호출 완료: $category, 건물 수: ${buildingNames.length}');
+      debugPrint('📍 건물 이름 목록: $buildingNames');
       
-      debugPrint('카테고리 $category의 건물 위치 ${buildings.length}개 조회됨');
+      setState(() {
+        _isLoading = false;
+      });
       
-      // 조회된 건물들을 로그로 출력하여 디버깅
-      for (var building in buildings) {
-        debugPrint('건물: ${building.buildingName}, 위치: (${building.location.x}, ${building.location.y})');
-      }
-      
-      // 부모 위젯에 카테고리명과 건물 위치 정보 전달
-      widget.onCategorySelected(category, buildings);
+      // 🔥 콜백 호출
+      widget.onCategorySelected(category, buildingNames);
       
     } catch (e) {
-      debugPrint('카테고리 건물 조회 실패: $e');
-      // 에러 발생 시 빈 리스트로 전달
-      widget.onCategorySelected(category, []);
+      debugPrint('❌ API 호출 오류: $e');
+      setState(() {
+        _isLoading = false;
+        _selectedCategory = null; // 오류 시 선택 해제
+      });
+    } finally {
+      // 🔥 API 호출 완료
+      _isApiCalling = false;
+    }
+  }
+
+  Future<List<String>> _getCategoryBuildingNames(String category) async {
+    try {
+      debugPrint('🎯 getCategoryBuildingNames 호출: $category');
       
-      // 에러 메시지 표시
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('카테고리 정보를 불러오는데 실패했습니다: $e'),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 3),
-          ),
-        );
+      // 🔥 대안 방법: CategoryApiService의 원본 데이터 활용
+      // 만약 HTTP 요청이 계속 실패한다면, 이미 로딩된 카테고리 데이터를 활용
+      
+      try {
+        // 먼저 HTTP 요청 시도
+        final response = await http.get(
+          Uri.parse('http://13.211.150.88:3001/category'), // 로그인 서버와 같은 주소
+          headers: {'Content-Type': 'application/json'},
+        ).timeout(const Duration(seconds: 5));
+
+        if (response.statusCode == 200) {
+          final String responseBody = utf8.decode(response.bodyBytes);
+          final List<dynamic> jsonData = json.decode(responseBody);
+          
+          debugPrint('✅ HTTP 요청 성공! API 데이터: ${jsonData.length}개');
+          
+          // 선택된 카테고리에 해당하는 건물들만 필터링
+          final filteredBuildings = <String>[];
+          
+          for (final item in jsonData) {
+            final categoryName = item['Category_Name']?.toString();
+            final buildingName = item['Building_Name']?.toString();
+            
+            if (categoryName == category && buildingName != null && buildingName.isNotEmpty) {
+              if (!filteredBuildings.contains(buildingName)) {
+                filteredBuildings.add(buildingName);
+              }
+            }
+          }
+
+          debugPrint('🏢 건물 이름 목록: $filteredBuildings');
+          return filteredBuildings;
+        }
+      } catch (e) {
+        debugPrint('⚠️ HTTP 요청 실패, 대안 방법 사용: $e');
       }
+      
+      // 🔥 대안: 이미 _categories에 로딩된 데이터 기반으로 추론
+      // 카테고리별 건물 매핑을 하드코딩으로 제공 (임시 해결책)
+      final Map<String, List<String>> categoryBuildingMap = {
+        '라운지': ['W1', 'W10', 'W12', 'W13', 'W19', 'W3', 'W5', 'W6'],
+        '소화기': ['W1', 'W10', 'W11', 'W12', 'W13', 'W14', 'W15', 'W16', 'W17-동관', 'W17-서관', 'W18', 'W19', 'W2', 'W2-1', 'W3', 'W4', 'W5', 'W6', 'W7', 'W8', 'W9'],
+        '자판기': ['W1', 'W10', 'W2', 'W4', 'W5', 'W6'],
+        '정수기': ['W1', 'W10', 'W11', 'W12', 'W13', 'W14', 'W15', 'W16', 'W17-동관', 'W17-서관', 'W18', 'W19', 'W2', 'W3', 'W4', 'W5', 'W6', 'W7', 'W8', 'W9'],
+        '프린터': ['W1', 'W10', 'W12', 'W13', 'W16', 'W19', 'W5', 'W7'],
+        '은행(atm)': ['W1', 'W16'],
+        '카페': ['W12', 'W5'],
+        '서점': ['W16'],
+        '식당': ['W16'],
+        '우체국': ['W16'],
+        '편의점': ['W16'],
+        '헬스장': ['W2-1', 'W5'],
+      };
+      
+      final buildings = categoryBuildingMap[category] ?? [];
+      debugPrint('🔄 대안 방법으로 건물 목록 반환: $buildings');
+      return buildings;
+      
+    } catch (e) {
+      debugPrint('❌ 카테고리 건물 조회 실패: $e');
+      return [];
     }
   }
 
@@ -146,7 +265,11 @@ class _CategoryChipsState extends State<CategoryChips> {
               ),
               const SizedBox(width: 8),
               InkWell(
-                onTap: _loadCategories,
+                onTap: () {
+                  if (mounted) {
+                    _loadCategories();
+                  }
+                },
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
@@ -197,11 +320,15 @@ class _CategoryChipsState extends State<CategoryChips> {
   }
 
   Widget _buildCategoryChip(String category) {
-    final isSelected = widget.selectedCategory == category;
+    final isSelected = _selectedCategory == category; // 🔥 수정: widget.selectedCategory → _selectedCategory
     IconData icon = _getCategoryIcon(category);
 
     return InkWell(
-      onTap: () => _onCategoryTap(category),
+      onTap: () {
+        if (mounted) {
+          _onCategoryTap(category);
+        }
+      },
       borderRadius: BorderRadius.circular(20),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
@@ -256,6 +383,7 @@ class _CategoryChipsState extends State<CategoryChips> {
     );
   }
 
+  // 🔥 카테고리별 아이콘 가져오기 (CategoryChips용)
   IconData _getCategoryIcon(String category) {
     switch (category) {
       case '카페':
@@ -274,6 +402,7 @@ class _CategoryChipsState extends State<CategoryChips> {
         return Icons.content_copy;
       case 'ATM':
       case '은행':
+      case '은행(atm)':
         return Icons.atm;
       case '의료':
       case '보건소':
@@ -281,15 +410,25 @@ class _CategoryChipsState extends State<CategoryChips> {
       case '도서관':
         return Icons.local_library;
       case '체육관':
+      case '헬스장':
         return Icons.fitness_center;
       case '주차장':
         return Icons.local_parking;
+      case '우체국':
+        return Icons.local_post_office;
+      case '서점':
+        return Icons.menu_book;
+      case '정수기':
+        return Icons.water_drop;
+      case '소화기':
+        return Icons.fire_extinguisher;
+      case '라운지':
+        return Icons.weekend;
       default:
         return Icons.category;
     }
   }
 
-  // 카테고리 아이콘을 가져오는 static 메서드 (외부에서 사용 가능)
   static IconData getCategoryIcon(String category) {
     switch (category) {
       case '카페':
@@ -316,5 +455,11 @@ class _CategoryChipsState extends State<CategoryChips> {
       default:
         return Icons.category;
     }
+  }
+
+  @override
+  void dispose() {
+    debugPrint('🧹 CategoryChips dispose');
+    super.dispose();
   }
 }

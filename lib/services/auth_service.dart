@@ -2,10 +2,11 @@
 
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/config/api_config.dart';
 import 'package:http/http.dart' as http;
 
 class AuthService {
-  static const String baseUrl = 'http://13.211.150.88:3001/user';
+  static final String baseUrl = ApiConfig.userBase;
   
   /// 회원가입 API 호출
   static Future<AuthResult> register({

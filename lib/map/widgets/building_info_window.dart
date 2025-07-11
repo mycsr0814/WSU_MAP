@@ -1,7 +1,6 @@
 // lib/map/widgets/building_info_window.dart - 내부도면보기 버튼으로 수정
 
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/map/widgets/floor_plan_dialog.dart';
 import 'package:flutter_application_1/models/building.dart';
 import '../../generated/app_localizations.dart';
 import 'package:flutter_application_1/map/widgets/directions_screen.dart';
@@ -9,19 +8,32 @@ import 'package:flutter_application_1/inside/building_map_page.dart';
 
 
 
+bool containsExactWord(String text, String word) {
+  final pattern = RegExp(r'\b' + RegExp.escape(word) + r'\b');
+  return pattern.hasMatch(text);
+}
+
+
 String getImageForBuilding(String name) {
   final lower = name.toLowerCase();
-  if (lower.contains('w17-동관')) return 'lib/resource/ws17.jpg';
-  if (lower.contains('w15')) return 'lib/resource/ws15.jpg';
-  if (lower.contains('카페')) return 'assets/images/cafe.jpg';
-  if (lower.contains('식당')) return 'assets/images/restaurant.jpg';
-  if (lower.contains('체육관')) return 'assets/images/gym.jpg';
-  if (lower.contains('유치원')) return 'assets/images/kindergarten.jpg';
-  if (lower.contains('학군단')) return 'assets/images/military.jpg';
-  if (lower.contains('타워')) return 'assets/images/tower.jpg';
-  if (lower.contains('회관')) return 'assets/images/center.jpg';
+if (lower.contains('w17-서관')) return 'lib/asset/w17-서관.jpeg';
+  if (lower.contains('w17-동관')) return 'lib/asset/w17-동관.jpeg';
+  if (containsExactWord(lower, 'w19')) return 'lib/asset/w19.jpeg';
+  if (containsExactWord(lower, 'w18')) return 'lib/asset/w18.jpeg';
+  if (containsExactWord(lower, 'w16')) return 'lib/asset/w16.jpeg';
+  if (containsExactWord(lower, 'w15')) return 'lib/asset/w15.jpeg';
+  if (containsExactWord(lower, 'w14')) return 'lib/asset/w14.jpeg';
+  if (containsExactWord(lower, 'w13')) return 'lib/asset/w13.jpeg';
+  if (containsExactWord(lower, 'w12')) return 'lib/asset/w12.jpeg';
+  if (containsExactWord(lower, 'w11')) return 'lib/asset/w11.jpeg';
+  if (containsExactWord(lower, 'w10')) return 'lib/asset/w10.jpeg';
+  if (containsExactWord(lower, 'w9')) return 'lib/asset/w9.jpeg';
+  if (containsExactWord(lower, 'w7')) return 'lib/asset/w7.jpeg';
+  if (containsExactWord(lower, 'w6')) return 'lib/asset/w6.jpeg';
+  if (containsExactWord(lower, 'w1')) return 'lib/asset/w1.jpeg';
   return 'error.jpg'; // 기본 이미지
 }
+
 
 
 class BuildingInfoWindow extends StatelessWidget {
@@ -99,7 +111,6 @@ Widget _buildContent(BuildContext context, AppLocalizations l10n) {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 이미지 썸네일 + 클릭 시 모달로 원본 보기
         GestureDetector(
           onTap: () {
             showDialog(
@@ -144,7 +155,6 @@ Widget _buildContent(BuildContext context, AppLocalizations l10n) {
           ),
         ),
         const SizedBox(height: 12),
-        // 이하 기존 코드 유지
         _buildHeader(),
         const SizedBox(height: 12),
         _buildLocationInfo(l10n),
@@ -161,6 +171,7 @@ Widget _buildContent(BuildContext context, AppLocalizations l10n) {
     ),
   );
 }
+
 
 
 
@@ -371,7 +382,7 @@ Widget _buildContent(BuildContext context, AppLocalizations l10n) {
           const Icon(Icons.map_outlined, size: 20),
           const SizedBox(width: 8),
           Text(
-            l10n.view_floor_plan ?? '내부도면보기',
+            l10n.view_floor_plan,
             style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
