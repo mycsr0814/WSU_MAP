@@ -759,6 +759,7 @@ CategoryChips(
               _navigationManager.handleDirectionsResult(result, context);
             } else {
               print('잘못된 결과 타입: $result');
+              //?
             }
           },
         );
