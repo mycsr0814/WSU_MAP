@@ -1,5 +1,6 @@
 // lib/services/path_api_service.dart - from_location 추가된 버전
 
+import 'package:flutter_application_1/config/api_config.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter/material.dart';
@@ -7,7 +8,7 @@ import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:flutter_application_1/models/building.dart';
 
 class PathApiService {
-  static const String baseUrl = 'http://13.211.150.88:3000';
+  static final String baseUrl = ApiConfig.pathBase;
 
   /// MapController에서 사용하는 메인 메서드 (Building 간 경로)
   static Future<List<NLatLng>> getRoute(Building startBuilding, Building endBuilding) async {

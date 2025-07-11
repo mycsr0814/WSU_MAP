@@ -1,10 +1,11 @@
 // services/category_api_service.dart
 import 'dart:convert';
+import 'package:flutter_application_1/config/api_config.dart';
 import 'package:http/http.dart' as http;
 import '../models/category.dart';
 
 class CategoryApiService {
-  static const String baseUrl = 'http://13.211.150.88:3000/category';
+  static final String baseUrl = ApiConfig.categoryBase;
   
   // 카테고리 목록 조회
   static Future<List<Category>> getCategories() async {

@@ -1,7 +1,6 @@
 // lib/map/widgets/building_info_window.dart - 내부도면보기 버튼으로 수정
 
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/map/widgets/floor_plan_dialog.dart';
 import 'package:flutter_application_1/models/building.dart';
 import '../../generated/app_localizations.dart';
 import 'package:flutter_application_1/map/widgets/directions_screen.dart';
@@ -17,8 +16,8 @@ bool containsExactWord(String text, String word) {
 
 String getImageForBuilding(String name) {
   final lower = name.toLowerCase();
-  if (lower.contains('w17-서관')) return 'lib/asset/w17-w.jpeg';
-  if (lower.contains('w17-동관')) return 'lib/asset/w17-e.jpeg';
+if (lower.contains('w17-서관')) return 'lib/asset/w17-서관.jpeg';
+  if (lower.contains('w17-동관')) return 'lib/asset/w17-동관.jpeg';
   if (containsExactWord(lower, 'w19')) return 'lib/asset/w19.jpeg';
   if (containsExactWord(lower, 'w18')) return 'lib/asset/w18.jpeg';
   if (containsExactWord(lower, 'w16')) return 'lib/asset/w16.jpeg';
@@ -383,7 +382,7 @@ Widget _buildContent(BuildContext context, AppLocalizations l10n) {
           const Icon(Icons.map_outlined, size: 20),
           const SizedBox(width: 8),
           Text(
-            l10n.view_floor_plan ?? '내부도면보기',
+            l10n.view_floor_plan,
             style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
