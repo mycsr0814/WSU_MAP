@@ -9,25 +9,31 @@ import 'package:flutter_application_1/inside/building_map_page.dart';
 
 
 
+bool containsExactWord(String text, String word) {
+  final pattern = RegExp(r'\b' + RegExp.escape(word) + r'\b');
+  return pattern.hasMatch(text);
+}
+
+
 String getImageForBuilding(String name) {
   final lower = name.toLowerCase();
-  if (lower.contains('w1')) return 'lib/asset/w1.jpeg';
-  if (lower.contains('w6')) return 'lib/asset/w6.jpeg';
-  if (lower.contains('w7')) return 'lib/asset/w7.jpeg';
-  if (lower.contains('w9')) return 'lib/asset/w9.jpeg';
-  if (lower.contains('w10')) return 'lib/asset/w10.jpeg';
-  if (lower.contains('w11')) return 'lib/asset/w11.jpeg';
-  if (lower.contains('w12')) return 'lib/asset/w12.jpeg';
-  if (lower.contains('w13')) return 'lib/asset/w13.jpeg';
-  if (lower.contains('w14')) return 'lib/asset/w14.jpeg';
-  if (lower.contains('w15')) return 'lib/asset/w15.jpeg';
-  if (lower.contains('w16')) return 'lib/asset/w16.jpeg';
-  if (lower.contains('w17-서관')) return 'lib/asset/w17-서관.png';
-  if (lower.contains('w18')) return 'lib/asset/w18.jpeg';
-  if (lower.contains('w19')) return 'lib/asset/w19.jpeg';
-  
+  if (containsExactWord(lower, 'w17-서관')) return 'lib/asset/w17-서관.png';
+  if (containsExactWord(lower, 'w19')) return 'lib/asset/w19.jpeg';
+  if (containsExactWord(lower, 'w18')) return 'lib/asset/w18.jpeg';
+  if (containsExactWord(lower, 'w16')) return 'lib/asset/w16.jpeg';
+  if (containsExactWord(lower, 'w15')) return 'lib/asset/w15.jpeg';
+  if (containsExactWord(lower, 'w14')) return 'lib/asset/w14.jpeg';
+  if (containsExactWord(lower, 'w13')) return 'lib/asset/w13.jpeg';
+  if (containsExactWord(lower, 'w12')) return 'lib/asset/w12.jpeg';
+  if (containsExactWord(lower, 'w11')) return 'lib/asset/w11.jpeg';
+  if (containsExactWord(lower, 'w10')) return 'lib/asset/w10.jpeg';
+  if (containsExactWord(lower, 'w9')) return 'lib/asset/w9.jpeg';
+  if (containsExactWord(lower, 'w7')) return 'lib/asset/w7.jpeg';
+  if (containsExactWord(lower, 'w6')) return 'lib/asset/w6.jpeg';
+  if (containsExactWord(lower, 'w1')) return 'lib/asset/w1.jpeg';
   return 'error.jpg'; // 기본 이미지
 }
+
 
 
 class BuildingInfoWindow extends StatelessWidget {
@@ -105,7 +111,6 @@ Widget _buildContent(BuildContext context, AppLocalizations l10n) {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 이미지 썸네일 + 클릭 시 모달로 원본 보기
         GestureDetector(
           onTap: () {
             showDialog(
@@ -150,7 +155,6 @@ Widget _buildContent(BuildContext context, AppLocalizations l10n) {
           ),
         ),
         const SizedBox(height: 12),
-        // 이하 기존 코드 유지
         _buildHeader(),
         const SizedBox(height: 12),
         _buildLocationInfo(l10n),
@@ -167,6 +171,7 @@ Widget _buildContent(BuildContext context, AppLocalizations l10n) {
     ),
   );
 }
+
 
 
 
