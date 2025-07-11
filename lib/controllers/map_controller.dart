@@ -1,4 +1,5 @@
-// lib/controllers/map_controller.dart - 내 위치 마커 중복 및 권한 문제 완전 해결
+// lib/controllers/map_controller.dart - 카테고리 기능 수정 (최종)
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
@@ -8,8 +9,9 @@ import 'package:flutter_application_1/services/route_service.dart';
 import 'package:flutter_application_1/services/path_api_service.dart';
 import 'package:flutter_application_1/managers/location_manager.dart';
 import 'package:flutter_application_1/models/building.dart';
-import 'dart:math' as math;
 import 'package:flutter_application_1/models/category.dart';
+import 'package:flutter_application_1/models/category_marker_data.dart'; // 🔥 새로 추가
+import 'dart:math' as math;
 
 class MapScreenController extends ChangeNotifier {
   MapService? _mapService;
@@ -18,6 +20,12 @@ class MapScreenController extends ChangeNotifier {
 
   NMarker? _selectedMarker;
   final Map<String, NMarker> _buildingMarkers = {};
+
+  // 🔥 전체 건물 목록 추가
+  List<Building> _allBuildings = [];
+
+    // 🔥 추가: 현재 Context 저장
+  BuildContext? _currentContext;
 
   // 🏫 우송대학교 중심 좌표
   static const NLatLng _schoolCenter = NLatLng(36.3370, 127.4450);
@@ -36,7 +44,7 @@ class MapScreenController extends ChangeNotifier {
   bool _isLocationRequesting = false;
   bool _isRealLocationFound = false;
   loc.LocationData? _myLocation;
-  bool _hasRequestedLocationOnce = false; // 🔥 중복 요청 방지
+  bool _hasRequestedLocationOnce = false;
 
   // 위치 권한 오류
   bool _hasLocationPermissionError = false;
@@ -57,12 +65,8 @@ class MapScreenController extends ChangeNotifier {
 
   // 카테고리 관련 상태
   String? _selectedCategory;
-  List<CategoryBuilding> _categoryBuildings = [];
   bool _isCategoryLoading = false;
   String? _categoryError;
-
-  // 카테고리 마커들을 저장할 Set
-  final Set<String> _categoryMarkerIds = {};
 
   // Getters
   Building? get selectedBuilding => _selectedBuilding;
@@ -88,7 +92,6 @@ class MapScreenController extends ChangeNotifier {
 
   // 카테고리 관련 Getters
   String? get selectedCategory => _selectedCategory;
-  List<CategoryBuilding> get categoryBuildings => _categoryBuildings;
   bool get isCategoryLoading => _isCategoryLoading;
   String? get categoryError => _categoryError;
 
@@ -135,8 +138,11 @@ class MapScreenController extends ChangeNotifier {
   }
 
   /// Context 설정
-  void setContext(BuildContext context) {
+   void setContext(BuildContext context) {
+    _currentContext = context; // 🔥 Context 저장
     _mapService?.setContext(context);
+    
+    debugPrint('✅ MapController에 Context 설정 완료');
 
     final currentLocale = Localizations.localeOf(context);
     if (_currentLocale != null && _currentLocale != currentLocale) {
@@ -228,7 +234,238 @@ class MapScreenController extends ChangeNotifier {
     }
   }
 
-  /// 🔥 위치 업데이트 리스너 - 중복 마커 완전 방지
+  /// 🔥 건물 이름 목록으로 카테고리 아이콘 마커 표시 (단일 메서드)
+  /// 🔥 건물 이름 목록으로 카테고리 아이콘 마커 표시 (개선된 버전)
+ void selectCategoryByNames(String category, List<String> buildingNames) {
+  debugPrint('=== 카테고리 선택 요청: $category ===');
+  debugPrint('🔍 받은 건물 이름들: $buildingNames');
+  
+  // 빈 배열이거나 빈 카테고리면 해제
+  if (category.isEmpty || buildingNames.isEmpty) {
+    debugPrint('⚠️ 카테고리가 비어있음 - 해제 처리');
+    clearCategorySelection();
+    return;
+  }
+  
+  if (_selectedCategory == category) {
+    debugPrint('같은 카테고리 재선택 → 해제');
+    clearCategorySelection();
+    return;
+  }
+
+  // 이전 카테고리 정리
+  if (_selectedCategory != null) {
+    debugPrint('이전 카테고리($_selectedCategory) 정리');
+    _clearCategoryMarkers();
+  }
+
+  _selectedCategory = category;
+  _isCategoryLoading = true;
+  notifyListeners();
+
+  // 🔥 MapService에 마지막 카테고리 선택 정보 저장
+  _mapService?.saveLastCategorySelection(category, buildingNames);
+
+  try {
+    debugPrint('기존 건물 마커들 숨기기...');
+    _hideAllBuildingMarkers();
+
+    // 🔥 Context가 없으면 잠시 대기 후 재시도
+    if (_currentContext == null) {
+      debugPrint('⏳ Context 대기 중... 잠시 후 재시도');
+      Timer(const Duration(milliseconds: 500), () {
+        if (_selectedCategory == category) { // 여전히 같은 카테고리가 선택되어 있으면
+          debugPrint('🔄 Context 대기 후 재시도');
+          _showCategoryIconMarkers(buildingNames, category);
+        }
+      });
+    } else {
+      debugPrint('카테고리 아이콘 마커들 표시...');
+      _showCategoryIconMarkers(buildingNames, category);
+    }
+    
+    debugPrint('🔍 전체 건물 데이터 개수: ${_allBuildings.length}');
+    debugPrint('✅ 카테고리 선택 완료: $category');
+  } catch (e) {
+    debugPrint('🚨 카테고리 선택 오류: $e');
+    clearCategorySelection();
+  } finally {
+    _isCategoryLoading = false;
+    notifyListeners();
+  }
+}
+
+  /// 🔥 카테고리 아이콘 마커들 표시 (디버깅 강화)
+// 🔥 카테고리 아이콘 마커들 표시 (빈 배열 체크 제거)
+void _showCategoryIconMarkers(List<String> buildingNames, String category) {
+    debugPrint('🔍 === 카테고리 매칭 디버깅 시작 ===');
+    debugPrint('🔍 선택된 카테고리: $category');
+    debugPrint('🔍 API에서 받은 건물 이름들: $buildingNames');
+    debugPrint('🔍 전체 건물 데이터 개수: ${_allBuildings.length}');
+    
+    // 🔥 Context 확인
+    if (_currentContext == null) {
+      debugPrint('❌ Context가 없어서 카테고리 마커 표시 불가');
+      return;
+    }
+    
+    // 🔥 MapService에 Context가 설정되어 있는지 확인
+    if (_mapService?.context == null) {
+      debugPrint('🔄 MapService에 Context 재설정...');
+      _mapService?.setContext(_currentContext!);
+    }
+    
+    // 서버 데이터가 아직 도착하지 않았으면 대기
+    if (_allBuildings.length <= 1) {
+      debugPrint('⏳ 서버 데이터 대기 중... 잠시 후 재시도');
+      Timer(const Duration(seconds: 1), () {
+        if (_selectedCategory == category) {
+          _allBuildings = _mapService!.getAllBuildings();
+          debugPrint('🔄 재시도 - 건물 데이터: ${_allBuildings.length}개');
+          if (_allBuildings.length > 1) {
+            _showCategoryIconMarkers(buildingNames, category);
+          }
+        }
+      });
+      return;
+    }
+    
+    debugPrint('🔍 카테고리 아이콘 마커 표시 시작: ${buildingNames.length}개');
+
+    // 전체 건물 목록에서 해당 건물들 찾기
+    final categoryMarkerLocations = <CategoryMarkerData>[];
+    
+    for (String buildingName in buildingNames) {
+      debugPrint('🔍 건물 검색 중: "$buildingName"');
+      
+      Building? building;
+      try {
+        building = _allBuildings.firstWhere(
+          (b) => b.name.trim().toUpperCase() == buildingName.trim().toUpperCase(),
+        );
+        debugPrint('✅ 정확한 매칭 성공: ${building.name}');
+      } catch (e) {
+        try {
+          building = _allBuildings.firstWhere(
+            (b) => b.name.contains(buildingName) || buildingName.contains(b.name),
+          );
+          debugPrint('✅ 부분 매칭 성공: ${building.name} (검색어: $buildingName)');
+        } catch (e2) {
+          debugPrint('❌ 매칭 실패: "$buildingName"');
+          building = null;
+        }
+      }
+      
+      if (building != null) {
+        categoryMarkerLocations.add(CategoryMarkerData(
+          buildingName: building.name,
+          location: Location(x: building.lat, y: building.lng),
+          category: category,
+          icon: _getCategoryIcon(category),
+        ));
+        debugPrint('✅ 카테고리 마커 추가: ${building.name} - $category 아이콘');
+      }
+    }
+
+    debugPrint('🔍 === 매칭 결과 ===');
+    debugPrint('🔍 총 매칭된 건물 수: ${categoryMarkerLocations.length}/${buildingNames.length}');
+
+    if (categoryMarkerLocations.isEmpty) {
+      debugPrint('❌ 매칭되는 건물이 없습니다 - 카테고리 해제');
+      Future.microtask(() => clearCategorySelection());
+      return;
+    }
+
+    // 🔥 Context 재확인 후 MapService에 카테고리 아이콘 마커들 표시 요청
+    debugPrint('📍 Context 확인 완료, 카테고리 마커 표시 시작...');
+    _mapService?.showCategoryIconMarkers(categoryMarkerLocations);
+    
+    debugPrint('✅ 카테고리 아이콘 마커 표시 완료: ${categoryMarkerLocations.length}개');
+    debugPrint('🔍 === 카테고리 매칭 디버깅 끝 ===');
+  }
+
+  // 🔥 기존 _getCategoryIcon 메서드는 그대로 유지 (기존 코드와 동일)
+  IconData _getCategoryIcon(String category) {
+    switch (category) {
+      case '카페':
+        return Icons.local_cafe;
+      case '식당':
+        return Icons.restaurant;
+      case '편의점':
+        return Icons.store;
+      case '자판기':
+        return Icons.local_drink;
+      case '화장실':
+        return Icons.wc;
+      case '프린터':
+        return Icons.print;
+      case '복사기':
+        return Icons.content_copy;
+      case 'ATM':
+      case '은행(atm)':
+        return Icons.atm;
+      case '의료':
+      case '보건소':
+        return Icons.local_hospital;
+      case '도서관':
+        return Icons.local_library;
+      case '체육관':
+      case '헬스장':
+        return Icons.fitness_center;
+      case '주차장':
+        return Icons.local_parking;
+      case '라운지':
+        return Icons.weekend;
+      case '소화기':
+        return Icons.fire_extinguisher;
+      case '정수기':
+        return Icons.water_drop;
+      case '서점':
+        return Icons.menu_book;
+      case '우체국':
+        return Icons.local_post_office;
+      default:
+        return Icons.category;
+    }
+  }
+
+  /// 🔥 카테고리 마커들 제거
+  void _clearCategoryMarkers() {
+    debugPrint('카테고리 마커들 제거 중...');
+    _mapService?.clearCategoryMarkers();
+  }
+
+  /// 🔥 카테고리 선택 해제 (기존 건물 마커들 다시 표시)
+  void clearCategorySelection() {
+    debugPrint('=== 카테고리 선택 해제 ===');
+    
+    if (_selectedCategory != null) {
+      debugPrint('선택 해제할 카테고리: $_selectedCategory');
+      _clearCategoryMarkers();
+    }
+    
+    _selectedCategory = null;
+    _isCategoryLoading = false;
+    
+    debugPrint('모든 건물 마커 다시 표시 시작...');
+    _showAllBuildingMarkers();
+    debugPrint('✅ 카테고리 선택 해제 완료');
+    
+    notifyListeners();
+  }
+
+  /// 🔥 모든 건물 마커 다시 표시
+  void _showAllBuildingMarkers() {
+    _mapService?.showAllBuildingMarkers(_allBuildings);
+    debugPrint('📋 전체 건물 데이터 로드: ${_allBuildings.length}개');
+  }
+
+  /// 🔥 모든 건물 마커 숨기기
+  void _hideAllBuildingMarkers() {
+    _mapService?.hideAllBuildingMarkers();
+  }
+
+  /// 🔥 위치 업데이트 리스너
   void _onLocationUpdate() {
     if (_locationManager?.hasValidLocation == true && _mapService != null) {
       final location = _locationManager!.currentLocation!;
@@ -298,11 +535,20 @@ class MapScreenController extends ChangeNotifier {
     }
   }
 
-  /// 건물 마커를 백그라운드에서 추가
-  void _addBuildingMarkersInBackground() {
+  /// 🔥 건물 마커를 백그라운드에서 추가 (동기 버전으로 수정)
+  // 🔥 건물 마커를 백그라운드에서 추가 (동기화 문제 해결)
+void _addBuildingMarkersInBackground() {
     Future.microtask(() async {
       try {
         debugPrint('🏢 건물 마커 추가 시작...');
+        
+        // 🔥 첫 번째: 현재 데이터로 _allBuildings 초기화
+        _allBuildings = _mapService!.getAllBuildings();
+        debugPrint('📋 전체 건물 데이터 로드: ${_allBuildings.length}개');
+        
+        // 🔥 MapService에 콜백 등록 (서버 데이터 도착 시 자동 재실행)
+        _mapService!.setCategorySelectedCallback(_handleServerDataUpdate);
+        
         await _mapService!.addBuildingMarkers(_onBuildingMarkerTap);
         debugPrint('✅ 건물 마커 추가 완료');
       } catch (e) {
@@ -311,6 +557,32 @@ class MapScreenController extends ChangeNotifier {
     });
   }
 
+  // 🔥 서버 데이터 도착 시 _allBuildings 업데이트 및 카테고리 재매칭
+void _handleServerDataUpdate(String category, List<String> buildingNames) {
+  debugPrint('🔄 서버 데이터 도착 - _allBuildings 업데이트 중...');
+  
+  // 🔥 최신 서버 데이터로 _allBuildings 업데이트
+  _allBuildings = _mapService!.getAllBuildings();
+  debugPrint('📋 _allBuildings 업데이트 완료: ${_allBuildings.length}개');
+  
+  // 🔥 현재 선택된 카테고리가 있으면 재매칭
+  if (_selectedCategory != null && _selectedCategory == category) {
+    debugPrint('🔁 서버 데이터 도착 후 카테고리 재매칭: $_selectedCategory');
+    
+    // 🔥 Context가 없으면 잠시 대기
+    if (_currentContext == null) {
+      debugPrint('⏳ Context 대기 중... 잠시 후 카테고리 재매칭');
+      Timer(const Duration(milliseconds: 500), () {
+        if (_selectedCategory == category && _currentContext != null) {
+          _showCategoryIconMarkers(buildingNames, category);
+        }
+      });
+    } else {
+      _showCategoryIconMarkers(buildingNames, category);
+    }
+  }
+}
+  
   void _onBuildingMarkerTap(NMarker marker, Building building) async {
     await _mapService?.highlightBuildingMarker(marker);
     _selectedBuilding = building;
@@ -576,370 +848,6 @@ class MapScreenController extends ChangeNotifier {
     if (_isLoading != loading) {
       _isLoading = loading;
       notifyListeners();
-    }
-  }
-  
-  // 카테고리 관련 메서드들 (기존 코드 유지)
-  Future<void> selectCategory(String category, List<CategoryBuilding> buildings) async {
-    debugPrint('=== 카테고리 선택 요청: $category ===');
-    
-    if (_selectedCategory == category) {
-      debugPrint('같은 카테고리 재선택 → 해제');
-      clearCategorySelection();
-      return;
-    }
-
-    if (_selectedCategory != null) {
-      debugPrint('이전 카테고리($_selectedCategory) 정리');
-      await _clearCategoryMarkersFromMap();
-    }
-
-    try {
-      _selectedCategory = category;
-      _categoryBuildings = buildings;
-      _categoryError = null;
-      notifyListeners();
-
-      debugPrint('기존 건물 마커들 숨기기...');
-      await _mapService?.hideAllBuildingMarkers();
-
-      debugPrint('카테고리 마커들 표시...');
-      await _showCategoryMarkersOnMap();
-
-      debugPrint('✅ 카테고리 선택 완료: $category');
-    } catch (e) {
-      debugPrint('❌ 카테고리 선택 실패: $e');
-      _categoryError = e.toString();
-      _selectedCategory = null;
-      _categoryBuildings.clear();
-      notifyListeners();
-    }
-  }
-
-  void clearCategorySelection() {
-    debugPrint('=== 카테고리 선택 해제 ===');
-    
-    if (_selectedCategory != null) {
-      debugPrint('선택 해제할 카테고리: $_selectedCategory');
-      _clearCategoryMarkersFromMap();
-      _mapService?.showAllBuildingMarkers();
-    }
-
-    _selectedCategory = null;
-    _categoryBuildings.clear();
-    _categoryError = null;
-    _isCategoryLoading = false;
-    notifyListeners();
-    
-    debugPrint('✅ 카테고리 선택 해제 완료');
-  }
-
-  Future<void> _showCategoryMarkersOnMap() async {
-    if (_categoryBuildings.isEmpty) {
-      debugPrint('표시할 카테고리 건물이 없음');
-      return;
-    }
-
-    debugPrint('=== 지도에 카테고리 마커 표시 시작 ===');
-    debugPrint('표시할 마커 수: ${_categoryBuildings.length}');
-
-    try {
-      final controller = await _mapService?.getController();
-      if (controller == null) {
-        debugPrint('❌ 지도 컨트롤러가 없음');
-        return;
-      }
-
-      // 기존 카테고리 마커들 제거
-      await _clearCategoryMarkersFromMap();
-
-      // 새로운 카테고리 마커들 추가
-      for (int i = 0; i < _categoryBuildings.length; i++) {
-        final building = _categoryBuildings[i];
-        final markerId = 'category_${building.buildingName}_${_selectedCategory}_$i';
-        
-        debugPrint('카테고리 마커 추가: $markerId at (${building.location.x}, ${building.location.y})');
-
-        final marker = _createCategoryMarker(markerId, building);
-
-        await controller.addOverlay(marker);
-        _categoryMarkerIds.add(markerId);
-
-        marker.setOnTapListener((NMarker marker) {
-          debugPrint('카테고리 마커 클릭: ${building.buildingName}');
-          _onCategoryMarkerTap(building);
-        });
-
-        await Future.delayed(const Duration(milliseconds: 50));
-      }
-
-      debugPrint('✅ 카테고리 마커 표시 완료');
-
-      if (_categoryBuildings.length > 1) {
-        await _fitMapToCategoryBuildings();
-      } else if (_categoryBuildings.length == 1) {
-        final building = _categoryBuildings.first;
-        debugPrint('단일 마커로 지도 이동: ${building.buildingName}');
-        await _mapService?.moveCamera(
-          NLatLng(building.location.y, building.location.x),
-          zoom: 17,
-        );
-      }
-    } catch (e) {
-      debugPrint('❌ 카테고리 마커 표시 실패: $e');
-    }
-  }
-
-  NMarker _createCategoryMarker(String markerId, CategoryBuilding building) {
-    final categoryData = _getCategoryIconData(_selectedCategory!);
-    
-    return NMarker(
-      id: markerId,
-      position: NLatLng(building.location.y, building.location.x),
-      caption: NOverlayCaption(
-        text: '${_getCategoryEmoji(_selectedCategory!)} ${building.buildingName}',
-        color: categoryData['color'],
-        textSize: 12,
-        haloColor: Colors.white,
-      ),
-    );
-  }
-
-  String _getCategoryEmoji(String category) {
-    switch (category) {
-      case '카페':
-        return '☕';
-      case '식당':
-        return '🍽️';
-      case '편의점':
-        return '🏪';
-      case '자판기':
-        return '🥤';
-      case '화장실':
-        return '🚻';
-      case '프린터':
-        return '🖨️';
-      case '복사기':
-        return '📄';
-      case 'ATM':
-      case '은행':
-        return '🏧';
-      case '의료':
-      case '보건소':
-        return '🏥';
-      case '도서관':
-        return '📚';
-      case '체육관':
-        return '🏋️';
-      case '주차장':
-        return '🅿️';
-      default:
-        return '📍';
-    }
-  }
-
-  Map<String, dynamic> _getCategoryIconData(String category) {
-    switch (category) {
-      case '카페':
-        return {
-          'color': const Color(0xFF8B4513),
-          'icon': Icons.local_cafe,
-        };
-      case '식당':
-        return {
-          'color': const Color(0xFFFF6B35),
-          'icon': Icons.restaurant,
-        };
-      case '편의점':
-        return {
-          'color': const Color(0xFF4CAF50),
-          'icon': Icons.store,
-        };
-      case '자판기':
-        return {
-          'color': const Color(0xFF2196F3),
-          'icon': Icons.local_drink,
-        };
-      case '화장실':
-        return {
-          'color': const Color(0xFF9C27B0),
-          'icon': Icons.wc,
-        };
-      case '프린터':
-        return {
-          'color': const Color(0xFF607D8B),
-          'icon': Icons.print,
-        };
-      case '복사기':
-        return {
-          'color': const Color(0xFF607D8B),
-          'icon': Icons.content_copy,
-        };
-      case 'ATM':
-      case '은행':
-        return {
-          'color': const Color(0xFFFFC107),
-          'icon': Icons.atm,
-        };
-      case '의료':
-      case '보건소':
-        return {
-          'color': const Color(0xFFF44336),
-          'icon': Icons.local_hospital,
-        };
-      case '도서관':
-        return {
-          'color': const Color(0xFF795548),
-          'icon': Icons.local_library,
-        };
-      case '체육관':
-        return {
-          'color': const Color(0xFFE91E63),
-          'icon': Icons.fitness_center,
-        };
-      case '주차장':
-        return {
-          'color': const Color(0xFF9E9E9E),
-          'icon': Icons.local_parking,
-        };
-      default:
-        return {
-          'color': const Color(0xFF1E3A8A),
-          'icon': Icons.category,
-        };
-    }
-  }
-
-  void _onCategoryMarkerTap(CategoryBuilding categoryBuilding) {
-    debugPrint('카테고리 마커 클릭: ${categoryBuilding.buildingName}');
-    
-    final buildings = _mapService?.searchBuildings(categoryBuilding.buildingName) ?? [];
-    if (buildings.isNotEmpty) {
-      selectBuilding(buildings.first);
-      return;
-    }
-    
-    debugPrint('카테고리 전용 위치: ${categoryBuilding.buildingName}');
-    
-    final location = NLatLng(categoryBuilding.location.y, categoryBuilding.location.x);
-    _mapService?.moveCamera(location, zoom: 18);
-    
-    _showCategoryInfo(categoryBuilding);
-  }
-  
-  void _showCategoryInfo(CategoryBuilding categoryBuilding) {
-    debugPrint('카테고리 정보: ${categoryBuilding.buildingName} ($_selectedCategory)');
-  }
-
-  Future<void> _clearCategoryMarkersFromMap() async {
-    if (_categoryMarkerIds.isEmpty) {
-      debugPrint('제거할 카테고리 마커가 없음');
-      return;
-    }
-
-    debugPrint('=== 지도에서 카테고리 마커 제거 시작 ===');
-    debugPrint('제거할 마커 수: ${_categoryMarkerIds.length}');
-
-    try {
-      final controller = await _mapService?.getController();
-      if (controller == null) return;
-
-      for (final markerId in List.from(_categoryMarkerIds)) {
-        debugPrint('마커 제거: $markerId');
-        try {
-          final overlayInfo = NOverlayInfo(
-            type: NOverlayType.marker,
-            id: markerId,
-          );
-          await controller.deleteOverlay(overlayInfo);
-          await Future.delayed(const Duration(milliseconds: 10));
-        } catch (e) {
-          debugPrint('개별 마커 제거 실패: $markerId - $e');
-        }
-      }
-
-      _categoryMarkerIds.clear();
-      debugPrint('✅ 카테고리 마커 제거 완료');
-    } catch (e) {
-      debugPrint('❌ 카테고리 마커 제거 실패: $e');
-    }
-  }
-
-  Future<void> _fitMapToCategoryBuildings() async {
-    if (_categoryBuildings.isEmpty) return;
-
-    debugPrint('=== 지도 영역을 카테고리 건물들에 맞춰 조정 ===');
-
-    try {
-      double minLat = _categoryBuildings.first.location.y;
-      double maxLat = _categoryBuildings.first.location.y;
-      double minLng = _categoryBuildings.first.location.x;
-      double maxLng = _categoryBuildings.first.location.x;
-
-      for (final building in _categoryBuildings) {
-        if (building.location.y < minLat) minLat = building.location.y;
-        if (building.location.y > maxLat) maxLat = building.location.y;
-        if (building.location.x < minLng) minLng = building.location.x;
-        if (building.location.x > maxLng) maxLng = building.location.x;
-      }
-
-      const padding = 0.001;
-      minLat -= padding;
-      maxLat += padding;
-      minLng -= padding;
-      maxLng += padding;
-
-      debugPrint('계산된 영역: ($minLng, $minLat) ~ ($maxLng, $maxLat)');
-
-      final controller = await _mapService?.getController();
-      if (controller != null) {
-        await controller.updateCamera(
-          NCameraUpdate.fitBounds(
-            NLatLngBounds(
-              southWest: NLatLng(minLat, minLng),
-              northEast: NLatLng(maxLat, maxLng),
-            ),
-            padding: const EdgeInsets.all(80),
-          ),
-        );
-      }
-
-      debugPrint('✅ 지도 영역 조정 완료');
-    } catch (e) {
-      debugPrint('❌ 지도 영역 조정 실패: $e');
-    }
-  }
-
-  Color _getCategoryColor(String category) {
-    switch (category) {
-      case '카페':
-        return const Color(0xFF8B4513);
-      case '식당':
-        return const Color(0xFFFF6B35);
-      case '편의점':
-        return const Color(0xFF4CAF50);
-      case '자판기':
-        return const Color(0xFF2196F3);
-      case '화장실':
-        return const Color(0xFF9C27B0);
-      case '프린터':
-        return const Color(0xFF607D8B);
-      case '복사기':
-        return const Color(0xFF607D8B);
-      case 'ATM':
-      case '은행':
-        return const Color(0xFFFFC107);
-      case '의료':
-      case '보건소':
-        return const Color(0xFFF44336);
-      case '도서관':
-        return const Color(0xFF795548);
-      case '체육관':
-        return const Color(0xFFE91E63);
-      case '주차장':
-        return const Color(0xFF9E9E9E);
-      default:
-        return const Color(0xFF1E3A8A);
     }
   }
 
