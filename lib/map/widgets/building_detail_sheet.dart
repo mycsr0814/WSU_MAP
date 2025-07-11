@@ -1,4 +1,4 @@
-// lib/map/widgets/building_detail_sheet.dart - 길찾기 연동된 완전한 건물 상세 정보 시트
+// lib/map/widgets/building_detail_sheet.dart - 길찾기 버튼 수정
 
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/models/building.dart';
@@ -63,14 +63,17 @@ class BuildingDetailSheet extends StatelessWidget {
     }
   }
 
-  // 현재 위치에서 이 건물까지 바로 길찾기
+  /// 🔥 길찾기 버튼에서 호출 - 간소화 및 안정화
   void _navigateHere(BuildContext context) async {
     Navigator.pop(context); // DetailSheet 닫기
-    
+
     try {
-      // 로딩 표시
+      // context가 여전히 유효한지 확인
       if (!context.mounted) return;
-      
+
+      debugPrint('🚀 길찾기 시작: 현재 위치 → ${building.name}');
+
+      // 로딩 스낵바 표시
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Row(
@@ -90,48 +93,17 @@ class BuildingDetailSheet extends StatelessWidget {
             ],
           ),
           backgroundColor: const Color(0xFF1E3A8A),
-          duration: const Duration(seconds: 5),
+          duration: const Duration(seconds: 3),
           behavior: SnackBarBehavior.floating,
           margin: const EdgeInsets.all(16),
         ),
       );
 
-
-      // LocationManager에서 현재 위치 가져오기
-        final locationManager = Provider.of<LocationManager>(context, listen: false);
-      NLatLng currentLocation;
-
-      if (locationManager.hasValidLocation && locationManager.currentLocation != null) {
-        currentLocation = NLatLng(
-          locationManager.currentLocation!.latitude!,
-          locationManager.currentLocation!.longitude!,
-        );
-        debugPrint('✅ 기존 위치 사용: ${currentLocation.latitude}, ${currentLocation.longitude}');
-      } else {
-        // 새로운 위치 요청
-        debugPrint('📍 새로운 위치 요청...');
-        await locationManager.requestLocation();
-        await Future.delayed(const Duration(milliseconds: 500));
-        
-        if (locationManager.hasValidLocation && locationManager.currentLocation != null) {
-          currentLocation = NLatLng(
-            locationManager.currentLocation!.latitude!,
-            locationManager.currentLocation!.longitude!,
-          );
-          debugPrint('✅ 위치 획득 성공: ${currentLocation.latitude}, ${currentLocation.longitude}');
-        } else {
-          // 위치가 없으면 기본 위치 사용
-          currentLocation = const NLatLng(36.338133, 127.446423); // 우송대학교 중심
-          debugPrint('⚠️ 기본 위치 사용');
-        }
-      }
-
-      // PathApiService를 통해 경로 계산 (에러 처리 개선)
-      final pathCoordinates = await PathApiService.getRouteFromLocation(currentLocation, building);
-
-      // MapController를 통해 경로 표시
+      // 🔥 MapController를 통해 직접 길찾기 실행 (PathApiService 의존성 제거)
       if (!context.mounted) return;
       final mapController = Provider.of<MapScreenController>(context, listen: false);
+      
+      // 현재 위치에서 해당 건물까지 길찾기 실행
       await mapController.navigateFromCurrentLocation(building);
 
       if (context.mounted) {
@@ -159,7 +131,7 @@ class BuildingDetailSheet extends StatelessWidget {
       }
     } catch (e) {
       debugPrint('❌ 길찾기 오류: $e');
-      
+
       if (context.mounted) {
         ScaffoldMessenger.of(context).hideCurrentSnackBar();
         ScaffoldMessenger.of(context).showSnackBar(
@@ -168,7 +140,9 @@ class BuildingDetailSheet extends StatelessWidget {
               children: [
                 const Icon(Icons.error, color: Colors.white, size: 20),
                 const SizedBox(width: 8),
-                Text('길찾기 중 오류가 발생했습니다: ${e.toString()}'),
+                Expanded(
+                  child: Text('길찾기 중 오류가 발생했습니다. 위치 권한을 확인해주세요.'),
+                ),
               ],
             ),
             backgroundColor: Colors.red,
@@ -181,15 +155,15 @@ class BuildingDetailSheet extends StatelessWidget {
     }
   }
 
-  // 길찾기 결과 처리
+  // 길찾기 결과 처리 함수
   void _handleDirectionsResult(BuildContext context, dynamic result) {
     if (result is Map<String, dynamic>) {
       final startBuilding = result['start'] as Building?;
       final endBuilding = result['end'] as Building?;
       final useCurrentLocation = result['useCurrentLocation'] as bool? ?? false;
-      
+
       if (endBuilding != null) {
-        // 실제 경로 계산 및 표시 로직 실행
+        // 실제 경로 계산 및 표시
         _executeDirections(context, startBuilding, endBuilding, useCurrentLocation);
       } else {
         debugPrint('⚠️ 도착지 정보가 없습니다');
@@ -259,7 +233,7 @@ class BuildingDetailSheet extends StatelessWidget {
     }
   }
 
-   @override
+  @override
   Widget build(BuildContext context) {
     final floorInfos = _parseFloorInfo(building.info);
 
@@ -424,10 +398,13 @@ class BuildingDetailSheet extends StatelessWidget {
           // 버튼들
           Row(
             children: [
-              // 여기까지 오기 버튼
+              // 🔥 여기까지 오기 버튼 - 더 명확한 디버깅 추가
               Expanded(
                 child: ElevatedButton.icon(
-                  onPressed: () => _navigateHere(context),
+                  onPressed: () {
+                    debugPrint('🔥 "여기까지" 버튼 클릭됨 - ${building.name}');
+                    _navigateHere(context);
+                  },
                   icon: const Icon(Icons.near_me, size: 18),
                   label: const Text('여기까지'),
                   style: ElevatedButton.styleFrom(
@@ -577,6 +554,7 @@ class BuildingDetailSheet extends StatelessWidget {
     );
   }
 
+  // 나머지 메서드들은 기존과 동일...
   Widget _buildFloorPlanSection(BuildContext context, List<Map<String, String>> floorInfos) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -959,7 +937,8 @@ class BuildingDetailSheet extends StatelessWidget {
       ),
     );
   }
-// 서버에서 도면 가져오기
+
+  // 서버에서 도면 가져오기
   Future<void> _showFloorPlan(BuildContext context, String floor, String detail) async {
     final floorNumber = _extractFloorNumber(floor);
     final buildingCode = _extractBuildingCode(building.name);

@@ -1,7 +1,6 @@
 // lib/services/user_manager.dart - 현재 사용자 정보 관리
 
 import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert';
 
 class UserManager {
   static UserManager? _instance;

@@ -8,7 +8,6 @@ import '../generated/app_localizations.dart'; // 생성된 localization 파일 i
 import '../auth/user_auth.dart';
 import 'providers/app_language_provider.dart';
 import 'package:flutter_application_1/managers/location_manager.dart'; // 🔥 추가
-import 'package:location/location.dart' as loc; // 🔥 추가
 
 enum AppLanguage { korean, chinese, english }
 
