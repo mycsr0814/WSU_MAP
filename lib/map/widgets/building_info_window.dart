@@ -7,6 +7,23 @@ import '../../generated/app_localizations.dart';
 import 'package:flutter_application_1/map/widgets/directions_screen.dart';
 import 'package:flutter_application_1/inside/building_map_page.dart';
 
+
+
+String getImageForBuilding(String name) {
+  final lower = name.toLowerCase();
+  if (lower.contains('w17-동관')) return 'lib/resource/ws17.jpg';
+  if (lower.contains('w15')) return 'lib/resource/ws15.jpg';
+  if (lower.contains('카페')) return 'assets/images/cafe.jpg';
+  if (lower.contains('식당')) return 'assets/images/restaurant.jpg';
+  if (lower.contains('체육관')) return 'assets/images/gym.jpg';
+  if (lower.contains('유치원')) return 'assets/images/kindergarten.jpg';
+  if (lower.contains('학군단')) return 'assets/images/military.jpg';
+  if (lower.contains('타워')) return 'assets/images/tower.jpg';
+  if (lower.contains('회관')) return 'assets/images/center.jpg';
+  return 'error.jpg'; // 기본 이미지
+}
+
+
 class BuildingInfoWindow extends StatelessWidget {
   final Building building;
   final VoidCallback onClose;
@@ -75,12 +92,59 @@ class BuildingInfoWindow extends StatelessWidget {
     );
   }
 
-  Widget _buildContent(BuildContext context, AppLocalizations l10n) {
+Widget _buildContent(BuildContext context, AppLocalizations l10n) {
+  final imagePath = getImageForBuilding(building.name);
   return Padding(
     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // 이미지 썸네일 + 클릭 시 모달로 원본 보기
+        GestureDetector(
+          onTap: () {
+            showDialog(
+              context: context,
+              barrierDismissible: true,
+              builder: (_) => Dialog(
+                insetPadding: EdgeInsets.zero,
+                backgroundColor: Colors.transparent,
+                child: Stack(
+                  children: [
+                    Center(
+                      child: InteractiveViewer(
+                        child: Image.asset(
+                          imagePath,
+                          fit: BoxFit.contain,
+                          width: MediaQuery.of(context).size.width,
+                          height: MediaQuery.of(context).size.height,
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      top: 32,
+                      right: 32,
+                      child: IconButton(
+                        icon: Icon(Icons.close, color: Colors.white, size: 32),
+                        onPressed: () => Navigator.of(context).pop(),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Image.asset(
+              imagePath,
+              width: 56,
+              height: 56,
+              fit: BoxFit.cover,
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        // 이하 기존 코드 유지
         _buildHeader(),
         const SizedBox(height: 12),
         _buildLocationInfo(l10n),
@@ -91,12 +155,15 @@ class BuildingInfoWindow extends StatelessWidget {
         const SizedBox(height: 20),
         _buildFloorPlanButton(l10n, context),
         const SizedBox(height: 16),
-        _buildActionButtons(l10n, context), // context 매개변수 추가
+        _buildActionButtons(l10n, context),
         const SizedBox(height: 20),
       ],
     ),
   );
 }
+
+
+
 
 
   Widget _buildHeader() {

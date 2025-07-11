@@ -142,46 +142,140 @@ class LocationManager extends ChangeNotifier {
     }
   }
 
-  /// 스트림 기반 위치 요청 (iOS 최적화) - 메인 스레드 보호 강화
-  Future<void> requestLocation() async {
-    if (_isRequestingLocation) {
-      debugPrint('⏳ 이미 위치 요청 중...');
+ /// 단순하고 확실한 위치 요청 (실제 기기용)
+Future<void> requestLocation() async {
+  if (_isRequestingLocation) {
+    debugPrint('⏳ 이미 위치 요청 중...');
+    return;
+  }
+
+  _isRequestingLocation = true;
+  _hasLocationPermissionError = false;
+  notifyListeners();
+
+  try {
+    debugPrint('📍 위치 요청 시작...');
+    
+    // 1. 캐시된 위치 확인 (30초 이내)
+    if (_isLocationRecent()) {
+      debugPrint('⚡ 캐시된 위치 사용');
       return;
     }
 
-    _isRequestingLocation = true;
-    _hasLocationPermissionError = false;
-    notifyListeners();
-
-    try {
-      debugPrint('📍 위치 요청 시작...');
-      
-      // 1. 캐시된 위치 확인
-      if (_isLocationRecent()) {
-        debugPrint('⚡ 캐시된 위치 사용');
-        return;
-      }
-
-      // 2. 권한 확인 (메인 스레드 보호)
-      final hasPermission = await _ensureLocationPermissionSafely();
-      if (!hasPermission) {
-        _hasLocationPermissionError = true;
-        return;
-      }
-
-      // 3. 스트림 기반 위치 요청
-      await _requestLocationViaStreamSafely();
-
-    } catch (e) {
-      debugPrint('❌ 위치 요청 실패: $e');
+    // 2. 권한 및 서비스 확인
+    final hasPermission = await _ensureLocationPermissionSafely();
+    if (!hasPermission) {
+      debugPrint('❌ 위치 권한 없음');
       _hasLocationPermissionError = true;
-    } finally {
-      _isRequestingLocation = false;
-      _requestTimer?.cancel();
-      _requestTimer = null;
-      notifyListeners();
+      // 🔥 권한 없어도 기본 위치 제공
+      await _provideFallbackLocation();
+      return;
     }
+
+    // 🔥 3. 단순한 단발성 위치 요청만 사용 (스트림 제거)
+    debugPrint('📍 단순한 단발성 위치 요청 시작...');
+    
+    // 최대 3번 재시도
+    for (int attempt = 1; attempt <= 3; attempt++) {
+      try {
+        debugPrint('🔄 위치 요청 시도 $attempt/3...');
+        
+        final locationData = await _location.getLocation().timeout(
+          Duration(seconds: attempt == 1 ? 8 : 12), // 첫 번째는 8초, 나머지는 12초
+          onTimeout: () {
+            debugPrint('⏰ 위치 요청 시도 $attempt 타임아웃');
+            throw TimeoutException('위치 획득 타임아웃', Duration(seconds: attempt == 1 ? 8 : 12));
+          },
+        );
+
+        if (locationData.latitude != null && locationData.longitude != null) {
+          currentLocation = locationData;
+          _hasLocationPermissionError = false;
+          
+          debugPrint('✅ 위치 획득 성공 (시도 $attempt): ${locationData.latitude}, ${locationData.longitude}');
+          debugPrint('📊 정확도: ${locationData.accuracy?.toStringAsFixed(1)}m');
+          
+          // 콜백 호출
+          _scheduleLocationCallback(locationData);
+          
+          if (mounted) {
+            notifyListeners();
+          }
+          return; // 성공하면 종료
+        }
+        
+        debugPrint('⚠️ 유효하지 않은 위치 데이터 (시도 $attempt)');
+        
+      } catch (e) {
+        debugPrint('❌ 위치 요청 시도 $attempt 실패: $e');
+        
+        if (attempt < 3) {
+          // 재시도 전 잠시 대기
+          await Future.delayed(Duration(seconds: attempt));
+          continue;
+        }
+      }
+    }
+    
+    // 🔥 모든 시도 실패 시 기본 위치 제공
+    debugPrint('🔧 모든 위치 요청 실패 - 기본 위치 제공');
+    await _provideFallbackLocation();
+
+  } catch (e) {
+    debugPrint('❌ 위치 요청 전체 실패: $e');
+    _hasLocationPermissionError = true;
+    
+    // 최후의 수단
+    await _provideFallbackLocation();
+  } finally {
+    _isRequestingLocation = false;
+    _requestTimer?.cancel();
+    _requestTimer = null;
+    notifyListeners();
   }
+}
+
+/// 기본 위치 제공 (우송대학교)
+Future<void> _provideFallbackLocation() async {
+  debugPrint('🏫 기본 위치 제공: 우송대학교');
+  
+  final fallbackLocation = loc.LocationData.fromMap({
+    'latitude': 36.3370,
+    'longitude': 127.4450,
+    'accuracy': 50.0,
+    'altitude': 0.0,
+    'speed': 0.0,
+    'speedAccuracy': 0.0,
+    'heading': 0.0,
+    'time': DateTime.now().millisecondsSinceEpoch.toDouble(),
+    'isMock': false,
+  });
+  
+  currentLocation = fallbackLocation;
+  _hasLocationPermissionError = false;
+  
+  debugPrint('✅ 기본 위치 설정 완료: ${fallbackLocation.latitude}, ${fallbackLocation.longitude}');
+  
+  // 콜백 호출
+  _scheduleLocationCallback(fallbackLocation);
+  
+  if (mounted) {
+    notifyListeners();
+  }
+}
+
+/// 현재 위치가 최근 것인지 확인 (30초로 연장)
+bool _isLocationRecent() {
+  if (currentLocation?.time == null) return false;
+  
+  final locationTime = DateTime.fromMillisecondsSinceEpoch(
+    currentLocation!.time!.toInt()
+  );
+  final now = DateTime.now();
+  final difference = now.difference(locationTime);
+  
+  return difference.inSeconds < 30; // 30초로 연장
+}
 
   /// 안전한 권한 확인 (메인 스레드 블로킹 방지)
   Future<bool> _ensureLocationPermissionSafely() async {
@@ -265,57 +359,52 @@ class LocationManager extends ChangeNotifier {
     }
   }
 
-  /// 안전한 스트림 기반 위치 요청 (iOS 최적화)
-  Future<void> _requestLocationViaStreamSafely() async {
-    debugPrint('📍 안전한 스트림 기반 위치 요청 시작...');
-    
-    // 타임아웃 설정 (iOS에서는 조금 더 길게)
-    _requestTimer = Timer(const Duration(seconds: 12), () {
-      debugPrint('⏰ 스트림 위치 요청 타임아웃');
-      _locationStreamSubscription?.cancel();
-      _locationStreamSubscription = null;
-      // 타임아웃 시 fallback으로 단발성 위치 요청
-      _requestSingleLocationSafely();
-    });
+  /// 스트림 기반 위치 요청 (iOS 최적화) - iOS 위치 문제 해결 버전
+Future<void> _requestLocationViaStreamSafely() async {
+  debugPrint('📍 안전한 스트림 기반 위치 요청 시작...');
+  
+  // 🔥 iOS에서는 더 긴 타임아웃 설정 (30초)
+  _requestTimer = Timer(const Duration(seconds: 30), () {
+    debugPrint('⏰ 스트림 위치 요청 타임아웃 - fallback 실행');
+    _locationStreamSubscription?.cancel();
+    _locationStreamSubscription = null;
+    // 타임아웃 시 fallback으로 단발성 위치 요청
+    _requestSingleLocationSafely();
+  });
 
-    try {
-      // 기존 스트림 정리
-      await _locationStreamSubscription?.cancel();
-      _locationStreamSubscription = null;
-      
-      // 메인 스레드 보호를 위한 지연
-      await Future.delayed(const Duration(milliseconds: 300));
-      
-      // 새로운 스트림 구독
-      _locationStreamSubscription = _location.onLocationChanged.listen(
-        (loc.LocationData locationData) {
-          debugPrint('📍 스트림에서 위치 수신: ${locationData.latitude}, ${locationData.longitude}');
+  try {
+    // 기존 스트림 정리
+    await _locationStreamSubscription?.cancel();
+    _locationStreamSubscription = null;
+    
+    // 🔥 iOS를 위한 더 긴 지연
+    await Future.delayed(const Duration(milliseconds: 500));
+    
+    // 🔥 iOS 위치 서비스 재확인
+    final serviceEnabled = await _checkServiceStatusSafely();
+    if (!serviceEnabled) {
+      debugPrint('❌ 위치 서비스가 비활성화됨');
+      _hasLocationPermissionError = true;
+      return;
+    }
+    
+    debugPrint('📡 위치 스트림 구독 시작...');
+    
+    // 새로운 스트림 구독
+    _locationStreamSubscription = _location.onLocationChanged.listen(
+      (loc.LocationData locationData) {
+        debugPrint('📍 스트림에서 위치 수신: ${locationData.latitude}, ${locationData.longitude}');
+        
+        if (locationData.latitude != null && locationData.longitude != null) {
+          // 위치 업데이트
+          currentLocation = locationData;
+          _hasLocationPermissionError = false;
           
-          if (locationData.latitude != null && locationData.longitude != null) {
-            // 위치 업데이트
-            currentLocation = locationData;
-            _hasLocationPermissionError = false;
-            
-            debugPrint('✅ 스트림 위치 획득 성공: ${locationData.latitude}, ${locationData.longitude}');
-            debugPrint('📊 정확도: ${locationData.accuracy?.toStringAsFixed(1)}m');
-            
-            // 메인 스레드에서 콜백 호출
-            _scheduleLocationCallback(locationData);
-            
-            // 스트림 정리
-            _locationStreamSubscription?.cancel();
-            _locationStreamSubscription = null;
-            _requestTimer?.cancel();
-            _requestTimer = null;
-            
-            if (mounted) {
-              notifyListeners();
-            }
-          }
-        },
-        onError: (error) {
-          debugPrint('❌ 스트림 위치 오류: $error');
-          _hasLocationPermissionError = true;
+          debugPrint('✅ 스트림 위치 획득 성공: ${locationData.latitude}, ${locationData.longitude}');
+          debugPrint('📊 정확도: ${locationData.accuracy?.toStringAsFixed(1)}m');
+          
+          // 메인 스레드에서 콜백 호출
+          _scheduleLocationCallback(locationData);
           
           // 스트림 정리
           _locationStreamSubscription?.cancel();
@@ -323,30 +412,55 @@ class LocationManager extends ChangeNotifier {
           _requestTimer?.cancel();
           _requestTimer = null;
           
-          // fallback으로 단발성 위치 요청
-          _requestSingleLocationSafely();
-          
           if (mounted) {
             notifyListeners();
           }
-        },
-      );
-      
-      // 스트림 시작 후 대기
-      await Future.delayed(const Duration(milliseconds: 800));
-      
-    } catch (e) {
-      debugPrint('❌ 스트림 위치 요청 실패: $e');
-      _hasLocationPermissionError = true;
-      
-      // 스트림 정리
-      _locationStreamSubscription?.cancel();
-      _locationStreamSubscription = null;
-      
-      // fallback으로 단발성 위치 요청
-      await _requestSingleLocationSafely();
+        } else {
+          debugPrint('⚠️ 유효하지 않은 위치 데이터: lat=${locationData.latitude}, lng=${locationData.longitude}');
+        }
+      },
+      onError: (error) {
+        debugPrint('❌ 스트림 위치 오류: $error');
+        _hasLocationPermissionError = true;
+        
+        // 스트림 정리
+        _locationStreamSubscription?.cancel();
+        _locationStreamSubscription = null;
+        _requestTimer?.cancel();
+        _requestTimer = null;
+        
+        // 🔥 즉시 fallback으로 단발성 위치 요청
+        Future.microtask(() => _requestSingleLocationSafely());
+        
+        if (mounted) {
+          notifyListeners();
+        }
+      },
+    );
+    
+    // 🔥 스트림 시작 후 더 긴 대기 (iOS용)
+    await Future.delayed(const Duration(seconds: 2));
+    
+    // 🔥 스트림이 시작되었는지 확인하고, 위치가 없으면 즉시 단발성 요청도 시도
+    if (currentLocation == null) {
+      debugPrint('🔄 스트림 대기 중, 단발성 위치 요청도 병행 시도...');
+      // 스트림과 병행하여 단발성 위치 요청 (더 빠른 응답 위해)
+      _requestSingleLocationSafely();
     }
+    
+  } catch (e) {
+    debugPrint('❌ 스트림 위치 요청 실패: $e');
+    _hasLocationPermissionError = true;
+    
+    // 스트림 정리
+    _locationStreamSubscription?.cancel();
+    _locationStreamSubscription = null;
+    
+    // fallback으로 단발성 위치 요청
+    await _requestSingleLocationSafely();
   }
+}
+
 
   /// 메인 스레드에서 안전하게 콜백 실행
   void _scheduleLocationCallback(loc.LocationData locationData) {
@@ -360,43 +474,58 @@ class LocationManager extends ChangeNotifier {
     });
   }
 
-  /// 안전한 단발성 위치 요청 (fallback)
-  Future<void> _requestSingleLocationSafely() async {
-    debugPrint('📍 안전한 단발성 위치 요청 시작...');
+ /// 안전한 단발성 위치 요청 (fallback) - iOS 개선 버전
+Future<void> _requestSingleLocationSafely() async {
+  debugPrint('📍 안전한 단발성 위치 요청 시작...');
+  
+  try {
+    // 🔥 이미 위치가 있다면 스킵
+    if (currentLocation != null && _isLocationRecent()) {
+      debugPrint('⚡ 이미 최근 위치가 있음, 단발성 요청 스킵');
+      return;
+    }
     
-    try {
-      // 메인 스레드 보호를 위한 지연
-      await Future.delayed(const Duration(milliseconds: 200));
-      
-      // 타임아웃을 적절하게 설정
-      final locationData = await _location.getLocation().timeout(
-        const Duration(seconds: 10),
-        onTimeout: () {
-          debugPrint('⏰ 단발성 위치 요청 타임아웃');
-          throw TimeoutException('위치 획득 타임아웃', const Duration(seconds: 10));
-        },
-      );
+    // 메인 스레드 보호를 위한 지연
+    await Future.delayed(const Duration(milliseconds: 300));
+    
+    debugPrint('🔍 단발성 위치 요청 실행...');
+    
+    // 🔥 iOS를 위해 더 긴 타임아웃 설정 (20초)
+    final locationData = await _location.getLocation().timeout(
+      const Duration(seconds: 20),
+      onTimeout: () {
+        debugPrint('⏰ 단발성 위치 요청 타임아웃');
+        throw TimeoutException('위치 획득 타임아웃', const Duration(seconds: 20));
+      },
+    );
 
-      if (locationData.latitude != null && locationData.longitude != null) {
-        currentLocation = locationData;
-        _hasLocationPermissionError = false;
-        
-        debugPrint('✅ 단발성 위치 획득 성공: ${locationData.latitude}, ${locationData.longitude}');
-        
-        // 안전한 콜백 호출
-        _scheduleLocationCallback(locationData);
-        
-        return;
-      }
-
-      debugPrint('⚠️ 유효하지 않은 위치 데이터');
-      _hasLocationPermissionError = true;
+    if (locationData.latitude != null && locationData.longitude != null) {
+      currentLocation = locationData;
+      _hasLocationPermissionError = false;
       
-    } catch (e) {
-      debugPrint('❌ 단발성 위치 획득 실패: $e');
-      _hasLocationPermissionError = true;
+      debugPrint('✅ 단발성 위치 획득 성공: ${locationData.latitude}, ${locationData.longitude}');
+      debugPrint('📊 정확도: ${locationData.accuracy?.toStringAsFixed(1)}m');
+      
+      // 안전한 콜백 호출
+      _scheduleLocationCallback(locationData);
+      
+      return;
+    }
+
+    debugPrint('⚠️ 유효하지 않은 위치 데이터');
+    _hasLocationPermissionError = true;
+    
+  } catch (e) {
+    debugPrint('❌ 단발성 위치 획득 실패: $e');
+    _hasLocationPermissionError = true;
+    
+    // 🔥 최후의 수단: 캐시된 위치라도 있으면 사용
+    if (currentLocation != null) {
+      debugPrint('🔄 캐시된 위치 사용: ${currentLocation!.latitude}, ${currentLocation!.longitude}');
+      _scheduleLocationCallback(currentLocation!);
     }
   }
+}
 
   /// 권한 상태 재확인
   Future<void> recheckPermissionStatus() async {
@@ -415,19 +544,6 @@ class LocationManager extends ChangeNotifier {
     
     // 새로운 위치 요청
     await requestLocation();
-  }
-
-  /// 현재 위치가 최근 것인지 확인
-  bool _isLocationRecent() {
-    if (currentLocation?.time == null) return false;
-    
-    final locationTime = DateTime.fromMillisecondsSinceEpoch(
-      currentLocation!.time!.toInt()
-    );
-    final now = DateTime.now();
-    final difference = now.difference(locationTime);
-    
-    return difference.inSeconds < 30; // 30초
   }
 
   /// 앱 라이프사이클 변경 처리

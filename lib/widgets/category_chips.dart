@@ -300,8 +300,6 @@ class _CategoryChipsState extends State<CategoryChips> {
         return Icons.store;
       case '자판기':
         return Icons.local_drink;
-      case '화장실':
-        return Icons.wc;
       case '프린터':
         return Icons.print;
       case '복사기':
@@ -309,9 +307,6 @@ class _CategoryChipsState extends State<CategoryChips> {
       case 'ATM':
       case '은행':
         return Icons.atm;
-      case '의료':
-      case '보건소':
-        return Icons.local_hospital;
       case '도서관':
         return Icons.local_library;
       case '체육관':

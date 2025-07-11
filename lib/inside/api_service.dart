@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 
 /// 서버와 통신하는 API 서비스 클래스
 class ApiService {
-  final String _baseUrl = "http://3.24.110.21:3000";
+  final String _baseUrl = "http://13.211.150.88:3000";
 
   /// 서버에서 건물 목록을 받아오는 함수
   Future<List<String>> fetchBuildingList() async {
@@ -84,6 +84,56 @@ class ApiService {
       return '설명 없음';
     } else {
       throw Exception('방 설명을 불러오지 못했습니다.');
+    }
+  }
+
+  /// 🔥 새로 추가: 모든 호실 목록을 받아오는 함수
+  Future<List<Map<String, dynamic>>> fetchAllRooms() async {
+    try {
+      print('📞 API 호출: fetchAllRooms()');
+      final response = await http.get(Uri.parse('$_baseUrl/Room'));
+      
+      print('📡 응답 상태 코드: ${response.statusCode}');
+      
+      if (response.statusCode == 200) {
+        final List<dynamic> roomList = json.decode(utf8.decode(response.bodyBytes));
+        print('✅ 전체 호실 수: ${roomList.length}개');
+        
+        // 첫 번째 호실 데이터 구조 확인
+        if (roomList.isNotEmpty) {
+          print('🏠 첫 번째 호실 예시: ${roomList[0]}');
+        }
+        
+        return roomList.cast<Map<String, dynamic>>();
+      } else {
+        print('❌ API 오류 - 상태코드: ${response.statusCode}');
+        throw Exception('Failed to load room list from server');
+      }
+    } catch (e) {
+      print('❌ fetchAllRooms 오류: $e');
+      throw e;
+    }
+  }
+
+  /// 🔥 새로 추가: 특정 건물의 호실 목록을 받아오는 함수
+  Future<List<Map<String, dynamic>>> fetchRoomsByBuilding(String buildingName) async {
+    try {
+      print('📞 API 호출: fetchRoomsByBuilding("$buildingName")');
+      final allRooms = await fetchAllRooms();
+      
+      // 특정 건물의 호실만 필터링
+      final buildingRooms = allRooms.where((room) {
+        final roomBuildingName = room['Building_Name'] as String?;
+        return roomBuildingName != null && 
+               roomBuildingName.toLowerCase() == buildingName.toLowerCase();
+      }).toList();
+      
+      print('🏢 $buildingName 호실 수: ${buildingRooms.length}개');
+      
+      return buildingRooms;
+    } catch (e) {
+      print('❌ fetchRoomsByBuilding 오류: $e');
+      throw e;
     }
   }
 }

@@ -3,7 +3,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/friends/friends_screen.dart';
 import 'package:flutter_application_1/models/building.dart';
+import 'package:flutter_application_1/services/path_api_service.dart';
 import 'package:flutter_application_1/timetable/timetable_screen.dart';
+import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_application_1/map/widgets/map_view.dart';
 import 'package:flutter_application_1/map/widgets/building_info_window.dart';
@@ -137,117 +139,194 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     }
   }
 
-  /// 🔥 안전한 초기 위치 요청 (Future already completed 오류 방지)
-  Future<void> _requestInitialLocationSafely(LocationManager locationManager) async {
-    // 이미 요청 중이거나 찾았으면 리턴
-    if (_isRequestingLocation || _hasFoundInitialLocation) {
+/// 🔥 Welcome에서 미리 준비된 위치를 더 정확하게 확인하는 안전한 초기 위치 요청
+Future<void> _requestInitialLocationSafely(LocationManager locationManager) async {
+  // 이미 요청 중이거나 찾았으면 리턴
+  if (_isRequestingLocation || _hasFoundInitialLocation) {
+    debugPrint('⚠️ 이미 위치 요청 중이거나 찾았음 - 스킵');
+    return;
+  }
+
+  try {
+    _isRequestingLocation = true;
+    debugPrint('📍 안전한 초기 위치 요청 시작...');
+    
+    // UI 블로킹 방지를 위한 지연
+    await Future.delayed(const Duration(milliseconds: 100));
+    
+    // LocationManager 초기화 대기
+    int retries = 0;
+    while (!locationManager.isInitialized && retries < 50) {
+      await Future.delayed(const Duration(milliseconds: 100));
+      retries++;
+    }
+
+    if (!locationManager.isInitialized) {
+      debugPrint('⚠️ LocationManager 초기화 타임아웃');
+      setState(() {
+        _hasFoundInitialLocation = true;
+      });
       return;
     }
 
-    try {
-      _isRequestingLocation = true;
-      debugPrint('📍 안전한 초기 위치 요청 시작...');
-      
-      // UI 블로킹 방지를 위한 지연
-      await Future.delayed(const Duration(milliseconds: 100));
-      
-      // LocationManager 초기화 대기
-      int retries = 0;
-      while (!locationManager.isInitialized && retries < 50) {
-        await Future.delayed(const Duration(milliseconds: 100));
-        retries++;
-      }
+    debugPrint('✅ LocationManager 초기화 완료');
 
-      if (!locationManager.isInitialized) {
-        debugPrint('⚠️ LocationManager 초기화 타임아웃');
-        setState(() {
-          _hasFoundInitialLocation = true;
-        });
-        return;
-      }
-
-      debugPrint('✅ LocationManager 초기화 완료, 위치 요청 시작');
+    // 🔥 Welcome에서 미리 준비된 위치가 있는지 더 정확하게 확인
+    debugPrint('🔍 Welcome 위치 준비 상태 확인...');
+    debugPrint('   hasValidLocation: ${locationManager.hasValidLocation}');
+    debugPrint('   currentLocation: ${locationManager.currentLocation}');
+    debugPrint('   permissionStatus: ${locationManager.permissionStatus}');
+    
+    if (locationManager.hasValidLocation && locationManager.currentLocation != null) {
+      debugPrint('🎯 Welcome에서 미리 준비된 위치 발견! 즉시 사용');
+      debugPrint('   위도: ${locationManager.currentLocation!.latitude}');
+      debugPrint('   경도: ${locationManager.currentLocation!.longitude}');
       
-      // 위치 요청 실행
-      await locationManager.requestLocation();
-      
-      debugPrint('🔍 위치 요청 완료, 결과 확인...');
-      debugPrint('hasValidLocation: ${locationManager.hasValidLocation}');
-      
-      if (locationManager.hasValidLocation && mounted) {
-        debugPrint('✅ 초기 위치 획득 성공!');
-        setState(() {
-          _hasFoundInitialLocation = true;
-        });
-        _checkAndAutoMove();
-      } else {
-        debugPrint('❌ 초기 위치 획득 실패');
-        setState(() {
-          _hasFoundInitialLocation = true;
-        });
-      }
-    } catch (e) {
-      debugPrint('❌ 초기 위치 요청 실패: $e');
       if (mounted) {
         setState(() {
           _hasFoundInitialLocation = true;
         });
-      }
-    } finally {
-      _isRequestingLocation = false;
-    }
-  }
-
-  /// 지도와 위치가 모두 준비되면 자동 이동
-  void _checkAndAutoMove() {
-    debugPrint('🎯 자동 이동 조건 체크...');
-    debugPrint('_isMapReady: $_isMapReady');
-    debugPrint('_hasFoundInitialLocation: $_hasFoundInitialLocation');
-    debugPrint('_hasTriedAutoMove: $_hasTriedAutoMove');
-    
-    if (_isMapReady && _hasFoundInitialLocation && !_hasTriedAutoMove && !_isRequestingLocation) {
-      debugPrint('🎯 지도와 위치 모두 준비됨, 자동 이동 실행!');
-      _hasTriedAutoMove = true;
-      
-      // 자동 이동 실행
-      Future.microtask(() async {
-        if (mounted) {
-          try {
-            debugPrint('🚀 자동 이동 시작...');
-            await _controller.moveToMyLocation();
-            debugPrint('✅ 자동 이동 완료!');
-            
-            // 성공 알림
-            if (mounted) {
-              final l10n = AppLocalizations.of(context)!;
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Row(
-                    children: [
-                      const Icon(Icons.my_location, color: Colors.white, size: 20),
-                      const SizedBox(width: 8),
-                      Text(l10n.moved_to_my_location),
-                    ],
-                  ),
-                  backgroundColor: const Color(0xFF1E3A8A),
-                  duration: const Duration(seconds: 2),
-                  behavior: SnackBarBehavior.floating,
-                  margin: const EdgeInsets.all(16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-              );
-            }
-          } catch (e) {
-            debugPrint('❌ 자동 이동 실패: $e');
+        
+        // 🔥 즉시 자동 이동 체크 (약간의 지연 후)
+        Future.delayed(const Duration(milliseconds: 200), () {
+          if (mounted) {
+            _checkAndAutoMove();
           }
+        });
+        return; // 미리 준비된 위치가 있으면 여기서 종료
+      }
+    }
+
+    // 🔥 미리 준비된 위치가 없는 경우에만 새로 요청
+    debugPrint('🔄 미리 준비된 위치가 없음, 새로 위치 요청 시작...');
+    
+    // 위치 요청 실행
+    await locationManager.requestLocation();
+    
+    debugPrint('🔍 위치 요청 완료, 결과 확인...');
+    debugPrint('hasValidLocation: ${locationManager.hasValidLocation}');
+    
+    if (locationManager.hasValidLocation && mounted) {
+      debugPrint('✅ 새로운 위치 획득 성공!');
+      setState(() {
+        _hasFoundInitialLocation = true;
+      });
+      
+      // 🔥 위치 획득 후 자동 이동 체크
+      Future.delayed(const Duration(milliseconds: 300), () {
+        if (mounted) {
+          _checkAndAutoMove();
         }
       });
     } else {
-      debugPrint('⏳ 자동 이동 조건 미충족');
+      debugPrint('❌ 위치 획득 실패');
+      setState(() {
+        _hasFoundInitialLocation = true;
+      });
     }
+  } catch (e) {
+    debugPrint('❌ 초기 위치 요청 실패: $e');
+    if (mounted) {
+      setState(() {
+        _hasFoundInitialLocation = true;
+      });
+    }
+  } finally {
+    _isRequestingLocation = false;
   }
+}
+
+/// 지도와 위치가 모두 준비되면 자동 이동 (디버깅 강화 버전)
+void _checkAndAutoMove() {
+  debugPrint('🎯 자동 이동 조건 체크...');
+  debugPrint('_isMapReady: $_isMapReady');
+  debugPrint('_hasFoundInitialLocation: $_hasFoundInitialLocation');
+  debugPrint('_hasTriedAutoMove: $_hasTriedAutoMove');
+  debugPrint('_isRequestingLocation: $_isRequestingLocation');
+  
+  final locationManager = Provider.of<LocationManager>(context, listen: false);
+  debugPrint('locationManager.hasValidLocation: ${locationManager.hasValidLocation}');
+  debugPrint('locationManager.isRequestingLocation: ${locationManager.isRequestingLocation}');
+  
+  // 🔥 조건을 하나씩 체크하여 어떤 조건이 실패하는지 확인
+  if (!_isMapReady) {
+    debugPrint('❌ 지도가 준비되지 않음');
+    return;
+  }
+  
+  if (!_hasFoundInitialLocation) {
+    debugPrint('❌ 초기 위치를 찾지 못함');
+    return;
+  }
+  
+  if (_hasTriedAutoMove) {
+    debugPrint('❌ 이미 자동 이동을 시도함');
+    return;
+  }
+  
+  if (!locationManager.hasValidLocation) {
+    debugPrint('❌ LocationManager에 유효한 위치가 없음');
+    return;
+  }
+  
+  // 🔥 위치 요청 중이어도 자동 이동은 실행 (캐시된 위치 사용)
+  if (_isRequestingLocation || locationManager.isRequestingLocation) {
+    debugPrint('⚠️ 위치 요청 중이지만 캐시된 위치로 자동 이동 실행');
+  }
+  
+  debugPrint('🎯 모든 조건 만족! 자동 이동 실행!');
+  _hasTriedAutoMove = true;
+  
+  // 🔥 LocationManager에 이미 위치가 있다면 Welcome에서 준비된 것으로 간주
+  final hasExistingLocation = locationManager.currentLocation != null;
+  debugPrint('기존 위치 존재: $hasExistingLocation');
+  
+  // 자동 이동 실행 (기존 위치가 있으면 더 빠르게)
+  Future.delayed(Duration(milliseconds: hasExistingLocation ? 100 : 300), () async {
+    if (mounted) {
+      try {
+        debugPrint('🚀 자동 이동 시작...');
+        await _controller.moveToMyLocation();
+        debugPrint('✅ 자동 이동 완료!');
+        
+        // 성공 알림
+        if (mounted) {
+          final l10n = AppLocalizations.of(context)!;
+          final message = hasExistingLocation 
+            ? (l10n.moved_to_my_location + ' ⚡')
+            : l10n.moved_to_my_location;
+            
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  Icon(
+                    hasExistingLocation ? Icons.flash_on : Icons.my_location, 
+                    color: Colors.white, 
+                    size: 20
+                  ),
+                  const SizedBox(width: 8),
+                  Text(message),
+                ],
+              ),
+              backgroundColor: hasExistingLocation 
+                ? const Color(0xFF10B981)  // 초록색 (빠른 이동)
+                : const Color(0xFF1E3A8A), // 파란색 (일반 이동)
+              duration: const Duration(seconds: 2),
+              behavior: SnackBarBehavior.floating,
+              margin: const EdgeInsets.all(16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+          );
+        }
+      } catch (e) {
+        debugPrint('❌ 자동 이동 실패: $e');
+      }
+    }
+  });
+}
 
   @override
   Widget build(BuildContext context) {
@@ -309,42 +388,42 @@ Widget _buildMapScreen(MapScreenController controller) {
       // 카테고리 로딩 상태 표시
       if (_controller.isCategoryLoading) _buildCategoryLoadingIndicator(),
 
-      // 검색바와 카테고리 칩들
-      Positioned(
-        top: MediaQuery.of(context).padding.top + 10,
-        left: 16,
-        right: 16,
-        child: Column(
-          children: [
-            // 기존 검색바
-            BuildingSearchBar(
-              onBuildingSelected: (building) {
-                // 카테고리 선택 해제 (검색으로 건물 선택시)
-                if (_controller.selectedCategory != null) {
-                  _controller.clearCategorySelection();
-                }
-                _controller.selectBuilding(building);
-                if (mounted) _infoWindowController.show();
-              },
-              onSearchFocused: () => _controller.closeInfoWindow(_infoWindowController),
-            ),
-            
-            const SizedBox(height: 12),
-            
-            // 카테고리 칩들 - 올바른 콜백 시그니처 사용
-            CategoryChips(
-              selectedCategory: _controller.selectedCategory,
-              onCategorySelected: (category, buildings) {
-                debugPrint('카테고리 선택: $category, 건물 수: ${buildings.length}');
-                // 인포윈도우가 열려있다면 닫기
-                _controller.closeInfoWindow(_infoWindowController);
-                // 카테고리 선택/해제 토글 (건물 리스트도 함께 전달)
-                _controller.selectCategory(category, buildings);
-              },
-            ),
-          ],
-        ),
+    // 검색바와 카테고리 칩들
+Positioned(
+  top: MediaQuery.of(context).padding.top + 10,
+  left: 16,
+  right: 16,
+  child: Column(
+    children: [
+      // 🔥 BuildingSearchBar에 길찾기 콜백 추가
+      BuildingSearchBar(
+        onBuildingSelected: (building) {
+          // 카테고리 선택 해제 (검색으로 건물 선택시)
+          if (_controller.selectedCategory != null) {
+            _controller.clearCategorySelection();
+          }
+          _controller.selectBuilding(building);
+          if (mounted) _infoWindowController.show();
+        },
+        onSearchFocused: () => _controller.closeInfoWindow(_infoWindowController),
+        // 🔥 길찾기 버튼 콜백 추가
+        onDirectionsTap: _handleDirectionsButtonTap,
       ),
+      
+      const SizedBox(height: 12),
+      
+      // 카테고리 칩들
+      CategoryChips(
+        selectedCategory: _controller.selectedCategory,
+        onCategorySelected: (category, buildings) {
+          debugPrint('카테고리 선택: $category, 건물 수: ${buildings.length}');
+          _controller.closeInfoWindow(_infoWindowController);
+          _controller.selectCategory(category, buildings);
+        },
+      ),
+    ],
+  ),
+),
 
       // 🔥 네비게이션 상태 표시 (활성화된 경우) - 네비게이션 바 진짜 바로 위로
       if (_showNavigationStatus) ...[
@@ -1328,4 +1407,228 @@ Widget _buildMapScreen(MapScreenController controller) {
       );
     }
   }
+
+  /// 🔥 길찾기 버튼 탭 처리 - 모든 길찾기 로직을 여기서 관리
+Future<void> _handleDirectionsButtonTap() async {
+  try {
+    print('길찾기 버튼 클릭됨');
+    
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const DirectionsScreen(),
+      ),
+    );
+    
+    print('길찾기 결과: $result');
+    
+    if (result != null && result is Map<String, dynamic>) {
+      // 🔥 두 가지 처리 방식:
+      // 1. 네비게이션 상태 카드 표시 (기존 방식)
+      // 2. 바로 경로 계산 및 표시 (기존 BuildingSearchBar 방식)
+      
+      // 기본적으로는 네비게이션 상태 카드를 표시
+      _handleDirectionsResult(result);
+      
+      // 만약 바로 경로를 표시하고 싶다면 아래 메서드 호출
+      // await _calculateAndShowRoute(result);
+    }
+  } catch (e) {
+    print('길찾기 전체 오류: $e');
+    
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('길찾기 중 오류가 발생했습니다: $e'),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
+  }
+}
+
+/// 🔥 바로 경로 계산 및 표시 (기존 BuildingSearchBar 로직)
+Future<void> _calculateAndShowRoute(Map<String, dynamic> result) async {
+  final Building? startBuilding = result['start'] as Building?;
+  final Building endBuilding = result['end'] as Building;
+  final bool useCurrentLocation = result['useCurrentLocation'] as bool? ?? false;
+  
+  if (useCurrentLocation) {
+    print('현재 위치에서 ${endBuilding.name}까지 길찾기');
+  } else {
+    print('출발지: ${startBuilding?.name}, 도착지: ${endBuilding.name}');
+  }
+  
+  // 로딩 표시
+  if (mounted) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(
+                color: Colors.white,
+                strokeWidth: 2,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                useCurrentLocation 
+                    ? '현재 위치에서 ${endBuilding.name}으로 경로 계산 중...'
+                    : '${startBuilding?.name}에서 ${endBuilding.name}으로 경로 계산 중...'
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: const Color(0xFF1E3A8A),
+        duration: const Duration(seconds: 10),
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.all(16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+      ),
+    );
+  }
+
+  // PathApiService를 통해 경로 계산
+  try {
+    List<NLatLng> pathCoordinates;
+    
+    if (useCurrentLocation) {
+      // 현재 위치에서 목적지로의 경로 계산
+      try {
+        final locationManager = Provider.of<LocationManager>(context, listen: false);
+        
+        if (locationManager.hasValidLocation && locationManager.currentLocation != null) {
+          final currentLocation = NLatLng(
+            locationManager.currentLocation!.latitude!,
+            locationManager.currentLocation!.longitude!,
+          );
+          pathCoordinates = await PathApiService.getRouteFromLocation(currentLocation, endBuilding);
+          print('📍 LocationManager에서 현재 위치 사용: ${currentLocation.latitude}, ${currentLocation.longitude}');
+        } else {
+          final defaultLocation = const NLatLng(36.338133, 127.446423);
+          pathCoordinates = await PathApiService.getRouteFromLocation(defaultLocation, endBuilding);
+          print('📍 기본 위치 사용: ${defaultLocation.latitude}, ${defaultLocation.longitude}');
+        }
+      } catch (e) {
+        print('❌ 현재 위치 가져오기 실패: $e');
+        final defaultLocation = const NLatLng(36.338133, 127.446423);
+        pathCoordinates = await PathApiService.getRouteFromLocation(defaultLocation, endBuilding);
+      }
+    } else if (startBuilding != null) {
+      pathCoordinates = await PathApiService.getRoute(startBuilding, endBuilding);
+    } else {
+      throw Exception('출발지가 설정되지 않았습니다');
+    }
+    
+    if (mounted) {
+      // 로딩 스낵바 숨기기
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      
+      if (pathCoordinates.isNotEmpty) {
+        // MapController를 통해 경로 표시
+        if (useCurrentLocation) {
+          await _controller.navigateFromCurrentLocation(endBuilding);
+        } else {
+          _controller.setStartBuilding(startBuilding!);
+          _controller.setEndBuilding(endBuilding);
+          await _controller.calculateRoute();
+        }
+        
+        // 성공 메시지
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.navigation, color: Colors.white, size: 20),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    useCurrentLocation
+                        ? '현재 위치에서 ${endBuilding.name}까지 경로가 표시되었습니다 (${pathCoordinates.length}개 지점)'
+                        : '${startBuilding?.name}에서 ${endBuilding.name}까지 경로가 표시되었습니다 (${pathCoordinates.length}개 지점)',
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: const Color(0xFF10B981),
+            duration: const Duration(seconds: 4),
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.all(16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        );
+        
+        print('경로 계산 완료: ${pathCoordinates.length}개 좌표');
+      } else {
+        // 경로를 찾을 수 없음
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.warning, color: Colors.white, size: 20),
+                const SizedBox(width: 8),
+                const Text('경로를 찾을 수 없습니다. 직선 거리로 표시됩니다.'),
+              ],
+            ),
+            backgroundColor: Colors.orange,
+            duration: const Duration(seconds: 3),
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.all(16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        );
+      }
+    }
+    
+  } catch (e) {
+    print('PathApiService 오류: $e');
+    
+    if (mounted) {
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.error, color: Colors.white, size: 20),
+              const SizedBox(width: 8),
+              const Text('서버 연결 오류로 직선 경로를 표시합니다'),
+            ],
+          ),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 3),
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.all(16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+      );
+      
+      // 대체 경로 계산 (직선)
+      try {
+        if (useCurrentLocation) {
+          await _controller.navigateFromCurrentLocation(endBuilding);
+        } else if (startBuilding != null) {
+          _controller.setStartBuilding(startBuilding);
+          _controller.setEndBuilding(endBuilding);
+          await _controller.calculateRoute();
+        }
+      } catch (mapError) {
+        print('MapController 오류: $mapError');
+      }
+    }
+  }
+}
 }

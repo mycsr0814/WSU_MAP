@@ -16,6 +16,11 @@ class MapScreenController extends ChangeNotifier {
   RouteService? _routeService;
   LocationManager? _locationManager;
 
+  // 클래스 맨 위에 추가
+  NMarker? _selectedMarker;
+  final Map<String, NMarker> _buildingMarkers = {};
+
+
   // 선택된 건물
   Building? _selectedBuilding;
 
@@ -201,11 +206,16 @@ class MapScreenController extends ChangeNotifier {
     });
   }
 
-  void _onBuildingMarkerTap(NMarker marker, Building building) {
-    debugPrint('건물 마커 탭: ${building.name}');
-    _selectedBuilding = building;
-    notifyListeners();
-  }
+  void _onBuildingMarkerTap(NMarker marker, Building building) async {
+  await _mapService?.highlightBuildingMarker(marker);
+
+  _selectedBuilding = building;
+  notifyListeners();
+
+  // 선택된 마커로 지도 중심 이동 (선택 사항)
+  await _mapService?.moveCamera(marker.position, zoom: 18);
+}
+
 
   void selectBuilding(Building building) {
     _selectedBuilding = building;
@@ -214,12 +224,13 @@ class MapScreenController extends ChangeNotifier {
 
   // 선택된 건물 초기화 메서드 추가
   void clearSelectedBuilding() {
-    if (_selectedBuilding != null) {
-      _selectedBuilding = null;
-      notifyListeners();
-      debugPrint('🧹 선택된 건물 초기화 완료');
-    }
+  if (_selectedBuilding != null) {
+    _mapService?.resetAllBuildingMarkers();
+    _selectedBuilding = null;
+    notifyListeners();
   }
+}
+
 
   void closeInfoWindow(OverlayPortalController controller) {
     if (controller.isShowing) {
