@@ -169,115 +169,175 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
   }
 
   Future<void> _findAndDrawPath() async {
-    if (_startPoint == null || _endPoint == null) return;
+  // --- 함수 시작: 상태 초기화 (기존 코드와 동일) ---
+  if (_startPoint == null || _endPoint == null) return;
 
-    setState(() {
-      _isMapLoading = true;
-      _departurePath = [];
-      _arrivalPath = [];
-      _currentShortestPath = [];
-      _transitionInfo = null;
-    });
+  setState(() {
+    _isMapLoading = true;
+    _departurePath = [];
+    _arrivalPath = [];
+    _currentShortestPath = [];
+    _transitionInfo = null;
+  });
+  // --- 함수 시작: 상태 초기화 끝 ---
 
-    try {
-      final int fromFloor = int.parse(_startPoint!['floorNumber'].toString());
-      final int toFloor = int.parse(_endPoint!['floorNumber'].toString());
-      final String fromRoom = (_startPoint!['roomId'] as String).replaceFirst(
-        'R',
-        '',
+  try {
+    // --- API 요청 준비 (기존 코드와 동일) ---
+    // 이제 from/to building이 달라질 수 있으므로, 해당 정보도 API 요청에 포함해야 합니다.
+    // (이 부분은 고객님의 _apiService.findPath 구현에 따라 달라질 수 있습니다.)
+    final fromBuilding = widget.buildingName; // 예시
+    final toBuilding = _endPoint!['buildingName'] ?? widget.buildingName; // 예시
+
+    final int fromFloor = int.parse(_startPoint!['floorNumber'].toString());
+    final int toFloor = int.parse(_endPoint!['floorNumber'].toString());
+    final String fromRoom = (_startPoint!['roomId'] as String).replaceFirst('R', '');
+    final String toRoom = (_endPoint!['roomId'] as String).replaceFirst('R', '');
+
+    final response = await _apiService.findPath(
+      fromBuilding: fromBuilding,
+      fromFloor: fromFloor,
+      fromRoom: fromRoom,
+      toBuilding: toBuilding,
+      toFloor: toFloor,
+      toRoom: toRoom,
+    );
+    // --- API 요청 준비 끝 ---
+
+
+    // =================================================================
+    // =========== 통합 내비게이션을 위한 경로 처리 로직입니다 ===========
+    // =================================================================
+
+    final type = response['type'];
+    final result = response['result'];
+
+    // [공통 함수 1] 노드 ID를 지도 좌표(Offset)로 변환 (기존 로직과 동일, 수정됨)
+    List<Offset> convertIdsToOffsets(List<String> ids, String floorNum, Map<String, Map<String, Offset>> floorNodesMap) {
+      final nodeMap = floorNodesMap[floorNum] ?? {};
+      if (nodeMap.isEmpty) return [];
+      return ids
+          .map((nodeId) {
+            String simpleId = nodeId.split('@').last; // 'W19@1@101' -> '101'
+            return nodeMap[simpleId];
+          })
+          .whereType<Offset>()
+          .toList();
+    }
+
+    // [공통 함수 2] 실외 지도로 데이터와 함께 이동하는 로직 (고객님이 직접 구현하실 부분)
+    void navigateToOutdoorMap(Map<String, dynamic> outdoorData, Map<String, dynamic>? arrivalData) {
+      // 이 곳에서 Navigator.push를 사용해 실외 지도 페이지로 이동합니다.
+      // arguments를 통해 outdoor 경로나 최종 도착지 정보를 전달해야 합니다.
+      // 예시:
+      // Navigator.of(context).push(MaterialPageRoute(
+      //   builder: (_) => OutdoorMapPage(
+      //     outdoorPath: outdoorData['path']['path'],
+      //     arrivalInfo: arrivalData,
+      //   ),
+      // ));
+      print("실외 지도로 이동! outdoor path: ${outdoorData['path']['path']}");
+      print("최종 도착 정보: $arrivalData");
+       ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('실외 경로 안내를 시작합니다.')),
       );
-      final String toRoom = (_endPoint!['roomId'] as String).replaceFirst(
-        'R',
-        '',
-      );
+    }
 
-      final response = await _apiService.findPath(
-        fromBuilding: widget.buildingName,
-        fromFloor: fromFloor,
-        fromRoom: fromRoom,
-        toBuilding: widget.buildingName,
-        toFloor: toFloor,
-        toRoom: toRoom,
-      );
 
-      if (response['type'] == 'room-room' &&
-          response['result']?['arrival_indoor']?['path']?['path'] != null) {
-        final List<dynamic> pathNodeIds =
-            response['result']['arrival_indoor']['path']['path'];
-        final String fromFloorNumStr = fromFloor.toString();
-        final String toFloorNumStr = toFloor.toString();
+    // [유형 1] 건물 <-> 건물
+    if (type == "building-building") {
+      // 이 페이지는 출발/도착점이 건물이므로 직접 경로를 그리지 않습니다.
+      // 즉시 실외 지도 페이지로 데이터를 넘겨 길안내를 시작합니다.
+      navigateToOutdoorMap(result['outdoor'], null);
+    }
+    // [유형 2] 호실 <-> 건물 (현재 건물에서 출발하여 다른 건물 앞에서 끝남)
+    else if (type == "room-building") {
+      final departureIndoor = result?['departure_indoor'];
+      final outdoor = result?['outdoor'];
+
+      if (departureIndoor != null) {
+        // Step 1: 현재 페이지에서 출발지부터 건물 출구까지의 실내 경로를 그립니다.
+        final pathNodeIds = List<String>.from(departureIndoor['path']['path']);
+        final fromFloorNumStr = fromFloor.toString();
+        Map<String, Map<String, Offset>> floorNodesMap = {};
+        await _loadNodesForFloor(fromFloorNumStr, floorNodesMap);
+        final depOffsets = convertIdsToOffsets(pathNodeIds, fromFloorNumStr, floorNodesMap);
+        setState(() => _currentShortestPath = depOffsets);
+
+        // Step 2: 잠시 후, 실외 지도 페이지로 이동합니다.
+        Future.delayed(const Duration(seconds: 2), () {
+          navigateToOutdoorMap(outdoor, null);
+        });
+      }
+    }
+    // [유형 3] 건물 <-> 호실
+    // 이 경우는 실외 지도에서 길안내를 받다가, 목적지 건물에 도착했을 때
+    // building_map_page가 '도착 모드'로 실행되어야 합니다.
+    // 따라서 이 함수의 로직이 직접 호출되지는 않습니다.
+    // (실외 지도 페이지에서 이 페이지를 호출할 때 arrival_indoor 데이터를 넘겨줘야 함)
+    else if (type == "building-room") {
+      // 로직상 이 분기는 현재 페이지에서 직접 실행되기 어렵습니다.
+      // 시작점이 건물이므로, 시작은 실외 지도에서 해야 합니다.
+    }
+    // [유형 4] 호실 <-> 호실
+    else if (type == "room-room") {
+      final departureIndoor = result?['departure_indoor'];
+      final arrivalIndoor = result?['arrival_indoor'];
+
+      // [Case 4-1] 다른 건물 간 호실 이동
+      if (departureIndoor != null && arrivalIndoor != null) {
+        // Step 1: 출발지 건물(현재 페이지)에서 출구까지의 실내 경로를 그립니다.
+        final depPathNodeIds = List<String>.from(departureIndoor['path']['path']);
+        final fromFloorNumStr = fromFloor.toString();
+        Map<String, Map<String, Offset>> floorNodesMap = {};
+        await _loadNodesForFloor(fromFloorNumStr, floorNodesMap);
+        final depOffsets = convertIdsToOffsets(depPathNodeIds, fromFloorNumStr, floorNodesMap);
+        setState(() => _currentShortestPath = depOffsets);
+
+        // Step 2: 잠시 후, 실외 지도 페이지로 이동하며, '최종 도착 정보(arrival_indoor)'를 함께 전달합니다.
+        Future.delayed(const Duration(seconds: 2), () {
+          navigateToOutdoorMap(result['outdoor'], arrivalIndoor);
+        });
+      }
+      // [Case 4-2] 같은 건물 내 호실 이동 (기존과 동일하게 완벽 지원)
+      else if (arrivalIndoor != null) {
+        final pathNodeIds = List<String>.from(arrivalIndoor['path']['path']);
+        final fromFloorNumStr = fromFloor.toString();
+        final toFloorNumStr = toFloor.toString();
         final bool isCrossFloor = fromFloorNumStr != toFloorNumStr;
 
         Map<String, Map<String, Offset>> floorNodesMap = {};
-
-        await Future.wait([
-          _loadNodesForFloor(fromFloorNumStr, floorNodesMap),
-          if (isCrossFloor) _loadNodesForFloor(toFloorNumStr, floorNodesMap),
-        ]);
-
-        List<Offset> convertIdsToOffsets(List<dynamic> ids, String floorNum) {
-          final nodeMap = floorNodesMap[floorNum] ?? {};
-          if (nodeMap.isEmpty) return [];
-          return ids
-              .map((nodeId) {
-                String simpleId = (nodeId as String)
-                    .split('@')
-                    .last
-                    .replaceFirst('R', '');
-                return nodeMap[simpleId];
-              })
-              .where((offset) => offset != null)
-              .cast<Offset>()
-              .toList();
+        await _loadNodesForFloor(fromFloorNumStr, floorNodesMap);
+        if (isCrossFloor) {
+          await _loadNodesForFloor(toFloorNumStr, floorNodesMap);
         }
 
         if (isCrossFloor) {
-          int splitIndex = pathNodeIds.indexWhere(
-            (id) => (id as String).split('@')[1] != fromFloorNumStr,
-          );
+          int splitIndex = pathNodeIds.indexWhere((id) => id.split('@')[1] != fromFloorNumStr);
           if (splitIndex == -1) splitIndex = pathNodeIds.length;
-
-          final depOffsets = convertIdsToOffsets(
-            pathNodeIds.sublist(0, splitIndex),
-            fromFloorNumStr,
-          );
-          final arrOffsets = convertIdsToOffsets(
-            pathNodeIds.sublist(splitIndex),
-            toFloorNumStr,
-          );
-
+          final depOffsets = convertIdsToOffsets(pathNodeIds.sublist(0, splitIndex), fromFloorNumStr, floorNodesMap);
+          final arrOffsets = convertIdsToOffsets(pathNodeIds.sublist(splitIndex), toFloorNumStr, floorNodesMap);
           setState(() {
             _departurePath = depOffsets;
             _arrivalPath = arrOffsets;
-            _currentShortestPath =
-                _selectedFloor?['Floor_Number'].toString() == fromFloorNumStr
-                ? depOffsets
-                : arrOffsets;
+            _currentShortestPath = _selectedFloor?['Floor_Number'].toString() == fromFloorNumStr ? depOffsets : arrOffsets;
             _transitionInfo = {"from": fromFloorNumStr, "to": toFloorNumStr};
           });
           _showAndFadePrompt();
         } else {
-          final sameFloorOffsets = convertIdsToOffsets(
-            pathNodeIds,
-            fromFloorNumStr,
-          );
+          final sameFloorOffsets = convertIdsToOffsets(pathNodeIds, fromFloorNumStr, floorNodesMap);
           setState(() => _currentShortestPath = sameFloorOffsets);
         }
-      } else {
-        _clearAllPathInfo();
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('경로를 찾을 수 없습니다.')));
       }
-    } catch (e) {
-      _clearAllPathInfo();
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('길찾기 중 오류가 발생했습니다: $e')));
-    } finally {
-      if (mounted) setState(() => _isMapLoading = false);
     }
+  } catch (e) {
+    _clearAllPathInfo();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('길찾기 중 오류가 발생했습니다: $e')),
+    );
+  } finally {
+    if (mounted) setState(() => _isMapLoading = false);
   }
+}
 
   Future<void> _loadNodesForFloor(
     String floorNumber,
