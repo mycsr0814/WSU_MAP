@@ -18,6 +18,7 @@ import '../generated/app_localizations.dart';
 import 'package:app_settings/app_settings.dart';
 import 'package:location/location.dart' as loc;
 import 'package:flutter_application_1/widgets/category_chips.dart';
+import '../auth/user_auth.dart';
 
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
@@ -29,8 +30,9 @@ class MapScreen extends StatefulWidget {
 class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
   late MapScreenController _controller;
   late NavigationStateManager _navigationManager;
-  
-  final OverlayPortalController _infoWindowController = OverlayPortalController();
+
+  final OverlayPortalController _infoWindowController =
+      OverlayPortalController();
   int _currentNavIndex = 0;
   bool _isInitializing = false;
 
@@ -39,11 +41,10 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     super.initState();
     _controller = MapScreenController();
     _navigationManager = NavigationStateManager();
-    
     WidgetsBinding.instance.addObserver(this);
     _initializeController();
   }
-  
+
   @override
   void dispose() {
     _navigationManager.dispose();
@@ -52,43 +53,32 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     super.dispose();
   }
 
-  /// 🔥 간소화된 초기화 - 기존 자동 이동 로직 제거
-Future<void> _initializeController() async {
-  if (_isInitializing) return;
-
-  try {
-    _isInitializing = true;
-    debugPrint('🚀 MapScreen 초기화 시작...');
-
-     // LocationController 생성 및 설정
-     final locationController = LocationController();
-     _controller.setLocationController(locationController);
-
-    await _controller.initialize();
-    debugPrint('✅ MapScreen 초기화 완료');
-  } catch (e) {
-    debugPrint('❌ MapScreen 초기화 오류: $e');
-  } finally {
-    _isInitializing = false;
+  /// 지도 컨트롤러 초기화
+  Future<void> _initializeController() async {
+    if (_isInitializing) return;
+    try {
+      _isInitializing = true;
+      debugPrint('🚀 MapScreen 초기화 시작...');
+      final locationController = LocationController();
+      _controller.setLocationController(locationController);
+      await _controller.initialize();
+      debugPrint('✅ MapScreen 초기화 완료');
+    } catch (e) {
+      debugPrint('❌ MapScreen 초기화 오류: $e');
+    } finally {
+      _isInitializing = false;
+    }
   }
-}
 
-  /// 🔥 길찾기 화면 열기 메서드 추가
+  /// 길찾기 화면 열기
   void _openDirectionsScreen() async {
-    // 정보창이 열려있다면 닫기
     if (_infoWindowController.isShowing) {
       _controller.closeInfoWindow(_infoWindowController);
     }
-
-    // DirectionsScreen으로 이동하고 결과를 받아옴
     final result = await Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => const DirectionsScreen(),
-      ),
+      MaterialPageRoute(builder: (context) => const DirectionsScreen()),
     );
-
-    // 길찾기 결과가 있다면 처리
     if (result != null && result is Map<String, dynamic>) {
       print('길찾기 결과 받음: $result');
       _navigationManager.handleDirectionsResult(result, context);
@@ -107,9 +97,14 @@ Future<void> _initializeController() async {
               children: [
                 _buildMapScreen(controller),
                 const ScheduleScreen(),
+                // 친구 바텀시트는 네비게이션에서 띄우니 여긴 텍스트만
                 Container(
                   color: Colors.white,
-                  child: Center(child: Text(AppLocalizations.of(context)!.friends_screen_bottom_sheet)),
+                  child: Center(
+                    child: Text(
+                      AppLocalizations.of(context)!.friends_screen_bottom_sheet,
+                    ),
+                  ),
                 ),
                 const ProfileScreen(),
               ],
@@ -122,6 +117,7 @@ Future<void> _initializeController() async {
     );
   }
 
+  /// 지도 화면(실제 지도, 검색바, 카테고리, 컨트롤, 정보창 등)
   Widget _buildMapScreen(MapScreenController controller) {
     if (controller.selectedBuilding != null &&
         !_infoWindowController.isShowing &&
@@ -142,12 +138,7 @@ Future<void> _initializeController() async {
           },
           onTap: () => _controller.closeInfoWindow(_infoWindowController),
         ),
-
-        // 🔥 기존 초기 위치 로딩 제거 - 이제 즉시 학교 지도 표시
-        // if (!_locationHandler.hasFoundInitialLocation) _buildInitialLocationLoading(),
-        
         if (_controller.isCategoryLoading) _buildCategoryLoadingIndicator(),
-
         // 검색바와 카테고리 칩들
         Positioned(
           top: MediaQuery.of(context).padding.top + 10,
@@ -163,23 +154,22 @@ Future<void> _initializeController() async {
                   _controller.selectBuilding(building);
                   if (mounted) _infoWindowController.show();
                 },
-                onSearchFocused: () => _controller.closeInfoWindow(_infoWindowController),
-                onDirectionsTap: () => _openDirectionsScreen(), // 🔥 길찾기 버튼 콜백 추가
+                onSearchFocused: () =>
+                    _controller.closeInfoWindow(_infoWindowController),
+                onDirectionsTap: () => _openDirectionsScreen(),
               ),
               const SizedBox(height: 12),
-CategoryChips(
-  selectedCategory: _controller.selectedCategory,
-  onCategorySelected: (category, buildingNames) { // 🔥 List<CategoryBuilding> → List<String>으로 변경
-    debugPrint('카테고리 선택: $category, 건물 이름들: $buildingNames');
-    _controller.closeInfoWindow(_infoWindowController);
-    _controller.selectCategoryByNames(category, buildingNames); // 🔥 새로운 메서드 사용
-  },
-),
-              
+              CategoryChips(
+                selectedCategory: _controller.selectedCategory,
+                onCategorySelected: (category, buildingNames) {
+                  debugPrint('카테고리 선택: $category, 건물 이름들: $buildingNames');
+                  _controller.closeInfoWindow(_infoWindowController);
+                  _controller.selectCategoryByNames(category, buildingNames);
+                },
+              ),
             ],
           ),
         ),
-
         // 네비게이션 상태 카드
         if (_navigationManager.showNavigationStatus) ...[
           Positioned(
@@ -194,34 +184,29 @@ CategoryChips(
             ),
           ),
         ],
-
-        // 기타 UI 요소들
+        // 경로 계산, 위치 에러, 경로 초기화 버튼 등 기타 UI
         if (controller.isLoading &&
             controller.startBuilding != null &&
             controller.endBuilding != null)
           _buildRouteLoadingIndicator(),
-
-        if (controller.hasLocationPermissionError)
-          _buildLocationError(),
-
-        if (controller.hasActiveRoute && !_navigationManager.showNavigationStatus)
+        if (controller.hasLocationPermissionError) _buildLocationError(),
+        if (controller.hasActiveRoute &&
+            !_navigationManager.showNavigationStatus)
           Positioned(
             left: 16,
             right: 100,
             bottom: 30,
             child: _buildClearNavigationButton(controller),
           ),
-
-        // 🔥 수정된 우측 컨트롤 버튼들 - 새로운 내 위치 버튼 핸들러 사용
+        // 우측 하단 컨트롤 버튼
         Positioned(
           right: 16,
           bottom: 27,
           child: MapControls(
             controller: controller,
-            onMyLocationPressed: () => _controller.moveToMyLocation(), // 🔥 새로운 핸들러 사용
+            onMyLocationPressed: () => _controller.moveToMyLocation(),
           ),
         ),
-
         _buildBuildingInfoWindow(controller),
       ],
     );
@@ -273,6 +258,7 @@ CategoryChips(
     );
   }
 
+  /// 하단 네비게이션 바
   Widget _buildBottomNavigationBar() {
     final l10n = AppLocalizations.of(context)!;
     return Container(
@@ -293,9 +279,19 @@ CategoryChips(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               _buildNavItem(0, Icons.map_outlined, Icons.map, l10n.home),
-              _buildNavItem(1, Icons.schedule_outlined, Icons.schedule, l10n.timetable),
-              _buildFriendsNavItem(),
-              _buildNavItem(3, Icons.person_outline, Icons.person, l10n.my_page),
+              _buildNavItem(
+                1,
+                Icons.schedule_outlined,
+                Icons.schedule,
+                l10n.timetable,
+              ),
+              _buildFriendsNavItem(), // 친구 바텀시트 진입 버튼
+              _buildNavItem(
+                3,
+                Icons.person_outline,
+                Icons.person,
+                l10n.my_page,
+              ),
             ],
           ),
         ),
@@ -303,10 +299,20 @@ CategoryChips(
     );
   }
 
+  /// 친구 바텀시트 진입 버튼
   Widget _buildFriendsNavItem() {
+    final myId = context.read<UserAuth>().userId ?? '';
     final l10n = AppLocalizations.of(context)!;
     return GestureDetector(
-      onTap: () => FriendsBottomSheet.show(context),
+      onTap: () {
+        if (myId.isEmpty) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('로그인 후 이용 가능합니다.')));
+          return;
+        }
+        FriendsBottomSheet.show(context, myId);
+      },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
         child: Column(
@@ -326,7 +332,7 @@ CategoryChips(
             ),
             const SizedBox(height: 2),
             Text(
-              l10n.friends,
+              l10n.friends, // 이제 오류 없음!
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w500,
@@ -339,7 +345,13 @@ CategoryChips(
     );
   }
 
-  Widget _buildNavItem(int index, IconData icon, IconData activeIcon, String label) {
+  /// 일반 네비게이션 바 아이템
+  Widget _buildNavItem(
+    int index,
+    IconData icon,
+    IconData activeIcon,
+    String label,
+  ) {
     final isActive = _currentNavIndex == index;
     return GestureDetector(
       onTap: () => setState(() => _currentNavIndex = index),
@@ -351,7 +363,9 @@ CategoryChips(
             Container(
               padding: const EdgeInsets.all(7),
               decoration: BoxDecoration(
-                color: isActive ? const Color(0xFF1E3A8A).withOpacity(0.1) : Colors.transparent,
+                color: isActive
+                    ? const Color(0xFF1E3A8A).withOpacity(0.1)
+                    : Colors.transparent,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
@@ -403,11 +417,11 @@ CategoryChips(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               _buildCompactInfoItem(
-                Icons.straighten, 
-                '거리', 
-                _navigationManager.estimatedDistance.isNotEmpty 
-                  ? _navigationManager.estimatedDistance 
-                  : '계산중'
+                Icons.straighten,
+                '거리',
+                _navigationManager.estimatedDistance.isNotEmpty
+                    ? _navigationManager.estimatedDistance
+                    : '계산중',
               ),
               Container(
                 width: 1,
@@ -415,17 +429,17 @@ CategoryChips(
                 color: Colors.white.withOpacity(0.2),
               ),
               _buildCompactInfoItem(
-                Icons.access_time, 
-                '시간', 
-                _navigationManager.estimatedTime.isNotEmpty 
-                  ? _navigationManager.estimatedTime 
-                  : '계산중'
+                Icons.access_time,
+                '시간',
+                _navigationManager.estimatedTime.isNotEmpty
+                    ? _navigationManager.estimatedTime
+                    : '계산중',
               ),
             ],
           ),
-          
+
           const SizedBox(height: 8),
-          
+
           // 길 안내 시작 버튼과 경로 초기화 버튼
           Row(
             children: [
@@ -433,7 +447,10 @@ CategoryChips(
               Expanded(
                 child: ElevatedButton(
                   onPressed: () {
-                    _navigationManager.startActualNavigation(_controller, context);
+                    _navigationManager.startActualNavigation(
+                      _controller,
+                      context,
+                    );
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF10B981),
@@ -460,9 +477,9 @@ CategoryChips(
                   ),
                 ),
               ),
-              
+
               const SizedBox(width: 6),
-              
+
               // 경로 초기화 버튼 (50%)
               Expanded(
                 child: ElevatedButton(
@@ -507,11 +524,7 @@ CategoryChips(
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(
-          icon,
-          color: Colors.white,
-          size: 14,
-        ),
+        Icon(icon, color: Colors.white, size: 14),
         const SizedBox(height: 1),
         Text(
           label,
@@ -574,10 +587,7 @@ CategoryChips(
               const SizedBox(height: 8),
               Text(
                 l10n.finding_optimal_route,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey[500],
-                ),
+                style: TextStyle(fontSize: 14, color: Colors.grey[500]),
               ),
             ],
           ),
@@ -619,11 +629,7 @@ CategoryChips(
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(
-                    Icons.clear,
-                    color: Colors.white,
-                    size: 18,
-                  ),
+                  const Icon(Icons.clear, color: Colors.white, size: 18),
                   const SizedBox(width: 8),
                   Text(
                     l10n.clear_route,
@@ -645,7 +651,7 @@ CategoryChips(
   /// 🔥 위치 에러 처리 - 새로운 retryLocationPermission 사용
   Widget _buildLocationError() {
     final l10n = AppLocalizations.of(context)!;
-    
+
     return Positioned(
       top: MediaQuery.of(context).padding.top + 150,
       left: 16,
@@ -668,11 +674,7 @@ CategoryChips(
           children: [
             Row(
               children: [
-                const Icon(
-                  Icons.location_off,
-                  color: Colors.white,
-                  size: 24,
-                ),
+                const Icon(Icons.location_off, color: Colors.white, size: 24),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
@@ -737,7 +739,8 @@ CategoryChips(
         return BuildingInfoWindow(
           building: controller.selectedBuilding!,
           onClose: () => controller.closeInfoWindow(_infoWindowController),
-          onShowDetails: (building) => BuildingDetailSheet.show(context, building),
+          onShowDetails: (building) =>
+              BuildingDetailSheet.show(context, building),
           onShowFloorPlan: (building) {
             // FloorPlanDialog.show(context, building);
           },

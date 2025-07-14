@@ -1007,4 +1007,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get floor_plan_default_text => '平面图';
+
+  @override
+  String get delete_account_success => '您的账户已被删除。';
 }

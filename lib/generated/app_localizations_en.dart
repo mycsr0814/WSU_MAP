@@ -1035,4 +1035,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get floor_plan_default_text => 'Floor Plan';
+
+  @override
+  String get delete_account_success => 'Your account has been deleted.';
 }
