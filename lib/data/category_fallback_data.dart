@@ -1,5 +1,8 @@
 // lib/data/category_fallback_data.dart - 새로 생성
-/// 카테고리 API 실패 시 사용할 fallback 데이터
+// 카테고리 API 실패 시 사용할 fallback 데이터
+
+import 'package:flutter/material.dart';
+
 class CategoryFallbackData {
   
   /// 🔥 카테고리별 건물 매핑 데이터
@@ -71,22 +74,19 @@ class CategoryFallbackData {
     ],
   };
 
-  /// 🔥 카테고리 목록 가져오기
+   /// 🔥 카테고리 목록 가져오기
   static List<String> getCategories() {
     return categoryBuildingMap.keys.toList()..sort();
   }
 
-  /// 🔥 특정 카테고리의 건물 목록 가져오기
   static List<String> getBuildingsByCategory(String category) {
     return categoryBuildingMap[category] ?? [];
   }
 
-  /// 🔥 카테고리가 존재하는지 확인
   static bool hasCategory(String category) {
     return categoryBuildingMap.containsKey(category);
   }
 
-  /// 🔥 전체 건물 목록 가져오기 (중복 제거)
   static List<String> getAllBuildings() {
     final allBuildings = <String>{};
     for (final buildings in categoryBuildingMap.values) {
@@ -95,7 +95,6 @@ class CategoryFallbackData {
     return allBuildings.toList()..sort();
   }
 
-  /// 🔥 특정 건물이 속한 카테고리들 찾기
   static List<String> getCategoriesForBuilding(String buildingName) {
     final categories = <String>[];
     for (final entry in categoryBuildingMap.entries) {
@@ -106,38 +105,57 @@ class CategoryFallbackData {
     return categories;
   }
 
-  /// 🔥 카테고리별 통계 정보
   static Map<String, int> getCategoryStats() {
     return categoryBuildingMap.map(
       (category, buildings) => MapEntry(category, buildings.length),
     );
   }
 
-  /// 🔥 카테고리별 아이콘 매핑
-  static const Map<String, int> categoryIconCodePoints = {
-    '카페': 0xe156, // Icons.local_cafe
-    '식당': 0xe56c, // Icons.restaurant
-    '편의점': 0xe59c, // Icons.store
-    '자판기': 0xe1f4, // Icons.local_drink
-    '화장실': 0xf05a6, // Icons.wc
-    '프린터': 0xe8ad, // Icons.print
-    '복사기': 0xe14f, // Icons.content_copy
-    'ATM': 0xe1cb, // Icons.atm
-    '은행(atm)': 0xe1cb, // Icons.atm
-    '의료': 0xe3f0, // Icons.local_hospital
-    '보건소': 0xe3f0, // Icons.local_hospital
-    '도서관': 0xe40f, // Icons.local_library
-    '체육관': 0xe25c, // Icons.fitness_center
-    '헬스장': 0xe25c, // Icons.fitness_center
-    '주차장': 0xe410, // Icons.local_parking
-    '라운지': 0xef51, // Icons.weekend
-    '소화기': 0xe1d1, // Icons.fire_extinguisher (Material Icons Extended)
-    '정수기': 0xe798, // Icons.water_drop
-    '서점': 0xe3f7, // Icons.menu_book
-    '우체국': 0xe0e0, // Icons.local_post_office
-  };
+  /// 카테고리별 아이콘 반환 (이름 기반)
+  static IconData getCategoryIcon(String category) {
+    switch (category) {
+      case '카페':
+        return Icons.local_cafe;
+      case '식당':
+        return Icons.restaurant;
+      case '편의점':
+        return Icons.store;
+      case '자판기':
+        return Icons.local_convenience_store;
+      case '화장실':
+        return Icons.wc;
+      case '프린터':
+        return Icons.print;
+      case '복사기':
+        return Icons.content_copy;
+      case 'ATM':
+      case '은행(atm)':
+        return Icons.atm;
+      case '의료':
+      case '보건소':
+        return Icons.local_hospital;
+      case '도서관':
+        return Icons.local_library;
+      case '체육관':
+      case '헬스장':
+        return Icons.fitness_center;
+      case '주차장':
+        return Icons.local_parking;
+      case '라운지':
+        return Icons.weekend;
+      case '소화기':
+        return Icons.fire_extinguisher; // Material Icons Extended 필요
+      case '정수기':
+        return Icons.water_drop;
+      case '서점':
+        return Icons.menu_book;
+      case '우체국':
+        return Icons.local_post_office;
+      default:
+        return Icons.category;
+    }
+  }
 
-  /// 🔥 디버그용 정보 출력
   static void printDebugInfo() {
     print('=== Category Fallback Data Info ===');
     print('총 카테고리 수: ${categoryBuildingMap.length}');
@@ -150,20 +168,15 @@ class CategoryFallbackData {
   }
 }
 
-/// 🔥 카테고리 관련 유틸리티 함수들
 class CategoryUtils {
-  
-  /// 카테고리 이름 정규화 (공백 제거, 소문자 변환)
   static String normalizeCategory(String category) {
     return category.trim().toLowerCase();
   }
 
-  /// 건물 이름 정규화
   static String normalizeBuilding(String building) {
     return building.trim().toUpperCase();
   }
 
-  /// 카테고리별 색상 코드 반환
   static int getCategoryColorValue(String category) {
     switch (category) {
       case '카페':
@@ -207,7 +220,6 @@ class CategoryUtils {
     }
   }
 
-  /// 카테고리가 실내 시설인지 확인
   static bool isIndoorCategory(String category) {
     const indoorCategories = [
       '프린터', '복사기', 'ATM', '은행(atm)', '도서관', 
@@ -216,7 +228,6 @@ class CategoryUtils {
     return indoorCategories.contains(category);
   }
 
-  /// 카테고리가 24시간 이용 가능한지 확인
   static bool is24HourCategory(String category) {
     const twentyFourHourCategories = [
       '자판기', '정수기', '소화기'
