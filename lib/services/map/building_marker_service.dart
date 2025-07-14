@@ -26,6 +26,32 @@ class BuildingMarkerService {
     debugPrint('✅ BuildingMarkerService 지도 컨트롤러 설정 완료');
   }
 
+  /// 모든 건물 마커 완전 제거 (지도에서 삭제 + 리스트 초기화)
+  Future<void> clearAllMarkers() async {
+    if (_mapController == null) return;
+    try {
+      debugPrint('모든 건물 마커 완전 제거 시작: ${_buildingMarkers.length}개');
+      final markersToRemove = Set<NMarker>.from(_buildingMarkers);
+      for (final marker in markersToRemove) {
+        try {
+          await _mapController!.deleteOverlay(marker.info);
+        } catch (e) {
+          // 이미 제거된 마커는 무시
+        }
+      }
+      _buildingMarkers.clear();
+      _buildingMarkerIds.clear();
+      _selectedMarker = null;
+      debugPrint('✅ 모든 건물 마커 완전 제거 완료');
+    } catch (e) {
+      debugPrint('모든 건물 마커 완전 제거 중 오류: $e');
+      _buildingMarkers.clear();
+      _buildingMarkerIds.clear();
+      _selectedMarker = null;
+    }
+  }
+
+
   /// 마커 아이콘 로딩
   Future<void> loadMarkerIcons() async {
     try {

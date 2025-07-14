@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/controllers/location_controllers.dart';
 import 'package:flutter_application_1/friends/friends_screen.dart';
+import 'package:flutter_application_1/services/map/building_marker_service.dart';
 import 'package:flutter_application_1/timetable/timetable_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_application_1/map/widgets/map_view.dart';
@@ -29,6 +30,7 @@ class MapScreen extends StatefulWidget {
 class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
   late MapScreenController _controller;
   late NavigationStateManager _navigationManager;
+  late BuildingMarkerService _buildingMarkerService;
   
   final OverlayPortalController _infoWindowController = OverlayPortalController();
   int _currentNavIndex = 0;
@@ -39,6 +41,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     super.initState();
     _controller = MapScreenController();
     _navigationManager = NavigationStateManager();
+    _buildingMarkerService = BuildingMarkerService(); // ← 이 줄 추가!
     
     WidgetsBinding.instance.addObserver(this);
     _initializeController();
@@ -50,6 +53,14 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     WidgetsBinding.instance.removeObserver(this);
     _controller.dispose();
     super.dispose();
+  }
+
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // context가 준비된 뒤 반드시 한 번만 호출
+    _controller.setContext(context);
   }
 
   /// 🔥 간소화된 초기화 - 기존 자동 이동 로직 제거
@@ -167,15 +178,19 @@ Future<void> _initializeController() async {
                 onDirectionsTap: () => _openDirectionsScreen(), // 🔥 길찾기 버튼 콜백 추가
               ),
               const SizedBox(height: 12),
-CategoryChips(
-  selectedCategory: _controller.selectedCategory,
-  onCategorySelected: (category, buildingNames) { // 🔥 List<CategoryBuilding> → List<String>으로 변경
-    debugPrint('카테고리 선택: $category, 건물 이름들: $buildingNames');
-    _controller.closeInfoWindow(_infoWindowController);
-    _controller.selectCategoryByNames(category, buildingNames); // 🔥 새로운 메서드 사용
-  },
-),
-              
+              CategoryChips(
+                selectedCategory: _controller.selectedCategory,
+                onCategorySelected: (category, buildingNames) async {
+                  debugPrint('카테고리 선택: $category, 건물 이름들: $buildingNames');
+                  // 1. 기존 마커 모두 제거
+                  await _buildingMarkerService.clearAllMarkers();
+                  // 2. 선택 상태 및 정보창 정리
+                  _controller.clearSelectedBuilding();
+                  _controller.closeInfoWindow(_infoWindowController);
+                  // 3. 새 카테고리 마커만 추가
+                  _controller.selectCategoryByNames(category, buildingNames);
+                },
+              ),
             ],
           ),
         ),

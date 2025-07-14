@@ -13,7 +13,7 @@ dependencies:
     sdk: flutter
   flutter_localizations:
     sdk: flutter
-  vector_math: ^2.1.4
+    vector_math: ^2.1.4
 
   # 두 프로젝트의 모든 의존성을 통합했습니다.
   cupertino_icons: ^1.0.8
@@ -82,8 +82,8 @@ flutter:
     - lib/asset/w13.jpeg
     - lib/asset/w14.jpeg
     - lib/asset/w15.jpeg
-    - lib/asset/w17-w.jpeg
-    - lib/asset/w17-e.jpeg
+    - lib/asset/w17-서관.jpeg
+    - lib/asset/w17-동관.jpeg
     - lib/asset/w18.jpeg
     - lib/asset/w19.jpeg
 
