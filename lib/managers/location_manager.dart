@@ -5,6 +5,8 @@ import 'package:location/location.dart' as loc;
 import 'dart:async';
 import 'dart:io';
 
+import 'package:location/location.dart';
+
 class LocationManager extends ChangeNotifier {
   loc.LocationData? currentLocation;
   loc.PermissionStatus? permissionStatus;
@@ -35,6 +37,17 @@ class LocationManager extends ChangeNotifier {
   LocationManager() {
     _initializeSimple();
   }
+  
+Future<LocationData?> requestLocationQuickly() async {
+  if (hasValidLocation && currentLocation != null) {
+    debugPrint('캐시된 위치 반환');
+    return currentLocation;
+  }
+  // 새 위치 요청 후 반환
+  final newLocation = await requestLocation();
+  return newLocation;
+}
+
 
   /// 🔥 매우 단순한 초기화
   Future<void> _initializeSimple() async {
@@ -124,53 +137,61 @@ class LocationManager extends ChangeNotifier {
   }
 
   /// 🔥 매우 단순한 위치 요청
-  Future<void> requestLocation() async {
-    if (_isRequestingLocation) {
-      debugPrint('⏳ 이미 위치 요청 중...');
-      return;
-    }
-
-    debugPrint('📍 단순 위치 요청 시작...');
-    
-    _isRequestingLocation = true;
-    _hasLocationPermissionError = false;
-    notifyListeners();
-
-    try {
-      // 1. 캐시 확인
-      if (_isCacheValid()) {
-        debugPrint('⚡ 캐시된 위치 사용');
-        if (isActualGPSLocation(currentLocation!)) {
-          _scheduleLocationCallback(currentLocation!);
-          return;
-        } else {
-          debugPrint('🗑️ 캐시된 위치가 fallback, 새로 요청');
-        }
-      }
-
-      // 2. 🔥 권한 확인 (간단하게)
-      debugPrint('🔍 권한 확인 중...');
-      final hasPermission = await _simplePermissionCheck();
-      if (!hasPermission) {
-        debugPrint('❌ 위치 권한 없음');
-        _hasLocationPermissionError = true;
-        return;
-      }
-
-      // 3. 🔥 실제 위치 요청 (단순하게)
-      debugPrint('📍 실제 위치 요청...');
-      await _simpleLocationRequest();
-
-    } catch (e) {
-      debugPrint('❌ 위치 요청 실패: $e');
-      _hasLocationPermissionError = true;
-    } finally {
-      _isRequestingLocation = false;
-      _requestTimer?.cancel();
-      _requestTimer = null;
-      notifyListeners();
-    }
+Future<loc.LocationData?> requestLocation() async {
+  if (_isRequestingLocation) {
+    debugPrint('⏳ 이미 위치 요청 중...');
+    return currentLocation; // 이미 요청 중이면 현재값 반환
   }
+
+  debugPrint('📍 단순 위치 요청 시작...');
+  _isRequestingLocation = true;
+  _hasLocationPermissionError = false;
+  notifyListeners();
+
+  try {
+    // 1. 캐시 확인
+    if (_isCacheValid()) {
+      debugPrint('⚡ 캐시된 위치 사용');
+      if (isActualGPSLocation(currentLocation!)) {
+        _scheduleLocationCallback(currentLocation!);
+        return currentLocation; // 캐시 반환
+      } else {
+        debugPrint('🗑️ 캐시된 위치가 fallback, 새로 요청');
+      }
+    }
+
+    // 2. 🔥 권한 확인 (간단하게)
+    debugPrint('🔍 권한 확인 중...');
+    final hasPermission = await _simplePermissionCheck();
+    if (!hasPermission) {
+      debugPrint('❌ 위치 권한 없음');
+      _hasLocationPermissionError = true;
+      return null;
+    }
+
+    // 3. 🔥 실제 위치 요청 (단순하게)
+    debugPrint('📍 실제 위치 요청...');
+    await _simpleLocationRequest();
+
+    // 위치 요청 후 currentLocation이 유효하면 반환
+    if (currentLocation != null && isActualGPSLocation(currentLocation!)) {
+      return currentLocation;
+    } else {
+      debugPrint('❌ 위치 데이터 없음 또는 fallback');
+      return null;
+    }
+  } catch (e) {
+    debugPrint('❌ 위치 요청 실패: $e');
+    _hasLocationPermissionError = true;
+    return null;
+  } finally {
+    _isRequestingLocation = false;
+    _requestTimer?.cancel();
+    _requestTimer = null;
+    notifyListeners();
+  }
+}
+
 
   /// 🔥 단순한 권한 확인
   Future<bool> _simplePermissionCheck() async {

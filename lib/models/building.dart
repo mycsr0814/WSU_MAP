@@ -233,6 +233,28 @@ class Building {
     );
   }
 
+  // 🔥 추가: 방 정보로부터 Building 객체를 생성하는 팩토리 메서드
+  static Building fromRoomInfo(Map<String, dynamic> roomInfo) {
+    final String roomId = roomInfo['roomId'] ?? '';
+    final String roomName = roomId.startsWith('R') ? roomId.substring(1) : roomId;
+    final String buildingName = roomInfo['buildingName'] ?? '';
+    final int? floorNumber = roomInfo['floorNumber'];
+    
+    return Building(
+      name: '$buildingName $roomName호',
+      info: '${floorNumber ?? ''}층 $roomName호',
+      lat: 0.0, // 실제 좌표는 API에서 가져와야 함
+      lng: 0.0,
+      category: '강의실',
+      baseStatus: '사용가능',
+      hours: '',
+      phone: '',
+      imageUrl: '',
+      description: '$buildingName ${floorNumber ?? ''}층 $roomName호',
+    );
+  }
+
+
   @override
   String toString() {
     return 'Building(name: $name, lat: $lat, lng: $lng, category: $category, status: $status)';
