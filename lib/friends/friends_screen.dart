@@ -113,17 +113,17 @@ class _FriendsScreenState extends State<FriendsScreen> {
         ],
       ),
       body: isLoading
-          // 로딩 중 표시
+          // 1. 로딩 중이면 로딩 인디케이터
           ? const Center(child: CircularProgressIndicator())
-          // 에러 발생 시 메시지 표시
+          // 2. 에러 발생 시 에러 메시지 표시
           : error != null
           ? Center(child: Text('오류: $error'))
-          // 정상 데이터 표시
+          // 3. 정상 데이터 표시
           : RefreshIndicator(
               onRefresh: controller.loadAll,
               child: ListView(
                 children: [
-                  // 친구 목록 섹션
+                  // --- 친구 목록 섹션 ---
                   Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: Text(
@@ -131,10 +131,11 @@ class _FriendsScreenState extends State<FriendsScreen> {
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                   ),
-                  // 친구 리스트
+                  // --- 친구 리스트 ---
                   ...controller.friends.map(
                     (f) => ListTile(
                       leading: CircleAvatar(
+                        // 프로필 이미지가 있으면 이미지, 없으면 기본 아이콘
                         backgroundImage: f.profileImage.isNotEmpty
                             ? NetworkImage(f.profileImage)
                             : null,
@@ -142,13 +143,65 @@ class _FriendsScreenState extends State<FriendsScreen> {
                             ? const Icon(Icons.person, color: Color(0xFF1E3A8A))
                             : null,
                       ),
-                      title: Text(f.userName),
-                      subtitle: Text('ID: ${f.userId}'),
+                      title: Text(f.userName), // 친구 이름
+                      subtitle: Text('ID: ${f.userId}'), // 친구 ID
+                      // --- 친구 삭제 버튼(trailing) 추가 ---
+                      trailing: IconButton(
+                        icon: const Icon(Icons.delete, color: Colors.red),
+                        tooltip: '친구 삭제',
+                        onPressed: () async {
+                          // 삭제 전 확인 다이얼로그 표시
+                          final confirmed = await showDialog<bool>(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              title: const Text('친구 삭제'),
+                              content: Text(
+                                '${f.userName}님을 친구 목록에서 삭제하시겠습니까?',
+                              ),
+                              actions: [
+                                // 취소 버튼
+                                TextButton(
+                                  onPressed: () =>
+                                      Navigator.pop(context, false),
+                                  child: const Text('취소'),
+                                ),
+                                // 삭제 버튼
+                                ElevatedButton(
+                                  onPressed: () => Navigator.pop(context, true),
+                                  child: const Text('삭제'),
+                                ),
+                              ],
+                            ),
+                          );
+                          // 삭제 확인 시
+                          if (confirmed == true) {
+                            try {
+                              // FriendsController를 통해 친구 삭제 API 호출
+                              await controller.deleteFriend(f.userId);
+                              // 성공 시 스낵바 안내
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('친구가 삭제되었습니다.'),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            } catch (e) {
+                              // 실패 시 에러 안내
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('친구 삭제 중 오류 발생: $e'),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            }
+                          }
+                        },
+                      ),
                       // 필요에 따라 친구 상세/메시지 등 추가 가능
                     ),
                   ),
 
-                  // 친구 요청 목록 섹션
+                  // --- 친구 요청 목록 섹션 ---
                   if (controller.friendRequests.isNotEmpty) ...[
                     const Divider(),
                     Padding(
@@ -228,7 +281,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
                     ),
                   ],
 
-                  // 친구가 없을 때 안내 메시지
+                  // --- 친구가 없을 때 안내 메시지 ---
                   if (controller.friends.isEmpty)
                     Padding(
                       padding: const EdgeInsets.all(32.0),
