@@ -13,11 +13,13 @@ class DirectionsScreen extends StatefulWidget {
   // preset 매개변수 추가
   final Building? presetStart;
   final Building? presetEnd;
+  final Map<String, dynamic>? roomData; // 🔥 추가: 방 정보
 
   const DirectionsScreen({
     super.key,
     this.presetStart,
     this.presetEnd,
+    this.roomData, // 🔥 추가
   });
 
   @override
@@ -47,6 +49,15 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
     // preset 값들로 초기화
     _startBuilding = widget.presetStart;
     _endBuilding = widget.presetEnd;
+
+        // 🔥 추가: 방 정보가 전달된 경우 처리
+    if (widget.roomData != null) {
+      _handleRoomData(widget.roomData!);
+    } else {
+      // preset 값들로 초기화 (기존 로직)
+      _startBuilding = widget.presetStart;
+      _endBuilding = widget.presetEnd;
+    }
     
     // 건물 객체 검증
     if (_startBuilding != null) {
@@ -72,6 +83,75 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
     super.didChangeDependencies();
     _initializeSampleData();
   }
+
+    // 🔥 추가: 방 정보 처리 메서드
+  // 🔥 수정: 방 정보 처리 메서드 (더 안전한 타입 처리)
+void _handleRoomData(Map<String, dynamic> roomData) {
+  try {
+    print('=== _handleRoomData 시작 ===');
+    print('받은 방 정보: $roomData');
+    
+    final String roomName = (roomData['roomName'] ?? '').toString();
+    final String buildingName = (roomData['buildingName'] ?? '').toString();
+    final String type = (roomData['type'] ?? '').toString();
+    
+    // 🔥 수정: floorNumber를 완전히 안전하게 처리
+    String floorNumberStr = '';
+    dynamic floorNumberData = roomData['floorNumber'];
+    
+    print('floorNumberData: $floorNumberData (타입: ${floorNumberData.runtimeType})');
+    
+    if (floorNumberData != null) {
+      floorNumberStr = floorNumberData.toString();
+    }
+    
+    print('최종 floorNumberStr: "$floorNumberStr"');
+    
+    // 방 정보를 Building 객체로 변환
+    final roomBuilding = Building(
+      name: '$buildingName $roomName호',
+      info: '${floorNumberStr.isNotEmpty ? "${floorNumberStr}층 " : ""}$roomName호',
+      lat: 0.0, // 실제 좌표는 나중에 API에서 가져올 수 있음
+      lng: 0.0,
+      category: '강의실',
+      baseStatus: '사용가능',
+      hours: '',
+      phone: '',
+      imageUrl: '',
+      description: '$buildingName ${floorNumberStr.isNotEmpty ? "${floorNumberStr}층 " : ""}$roomName호',
+    );
+    
+    print('생성된 roomBuilding: ${roomBuilding.name}');
+    
+    // 출발지 또는 도착지로 설정
+    if (type == 'start') {
+      setState(() {
+        _startBuilding = roomBuilding;
+      });
+      print('출발지로 설정: ${roomBuilding.name}');
+    } else if (type == 'end') {
+      setState(() {
+        _endBuilding = roomBuilding;
+      });
+      print('도착지로 설정: ${roomBuilding.name}');
+    }
+    
+    print('=== _handleRoomData 완료 ===');
+  } catch (e, stackTrace) {
+    print('❌ _handleRoomData 오류: $e');
+    print('스택 트레이스: $stackTrace');
+    
+    // 오류 발생 시 사용자에게 알림
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('방 정보 처리 중 오류가 발생했습니다: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+}
 
   void _initializeSampleData() {
     try {
