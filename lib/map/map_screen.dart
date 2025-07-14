@@ -1,6 +1,7 @@
-// lib/map/map_screen.dart - 기존 자동 이동 로직 제거
+// lib/map/map_screen.dart - 길찾기 버튼 기능 추가
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/controllers/location_controllers.dart';
 import 'package:flutter_application_1/friends/friends_screen.dart';
 import 'package:flutter_application_1/timetable/timetable_screen.dart';
 import 'package:provider/provider.dart';
@@ -9,8 +10,8 @@ import 'package:flutter_application_1/map/widgets/building_info_window.dart';
 import 'package:flutter_application_1/map/widgets/building_detail_sheet.dart';
 import 'package:flutter_application_1/map/widgets/building_search_bar.dart';
 import 'package:flutter_application_1/map/widgets/map_controls.dart';
+import 'package:flutter_application_1/map/widgets/directions_screen.dart'; // 🔥 DirectionsScreen import 추가
 import 'package:flutter_application_1/controllers/map_controller.dart';
-import 'package:flutter_application_1/managers/location_manager.dart';
 import 'package:flutter_application_1/profile/profile_screen.dart';
 import 'package:flutter_application_1/map/navigation_state_manager.dart';
 import '../generated/app_localizations.dart';
@@ -52,27 +53,45 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
   }
 
   /// 🔥 간소화된 초기화 - 기존 자동 이동 로직 제거
-  Future<void> _initializeController() async {
-    if (_isInitializing) return;
+Future<void> _initializeController() async {
+  if (_isInitializing) return;
 
-    try {
-      _isInitializing = true;
-      debugPrint('🚀 MapScreen 초기화 시작...');
+  try {
+    _isInitializing = true;
+    debugPrint('🚀 MapScreen 초기화 시작...');
 
-      final locationManager = Provider.of<LocationManager>(context, listen: false);
-      _controller.setLocationManager(locationManager);
+     // LocationController 생성 및 설정
+     final locationController = LocationController();
+     _controller.setLocationController(locationController);
 
-      // 🔥 기존 자동 이동 로직 완전 제거
-      // MapLocationHandler 제거
-      // onLocationFound 콜백 제거
+    await _controller.initialize();
+    debugPrint('✅ MapScreen 초기화 완료');
+  } catch (e) {
+    debugPrint('❌ MapScreen 초기화 오류: $e');
+  } finally {
+    _isInitializing = false;
+  }
+}
 
-      await _controller.initialize();
+  /// 🔥 길찾기 화면 열기 메서드 추가
+  void _openDirectionsScreen() async {
+    // 정보창이 열려있다면 닫기
+    if (_infoWindowController.isShowing) {
+      _controller.closeInfoWindow(_infoWindowController);
+    }
 
-      debugPrint('✅ MapScreen 초기화 완료');
-    } catch (e) {
-      debugPrint('❌ MapScreen 초기화 오류: $e');
-    } finally {
-      _isInitializing = false;
+    // DirectionsScreen으로 이동하고 결과를 받아옴
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const DirectionsScreen(),
+      ),
+    );
+
+    // 길찾기 결과가 있다면 처리
+    if (result != null && result is Map<String, dynamic>) {
+      print('길찾기 결과 받음: $result');
+      _navigationManager.handleDirectionsResult(result, context);
     }
   }
 
@@ -145,16 +164,18 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                   if (mounted) _infoWindowController.show();
                 },
                 onSearchFocused: () => _controller.closeInfoWindow(_infoWindowController),
+                onDirectionsTap: () => _openDirectionsScreen(), // 🔥 길찾기 버튼 콜백 추가
               ),
               const SizedBox(height: 12),
-              CategoryChips(
-                selectedCategory: _controller.selectedCategory,
-                onCategorySelected: (category, buildings) {
-                  debugPrint('카테고리 선택: $category, 건물 수: ${buildings.length}');
-                  _controller.closeInfoWindow(_infoWindowController);
-                  _controller.selectCategory(category, buildings);
-                },
-              ),
+CategoryChips(
+  selectedCategory: _controller.selectedCategory,
+  onCategorySelected: (category, buildingNames) { // 🔥 List<CategoryBuilding> → List<String>으로 변경
+    debugPrint('카테고리 선택: $category, 건물 이름들: $buildingNames');
+    _controller.closeInfoWindow(_infoWindowController);
+    _controller.selectCategoryByNames(category, buildingNames); // 🔥 새로운 메서드 사용
+  },
+),
+              
             ],
           ),
         ),
@@ -734,6 +755,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
               _navigationManager.handleDirectionsResult(result, context);
             } else {
               print('잘못된 결과 타입: $result');
+              //?
             }
           },
         );

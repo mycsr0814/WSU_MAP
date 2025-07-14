@@ -1,4 +1,4 @@
-// models/category.dart
+// models/category.dart - 개선된 버전
 class Category {
   final String categoryName;
   final String? buildingName;
@@ -12,8 +12,8 @@ class Category {
 
   factory Category.fromJson(Map<String, dynamic> json) {
     return Category(
-      categoryName: json['Category_Name'] ?? '',
-      buildingName: json['Building_Name'],
+      categoryName: json['Category_Name']?.toString() ?? '',
+      buildingName: json['Building_Name']?.toString(),
       location: json['Location'] != null 
           ? CategoryLocation.fromJson(json['Location'])
           : null,
@@ -39,9 +39,18 @@ class CategoryLocation {
   });
 
   factory CategoryLocation.fromJson(Map<String, dynamic> json) {
+    // 🔥 더 안전한 파싱
+    double parseDouble(dynamic value) {
+      if (value == null) return 0.0;
+      if (value is double) return value;
+      if (value is int) return value.toDouble();
+      if (value is String) return double.tryParse(value) ?? 0.0;
+      return 0.0;
+    }
+
     return CategoryLocation(
-      x: (json['x'] ?? 0).toDouble(),
-      y: (json['y'] ?? 0).toDouble(),
+      x: parseDouble(json['x']),
+      y: parseDouble(json['y']),
     );
   }
 
@@ -51,12 +60,17 @@ class CategoryLocation {
       'y': y,
     };
   }
+
+  @override
+  String toString() {
+    return 'CategoryLocation(x: $x, y: $y)';
+  }
 }
 
 class CategoryBuilding {
   final String buildingName;
   final CategoryLocation location;
-  final String? categoryName; // 카테고리 정보 추가
+  final String? categoryName;
 
   CategoryBuilding({
     required this.buildingName,
@@ -65,11 +79,22 @@ class CategoryBuilding {
   });
 
   factory CategoryBuilding.fromJson(Map<String, dynamic> json) {
-    return CategoryBuilding(
-      buildingName: json['Building_Name'] ?? '',
+    print('🔍 CategoryBuilding.fromJson 호출: $json');
+    
+    // Location 파싱 체크
+    if (json['Location'] == null) {
+      print('🚨 Location이 null입니다!');
+      throw Exception('Location 데이터가 없습니다');
+    }
+    
+    final building = CategoryBuilding(
+      buildingName: json['Building_Name']?.toString() ?? '',
       location: CategoryLocation.fromJson(json['Location']),
-      categoryName: json['Category_Name'],
+      categoryName: json['Category_Name']?.toString(),
     );
+    
+    print('✅ CategoryBuilding 생성: ${building.buildingName}, 위치: ${building.location}');
+    return building;
   }
 
   Map<String, dynamic> toJson() {
@@ -78,6 +103,11 @@ class CategoryBuilding {
       'Location': location.toJson(),
       'Category_Name': categoryName,
     };
+  }
+
+  @override
+  String toString() {
+    return 'CategoryBuilding(buildingName: $buildingName, location: $location, categoryName: $categoryName)';
   }
 }
 
@@ -99,5 +129,10 @@ class CategoryMarker {
       categoryName: category,
       location: building.location,
     );
+  }
+
+  @override
+  String toString() {
+    return 'CategoryMarker(buildingName: $buildingName, categoryName: $categoryName, location: $location)';
   }
 }

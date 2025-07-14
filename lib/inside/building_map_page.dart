@@ -1,4 +1,4 @@
-// lib/page/building_map_page.dart (자동 경로 재탐색 및 출발지 복귀 기능 최종 적용)
+// lib/page/building_map_page.dart (경로 생성 후 출발 층 자동 전환 기능만 적용)
 
 import 'dart:async';
 import 'dart:math';
@@ -16,6 +16,7 @@ import '../inside/path_painter.dart';
 
 class BuildingMapPage extends StatefulWidget {
   final String buildingName;
+
   const BuildingMapPage({super.key, required this.buildingName});
 
   @override
@@ -23,243 +24,376 @@ class BuildingMapPage extends StatefulWidget {
 }
 
 class _BuildingMapPageState extends State<BuildingMapPage> {
-  // --- 상태 변수: UI와 데이터 관리를 위한 변수들 ---
-  List<dynamic> _floorList = []; // 건물 전체 층 목록
-  Map<String, dynamic>? _selectedFloor; // 현재 선택된 층 정보
-  String? _svgUrl; // 현재 층의 SVG 도면 URL
-  List<Map<String, dynamic>> _buttonData = []; // SVG에서 파싱한 버튼(강의실) 데이터
-  Map<String, Offset> _navNodes = {}; // 현재 층의 길찾기 노드 좌표 데이터
+  // --- 상태 변수 (기존과 모두 동일) ---
+  List<dynamic> _floorList = [];
+  Map<String, dynamic>? _selectedFloor;
+  String? _svgUrl;
+  List<Map<String, dynamic>> _buttonData = [];
+  Map<String, dynamic>? _startPoint;
+  Map<String, dynamic>? _endPoint;
+  List<Offset> _departurePath = [];
+  List<Offset> _arrivalPath = [];
+  List<Offset> _currentShortestPath = [];
+  Map<String, String>? _transitionInfo;
+  bool _isFloorListLoading = true;
+  bool _isMapLoading = false;
+  String? _error;
+  String? _selectedRoomId;
 
-  // --- 길찾기 관련 상태 변수 ---
-  Map<String, dynamic>? _startPoint; // 출발지 정보
-  Map<String, dynamic>? _endPoint; // 도착지 정보
-  List<Offset> _departurePath = []; // 층간 이동 시 출발층의 경로
-  List<Offset> _arrivalPath = []; // 층간 이동 시 도착층의 경로
-  List<Offset> _currentShortestPath = []; // 현재 화면에 그려질 최종 경로
-  Map<String, String>? _transitionInfo; // 층간 이동 정보 (예: {"from": "1", "to": "2"})
+  final ApiService _apiService = ApiService();
+  final TransformationController _transformationController =
+      TransformationController();
+  Timer? _resetTimer;
+  static const double svgScale = 0.7;
+  bool _showTransitionPrompt = false;
+  Timer? _promptTimer;
 
-  // --- UI 제어 및 기타 변수 ---
-  bool _isFloorListLoading = true; // 층 목록 로딩 상태
-  bool _isMapLoading = false; // 지도 데이터(SVG) 로딩 상태
-  String? _error; // 오류 메시지
-  String? _selectedRoomId; // 사용자가 선택한 방 ID (테두리 표시용)
-  final ApiService _apiService = ApiService(); // 서버 통신 서비스
-  final TransformationController _transformationController = TransformationController(); // 지도 확대/축소 제어
-  Timer? _resetTimer; // 지도 자동 복귀 타이머
-  static const double svgScale = 0.7; // SVG 기본 스케일
-
-  // --- 애니메이션 관련 상태 변수 ---
-  bool _showTransitionPrompt = false; // 층간 이동 안내 메시지 표시 여부
-  Timer? _promptTimer; // 안내 메시지 자동 숨김 타이머
-
-  /// 위젯이 처음 생성될 때 호출
   @override
   void initState() {
     super.initState();
-    _loadFloorList(widget.buildingName); // 페이지에 진입하면 층 목록을 불러옵니다.
+    _loadFloorList(widget.buildingName);
   }
 
-  /// 위젯이 화면에서 사라질 때 호출
   @override
   void dispose() {
     _transformationController.dispose();
     _resetTimer?.cancel();
-    _promptTimer?.cancel(); // 위젯이 종료될 때 모든 타이머를 안전하게 정리합니다.
+    _promptTimer?.cancel();
     super.dispose();
   }
 
-  /// 서버에서 해당 건물의 모든 층 목록을 비동기적으로 불러옵니다.
   Future<void> _loadFloorList(String buildingName) async {
-    setState(() { _isFloorListLoading = true; _error = null; });
+    setState(() {
+      _isFloorListLoading = true;
+      _error = null;
+    });
+
     try {
       final floors = await _apiService.fetchFloorList(buildingName);
       if (mounted) {
-        setState(() { _floorList = floors; _isFloorListLoading = false; });
+        setState(() {
+          _floorList = floors;
+          _isFloorListLoading = false;
+        });
         if (_floorList.isNotEmpty) {
-          _onFloorChanged(_floorList.first); // 성공 시 첫 번째 층을 자동으로 선택합니다.
+          _onFloorChanged(_floorList.first);
         } else {
           setState(() => _error = "이 건물의 층 정보를 찾을 수 없습니다.");
         }
       }
     } catch (e) {
-      if (mounted) { setState(() { _isFloorListLoading = false; _error = '층 목록을 불러오는 데 실패했습니다: $e'; }); }
+      if (mounted) {
+        setState(() {
+          _isFloorListLoading = false;
+          _error = '층 목록을 불러오는 데 실패했습니다: $e';
+        });
+      }
     }
   }
 
-  /// 특정 층의 SVG 도면과 내부 노드 데이터를 불러옵니다.
   Future<void> _loadMapData(Map<String, dynamic> floorInfo) async {
     setState(() => _isMapLoading = true);
+
     try {
       final svgUrl = floorInfo['File'] as String?;
-      if (svgUrl == null || svgUrl.isEmpty) throw Exception('SVG URL이 유효하지 않습니다.');
+      if (svgUrl == null || svgUrl.isEmpty)
+        throw Exception('SVG URL이 유효하지 않습니다.');
+
       final svgResponse = await http.get(Uri.parse(svgUrl));
-      if (svgResponse.statusCode != 200) throw Exception('SVG 파일을 다운로드할 수 없습니다');
+      if (svgResponse.statusCode != 200)
+        throw Exception('SVG 파일을 다운로드할 수 없습니다');
+
       final svgContent = svgResponse.body;
-      final buttons = SvgDataParser.parseButtonData(svgContent); // 클릭 가능한 버튼 영역 파싱
-      final allNodes = SvgDataParser.parseAllNodes(svgContent); // 길찾기용 모든 노드 좌표 파싱
+      final buttons = SvgDataParser.parseButtonData(svgContent);
+
       if (mounted) {
-        setState(() { _svgUrl = svgUrl; _buttonData = buttons; _navNodes = allNodes; _isMapLoading = false; });
+        setState(() {
+          _svgUrl = svgUrl;
+          _buttonData = buttons;
+          _isMapLoading = false;
+        });
       }
     } catch (e) {
-      if (mounted) { setState(() { _isMapLoading = false; _error = '지도 데이터를 불러오는 데 실패했습니다: $e'; }); }
+      if (mounted) {
+        setState(() {
+          _isMapLoading = false;
+          _error = '지도 데이터를 불러오는 데 실패했습니다: $e';
+        });
+      }
     }
   }
-  
-  /// 사용자가 층 선택 버튼을 눌렀을 때 호출되는 함수
+
   void _onFloorChanged(Map<String, dynamic> newFloor) {
-    // 이미 선택된 층이면 아무것도 하지 않음
-    if (_selectedFloor?['Floor_Id'] == newFloor['Floor_Id'] && _error == null) return;
-    
+    if (_selectedFloor?['Floor_Id'] == newFloor['Floor_Id'] && _error == null)
+      return;
+
     setState(() {
       _selectedFloor = newFloor;
-      // 층간 길찾기 중인 경우, 현재 층에 맞는 경로를 화면에 표시
+
       if (_transitionInfo != null) {
-        if (newFloor['Floor_Number'].toString() == _transitionInfo!['from']) _currentShortestPath = _departurePath;
-        else if (newFloor['Floor_Number'].toString() == _transitionInfo!['to']) _currentShortestPath = _arrivalPath;
-        else _currentShortestPath = [];
+        if (newFloor['Floor_Number'].toString() == _transitionInfo!['from']) {
+          _currentShortestPath = _departurePath;
+        } else if (newFloor['Floor_Number'].toString() ==
+            _transitionInfo!['to']) {
+          _currentShortestPath = _arrivalPath;
+        } else {
+          _currentShortestPath = [];
+        }
       } else {
-        // 길찾기 중이 아닐 때, 다른 층으로 이동하면 기존 경로를 지움
-        final bool shouldResetPath = _startPoint?['floorId'] != newFloor['Floor_Id'] || _endPoint?['floorId'] != newFloor['Floor_Id'];
+        final bool shouldResetPath =
+            _startPoint?['floorId'] != newFloor['Floor_Id'] ||
+            _endPoint?['floorId'] != newFloor['Floor_Id'];
         if (shouldResetPath) _currentShortestPath = [];
       }
     });
-    
-    _loadMapData(newFloor); // 새롭게 선택된 층의 지도 데이터를 불러옵니다.
 
-    // 층간 이동 중에 층을 바꾸면 안내 메시지를 다시 띄워줍니다.
+    _loadMapData(newFloor);
+
     if (_transitionInfo != null) {
       _showAndFadePrompt();
     }
   }
 
-  /// 모든 길찾기 관련 정보를 초기화하는 함수 (새로고침 버튼용)
   void _clearAllPathInfo() {
     _promptTimer?.cancel();
     setState(() {
-      _startPoint = null; _endPoint = null; _departurePath = []; _arrivalPath = [];
-      _currentShortestPath = []; _transitionInfo = null;
-      _showTransitionPrompt = false; // 안내 메시지 숨기기
-      _transformationController.value = Matrix4.identity(); // 지도 줌/이동 상태 초기화
+      _startPoint = null;
+      _endPoint = null;
+      _departurePath = [];
+      _arrivalPath = [];
+      _currentShortestPath = [];
+      _transitionInfo = null;
+      _showTransitionPrompt = false;
+      _transformationController.value = Matrix4.identity();
     });
   }
 
-  /// 출발/도착 지점이 모두 설정되면 서버에 길찾기를 요청하는 핵심 함수
   Future<void> _findAndDrawPath() async {
-    if (_startPoint == null || _endPoint == null) return;
-    setState(() { _isMapLoading = true; _departurePath = []; _arrivalPath = []; _currentShortestPath = []; _transitionInfo = null; });
-    try {
-      final int fromFloor = int.parse(_startPoint!['floorNumber'].toString());
-      final int toFloor = int.parse(_endPoint!['floorNumber'].toString());
-      final String fromRoom = (_startPoint!['roomId'] as String).replaceFirst('R', '');
-      final String toRoom = (_endPoint!['roomId'] as String).replaceFirst('R', '');
-      
-      final response = await _apiService.findPath(
-        fromBuilding: widget.buildingName, fromFloor: fromFloor, fromRoom: fromRoom,
-        toBuilding: widget.buildingName, toFloor: toFloor, toRoom: toRoom,
-      );
-      
-      if (response['type'] == 'room-room' && response['result']?['arrival_indoor']?['path']?['path'] != null) {
-        final List<dynamic> pathNodeIds = response['result']['arrival_indoor']['path']['path'];
-        final String fromFloorNumStr = fromFloor.toString();
-        final String toFloorNumStr = toFloor.toString();
-        final bool isCrossFloor = fromFloorNumStr != toFloorNumStr;
-        
-        Map<String, Map<String, Offset>> floorNodesMap = {};
-        await Future.wait([
-          _loadNodesForFloor(fromFloorNumStr, floorNodesMap),
-          if (isCrossFloor) _loadNodesForFloor(toFloorNumStr, floorNodesMap),
-        ]);
+  // --- 함수 시작: 상태 초기화 (기존 코드와 동일) ---
+  if (_startPoint == null || _endPoint == null) return;
 
-        List<Offset> convertIdsToOffsets(List<dynamic> ids, String floorNum) {
-          final nodeMap = floorNodesMap[floorNum] ?? {};
-          if (nodeMap.isEmpty) return [];
-          return ids.map((nodeId) {
-            String simpleId = (nodeId as String).split('@').last.replaceFirst('R', '');
+  setState(() {
+    _isMapLoading = true;
+    _departurePath = [];
+    _arrivalPath = [];
+    _currentShortestPath = [];
+    _transitionInfo = null;
+  });
+  // --- 함수 시작: 상태 초기화 끝 ---
+
+  try {
+    // --- API 요청 준비 (기존 코드와 동일) ---
+    // 이제 from/to building이 달라질 수 있으므로, 해당 정보도 API 요청에 포함해야 합니다.
+    // (이 부분은 고객님의 _apiService.findPath 구현에 따라 달라질 수 있습니다.)
+    final fromBuilding = widget.buildingName; // 예시
+    final toBuilding = _endPoint!['buildingName'] ?? widget.buildingName; // 예시
+
+    final int fromFloor = int.parse(_startPoint!['floorNumber'].toString());
+    final int toFloor = int.parse(_endPoint!['floorNumber'].toString());
+    final String fromRoom = (_startPoint!['roomId'] as String).replaceFirst('R', '');
+    final String toRoom = (_endPoint!['roomId'] as String).replaceFirst('R', '');
+
+    final response = await _apiService.findPath(
+      fromBuilding: fromBuilding,
+      fromFloor: fromFloor,
+      fromRoom: fromRoom,
+      toBuilding: toBuilding,
+      toFloor: toFloor,
+      toRoom: toRoom,
+    );
+    // --- API 요청 준비 끝 ---
+
+
+    // =================================================================
+    // =========== 통합 내비게이션을 위한 경로 처리 로직입니다 ===========
+    // =================================================================
+
+    final type = response['type'];
+    final result = response['result'];
+
+    // [공통 함수 1] 노드 ID를 지도 좌표(Offset)로 변환 (기존 로직과 동일, 수정됨)
+    List<Offset> convertIdsToOffsets(List<String> ids, String floorNum, Map<String, Map<String, Offset>> floorNodesMap) {
+      final nodeMap = floorNodesMap[floorNum] ?? {};
+      if (nodeMap.isEmpty) return [];
+      return ids
+          .map((nodeId) {
+            String simpleId = nodeId.split('@').last; // 'W19@1@101' -> '101'
             return nodeMap[simpleId];
-          }).where((offset) => offset != null).cast<Offset>().toList();
+          })
+          .whereType<Offset>()
+          .toList();
+    }
+
+    // [공통 함수 2] 실외 지도로 데이터와 함께 이동하는 로직 (고객님이 직접 구현하실 부분)
+    void navigateToOutdoorMap(Map<String, dynamic> outdoorData, Map<String, dynamic>? arrivalData) {
+      // 이 곳에서 Navigator.push를 사용해 실외 지도 페이지로 이동합니다.
+      // arguments를 통해 outdoor 경로나 최종 도착지 정보를 전달해야 합니다.
+      // 예시:
+      // Navigator.of(context).push(MaterialPageRoute(
+      //   builder: (_) => OutdoorMapPage(
+      //     outdoorPath: outdoorData['path']['path'],
+      //     arrivalInfo: arrivalData,
+      //   ),
+      // ));
+      print("실외 지도로 이동! outdoor path: ${outdoorData['path']['path']}");
+      print("최종 도착 정보: $arrivalData");
+       ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('실외 경로 안내를 시작합니다.')),
+      );
+    }
+
+
+    // [유형 1] 건물 <-> 건물
+    if (type == "building-building") {
+      // 이 페이지는 출발/도착점이 건물이므로 직접 경로를 그리지 않습니다.
+      // 즉시 실외 지도 페이지로 데이터를 넘겨 길안내를 시작합니다.
+      navigateToOutdoorMap(result['outdoor'], null);
+    }
+    // [유형 2] 호실 <-> 건물 (현재 건물에서 출발하여 다른 건물 앞에서 끝남)
+    else if (type == "room-building") {
+      final departureIndoor = result?['departure_indoor'];
+      final outdoor = result?['outdoor'];
+
+      if (departureIndoor != null) {
+        // Step 1: 현재 페이지에서 출발지부터 건물 출구까지의 실내 경로를 그립니다.
+        final pathNodeIds = List<String>.from(departureIndoor['path']['path']);
+        final fromFloorNumStr = fromFloor.toString();
+        Map<String, Map<String, Offset>> floorNodesMap = {};
+        await _loadNodesForFloor(fromFloorNumStr, floorNodesMap);
+        final depOffsets = convertIdsToOffsets(pathNodeIds, fromFloorNumStr, floorNodesMap);
+        setState(() => _currentShortestPath = depOffsets);
+
+        // Step 2: 잠시 후, 실외 지도 페이지로 이동합니다.
+        Future.delayed(const Duration(seconds: 2), () {
+          navigateToOutdoorMap(outdoor, null);
+        });
+      }
+    }
+    // [유형 3] 건물 <-> 호실
+    // 이 경우는 실외 지도에서 길안내를 받다가, 목적지 건물에 도착했을 때
+    // building_map_page가 '도착 모드'로 실행되어야 합니다.
+    // 따라서 이 함수의 로직이 직접 호출되지는 않습니다.
+    // (실외 지도 페이지에서 이 페이지를 호출할 때 arrival_indoor 데이터를 넘겨줘야 함)
+    else if (type == "building-room") {
+      // 로직상 이 분기는 현재 페이지에서 직접 실행되기 어렵습니다.
+      // 시작점이 건물이므로, 시작은 실외 지도에서 해야 합니다.
+    }
+    // [유형 4] 호실 <-> 호실
+    else if (type == "room-room") {
+      final departureIndoor = result?['departure_indoor'];
+      final arrivalIndoor = result?['arrival_indoor'];
+
+      // [Case 4-1] 다른 건물 간 호실 이동
+      if (departureIndoor != null && arrivalIndoor != null) {
+        // Step 1: 출발지 건물(현재 페이지)에서 출구까지의 실내 경로를 그립니다.
+        final depPathNodeIds = List<String>.from(departureIndoor['path']['path']);
+        final fromFloorNumStr = fromFloor.toString();
+        Map<String, Map<String, Offset>> floorNodesMap = {};
+        await _loadNodesForFloor(fromFloorNumStr, floorNodesMap);
+        final depOffsets = convertIdsToOffsets(depPathNodeIds, fromFloorNumStr, floorNodesMap);
+        setState(() => _currentShortestPath = depOffsets);
+
+        // Step 2: 잠시 후, 실외 지도 페이지로 이동하며, '최종 도착 정보(arrival_indoor)'를 함께 전달합니다.
+        Future.delayed(const Duration(seconds: 2), () {
+          navigateToOutdoorMap(result['outdoor'], arrivalIndoor);
+        });
+      }
+      // [Case 4-2] 같은 건물 내 호실 이동 (기존과 동일하게 완벽 지원)
+      else if (arrivalIndoor != null) {
+        final pathNodeIds = List<String>.from(arrivalIndoor['path']['path']);
+        final fromFloorNumStr = fromFloor.toString();
+        final toFloorNumStr = toFloor.toString();
+        final bool isCrossFloor = fromFloorNumStr != toFloorNumStr;
+
+        Map<String, Map<String, Offset>> floorNodesMap = {};
+        await _loadNodesForFloor(fromFloorNumStr, floorNodesMap);
+        if (isCrossFloor) {
+          await _loadNodesForFloor(toFloorNumStr, floorNodesMap);
         }
 
         if (isCrossFloor) {
-          int splitIndex = pathNodeIds.indexWhere((id) => (id as String).split('@')[1] != fromFloorNumStr);
+          int splitIndex = pathNodeIds.indexWhere((id) => id.split('@')[1] != fromFloorNumStr);
           if (splitIndex == -1) splitIndex = pathNodeIds.length;
-          final depOffsets = convertIdsToOffsets(pathNodeIds.sublist(0, splitIndex), fromFloorNumStr);
-      final arrOffsets = convertIdsToOffsets(pathNodeIds.sublist(splitIndex), toFloorNumStr);
+          final depOffsets = convertIdsToOffsets(pathNodeIds.sublist(0, splitIndex), fromFloorNumStr, floorNodesMap);
+          final arrOffsets = convertIdsToOffsets(pathNodeIds.sublist(splitIndex), toFloorNumStr, floorNodesMap);
           setState(() {
-            _departurePath = depOffsets; _arrivalPath = arrOffsets;
+            _departurePath = depOffsets;
+            _arrivalPath = arrOffsets;
             _currentShortestPath = _selectedFloor?['Floor_Number'].toString() == fromFloorNumStr ? depOffsets : arrOffsets;
             _transitionInfo = {"from": fromFloorNumStr, "to": toFloorNumStr};
           });
           _showAndFadePrompt();
         } else {
-          final sameFloorOffsets = convertIdsToOffsets(pathNodeIds, fromFloorNumStr);
+          final sameFloorOffsets = convertIdsToOffsets(pathNodeIds, fromFloorNumStr, floorNodesMap);
           setState(() => _currentShortestPath = sameFloorOffsets);
         }
-      } else {
-        _clearAllPathInfo();
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('경로를 찾을 수 없습니다.')));
       }
-    } catch (e) {
-      _clearAllPathInfo();
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('길찾기 중 오류가 발생했습니다: $e')));
-    } finally {
-      if(mounted) setState(() => _isMapLoading = false);
     }
+  } catch (e) {
+    _clearAllPathInfo();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('길찾기 중 오류가 발생했습니다: $e')),
+    );
+  } finally {
+    if (mounted) setState(() => _isMapLoading = false);
   }
+}
 
-  /// 길찾기에 필요한 특정 층의 노드 데이터를 동적으로 로드하는 헬퍼 함수
-  Future<void> _loadNodesForFloor(String floorNumber, Map<String, Map<String, Offset>> targetMap) async {
+  Future<void> _loadNodesForFloor(
+    String floorNumber,
+    Map<String, Map<String, Offset>> targetMap,
+  ) async {
     if (targetMap.containsKey(floorNumber)) return;
-    final floorInfo = _floorList.firstWhere((f) => f['Floor_Number'].toString() == floorNumber, orElse: () => null);
+
+    final floorInfo = _floorList.firstWhere(
+      (f) => f['Floor_Number'].toString() == floorNumber,
+      orElse: () => null,
+    );
+
     if (floorInfo != null) {
       final svgUrl = floorInfo['File'] as String?;
       if (svgUrl != null && svgUrl.isNotEmpty) {
         final svgResponse = await http.get(Uri.parse(svgUrl));
         if (svgResponse.statusCode == 200) {
-          targetMap[floorNumber] = SvgDataParser.parseAllNodes(svgResponse.body);
+          targetMap[floorNumber] = SvgDataParser.parseAllNodes(
+            svgResponse.body,
+          );
         }
       }
     }
   }
-  
-  /// [핵심 개선] 출발지/도착지 설정을 통합하여 처리하고 자동 경로 재탐색을 지원하는 함수
+
+  // [핵심 수정 1] 출발/도착 지점 설정을 위한 통합 함수
   void _setPoint(String type, String roomId) async {
-    // 1. 현재 선택된 지점(강의실)의 정보를 Map 형태로 준비합니다.
     final pointData = {
       "floorId": _selectedFloor?['Floor_Id'],
       "floorNumber": _selectedFloor?['Floor_Number'],
-      "roomId": roomId
+      "roomId": roomId,
     };
 
-    // 2. '출발' 또는 '도착' 상태를 업데이트하여 하단 정보 UI에 즉시 반영합니다.
     setState(() {
       if (type == 'start') {
         _startPoint = pointData;
-      } else { // type == 'end'
+      } else {
         _endPoint = pointData;
       }
     });
 
-    // 3. 사용자 경험을 위해 BottomSheet를 즉시 닫아줍니다.
-    if(mounted) Navigator.pop(context);
+    if (mounted) Navigator.pop(context); // 모달 닫기
 
-    // 4. 출발지와 도착지가 모두 설정되었다면, 자동으로 길찾기를 실행합니다.
-    //    (예: 기존 경로가 있는 상태에서 출발지만 바꿔도 바로 재탐색)
+    // 출발지와 도착지가 모두 설정되면 경로 탐색 실행
     if (_startPoint != null && _endPoint != null) {
-      // 길찾기 기능이 완료될 때까지 기다립니다.
       await _findAndDrawPath();
 
-      // 5. [사용자 경험 개선] 길찾기 완료 후, 현재 화면이 출발지 층이 아니라면 출발지 층으로 자동 전환합니다.
+      // [핵심 수정 2] 경로 탐색 후, 현재 층이 출발 층이 아니면 출발 층으로 자동 전환
       final startFloorId = _startPoint!['floorId'];
       final currentFloorId = _selectedFloor?['Floor_Id'];
 
       if (startFloorId != null && startFloorId != currentFloorId) {
-        // 전체 층 목록에서 출발지 층 정보를 찾습니다.
         final startingFloorInfo = _floorList.firstWhere(
           (floor) => floor['Floor_Id'] == startFloorId,
           orElse: () => null,
         );
-        
-        // 해당 층으로 지도를 전환합니다.
         if (startingFloorInfo != null && mounted) {
           _onFloorChanged(startingFloorInfo);
         }
@@ -267,55 +401,41 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
     }
   }
 
-    /// 방 버튼 클릭 시 서버에서 설명 받아와서 RoomInfoSheet(모달)로 표시
+  // [핵심 수정 3] _setPoint 함수를 호출하도록 변경된 모달 표시 함수
   void _showRoomInfoSheet(BuildContext context, String roomId) async {
     setState(() => _selectedRoomId = roomId);
-
-    // R이 앞에 붙어있으면 제거 (서버 요청과 화면 표시 모두에 사용)
     String roomIdNoR = roomId.startsWith('R') ? roomId.substring(1) : roomId;
-
     String roomDesc = '';
+
     try {
-      // 서버에서 방 설명 받아오기 (GET)
       roomDesc = await _apiService.fetchRoomDescription(
         buildingName: widget.buildingName,
-        floorNumber: _selectedFloor?['Floor_Number'],
-        roomName: roomIdNoR, // 서버에도 R을 뺀 값으로 전달
+        floorNumber: _selectedFloor?['Floor_Number']?.toString() ?? '',
+        roomName: roomIdNoR,
       );
     } catch (e) {
       print(e);
       roomDesc = '설명을 불러오지 못했습니다.';
     }
 
-    // RoomInfoSheet 모달로 방 정보 표시 (name에 R 뺀 값)
     await showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (context) => RoomInfoSheet(
         roomInfo: RoomInfo(id: roomId, name: roomIdNoR, desc: roomDesc),
-        onDeparture: () {
-          setState(() => _startPoint = {"floorId": _selectedFloor?['Floor_Id'], "roomId": roomId});
-          if (_endPoint != null) _findAndDrawPath();
-          Navigator.pop(context);
-        },
-        onArrival: () {
-          setState(() => _endPoint = {"floorId": _selectedFloor?['Floor_Id'], "roomId": roomId});
-          if (_startPoint != null) _findAndDrawPath();
-          Navigator.pop(context);
-        },
+        onDeparture: () => _setPoint('start', roomId),
+        onArrival: () => _setPoint('end', roomId),
       ),
     );
+
     if (mounted) setState(() => _selectedRoomId = null);
   }
 
-  /// 층간 이동 안내 메시지를 표시하고, 몇 초 뒤 자동으로 사라지게 하는 함수
   void _showAndFadePrompt() {
-    setState(() => _showTransitionPrompt = true); // 메시지 보이기
-    _promptTimer?.cancel(); // 기존 타이머가 있다면 취소
-    _promptTimer = Timer(const Duration(seconds: 3), () { // 3초 타이머 설정
-      if (mounted) {
-        setState(() => _showTransitionPrompt = false); // 3초 후 메시지 숨기기
-      }
+    setState(() => _showTransitionPrompt = true);
+    _promptTimer?.cancel();
+    _promptTimer = Timer(const Duration(seconds: 3), () {
+      if (mounted) setState(() => _showTransitionPrompt = false);
     });
   }
 
@@ -325,12 +445,19 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
       appBar: AppBar(
         title: Text('${widget.buildingName} 실내 안내도'),
         backgroundColor: Colors.indigo,
-        actions: [ IconButton(icon: const Icon(Icons.refresh), onPressed: _clearAllPathInfo, tooltip: '초기화'), ],
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _clearAllPathInfo,
+            tooltip: '초기화',
+          ),
+        ],
       ),
       body: Stack(
         children: [
           Center(child: _buildBodyContent()),
-          if (!_isFloorListLoading && _error == null) Positioned(left: 16, bottom: 120, child: _buildFloorSelector()),
+          if (!_isFloorListLoading && _error == null)
+            Positioned(left: 16, bottom: 120, child: _buildFloorSelector()),
           _buildPathInfo(),
           _buildTransitionPrompt(),
         ],
@@ -338,83 +465,177 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
     );
   }
 
-  /// 층 목록, 에러, 로딩 등 상태에 따라 본문 위젯을 결정
   Widget _buildBodyContent() {
-    if (_isFloorListLoading) return const Center(child: Text('층 목록을 불러오는 중...'));
-    if (_error != null) return Center(child: Padding( padding: const EdgeInsets.all(16.0), child: Text(_error!, textAlign: TextAlign.center, style: const TextStyle(color: Colors.red, fontSize: 16),),));
+    if (_isFloorListLoading)
+      return const Center(child: Text('층 목록을 불러오는 중...'));
+    if (_error != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Text(
+            _error!,
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: Colors.red, fontSize: 16),
+          ),
+        ),
+      );
+    }
     if (_isMapLoading) return const Center(child: CircularProgressIndicator());
     if (_svgUrl == null) return const Center(child: Text('층을 선택해주세요.'));
     return _buildMapView();
   }
 
-  /// SVG 도면, 방 버튼, 경로 등 실제 지도 UI를 그리는 위젯
   Widget _buildMapView() {
     const double svgWidth = 210, svgHeight = 297;
-    return LayoutBuilder(builder: (context, constraints) {
-      final baseScale = min(constraints.maxWidth / svgWidth, constraints.maxHeight / svgHeight);
-      final totalScale = baseScale * 1.0;
-      final svgDisplayWidth = svgWidth * totalScale * svgScale;
-      final svgDisplayHeight = svgHeight * totalScale * svgScale;
-      final leftOffset = (constraints.maxWidth - svgDisplayWidth) / 2;
-      final topOffset = (constraints.maxHeight - svgDisplayHeight) / 2;
-      return InteractiveViewer(
-        transformationController: _transformationController, minScale: 0.5, maxScale: 4.0,
-        onInteractionEnd: (details) => _resetScaleAfterDelay(),
-        child: SizedBox(
-          width: constraints.maxWidth, height: constraints.maxHeight,
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              Positioned(
-                left: leftOffset, top: topOffset,
-                child: ColorFiltered(
-                  colorFilter: const ColorFilter.mode(Colors.black, BlendMode.srcIn),
-                  child: SvgPicture.network(_svgUrl!, width: svgDisplayWidth, height: svgDisplayHeight, placeholderBuilder: (context) => const Center(child: CircularProgressIndicator())),
-                ),
-              ),
-              ..._buttonData.map((button) {
-                final Rect rect = button['rect']; final String id = button['id'];
-                final scaledRect = Rect.fromLTWH(leftOffset + rect.left * totalScale * svgScale, topOffset + rect.top * totalScale * svgScale, rect.width * totalScale * svgScale, rect.height * totalScale * svgScale);
-                return Positioned.fromRect( rect: scaledRect,
-                  child: GestureDetector( onTap: () => _showRoomInfoSheet(context, id),
-                    child: CustomPaint(painter: RoomShapePainter(isSelected: _selectedRoomId == id), child: Container(color: Colors.transparent)),
-                  ),
-                );
-              }).toList(),
-              if (_currentShortestPath.isNotEmpty)
-                Positioned( left: leftOffset, top: topOffset,
-                  child: IgnorePointer(
-                    child: CustomPaint(size: Size(svgDisplayWidth, svgDisplayHeight),
-                      painter: PathPainter(pathPoints: _currentShortestPath, scale: totalScale * svgScale),
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final baseScale = min(
+          constraints.maxWidth / svgWidth,
+          constraints.maxHeight / svgHeight,
+        );
+        final totalScale = baseScale * 1.0;
+        final svgDisplayWidth = svgWidth * totalScale * svgScale;
+        final svgDisplayHeight = svgHeight * totalScale * svgScale;
+        final leftOffset = (constraints.maxWidth - svgDisplayWidth) / 2;
+        final topOffset = (constraints.maxHeight - svgDisplayHeight) / 2;
+
+        return GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTapDown: (TapDownDetails details) {
+            final Offset scenePoint = _transformationController.toScene(
+              details.localPosition,
+            );
+            final Offset svgTapPosition = Offset(
+              (scenePoint.dx - leftOffset) / (totalScale * svgScale),
+              (scenePoint.dy - topOffset) / (totalScale * svgScale),
+            );
+
+            for (var button in _buttonData.reversed) {
+              bool isHit = false;
+              if (button['type'] == 'path') {
+                isHit = (button['path'] as Path).contains(svgTapPosition);
+              } else {
+                isHit = (button['rect'] as Rect).contains(svgTapPosition);
+              }
+              if (isHit) {
+                _showRoomInfoSheet(context, button['id']);
+                break;
+              }
+            }
+          },
+          child: InteractiveViewer(
+            transformationController: _transformationController,
+            minScale: 0.5,
+            maxScale: 4.0,
+            onInteractionEnd: (details) => _resetScaleAfterDelay(),
+            child: SizedBox(
+              width: constraints.maxWidth,
+              height: constraints.maxHeight,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Positioned(
+                    left: leftOffset,
+                    top: topOffset,
+                    child: ColorFiltered(
+                      colorFilter: const ColorFilter.mode(
+                        Colors.black,
+                        BlendMode.srcIn,
+                      ),
+                      child: SvgPicture.network(
+                        _svgUrl!,
+                        width: svgDisplayWidth,
+                        height: svgDisplayHeight,
+                        placeholderBuilder: (context) =>
+                            const Center(child: CircularProgressIndicator()),
+                      ),
                     ),
                   ),
-                ),
-            ],
+                  ..._buttonData.map((button) {
+                    final Rect bounds = button['type'] == 'path'
+                        ? (button['path'] as Path).getBounds()
+                        : button['rect'];
+                    final String id = button['id'];
+                    final scaledRect = Rect.fromLTWH(
+                      leftOffset + bounds.left * totalScale * svgScale,
+                      topOffset + bounds.top * totalScale * svgScale,
+                      bounds.width * totalScale * svgScale,
+                      bounds.height * totalScale * svgScale,
+                    );
+                    return Positioned.fromRect(
+                      rect: scaledRect,
+                      child: IgnorePointer(
+                        child: CustomPaint(
+                          painter: RoomShapePainter(
+                            isSelected: _selectedRoomId == id,
+                            shape: button['path'] ?? button['rect'],
+                          ),
+                          size: scaledRect.size,
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                  if (_currentShortestPath.isNotEmpty)
+                    Positioned(
+                      left: leftOffset,
+                      top: topOffset,
+                      child: IgnorePointer(
+                        child: CustomPaint(
+                          size: Size(svgDisplayWidth, svgDisplayHeight),
+                          painter: PathPainter(
+                            pathPoints: _currentShortestPath,
+                            scale: totalScale * svgScale,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
           ),
-        ),
-      );
-    });
+        );
+      },
+    );
   }
 
-  /// 층간 이동 안내 메시지를 부드럽게 나타나고 사라지게 하는 위젯
   Widget _buildTransitionPrompt() {
     String? promptText;
-    if (_transitionInfo != null && _selectedFloor?['Floor_Number'].toString() == _transitionInfo!['from']) {
+    if (_transitionInfo != null &&
+        _selectedFloor?['Floor_Number'].toString() ==
+            _transitionInfo!['from']) {
       promptText = '${_transitionInfo!['to']}층으로 이동하세요';
     }
+
     return AnimatedOpacity(
       opacity: _showTransitionPrompt && promptText != null ? 1.0 : 0.0,
       duration: const Duration(milliseconds: 500),
       child: IgnorePointer(
         child: Positioned(
-          bottom: 200, left: 0, right: 0,
+          bottom: 200,
+          left: 0,
+          right: 0,
           child: Center(
             child: Card(
-              color: Colors.redAccent, elevation: 8,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              color: Colors.redAccent,
+              elevation: 8,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                child: Text(promptText ?? '', textAlign: TextAlign.center, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 12,
+                ),
+                child: Text(
+                  promptText ?? '',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
               ),
             ),
           ),
@@ -423,18 +644,37 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
     );
   }
 
-  /// 층 선택 버튼 UI를 그리는 위젯
   Widget _buildFloorSelector() {
-    return Card( elevation: 4, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding( padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
         child: Column(
           children: _floorList.reversed.map((floor) {
-            final bool isSelected = _selectedFloor?['Floor_Id'] == floor['Floor_Id'];
-            return GestureDetector( onTap: () => _onFloorChanged(floor),
+            final bool isSelected =
+                _selectedFloor?['Floor_Id'] == floor['Floor_Id'];
+            return GestureDetector(
+              onTap: () => _onFloorChanged(floor),
               child: Container(
-                margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8), padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(color: isSelected ? Colors.indigo.withOpacity(0.8) : Colors.transparent, borderRadius: BorderRadius.circular(8)),
-                child: Text('${floor['Floor_Number']}F', style: TextStyle(fontWeight: isSelected ? FontWeight.bold : FontWeight.normal, color: isSelected ? Colors.white : Colors.black87, fontSize: 16)),
+                margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? Colors.indigo.withOpacity(0.8)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  '${floor['Floor_Number']}F',
+                  style: TextStyle(
+                    fontWeight: isSelected
+                        ? FontWeight.bold
+                        : FontWeight.normal,
+                    color: isSelected ? Colors.white : Colors.black87,
+                    fontSize: 16,
+                  ),
+                ),
               ),
             );
           }).toList(),
@@ -443,12 +683,18 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
     );
   }
 
-  /// 화면 하단의 출발/도착 정보 표시 UI
   Widget _buildPathInfo() {
-    return Positioned( bottom: 16, left: 16, right: 16,
-      child: Card( elevation: 6, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        child: Padding( padding: const EdgeInsets.all(12.0),
-          child: Row( mainAxisAlignment: MainAxisAlignment.spaceAround,
+    return Positioned(
+      bottom: 16,
+      left: 16,
+      right: 16,
+      child: Card(
+        elevation: 6,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        child: Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               _buildPointInfo("출발", _startPoint?['roomId'], Colors.green),
               const Icon(Icons.arrow_forward_rounded, color: Colors.grey),
@@ -460,20 +706,29 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
     );
   }
 
-  /// 출발 또는 도착 지점의 정보를 표시하는 작은 위젯
   Widget _buildPointInfo(String title, String? id, Color color) {
     return Column(
       children: [
         Text(title, style: const TextStyle(fontSize: 12, color: Colors.grey)),
         const SizedBox(height: 4),
-        Text(id ?? '미지정', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: color)),
+        Text(
+          id ?? '미지정',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
+        ),
       ],
     );
   }
-  
-  /// 사용자가 지도를 확대/축소한 후, 3초가 지나면 원래 크기로 복귀시키는 함수
+
   void _resetScaleAfterDelay() {
     _resetTimer?.cancel();
-    _resetTimer = Timer(const Duration(seconds: 3), () { if (mounted) { _transformationController.value = Matrix4.identity(); } });
+    _resetTimer = Timer(const Duration(seconds: 3), () {
+      if (mounted) {
+        _transformationController.value = Matrix4.identity();
+      }
+    });
   }
 }

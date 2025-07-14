@@ -4,6 +4,7 @@ import 'package:flutter_application_1/managers/location_manager.dart';
 import 'package:flutter_application_1/map/map_screen.dart';
 import 'package:flutter_application_1/welcome_view.dart';
 import 'package:flutter_application_1/selection/auth_selection_view.dart';
+import 'package:flutter_application_1/map/widgets/directions_screen.dart'; // 🔥 추가
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'auth/user_auth.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -23,16 +24,16 @@ void main() async {
     debugPrint('❌ 네이버 지도 초기화 오류: $e');
   }
 
-  runApp(
-    MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => UserAuth()),
-        ChangeNotifierProvider(create: (_) => LocationManager()),
-        ChangeNotifierProvider(create: (_) => AppLanguageProvider()), // 언어 Provider 추가
-      ],
-      child: const CampusNavigatorApp(),
-    ),
-  );
+runApp(
+  MultiProvider(
+    providers: [
+      ChangeNotifierProvider(create: (_) => UserAuth()),
+      ChangeNotifierProvider(create: (_) => AppLanguageProvider()),
+      ChangeNotifierProvider(create: (_) => LocationManager()), // 반드시 추가
+    ],
+    child: const CampusNavigatorApp(),
+  ),
+);
 }
 
 class CampusNavigatorApp extends StatefulWidget {
@@ -105,19 +106,32 @@ class _CampusNavigatorAppState extends State<CampusNavigatorApp> {
             GlobalWidgetsLocalizations.delegate,
             GlobalCupertinoLocalizations.delegate,
           ],
-home: _isInitialized
-    ? Consumer<UserAuth>(
-        builder: (context, auth, _) {
-          if (auth.isFirstLaunch) {
-            return const WelcomeView(); // 파라미터 없이
-          } else if (auth.isLoggedIn) {
-            return const MapScreen();
-          } else {
-            return const AuthSelectionView();
-          }
-        },
-      )
-    : _buildLoadingScreen(),
+          // 🔥 추가: 라우트 설정
+          routes: {
+            '/directions': (context) {
+              // arguments로 방 정보를 받아서 DirectionsScreen에 전달
+              final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+              
+              if (args != null) {
+                return DirectionsScreen(roomData: args);
+              } else {
+                return const DirectionsScreen();
+              }
+            },
+          },
+          home: _isInitialized
+              ? Consumer<UserAuth>(
+                  builder: (context, auth, _) {
+                    if (auth.isFirstLaunch) {
+                      return const WelcomeView(); // 파라미터 없이
+                    } else if (auth.isLoggedIn) {
+                      return const MapScreen();
+                    } else {
+                      return const AuthSelectionView();
+                    }
+                  },
+                )
+              : _buildLoadingScreen(),
           debugShowCheckedModeBanner: false,
         );
       },

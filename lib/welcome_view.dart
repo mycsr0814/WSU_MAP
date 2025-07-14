@@ -119,67 +119,57 @@ class _WelcomeViewState extends State<WelcomeView>
 /// 🔥 백그라운드에서 위치 미리 준비 (단순화 최종 버전)
 Future<void> _prepareLocationInBackground() async {
   if (_isPreparingLocation || _locationPrepared) return;
-  
+
   try {
     _isPreparingLocation = true;
     debugPrint('🔄 Welcome 화면에서 위치 미리 준비 시작...');
-    
-    // 애니메이션이 어느 정도 진행된 후에 위치 요청 시작
+
     await Future.delayed(const Duration(milliseconds: 1500));
-    
     final locationManager = Provider.of<LocationManager>(context, listen: false);
-    
+
     // LocationManager 초기화 대기
     int retries = 0;
     while (!locationManager.isInitialized && retries < 30) {
       await Future.delayed(const Duration(milliseconds: 100));
       retries++;
     }
-    
+
     if (locationManager.isInitialized) {
       debugPrint('🔍 Welcome에서 위치 권한 확인 중...');
-      
-      // 권한 상태 확인
       await Future.delayed(const Duration(milliseconds: 300));
       await locationManager.recheckPermissionStatus();
-      
-      // 백그라운드 권한 확인이 완료될 때까지 대기
+
       int permissionRetries = 0;
       while (locationManager.permissionStatus == null && permissionRetries < 15) {
         await Future.delayed(const Duration(milliseconds: 100));
         permissionRetries++;
       }
-      
+
       debugPrint('🔍 최종 권한 상태: ${locationManager.permissionStatus}');
-      
-      // 🔥 권한이 있든 없든 위치 요청 시도 (짧은 시간만)
-      debugPrint('✅ Welcome에서 간단한 위치 요청 시작...');
-      
+      debugPrint('✅ Welcome에서 빠른 위치 요청 시작...');
+
       try {
-        // 🔥 타임아웃을 3초로 단축 (Welcome에서는 빠르게)
-        await locationManager.requestLocation().timeout(
+        // 🔥 캐시 우선 위치 요청
+        await locationManager.requestLocationQuickly().timeout(
           const Duration(seconds: 3),
           onTimeout: () {
             debugPrint('⏰ Welcome 위치 요청 타임아웃 (3초) - 정상 진행');
             throw TimeoutException('Welcome 위치 타임아웃', const Duration(seconds: 3));
           },
         );
-        
+
         if (locationManager.hasValidLocation && mounted) {
           debugPrint('✅ Welcome 화면에서 위치 준비 완료!');
           debugPrint('   위도: ${locationManager.currentLocation?.latitude}');
           debugPrint('   경도: ${locationManager.currentLocation?.longitude}');
-          
           setState(() {
             _locationPrepared = true;
           });
         } else {
           debugPrint('⚠️ Welcome 화면에서 위치 준비 실패 - Map에서 재시도');
-          // 실패해도 정상 진행
         }
       } catch (e) {
         debugPrint('⚠️ Welcome 위치 요청 실패: $e - Map에서 재시도');
-        // 실패해도 정상 진행 (Map에서 재시도)
       }
     } else {
       debugPrint('❌ Welcome 화면에서 LocationManager 초기화 실패');
@@ -190,6 +180,7 @@ Future<void> _prepareLocationInBackground() async {
     _isPreparingLocation = false;
   }
 }
+
 
   // 기본 텍스트 반환 함수들 (localization이 없을 때 사용)
   String _getAppTitle() {
