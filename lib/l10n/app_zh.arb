@@ -411,5 +411,6 @@
     }
   },
   "floor_plan_not_available": "无法加载平面图图像",
-  "floor_plan_default_text": "平面图"
+  "floor_plan_default_text": "平面图",
+  "delete_account_success": "您的账户已被删除。"
 }

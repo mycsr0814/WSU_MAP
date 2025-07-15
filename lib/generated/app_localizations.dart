@@ -2007,6 +2007,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Floor Plan'**
   String get floor_plan_default_text;
+
+  /// No description provided for @delete_account_success.
+  ///
+  /// In en, this message translates to:
+  /// **'Your account has been deleted.'**
+  String get delete_account_success;
 }
 
 class _AppLocalizationsDelegate

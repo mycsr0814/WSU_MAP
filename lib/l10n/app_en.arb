@@ -512,5 +512,6 @@
     }
   },
   "floor_plan_not_available": "Unable to load floor plan image",
-  "floor_plan_default_text": "Floor Plan"
+  "floor_plan_default_text": "Floor Plan",
+  "delete_account_success": "Your account has been deleted."
 }

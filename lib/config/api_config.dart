@@ -8,4 +8,5 @@ class ApiConfig {
   static String get categoryBase => '$baseHost:$buildingPort/category';
   static String get pathBase => '$baseHost:$buildingPort';
   static String get userBase => '$baseHost:$userPort/user';
+  static String get friendBase => '$baseHost:$userPort/friend';
 }

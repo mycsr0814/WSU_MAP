@@ -9,10 +9,10 @@ import '../services/auth_service.dart';
 enum UserRole {
   /// 외부 방문자 (게스트)
   external,
-  
+
   /// 학생 및 교수진 (로그인 사용자)
   studentProfessor,
-  
+
   /// 시스템 관리자
   admin,
 }
@@ -70,11 +70,11 @@ class UserAuth extends ChangeNotifier {
   String? _userId;
   String? _userName;
   bool _isLoggedIn = false;
-  
+
   // 상태 관리
   bool _isLoading = false;
   String? _lastError;
-  
+
   // 첫 실행 상태 관리
   bool _isFirstLaunch = true;
 
@@ -127,7 +127,10 @@ class UserAuth extends ChangeNotifier {
       final rememberMe = prefs.getBool('remember_me') ?? false;
 
       // 기억하기가 체크되어 있고, 로그인 정보가 모두 있는 경우에만 복원
-      if (rememberMe && savedIsLoggedIn && savedUserId != null && savedUserName != null) {
+      if (rememberMe &&
+          savedIsLoggedIn &&
+          savedUserId != null &&
+          savedUserName != null) {
         _userId = savedUserId;
         _userName = savedUserName;
         _userRole = UserRole.studentProfessor;
@@ -155,7 +158,7 @@ class UserAuth extends ChangeNotifier {
 
     try {
       final result = await AuthService.login(id: id, pw: password);
-      
+
       if (result.isSuccess) {
         if (result.userId != null && result.userName != null) {
           _userId = result.userId!;
@@ -163,14 +166,14 @@ class UserAuth extends ChangeNotifier {
           _userRole = UserRole.studentProfessor;
           _isLoggedIn = true;
           _isFirstLaunch = false; // 로그인 성공 시 첫 실행 상태 해제
-          
+
           // 기억하기 옵션이 체크된 경우에만 로그인 정보 저장
           if (rememberMe) {
             await _saveLoginInfo(rememberMe: true);
           } else {
             await _clearLoginInfo();
           }
-          
+
           notifyListeners();
           return true;
         } else {
@@ -218,7 +221,7 @@ class UserAuth extends ChangeNotifier {
       }
       _isLoggedIn = true;
       _isFirstLaunch = false; // 게스트 로그인 시 첫 실행 상태 해제
-      
+
       notifyListeners();
     } finally {
       _setLoading(false);
@@ -243,7 +246,7 @@ class UserAuth extends ChangeNotifier {
       }
       _isLoggedIn = true;
       _isFirstLaunch = false; // 관리자 로그인 시 첫 실행 상태 해제
-      
+
       await _saveLoginInfo(rememberMe: true);
       notifyListeners();
     } finally {
@@ -264,14 +267,14 @@ class UserAuth extends ChangeNotifier {
       }
 
       await _clearLoginInfo();
-      
+
       _userRole = null;
       _userId = null;
       _userName = null;
       _isLoggedIn = false;
       _isFirstLaunch = true; // 로그아웃 시 Welcome 페이지로 돌아가도록 설정
       _clearError();
-      
+
       notifyListeners();
       return true;
     } catch (e) {
@@ -304,7 +307,7 @@ class UserAuth extends ChangeNotifier {
         stuNumber: stuNumber,
         email: email,
       );
-      
+
       if (result.isSuccess) {
         return true;
       } else {
@@ -352,7 +355,7 @@ class UserAuth extends ChangeNotifier {
         phone: phone,
         email: email,
       );
-      
+
       if (result.isSuccess) {
         return true;
       } else {
@@ -375,10 +378,11 @@ class UserAuth extends ChangeNotifier {
 
   /// 회원 탈퇴
   Future<bool> deleteAccount({BuildContext? context}) async {
+    // 1. 로그인 상태가 아니면 탈퇴 불가
     if (_userId == null || !_isLoggedIn) {
       if (context != null) {
         final l10n = AppLocalizations.of(context)!;
-        _setError(l10n.login_required);
+        _setError(l10n.login_required); // 다국어 에러 메시지
       } else {
         _setError('로그인이 필요합니다.');
       }
@@ -389,22 +393,26 @@ class UserAuth extends ChangeNotifier {
     _clearError();
 
     try {
+      // 2. 서버에 회원탈퇴 요청
       final result = await AuthService.deleteUser(id: _userId!);
-      
+
       if (result.isSuccess) {
+        // 3. 로컬 사용자 정보 및 SharedPreferences 삭제
         await _clearLoginInfo();
         _userRole = null;
         _userId = null;
         _userName = null;
         _isLoggedIn = false;
-        
+
         notifyListeners();
         return true;
       } else {
+        // 4. 서버에서 실패 메시지 반환 시 에러 기록
         _setError(result.message);
         return false;
       }
     } catch (e) {
+      // 5. 예외 발생 시 에러 메시지 기록
       if (context != null) {
         final l10n = AppLocalizations.of(context)!;
         _setError(l10n.delete_error);
@@ -447,7 +455,7 @@ class UserAuth extends ChangeNotifier {
       final rememberMe = prefs.getBool('remember_me') ?? false;
       final savedUserId = prefs.getString('user_id');
       final savedUserName = prefs.getString('user_name');
-      
+
       return rememberMe && savedUserId != null && savedUserName != null;
     } catch (e) {
       debugPrint('저장된 로그인 정보 확인 오류: $e');

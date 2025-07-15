@@ -1009,4 +1009,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get floor_plan_default_text => '내부 도면';
+
+  @override
+  String get delete_account_success => '회원탈퇴가 완료되었습니다.';
 }

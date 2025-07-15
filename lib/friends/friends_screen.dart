@@ -1,534 +1,331 @@
-// lib/friends/friends_bottom_sheet_i18n.dart - 다국어 지원 친구창
+// friends_screen.dart
+// 친구 목록, 친구 추가, 친구 요청 UI를 모두 포함한 메인 화면
+//
+// 이 파일은 친구 목록 조회, 친구 추가, 친구 요청 수락/거절 등
+// 친구 관련 주요 UI와 로직을 모두 제공합니다.
 
 import 'package:flutter/material.dart';
-import '../generated/app_localizations.dart';
+import 'friends_controller.dart';
+import 'friend_repository.dart';
+import 'friend_api_service.dart';
+import 'friend.dart';
 
-class FriendsBottomSheet {
-  static void show(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => const FriendsBottomSheetContentI18n(),
-    );
-  }
-}
+/// 친구 메인 화면 위젯
+///
+/// 친구 목록, 친구 추가, 친구 요청 수락/거절 등
+/// 모든 친구 관련 기능을 한 화면에서 제공합니다.
+/// 반드시 내 ID(myId)를 생성자 파라미터로 전달해야 합니다.
+class FriendsScreen extends StatefulWidget {
+  final String myId; // 내 ID
 
-class FriendsBottomSheetContentI18n extends StatefulWidget {
-  const FriendsBottomSheetContentI18n({super.key});
+  const FriendsScreen({Key? key, required this.myId}) : super(key: key);
 
   @override
-  State<FriendsBottomSheetContentI18n> createState() => _FriendsBottomSheetContentI18nState();
+  State<FriendsScreen> createState() => _FriendsScreenState();
 }
 
-class _FriendsBottomSheetContentI18nState extends State<FriendsBottomSheetContentI18n> {
-  final List<Map<String, dynamic>> _friends = [
-    {
-      'name': '김철수',
-      'nameEn': 'Kim Cheolsu',
-      'nameZh': '金哲洙',
-      'status': 'online',
-      'location': '중앙도서관',
-      'locationEn': 'Central Library',
-      'locationZh': '中央图书馆',
-      'avatar': '👨‍🎓',
-      'isOnline': true,
-    },
-    {
-      'name': '이영희',
-      'nameEn': 'Lee Younghee',
-      'nameZh': '李英姬',
-      'status': 'in_class',
-      'location': '공학관 201호',
-      'locationEn': 'Engineering Building 201',
-      'locationZh': '工学馆201号',
-      'avatar': '👩‍🎓',
-      'isOnline': true,
-    },
-    {
-      'name': '박민수',
-      'nameEn': 'Park Minsu',
-      'nameZh': '朴民洙',
-      'status': 'offline',
-      'location': '마지막 위치: 학생회관',
-      'locationEn': 'Last seen: Student Union',
-      'locationZh': '最后位置：学生会馆',
-      'avatar': '👨‍🎓',
-      'isOnline': false,
-    },
-    {
-      'name': '최지원',
-      'nameEn': 'Choi Jiwon',
-      'nameZh': '崔智媛',
-      'status': 'online',
-      'location': '카페테리아',
-      'locationEn': 'Cafeteria',
-      'locationZh': '咖啡厅',
-      'avatar': '👩‍🎓',
-      'isOnline': true,
-    },
-  ];
+/// FriendsScreen의 상태 클래스
+class _FriendsScreenState extends State<FriendsScreen> {
+  // 친구 및 친구 요청 상태를 관리하는 컨트롤러
+  late final FriendsController controller;
 
+  // 친구 추가 다이얼로그 입력값을 위한 컨트롤러
   final TextEditingController _addFriendController = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+    // 반드시 내 ID(widget.myId)를 넘겨서 컨트롤러 생성
+    controller = FriendsController(
+      FriendRepository(FriendApiService()),
+      widget.myId,
+    );
+    controller.loadAll();
+    // 상태 변경 시 setState로 UI 갱신
+    controller.addListener(() => setState(() {}));
+  }
+
+  @override
   void dispose() {
+    controller.dispose();
     _addFriendController.dispose();
     super.dispose();
   }
 
-  String _getLocalizedName(Map<String, dynamic> friend, String locale) {
-    switch (locale) {
-      case 'en':
-        return friend['nameEn'] ?? friend['name'];
-      case 'zh':
-        return friend['nameZh'] ?? friend['name'];
-      default:
-        return friend['name'];
-    }
-  }
-
-  String _getLocalizedLocation(Map<String, dynamic> friend, String locale) {
-    switch (locale) {
-      case 'en':
-        return friend['locationEn'] ?? friend['location'];
-      case 'zh':
-        return friend['locationZh'] ?? friend['location'];
-      default:
-        return friend['location'];
-    }
-  }
-
-  String _getLocalizedStatus(String status, AppLocalizations l10n) {
-    switch (status) {
-      case 'online':
-        return l10n.online;
-      case 'in_class':
-        return l10n.in_class;
-      case 'offline':
-        return l10n.offline;
-      default:
-        return status;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.85,
-      decoration: const BoxDecoration(
-        color: Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      child: Column(
-        children: [
-          _buildHandle(),
-          _buildHeader(l10n),
-          Expanded(
-            child: _buildFriendsList(l10n),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHandle() {
-    return Container(
-      margin: const EdgeInsets.only(top: 12, bottom: 8),
-      width: 40,
-      height: 4,
-      decoration: BoxDecoration(
-        color: Colors.grey[300],
-        borderRadius: BorderRadius.circular(2),
-      ),
-    );
-  }
-
-  Widget _buildHeader(AppLocalizations l10n) {
-    final onlineFriends = _friends.where((friend) => friend['isOnline']).length;
-    
-    return Container(
-      margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF1E3A8A), Color(0xFF3B82F6)],
-        ),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF1E3A8A).withOpacity(0.3),
-            blurRadius: 15,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 60,
-            height: 60,
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(30),
-            ),
-            child: const Icon(
-              Icons.people,
-              size: 30,
-              color: Colors.white,
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  l10n.my_friends,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  l10n.friends_count_status(_friends.length, onlineFriends),
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.white.withOpacity(0.8),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.person_add, color: Colors.white),
-            onPressed: () => _showAddFriendDialog(l10n),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFriendsList(AppLocalizations l10n) {
-    final locale = Localizations.localeOf(context).languageCode;
-    
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      itemCount: _friends.length,
-      itemBuilder: (context, index) {
-        final friend = _friends[index];
-        return _buildFriendCard(friend, l10n, locale);
-      },
-    );
-  }
-
-  Widget _buildFriendCard(Map<String, dynamic> friend, AppLocalizations l10n, String locale) {
-    final friendName = _getLocalizedName(friend, locale);
-    final friendLocation = _getLocalizedLocation(friend, locale);
-    final friendStatus = _getLocalizedStatus(friend['status'], l10n);
-    
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () => _showFriendDetails(friend, l10n, locale),
-          borderRadius: BorderRadius.circular(16),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Stack(
-                  children: [
-                    Container(
-                      width: 50,
-                      height: 50,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF1E3A8A).withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(25),
-                      ),
-                      child: Center(
-                        child: Text(
-                          friend['avatar'],
-                          style: const TextStyle(fontSize: 24),
-                        ),
-                      ),
-                    ),
-                    if (friend['isOnline'])
-                      Positioned(
-                        right: 0,
-                        bottom: 0,
-                        child: Container(
-                          width: 16,
-                          height: 16,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF10B981),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.white, width: 2),
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        friendName,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF1E3A8A),
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        friendStatus,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: friend['isOnline'] 
-                            ? const Color(0xFF10B981) 
-                            : Colors.grey[500],
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.location_on,
-                            size: 14,
-                            color: Colors.grey[400],
-                          ),
-                          const SizedBox(width: 4),
-                          Expanded(
-                            child: Text(
-                              friendLocation,
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey[600],
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.message, color: Color(0xFF1E3A8A)),
-                  onPressed: () => _sendMessage(friend, l10n, locale),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _showAddFriendDialog(AppLocalizations l10n) {
+  /// 친구 추가 다이얼로그를 띄우는 함수
+  /// 사용자가 친구의 ID를 입력해 친구 요청을 보낼 수 있음
+  void _showAddFriendDialog() {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        title: Text(l10n.add_friend),
+        title: const Text('친구 추가'),
         content: TextField(
           controller: _addFriendController,
-          decoration: InputDecoration(
-            hintText: l10n.enter_friend_info,
-            border: const OutlineInputBorder(),
-          ),
+          decoration: const InputDecoration(hintText: '상대방 ID 입력'),
         ),
         actions: [
           TextButton(
             onPressed: () {
-              _addFriendController.clear();
               Navigator.pop(context);
+              _addFriendController.clear();
             },
-            child: Text(l10n.cancel),
+            child: const Text('취소'),
           ),
           ElevatedButton(
-            onPressed: () {
-              _addFriendController.clear();
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(l10n.friend_request_sent),
-                  backgroundColor: const Color(0xFF10B981),
-                ),
-              );
+            onPressed: () async {
+              final id = _addFriendController.text.trim();
+              if (id.isNotEmpty) {
+                await controller.addFriend(id);
+                Navigator.pop(context);
+                _addFriendController.clear();
+                // 친구 요청 성공 시 스낵바 표시 (실패 시는 controller.errorMessage로 처리)
+                if (controller.errorMessage == null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('친구 요청이 전송되었습니다!'),
+                      backgroundColor: Color(0xFF10B981),
+                    ),
+                  );
+                }
+              }
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF1E3A8A),
-            ),
-            child: Text(l10n.add, style: const TextStyle(color: Colors.white)),
+            child: const Text('추가하기'),
           ),
         ],
       ),
     );
   }
 
-  void _showFriendDetails(Map<String, dynamic> friend, AppLocalizations l10n, String locale) {
-    final friendName = _getLocalizedName(friend, locale);
-    final friendLocation = _getLocalizedLocation(friend, locale);
-    
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+  @override
+  Widget build(BuildContext context) {
+    final isLoading = controller.isLoading;
+    final error = controller.errorMessage;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('친구'),
+        actions: [
+          // 친구 추가 버튼 (우상단)
+          IconButton(
+            icon: const Icon(Icons.person_add),
+            onPressed: _showAddFriendDialog,
+          ),
+        ],
       ),
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(2),
+      body: isLoading
+          // 1. 로딩 중이면 로딩 인디케이터
+          ? const Center(child: CircularProgressIndicator())
+          // 2. 에러 발생 시 에러 메시지 표시
+          : error != null
+          ? Center(child: Text('오류: $error'))
+          // 3. 정상 데이터 표시
+          : RefreshIndicator(
+              onRefresh: controller.loadAll,
+              child: ListView(
+                children: [
+                  // --- 친구 목록 섹션 ---
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Text(
+                      '내 친구 (${controller.friends.length})',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                  ),
+                  // --- 친구 리스트 ---
+                  ...controller.friends.map(
+                    (f) => ListTile(
+                      leading: CircleAvatar(
+                        // 프로필 이미지가 있으면 이미지, 없으면 기본 아이콘
+                        backgroundImage: f.profileImage.isNotEmpty
+                            ? NetworkImage(f.profileImage)
+                            : null,
+                        child: f.profileImage.isEmpty
+                            ? const Icon(Icons.person, color: Color(0xFF1E3A8A))
+                            : null,
+                      ),
+                      title: Text(f.userName), // 친구 이름
+                      subtitle: Text('ID: ${f.userId}'), // 친구 ID
+                      // --- 친구 삭제 버튼(trailing) 추가 ---
+                      trailing: IconButton(
+                        icon: const Icon(Icons.delete, color: Colors.red),
+                        tooltip: '친구 삭제',
+                        onPressed: () async {
+                          // 삭제 전 확인 다이얼로그 표시
+                          final confirmed = await showDialog<bool>(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              title: const Text('친구 삭제'),
+                              content: Text(
+                                '${f.userName}님을 친구 목록에서 삭제하시겠습니까?',
+                              ),
+                              actions: [
+                                // 취소 버튼
+                                TextButton(
+                                  onPressed: () =>
+                                      Navigator.pop(context, false),
+                                  child: const Text('취소'),
+                                ),
+                                // 삭제 버튼
+                                ElevatedButton(
+                                  onPressed: () => Navigator.pop(context, true),
+                                  child: const Text('삭제'),
+                                ),
+                              ],
+                            ),
+                          );
+                          // 삭제 확인 시
+                          if (confirmed == true) {
+                            try {
+                              // FriendsController를 통해 친구 삭제 API 호출
+                              await controller.deleteFriend(f.userId);
+                              // 성공 시 스낵바 안내
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('친구가 삭제되었습니다.'),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            } catch (e) {
+                              // 실패 시 에러 안내
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('친구 삭제 중 오류 발생: $e'),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            }
+                          }
+                        },
+                      ),
+                      // 필요에 따라 친구 상세/메시지 등 추가 가능
+                    ),
+                  ),
+
+                  // --- 친구 요청 목록 섹션 ---
+                  if (controller.friendRequests.isNotEmpty) ...[
+                    const Divider(),
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Text(
+                        '받은 친구 요청',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                    ),
+                    // 친구 요청 리스트
+                    ...controller.friendRequests.map(
+                      (req) => ListTile(
+                        leading: const Icon(Icons.person),
+                        title: Text(req.fromUserName),
+                        subtitle: Text('ID: ${req.fromUserId}'),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // 친구 요청 수락 버튼
+                            IconButton(
+                              icon: const Icon(
+                                Icons.check,
+                                color: Colors.green,
+                              ),
+                              onPressed: () async {
+                                // add_id(=req.fromUserId)가 null/빈 값이면 서버로 요청 보내지 않음
+                                if (req.fromUserId == null ||
+                                    req.fromUserId.isEmpty) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('친구 요청 정보가 올바르지 않습니다.'),
+                                      backgroundColor: Colors.red,
+                                    ),
+                                  );
+                                  return;
+                                }
+                                await controller.acceptRequest(req.fromUserId);
+                                if (controller.errorMessage == null) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('친구 요청을 수락했습니다!'),
+                                      backgroundColor: Color(0xFF10B981),
+                                    ),
+                                  );
+                                }
+                              },
+                            ),
+                            // 친구 요청 거절 버튼
+                            IconButton(
+                              icon: const Icon(Icons.close, color: Colors.red),
+                              onPressed: () async {
+                                // add_id(=req.fromUserId)가 null/빈 값이면 서버로 요청 보내지 않음
+                                if (req.fromUserId == null ||
+                                    req.fromUserId.isEmpty) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('친구 요청 정보가 올바르지 않습니다.'),
+                                      backgroundColor: Colors.red,
+                                    ),
+                                  );
+                                  return;
+                                }
+                                await controller.rejectRequest(req.fromUserId);
+                                if (controller.errorMessage == null) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('친구 요청을 거절했습니다.'),
+                                      backgroundColor: Colors.red,
+                                    ),
+                                  );
+                                }
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+
+                  // --- 친구가 없을 때 안내 메시지 ---
+                  if (controller.friends.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.all(32.0),
+                      child: Center(
+                        child: Text(
+                          '아직 친구가 없습니다.\n상단의 + 버튼으로 친구를 추가해보세요!',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 16,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
-            const SizedBox(height: 24),
-            Text(
-              friend['avatar'],
-              style: const TextStyle(fontSize: 60),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              friendName,
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF1E3A8A),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              friendLocation,
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey[600],
-              ),
-            ),
-            const SizedBox(height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                _buildActionButton(
-                  icon: Icons.message,
-                  label: l10n.message,
-                  onPressed: () => _sendMessage(friend, l10n, locale),
-                ),
-                _buildActionButton(
-                  icon: Icons.location_on,
-                  label: l10n.view_location,
-                  onPressed: () => _showLocation(friend, l10n, locale),
-                ),
-                _buildActionButton(
-                  icon: Icons.phone,
-                  label: l10n.call,
-                  onPressed: () => _makeCall(friend, l10n, locale),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildActionButton({
-    required IconData icon,
-    required String label,
-    required VoidCallback onPressed,
-  }) {
-    return Column(
-      children: [
-        Container(
-          width: 50,
-          height: 50,
-          decoration: BoxDecoration(
-            color: const Color(0xFF1E3A8A).withOpacity(0.1),
-            borderRadius: BorderRadius.circular(25),
-          ),
-          child: IconButton(
-            icon: Icon(icon, color: const Color(0xFF1E3A8A)),
-            onPressed: onPressed,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.grey[600],
-          ),
-        ),
-      ],
-    );
-  }
-
-  void _sendMessage(Map<String, dynamic> friend, AppLocalizations l10n, String locale) {
-    final friendName = _getLocalizedName(friend, locale);
-    Navigator.pop(context);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(l10n.start_chat_with(friendName)),
-        backgroundColor: const Color(0xFF1E3A8A),
-      ),
-    );
-  }
-
-  void _showLocation(Map<String, dynamic> friend, AppLocalizations l10n, String locale) {
-    final friendName = _getLocalizedName(friend, locale);
-    Navigator.pop(context);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(l10n.show_location_on_map(friendName)),
-        backgroundColor: const Color(0xFF10B981),
-      ),
-    );
-  }
-
-  void _makeCall(Map<String, dynamic> friend, AppLocalizations l10n, String locale) {
-    final friendName = _getLocalizedName(friend, locale);
-    Navigator.pop(context);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(l10n.calling(friendName)),
-        backgroundColor: const Color(0xFFEF4444),
-      ),
     );
   }
 }
 
-// 사용 방법:
-// 하단 네비게이션에서 친구 찾기 버튼을 눌렀을 때 호출하는 함수
-void showFriendsBottomSheetI18n(BuildContext context) {
-  FriendsBottomSheet.show(context);
+/// 친구 바텀시트를 국제화 진입점으로 띄우는 함수
+void showFriendsBottomSheetI18n(BuildContext context, String myId) {
+  FriendsBottomSheet.show(context, myId);
+}
+
+/// 친구 바텀시트 위젯 클래스
+///
+/// showFriendsBottomSheetI18n(context, myId)로 호출하면
+/// 바텀시트에 FriendsScreen(myId: myId)가 뜬다.
+class FriendsBottomSheet {
+  static void show(BuildContext context, String myId) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.85,
+        decoration: const BoxDecoration(
+          color: Color(0xFFF8FAFC),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: FriendsScreen(myId: myId), // 실제 친구 UI가 바텀시트에 뜸!
+      ),
+    );
+  }
 }
