@@ -47,6 +47,16 @@ class MapScreenController extends ChangeNotifier {
   // 언어 변경 감지
   Locale? _currentLocale;
 
+
+  // 🔥 추가된 getter들
+  LocationController? get locationController => _locationController;
+  NaverMapController? get mapController => _mapService?.getController();
+
+  // 🔥 사용자 위치 마커 업데이트 메서드 추가
+  void updateUserLocationMarker(NLatLng position) {
+    _locationController?.updateUserLocationMarker(position);
+  }
+
   // 경로 정보
   String? _routeDistance;
   String? _routeTime;
@@ -594,7 +604,7 @@ Future<void> navigateFromCurrentLocation(Building targetBuilding) async {
 
   Future<void> _clearAllOverlays() async {
     try {
-      final controller = await _mapService?.getController();
+      final controller = await _mapService?.getControllerAsync(); // getController() → getControllerAsync()
       if (controller == null) return;
 
       if (_routeOverlays.isNotEmpty) {
