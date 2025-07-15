@@ -5,133 +5,70 @@ import 'package:flutter_application_1/models/building.dart';
 import 'package:flutter_application_1/models/search_result.dart';
 import 'package:flutter_application_1/map/building_data.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/repositories/building_repository.dart';
 
 class IntegratedSearchService {
   
  /// 건물과 호실을 통합 검색하는 메서드 (개선된 매칭 로직)
 static Future<List<SearchResult>> search(String query, BuildContext context) async {
   final lowercaseQuery = query.toLowerCase().trim();
-  
-  print('🔍🔍🔍 === 통합 검색 시작: "$query" ===');
-  
-  if (lowercaseQuery.isEmpty) {
-    return [];
-  }
+  if (lowercaseQuery.isEmpty) return [];
 
   List<SearchResult> results = [];
 
-  try {
-    // 1. 기존 건물 데이터에서 검색
-    final buildings = BuildingDataProvider.getBuildingData(context);
-    print('🏢 사용 가능한 건물 수: ${buildings.length}');
-    
-    // 🔥 개선된 검색 우선순위 적용
-    List<Building> exactMatches = []; // 정확히 일치
-    List<Building> startMatches = []; // 시작 부분 일치
-    List<Building> codeMatches = []; // 🔥 새로 추가: 건물 코드 일치 (W19, W17 등)
-    List<Building> containsMatches = []; // 포함 일치
+  // ✅ 최신 건물 리스트 사용 (마커와 동일)
+  final buildings = BuildingRepository().allBuildings;
 
-    for (final building in buildings) {
-      final buildingName = building.name.toLowerCase();
-      final buildingInfo = building.info.toLowerCase();
-      final buildingCategory = building.category.toLowerCase();
-      
-      // 🔥 건물 코드 추출 (괄호 안의 코드)
-      String? buildingCode;
-      final codeMatch = RegExp(r'\(([^)]+)\)').firstMatch(building.name);
-      if (codeMatch != null) {
-        buildingCode = codeMatch.group(1)?.toLowerCase();
-      }
-      
-      print('🏢 ${building.name} → 코드: $buildingCode');
-      
-      if (buildingName == lowercaseQuery) {
-        exactMatches.add(building);
-        print('✅ 정확 일치: ${building.name}');
-      } else if (buildingCode != null && buildingCode == lowercaseQuery) {
-        // 🔥 건물 코드가 정확히 일치하는 경우 (W19 = W19)
-        codeMatches.add(building);
-        print('🎯 코드 일치: ${building.name} (코드: $buildingCode)');
-      } else if (buildingName.startsWith(lowercaseQuery)) {
-        startMatches.add(building);
-        print('🎯 시작 일치: ${building.name}');
-      } else if (buildingName.contains(lowercaseQuery) || 
-                 buildingInfo.contains(lowercaseQuery) || 
-                 buildingCategory.contains(lowercaseQuery) ||
-                 (buildingCode != null && buildingCode.contains(lowercaseQuery))) {
-        containsMatches.add(building);
-        print('📝 포함 일치: ${building.name}');
-      }
+  List<Building> exactMatches = [];
+  List<Building> codeMatches = [];
+  List<Building> startMatches = [];
+  List<Building> containsMatches = [];
+
+  for (final building in buildings) {
+    final buildingName = building.name.toLowerCase();
+    final buildingInfo = building.info.toLowerCase();
+    final buildingCategory = building.category.toLowerCase();
+
+    // 🔍 괄호 안의 건물 코드 추출 (예: "W17" from "W17-동관(W17)")
+    String? buildingCode;
+    final codeMatch = RegExp(r'\(([^)]+)\)').firstMatch(building.name);
+    if (codeMatch != null) {
+      buildingCode = codeMatch.group(1)?.toLowerCase();
     }
 
-    // 🔥 우선순위에 따라 건물들을 정렬 (코드 일치를 높은 순위로)
-    List<Building> sortedBuildings = [
-      ...exactMatches,
-      ...codeMatches,  // 🔥 코드 일치를 정확 일치 다음 순위로
-      ...startMatches,
-      ...containsMatches,
-    ];
-
-    print('📊 매칭된 건물들:');
-    print('   정확 일치: ${exactMatches.length}개');
-    print('   코드 일치: ${codeMatches.length}개'); // 🔥 추가
-    print('   시작 일치: ${startMatches.length}개');
-    print('   포함 일치: ${containsMatches.length}개');
-
-    // 2. 건물 결과 추가 및 호실 검색
-    int buildingCount = 0;
-    for (final building in sortedBuildings) {
-      buildingCount++;
-      print('🏠 [$buildingCount/${sortedBuildings.length}] 처리 중: ${building.name}');
-      
-      // 건물 자체를 결과에 추가
-      results.add(SearchResult.fromBuilding(building));
-      print('   ✅ 건물 추가: ${building.name}');
-      
-      // 🔥 정확일치, 코드일치, 시작일치의 경우 모든 호실 추가
-      if (exactMatches.contains(building) || 
-          codeMatches.contains(building) ||  // 🔥 코드 일치도 포함
-          startMatches.contains(building)) {
-        print('   🔍 ${building.name}의 모든 호실 검색 시작');
-        final roomsBefore = results.length;
-        await _addAllRoomsForBuilding(building, results);
-        final roomsAfter = results.length;
-        print('   📊 ${building.name}: ${roomsAfter - roomsBefore}개 호실 추가됨');
-      } else {
-        print('   ⏭️ ${building.name}: 포함 일치이므로 호실 검색 생략');
-      }
+    // 🔎 검색 우선순위 분류
+    if (buildingName == lowercaseQuery) {
+      exactMatches.add(building);
+    } else if (buildingCode != null && buildingCode == lowercaseQuery) {
+      codeMatches.add(building);
+    } else if (buildingName.startsWith(lowercaseQuery)) {
+      startMatches.add(building);
+    } else if (
+      buildingName.contains(lowercaseQuery) ||
+      buildingInfo.contains(lowercaseQuery) ||
+      buildingCategory.contains(lowercaseQuery) ||
+      (buildingCode != null && buildingCode.contains(lowercaseQuery))
+    ) {
+      containsMatches.add(building);
     }
-
-    // 3. 호실 번호로 직접 검색 (예: "401", "101" 등)
-    if (_isRoomNumberQuery(lowercaseQuery)) {
-      print('🔍 호실 번호 직접 검색: $lowercaseQuery');
-      await _searchRoomsByNumber(lowercaseQuery, buildings, results);
-    }
-
-  } catch (e) {
-    print('❌ 통합 검색 오류: $e');
   }
 
-  // 4. 중복 제거 및 정렬
-  final originalCount = results.length;
-  results = _removeDuplicates(results);
-  results = _sortResults(results, lowercaseQuery);
+  // 🔠 정렬된 건물 리스트
+  final sortedBuildings = [
+    ...exactMatches,
+    ...codeMatches,
+    ...startMatches,
+    ...containsMatches,
+  ];
 
-  print('📊 검색 결과 요약:');
-  print('   원본 결과: ${originalCount}개');
-  print('   중복 제거 후: ${results.length}개');
-  print('   건물 결과: ${results.where((r) => r.isBuilding).length}개');
-  print('   호실 결과: ${results.where((r) => r.isRoom).length}개');
-  
-  // 처음 몇 개 결과 출력
-  for (int i = 0; i < results.length && i < 5; i++) {
-    final result = results[i];
-    print('   [$i] ${result.type.name}: ${result.displayName}');
+  // 🔁 건물 및 호실 결과 생성
+  for (final building in sortedBuildings) {
+    results.add(SearchResult.fromBuilding(building));
+    await _addAllRoomsForBuilding(building, results);
   }
-  
-  print('🔍 검색 완료: ${results.length}개 결과');
-  
-  return results;
+
+  // ✅ 중복 제거 후 반환
+  return _removeDuplicates(results);
 }
 
   /// 호실 번호인지 판단하는 메서드

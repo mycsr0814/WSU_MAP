@@ -37,43 +37,45 @@ class _SearchScreenState extends State<SearchScreen> {
     super.dispose();
   }
 
-  Future<void> _onSearchChanged() async {
-    final query = _searchController.text.trim();
-    
-    if (query.isEmpty) {
+String _lastQuery = '';
+
+Future<void> _onSearchChanged() async {
+  final query = _searchController.text.trim();
+  _lastQuery = query;
+
+  if (query.isEmpty) {
+    setState(() {
+      _searchResults = [];
+      _isSearching = false;
+      _isLoading = false;
+    });
+    return;
+  }
+
+  setState(() {
+    _isSearching = true;
+    _isLoading = true;
+  });
+
+  try {
+    final results = await IntegratedSearchService.search(query, context);
+    if (mounted && _lastQuery == query) {
       setState(() {
-        _searchResults = [];
-        _isSearching = false;
+        _searchResults = results;
         _isLoading = false;
       });
-      return;
     }
-
-    setState(() {
-      _isSearching = true;
-      _isLoading = true;
-    });
-
-    try {
-      // 통합 검색 서비스 사용
-      final results = await IntegratedSearchService.search(query, context);
-      
-      if (mounted) {
-        setState(() {
-          _searchResults = results;
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      debugPrint('검색 오류: $e');
-      if (mounted) {
-        setState(() {
-          _searchResults = [];
-          _isLoading = false;
-        });
-      }
+  } catch (e) {
+    debugPrint('검색 오류: $e');
+    if (mounted && _lastQuery == query) {
+      setState(() {
+        _searchResults = [];
+        _isLoading = false;
+      });
     }
   }
+}
+
 
   void _onResultSelected(SearchResult result) {
     // 결과 타입에 따라 적절한 Building 객체 전달
