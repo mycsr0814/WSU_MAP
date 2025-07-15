@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'friend.dart';
 
 class FriendApiService {
-  static const String baseUrl = 'http://13.210.72.194:3001/friend';
+  static const String baseUrl = 'http://16.176.161.244:3001/friend';
 
   /// 내 친구 목록 조회
   Future<List<Friend>> fetchMyFriends(String myId) async {

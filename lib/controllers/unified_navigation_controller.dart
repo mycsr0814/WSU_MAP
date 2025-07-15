@@ -5,6 +5,7 @@ import 'package:flutter_application_1/inside/building_map_page.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:flutter_application_1/models/building.dart';
 import 'package:flutter_application_1/services/unified_path_service.dart';
+import 'package:flutter_application_1/generated/app_localizations.dart';
 
 /// 네비게이션 단계 정의
 enum NavigationStep {
@@ -200,20 +201,22 @@ class UnifiedNavigationController extends ChangeNotifier {
   }
 
   /// 건물 → 건물 네비게이션
-  Future<bool> _handleBuildingToBuildingNavigation(UnifiedPathResponse response) async {
-    final outdoorData = response.result.outdoor;
-    if (outdoorData == null) return false;
-    
-    _outdoorCoordinates = UnifiedPathService.extractOutdoorCoordinates(outdoorData);
-    
-    _updateState(NavigationState(
-      currentStep: NavigationStep.outdoor,
-      instruction: '${_endBuilding?.name ?? "목적지"}까지 이동하세요',
-      isActive: true,
-    ));
-    
-    return await _startOutdoorNavigation();
-  }
+Future<bool> _handleBuildingToBuildingNavigation(UnifiedPathResponse response) async {
+  final outdoorData = response.result.outdoor;
+  if (outdoorData == null) return false;
+
+  _outdoorCoordinates = UnifiedPathService.extractOutdoorCoordinates(outdoorData);
+
+  _updateState(NavigationState(
+    currentStep: NavigationStep.outdoor,
+    instruction: AppLocalizations.of(_context!)!
+        .instructionMoveToDestination(_endBuilding?.name ?? '목적지'),
+    isActive: true,
+  ));
+
+  return await _startOutdoorNavigation();
+}
+
 
   /// 호실 → 건물 네비게이션
   Future<bool> _handleRoomToBuildingNavigation(UnifiedPathResponse response) async {
@@ -223,11 +226,11 @@ class UnifiedNavigationController extends ChangeNotifier {
     if (departureData != null) {
       _departureIndoorNodes = UnifiedPathService.extractIndoorNodeIds(departureData);
       
-      _updateState(NavigationState(
-        currentStep: NavigationStep.departureIndoor,
-        instruction: '건물 출구까지 이동하세요',
-        isActive: true,
-      ));
+   _updateState(NavigationState(
+  currentStep: NavigationStep.departureIndoor,
+  instruction: AppLocalizations.of(_context!)!.instructionExitToOutdoor,
+  isActive: true,
+));
       
       // 출발지 실내 네비게이션 시작
       await _startIndoorNavigation(_departureIndoorNodes!, isArrival: false);
@@ -244,28 +247,30 @@ class UnifiedNavigationController extends ChangeNotifier {
   }
 
   /// 건물 → 호실 네비게이션
-  Future<bool> _handleBuildingToRoomNavigation(UnifiedPathResponse response) async {
-    final outdoorData = response.result.outdoor;
-    final arrivalData = response.result.arrivalIndoor;
-    
-    if (outdoorData != null) {
-      _outdoorCoordinates = UnifiedPathService.extractOutdoorCoordinates(outdoorData);
-      
-      if (arrivalData != null) {
-        _arrivalIndoorNodes = UnifiedPathService.extractIndoorNodeIds(arrivalData);
-      }
-      
-      _updateState(NavigationState(
-        currentStep: NavigationStep.outdoor,
-        instruction: '${_endBuilding?.name ?? "목적지"} 건물까지 이동하세요',
-        isActive: true,
-      ));
-      
-      return await _startOutdoorNavigation();
+Future<bool> _handleBuildingToRoomNavigation(UnifiedPathResponse response) async {
+  final outdoorData = response.result.outdoor;
+  final arrivalData = response.result.arrivalIndoor;
+
+  if (outdoorData != null) {
+    _outdoorCoordinates = UnifiedPathService.extractOutdoorCoordinates(outdoorData);
+
+    if (arrivalData != null) {
+      _arrivalIndoorNodes = UnifiedPathService.extractIndoorNodeIds(arrivalData);
     }
-    
-    return false;
+
+    _updateState(NavigationState(
+      currentStep: NavigationStep.outdoor,
+      instruction: AppLocalizations.of(_context!)!
+          .instructionMoveToDestinationBuilding(_endBuilding?.name ?? '목적지'),
+      isActive: true,
+    ));
+
+    return await _startOutdoorNavigation();
   }
+
+  return false;
+}
+
 
   /// 호실 → 호실 네비게이션
   Future<bool> _handleRoomToRoomNavigation(UnifiedPathResponse response) async {
@@ -277,11 +282,11 @@ class UnifiedNavigationController extends ChangeNotifier {
     if (departureData == null && outdoorData == null && arrivalData != null) {
       _arrivalIndoorNodes = UnifiedPathService.extractIndoorNodeIds(arrivalData);
       
-      _updateState(NavigationState(
-        currentStep: NavigationStep.arrivalIndoor,
-        instruction: '목적지 호실까지 이동하세요',
-        isActive: true,
-      ));
+_updateState(NavigationState(
+  currentStep: NavigationStep.arrivalIndoor,
+  instruction: AppLocalizations.of(_context!)!.instructionMoveToRoom,
+  isActive: true,
+));
       
       return await _startIndoorNavigation(_arrivalIndoorNodes!, isArrival: true);
     }
@@ -312,27 +317,29 @@ class UnifiedNavigationController extends ChangeNotifier {
 
   /// 현재 위치 → 건물 네비게이션
   Future<bool> _handleLocationToBuildingNavigation(UnifiedPathResponse response) async {
-    final outdoorData = response.result.outdoor;
-    final arrivalData = response.result.arrivalIndoor;
-    
-    if (outdoorData != null) {
-      _outdoorCoordinates = UnifiedPathService.extractOutdoorCoordinates(outdoorData);
-      
-      if (arrivalData != null) {
-        _arrivalIndoorNodes = UnifiedPathService.extractIndoorNodeIds(arrivalData);
-      }
-      
-      _updateState(NavigationState(
-        currentStep: NavigationStep.outdoor,
-        instruction: '${_endBuilding?.name ?? "목적지"}까지 이동하세요',
-        isActive: true,
-      ));
-      
-      return await _startOutdoorNavigation();
+  final outdoorData = response.result.outdoor;
+  final arrivalData = response.result.arrivalIndoor;
+
+  if (outdoorData != null) {
+    _outdoorCoordinates = UnifiedPathService.extractOutdoorCoordinates(outdoorData);
+
+    if (arrivalData != null) {
+      _arrivalIndoorNodes = UnifiedPathService.extractIndoorNodeIds(arrivalData);
     }
-    
-    return false;
+
+    _updateState(NavigationState(
+      currentStep: NavigationStep.outdoor,
+      instruction: AppLocalizations.of(_context!)!
+          .instructionMoveToDestination(_endBuilding?.name ?? '목적지'),
+      isActive: true,
+    ));
+
+    return await _startOutdoorNavigation();
   }
+
+  return false;
+}
+
 
   /// 실내 네비게이션 시작
   Future<bool> _startIndoorNavigation(List<String> nodeIds, {required bool isArrival}) async {
@@ -383,49 +390,44 @@ class UnifiedNavigationController extends ChangeNotifier {
   }
 
   /// 실내 네비게이션 완료 처리
-  Future<bool> _onIndoorNavigationCompleted(bool wasArrival) async {
-    if (wasArrival) {
-      // 도착지 실내 네비게이션 완료 → 전체 완료
-      _updateState(NavigationState(
-        currentStep: NavigationStep.completed,
-        instruction: '목적지에 도착했습니다!',
-        isActive: false,
-      ));
-      return true;
-    } else {
-      // 출발지 실내 네비게이션 완료 → 실외로 이동
-      if (_outdoorCoordinates != null) {
-        _updateState(NavigationState(
-          currentStep: NavigationStep.outdoor,
-          instruction: '${_endBuilding?.name ?? "목적지"}까지 이동하세요',
-          isActive: true,
-        ));
-        return await _startOutdoorNavigation();
-      }
-    }
-    return false;
+Future<bool> _onIndoorNavigationCompleted(bool wasArrival) async {
+  if (wasArrival) {
+    _updateState(NavigationState(
+      currentStep: NavigationStep.completed,
+      instruction: AppLocalizations.of(_context!)!.instructionArrived,
+      isActive: false,
+    ));
+  } else {
+    _updateState(NavigationState(
+      currentStep: NavigationStep.outdoor,
+      instruction: AppLocalizations.of(_context!)!
+          .instructionMoveToDestination(_endBuilding?.name ?? '목적지'),
+      isActive: true,
+    ));
   }
+  return true;
+}
+
 
   /// 실외 네비게이션 완료 처리
-  Future<bool> onOutdoorNavigationCompleted() async {
-    if (_arrivalIndoorNodes != null && _arrivalIndoorNodes!.isNotEmpty) {
-      // 도착지 실내 네비게이션 시작
-      _updateState(NavigationState(
-        currentStep: NavigationStep.arrivalIndoor,
-        instruction: '목적지 호실까지 이동하세요',
-        isActive: true,
-      ));
-      return await _startIndoorNavigation(_arrivalIndoorNodes!, isArrival: true);
-    } else {
-      // 건물 도착으로 완료
-      _updateState(NavigationState(
-        currentStep: NavigationStep.completed,
-        instruction: '목적지에 도착했습니다!',
-        isActive: false,
-      ));
-      return true;
-    }
+Future<bool> onOutdoorNavigationCompleted() async {
+  if (_arrivalIndoorNodes != null && _arrivalIndoorNodes!.isNotEmpty) {
+    _updateState(NavigationState(
+      currentStep: NavigationStep.arrivalIndoor,
+      instruction: AppLocalizations.of(_context!)!.instructionMoveToRoom,
+      isActive: true,
+    ));
+    return true;
+  } else {
+    _updateState(NavigationState(
+      currentStep: NavigationStep.completed,
+      instruction: AppLocalizations.of(_context!)!.instructionArrived,
+      isActive: false,
+    ));
+    return true;
   }
+}
+
 
   /// 네비게이션 중단
   void stopNavigation() {
@@ -453,35 +455,37 @@ class UnifiedNavigationController extends ChangeNotifier {
   }
 
   /// 다음 단계로 진행
-  void proceedToNextStep() {
-    switch (_state.currentStep) {
-      case NavigationStep.departureIndoor:
-        if (_outdoorCoordinates != null) {
-          _updateState(_state.copyWith(
-            currentStep: NavigationStep.outdoor,
-            instruction: '${_endBuilding?.name ?? "목적지"}까지 이동하세요',
-          ));
-          _startOutdoorNavigation();
-        }
-        break;
-        
-      case NavigationStep.outdoor:
-        onOutdoorNavigationCompleted();
-        break;
-        
-      case NavigationStep.arrivalIndoor:
+Future<void> proceedToNextStep() async {
+  switch (_state.currentStep) {
+    case NavigationStep.departureIndoor:
+      if (_outdoorCoordinates != null) {
         _updateState(_state.copyWith(
-          currentStep: NavigationStep.completed,
-          instruction: '목적지에 도착했습니다!',
-          isActive: false,
+          currentStep: NavigationStep.outdoor,
+          instruction: AppLocalizations.of(_context!)!
+              .instructionMoveToDestination(_endBuilding?.name ?? '목적지'),
         ));
-        break;
-        
-      case NavigationStep.completed:
-        // 이미 완료됨
-        break;
-    }
+        await _startOutdoorNavigation();
+      }
+      break;
+
+    case NavigationStep.outdoor:
+      await onOutdoorNavigationCompleted();
+      break;
+
+    case NavigationStep.arrivalIndoor:
+      _updateState(_state.copyWith(
+        currentStep: NavigationStep.completed,
+        instruction: AppLocalizations.of(_context!)!.instructionArrived,
+        isActive: false,
+      ));
+      break;
+
+    case NavigationStep.completed:
+      break;
   }
+}
+
+
 
   @override
   void dispose() {

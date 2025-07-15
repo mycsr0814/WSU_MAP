@@ -1,6 +1,7 @@
 // lib/map/widgets/search_screen.dart - 통합 검색 화면
 
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/generated/app_localizations.dart';
 import 'package:flutter_application_1/models/building.dart';
 import 'package:flutter_application_1/models/search_result.dart';
 import 'package:flutter_application_1/services/integrated_search_service.dart';
@@ -88,77 +89,80 @@ Future<void> _onSearchChanged() async {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey.shade50,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          onPressed: () => Navigator.pop(context),
-          icon: const Icon(Icons.arrow_back, color: Colors.black87),
+Widget build(BuildContext context) {
+  final l10n = AppLocalizations.of(context)!;
+
+  return Scaffold(
+    backgroundColor: Colors.grey.shade50,
+    appBar: AppBar(
+      backgroundColor: Colors.white,
+      elevation: 0,
+      leading: IconButton(
+        onPressed: () => Navigator.pop(context),
+        icon: const Icon(Icons.arrow_back, color: Colors.black87),
+      ),
+      title: Container(
+        height: 40,
+        decoration: BoxDecoration(
+          color: Colors.grey.shade50,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.grey.shade200),
         ),
-        title: Container(
-          height: 40,
-          decoration: BoxDecoration(
-            color: Colors.grey.shade50,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.grey.shade200),
-          ),
-          child: TextField(
-            controller: _searchController,
-            focusNode: _focusNode,
-            onChanged: (_) => _onSearchChanged(),
-            decoration: InputDecoration(
-              hintText: '건물명 또는 호실을 검색해주세요',
-              hintStyle: TextStyle(
-                color: Colors.grey.shade500,
-                fontSize: 14,
-              ),
-              prefixIcon: Padding(
-                padding: const EdgeInsets.all(8),
-                child: Icon(
-                  Icons.search,
-                  color: Colors.indigo.shade400,
-                  size: 20,
-                ),
-              ),
-              suffixIcon: _searchController.text.isNotEmpty
-                  ? IconButton(
-                      onPressed: () {
-                        _searchController.clear();
-                        _onSearchChanged();
-                      },
-                      icon: Icon(
-                        Icons.clear,
-                        color: Colors.grey.shade400,
-                        size: 20,
-                      ),
-                    )
-                  : null,
-              border: InputBorder.none,
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 10,
-              ),
-            ),
-            style: const TextStyle(
+        child: TextField(
+          controller: _searchController,
+          focusNode: _focusNode,
+          onChanged: (_) => _onSearchChanged(),
+          decoration: InputDecoration(
+            hintText: l10n.searchHint, // ✅ 다국어 처리된 안내문
+            hintStyle: TextStyle(
+              color: Colors.grey.shade500,
               fontSize: 14,
-              color: Colors.black87,
+            ),
+            prefixIcon: Padding(
+              padding: const EdgeInsets.all(8),
+              child: Icon(
+                Icons.search,
+                color: Colors.indigo.shade400,
+                size: 20,
+              ),
+            ),
+            suffixIcon: _searchController.text.isNotEmpty
+                ? IconButton(
+                    onPressed: () {
+                      _searchController.clear();
+                      _onSearchChanged();
+                    },
+                    icon: Icon(
+                      Icons.clear,
+                      color: Colors.grey.shade400,
+                      size: 20,
+                    ),
+                  )
+                : null,
+            border: InputBorder.none,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 10,
             ),
           ),
-        ),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Container(
-            height: 1,
-            color: Colors.grey.shade200,
+          style: const TextStyle(
+            fontSize: 14,
+            color: Colors.black87,
           ),
         ),
       ),
-      body: _buildBody(),
-    );
-  }
+      bottom: PreferredSize(
+        preferredSize: const Size.fromHeight(1),
+        child: Container(
+          height: 1,
+          color: Colors.grey.shade200,
+        ),
+      ),
+    ),
+    body: _buildBody(),
+  );
+}
+
 
   Widget _buildBody() {
     if (!_isSearching) {
@@ -177,56 +181,47 @@ Future<void> _onSearchChanged() async {
   }
 
   Widget _buildInitialState() {
-    return const Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.search,
-            color: Colors.grey,
-            size: 64,
-          ),
-          SizedBox(height: 16),
-          Text(
-            '건물명 또는 호실을 검색해보세요',
-            style: TextStyle(
-              color: Colors.grey,
-              fontSize: 16,
-            ),
-          ),
-          SizedBox(height: 8),
-          Text(
-            '예: W19, 공학관, 401호',
-            style: TextStyle(
-              color: Colors.grey,
-              fontSize: 14,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  final l10n = AppLocalizations.of(context)!;
 
-  Widget _buildLoadingState() {
-    return const Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          CircularProgressIndicator(
-            color: Colors.indigo,
-          ),
-          SizedBox(height: 16),
-          Text(
-            '검색 중...',
-            style: TextStyle(
-              color: Colors.grey,
-              fontSize: 16,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  return Center(
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const Icon(Icons.search, color: Colors.grey, size: 64),
+        const SizedBox(height: 16),
+        Text(
+          l10n.searchInitialGuide,
+          style: const TextStyle(color: Colors.grey, fontSize: 16),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          l10n.searchHintExample,
+          style: const TextStyle(color: Colors.grey, fontSize: 14),
+        ),
+      ],
+    ),
+  );
+}
+
+
+Widget _buildLoadingState() {
+  final l10n = AppLocalizations.of(context)!;
+
+  return Center(
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const CircularProgressIndicator(color: Colors.indigo),
+        const SizedBox(height: 16),
+        Text(
+          l10n.searchLoading,
+          style: const TextStyle(color: Colors.grey, fontSize: 16),
+        ),
+      ],
+    ),
+  );
+}
+
 
   Widget _buildSearchResults() {
     return ListView.builder(
@@ -296,35 +291,31 @@ Future<void> _onSearchChanged() async {
     );
   }
 
-  Widget _buildNoResults() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.search_off,
-            color: Colors.grey.shade400,
-            size: 64,
+ Widget _buildNoResults() {
+  final l10n = AppLocalizations.of(context)!;
+
+  return Center(
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(Icons.search_off, color: Colors.grey.shade400, size: 64),
+        const SizedBox(height: 16),
+        Text(
+          l10n.searchNoResult,
+          style: const TextStyle(
+            color: Colors.grey,
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
           ),
-          const SizedBox(height: 16),
-          Text(
-            '검색 결과가 없습니다',
-            style: TextStyle(
-              color: Colors.grey.shade600,
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            '다른 검색어로 시도해보세요',
-            style: TextStyle(
-              color: Colors.grey.shade500,
-              fontSize: 14,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+        ),
+        const SizedBox(height: 8),
+        Text(
+          l10n.searchTryAgain,
+          style: const TextStyle(color: Colors.grey, fontSize: 14),
+        ),
+      ],
+    ),
+  );
+}
+
 }

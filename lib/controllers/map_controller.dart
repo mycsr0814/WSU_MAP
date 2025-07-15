@@ -375,8 +375,6 @@ Future<void> selectCategoryByNames(String category, List<String> buildingNames) 
   await _mapService?.clearCategoryMarkers();
 }
 
-  
-
   /// 🔥 카테고리 선택 해제 (기존 건물 마커들 다시 표시)
   Future<void> clearCategorySelection() async {
   debugPrint('=== 카테고리 선택 해제 ===');
