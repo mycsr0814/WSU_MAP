@@ -570,7 +570,8 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 
   /// ================================
-
+  /// 🔥 수정된 로그아웃 함수
+  /// ================================
   void _handleLogout(UserAuth userAuth) async {
     final l10n = AppLocalizations.of(context)!;
 
@@ -620,10 +621,16 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
 
     if (confirmed == true) {
+      debugPrint('🔥 ProfileScreen: 로그아웃 시작');
+
+      // 1. 로그아웃 처리
       final success = await userAuth.logout();
+
       if (success && mounted) {
-        // 로그아웃 후 자동으로 WelcomeView로 이동됨 (Consumer가 처리)
-        // Navigator 호출 불필요
+        debugPrint('🔥 ProfileScreen: 로그아웃 성공 - 네비게이션 스택 클리어');
+
+        // 2. 🔥 네비게이션 스택 완전 클리어 후 루트 화면으로 이동
+        Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
       }
     }
   }
