@@ -11,7 +11,7 @@ import 'package:flutter_application_1/map/widgets/building_info_window.dart';
 import 'package:flutter_application_1/map/widgets/building_detail_sheet.dart';
 import 'package:flutter_application_1/map/widgets/building_search_bar.dart';
 import 'package:flutter_application_1/map/widgets/map_controls.dart';
-import 'package:flutter_application_1/map/widgets/directions_screen.dart'; // 🔥 DirectionsScreen import 추가
+import 'package:flutter_application_1/map/widgets/directions_screen.dart';
 import 'package:flutter_application_1/controllers/map_controller.dart';
 import 'package:flutter_application_1/profile/profile_screen.dart';
 import 'package:flutter_application_1/map/navigation_state_manager.dart';
@@ -31,15 +31,9 @@ class MapScreen extends StatefulWidget {
 class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
   late MapScreenController _controller;
   late NavigationStateManager _navigationManager;
-<<<<<<< HEAD
   late BuildingMarkerService _buildingMarkerService;
   
   final OverlayPortalController _infoWindowController = OverlayPortalController();
-=======
-
-  final OverlayPortalController _infoWindowController =
-      OverlayPortalController();
->>>>>>> 80125b4ace3fecb8c56ccd67b4b9cc5a02aa8239
   int _currentNavIndex = 0;
   bool _isInitializing = false;
 
@@ -48,11 +42,8 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     super.initState();
     _controller = MapScreenController();
     _navigationManager = NavigationStateManager();
-<<<<<<< HEAD
-    _buildingMarkerService = BuildingMarkerService(); // ← 이 줄 추가!
+    _buildingMarkerService = BuildingMarkerService();
     
-=======
->>>>>>> 80125b4ace3fecb8c56ccd67b4b9cc5a02aa8239
     WidgetsBinding.instance.addObserver(this);
     _initializeController();
   }
@@ -65,8 +56,6 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     super.dispose();
   }
 
-<<<<<<< HEAD
-
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -74,33 +63,18 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     _controller.setContext(context);
   }
 
-  /// 🔥 간소화된 초기화 - 기존 자동 이동 로직 제거
-Future<void> _initializeController() async {
-  if (_isInitializing) return;
-
-  try {
-    _isInitializing = true;
-    debugPrint('🚀 MapScreen 초기화 시작...');
-
-     // LocationController 생성 및 설정
-     final locationController = LocationController();
-     _controller.setLocationController(locationController);
-
-    await _controller.initialize();
-    debugPrint('✅ MapScreen 초기화 완료');
-  } catch (e) {
-    debugPrint('❌ MapScreen 초기화 오류: $e');
-  } finally {
-    _isInitializing = false;
-=======
-  /// 지도 컨트롤러 초기화
+  /// 간소화된 초기화 - 기존 자동 이동 로직 제거
   Future<void> _initializeController() async {
     if (_isInitializing) return;
+
     try {
       _isInitializing = true;
       debugPrint('🚀 MapScreen 초기화 시작...');
+
+      // LocationController 생성 및 설정
       final locationController = LocationController();
       _controller.setLocationController(locationController);
+
       await _controller.initialize();
       debugPrint('✅ MapScreen 초기화 완료');
     } catch (e) {
@@ -108,7 +82,6 @@ Future<void> _initializeController() async {
     } finally {
       _isInitializing = false;
     }
->>>>>>> 80125b4ace3fecb8c56ccd67b4b9cc5a02aa8239
   }
 
   /// 길찾기 화면 열기
@@ -202,7 +175,6 @@ Future<void> _initializeController() async {
               const SizedBox(height: 12),
               CategoryChips(
                 selectedCategory: _controller.selectedCategory,
-<<<<<<< HEAD
                 onCategorySelected: (category, buildingNames) async {
                   debugPrint('카테고리 선택: $category, 건물 이름들: $buildingNames');
                   // 1. 기존 마커 모두 제거
@@ -211,11 +183,6 @@ Future<void> _initializeController() async {
                   _controller.clearSelectedBuilding();
                   _controller.closeInfoWindow(_infoWindowController);
                   // 3. 새 카테고리 마커만 추가
-=======
-                onCategorySelected: (category, buildingNames) {
-                  debugPrint('카테고리 선택: $category, 건물 이름들: $buildingNames');
-                  _controller.closeInfoWindow(_infoWindowController);
->>>>>>> 80125b4ace3fecb8c56ccd67b4b9cc5a02aa8239
                   _controller.selectCategoryByNames(category, buildingNames);
                 },
               ),
@@ -384,7 +351,7 @@ Future<void> _initializeController() async {
             ),
             const SizedBox(height: 2),
             Text(
-              l10n.friends, // 이제 오류 없음!
+              l10n.friends,
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w500,
@@ -441,7 +408,7 @@ Future<void> _initializeController() async {
     );
   }
 
-  // 🔥 네비게이션 상태 카드 위젯
+  /// 네비게이션 상태 카드 위젯
   Widget _buildNavigationStatusCard() {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 4),
@@ -571,7 +538,7 @@ Future<void> _initializeController() async {
     );
   }
 
-  // 컴팩트한 정보 아이템 위젯
+  /// 컴팩트한 정보 아이템 위젯
   Widget _buildCompactInfoItem(IconData icon, String label, String value) {
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -700,7 +667,7 @@ Future<void> _initializeController() async {
     );
   }
 
-  /// 🔥 위치 에러 처리 - 새로운 retryLocationPermission 사용
+  /// 위치 에러 처리 - 새로운 retryLocationPermission 사용
   Widget _buildLocationError() {
     final l10n = AppLocalizations.of(context)!;
 
@@ -759,7 +726,7 @@ Future<void> _initializeController() async {
                   ),
                 ),
                 const SizedBox(width: 8),
-                // 🔥 새로운 재시도 버튼 - MapController의 메서드 사용
+                // 새로운 재시도 버튼 - MapController의 메서드 사용
                 Expanded(
                   child: ElevatedButton.icon(
                     onPressed: () => _controller.retryLocationPermission(),
@@ -810,7 +777,6 @@ Future<void> _initializeController() async {
               _navigationManager.handleDirectionsResult(result, context);
             } else {
               print('잘못된 결과 타입: $result');
-              //?
             }
           },
         );
