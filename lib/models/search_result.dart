@@ -61,23 +61,22 @@ class SearchResult {
   bool get isRoom => type == SearchResultType.room;
 
   // 호실인 경우 Building 객체를 호실 좌표로 생성 (필요시)
-  Building toBuildingWithRoomLocation() {
-    if (isRoom) {
-      // 호실의 경우 건물 좌표를 그대로 사용하거나
-      // 필요하다면 호실별 세부 좌표 계산 로직 추가
-      return Building(
-        name: displayName,
-        info: roomDescription ?? '${building.name} ${roomNumber}호',
-        lat: building.lat, // 동일한 건물 좌표 사용
-        lng: building.lng,
-        category: '강의실',
-        baseStatus: building.baseStatus,
-        hours: building.hours,
-        phone: building.phone,
-        imageUrl: building.imageUrl,
-        description: roomDescription ?? '',
-      );
-    }
-    return building;
+Building toBuildingWithRoomLocation() {
+  if (isRoom) {
+    return Building(
+      name: building.name, // ✅ 건물명만 (예: "W19")
+      info: roomDescription ?? '${building.name} ${roomNumber}호',
+      lat: building.lat,
+      lng: building.lng,
+      category: building.category,
+      baseStatus: building.baseStatus,
+      hours: building.hours,
+      phone: building.phone,
+      imageUrl: building.imageUrl,
+      // ✅ description에 floor/room 정보를 함께 포함
+      description: 'floor:$floorNumber,room:$roomNumber',
+    );
   }
+  return building;
+}
 }
