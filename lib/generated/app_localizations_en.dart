@@ -1038,4 +1038,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get delete_account_success => 'Your account has been deleted.';
+
+  @override
+  String get building_name => 'Building';
+
+  @override
+  String get floor_number => 'Floor';
+
+  @override
+  String get room_name => 'Room';
+
+  @override
+  String get overlap_message => 'A class is already scheduled at this time.';
 }

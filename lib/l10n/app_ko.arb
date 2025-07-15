@@ -412,5 +412,9 @@
   },
   "floor_plan_not_available": "도면 이미지를 불러올 수 없습니다",
   "floor_plan_default_text": "내부 도면",
-  "delete_account_success": "회원탈퇴가 완료되었습니다."
+  "delete_account_success": "회원탈퇴가 완료되었습니다.",
+    "building_name": "건물명",
+  "floor_number": "층수",
+  "room_name": "강의실",
+  "overlap_message": "이미 같은 시간에 등록된 수업이 있습니다."
 }

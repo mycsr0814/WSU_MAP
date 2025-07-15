@@ -412,5 +412,9 @@
   },
   "floor_plan_not_available": "无法加载平面图图像",
   "floor_plan_default_text": "平面图",
-  "delete_account_success": "您的账户已被删除。"
+  "delete_account_success": "您的账户已被删除。",
+  "building_name": "楼名",
+"floor_number": "楼层",
+"room_name": "教室",
+"overlap_message": "该时间段已安排有课程。"
 }

@@ -87,6 +87,9 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
+    // 1. userId를 Provider에서 받아오기
+    final userId = context.read<UserAuth>().userId ?? '';
+    print('userId: $userId'); 
     return ChangeNotifierProvider.value(
       value: _controller,
       child: Consumer<MapScreenController>(
@@ -96,7 +99,8 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
               index: _currentNavIndex,
               children: [
                 _buildMapScreen(controller),
-                const ScheduleScreen(),
+                // 2. userId를 ScheduleScreen에 전달
+                ScheduleScreen(userId: userId),
                 // 친구 바텀시트는 네비게이션에서 띄우니 여긴 텍스트만
                 Container(
                   color: Colors.white,

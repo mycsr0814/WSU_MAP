@@ -1012,4 +1012,16 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get delete_account_success => '회원탈퇴가 완료되었습니다.';
+
+  @override
+  String get building_name => '건물명';
+
+  @override
+  String get floor_number => '층수';
+
+  @override
+  String get room_name => '강의실';
+
+  @override
+  String get overlap_message => '이미 같은 시간에 등록된 수업이 있습니다.';
 }

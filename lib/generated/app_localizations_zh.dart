@@ -1010,4 +1010,16 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get delete_account_success => '您的账户已被删除。';
+
+  @override
+  String get building_name => '楼名';
+
+  @override
+  String get floor_number => '楼层';
+
+  @override
+  String get room_name => '教室';
+
+  @override
+  String get overlap_message => '该时间段已安排有课程。';
 }

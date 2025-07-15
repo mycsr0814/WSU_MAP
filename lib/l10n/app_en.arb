@@ -513,5 +513,9 @@
   },
   "floor_plan_not_available": "Unable to load floor plan image",
   "floor_plan_default_text": "Floor Plan",
-  "delete_account_success": "Your account has been deleted."
+  "delete_account_success": "Your account has been deleted.",
+  "building_name": "Building",
+  "floor_number": "Floor",
+  "room_name": "Room",
+  "overlap_message": "A class is already scheduled at this time."
 }
