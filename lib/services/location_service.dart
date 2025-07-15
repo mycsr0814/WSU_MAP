@@ -1,4 +1,4 @@
-// lib/services/location_service.dart - 개선된 버전 (좌표 매핑 수정)
+// lib/services/location_service.dart - 개선된 버전
 import 'package:flutter/material.dart';
 import 'package:location/location.dart' as loc;
 import 'dart:async';
@@ -12,12 +12,14 @@ class LocationResult {
   final loc.LocationData? locationData;
   final LocationError? error;
   final bool isFromCache;
+  final DateTime timestamp;
 
-  const LocationResult({
+  LocationResult({
     this.locationData,
     this.error,
     this.isFromCache = false,
-  });
+    DateTime? timestamp,
+  }) : timestamp = timestamp ?? DateTime.now();
 
   bool get isSuccess => locationData != null && error == null;
   bool get hasValidLocation =>
@@ -35,6 +37,9 @@ enum LocationError {
   serverError,
 }
 
+/// 위치 전송 성공 콜백 타입
+typedef LocationSentCallback = void Function(bool success, DateTime timestamp);
+
 /// 핵심 위치 서비스 - 위치 획득 및 서버 전송
 class LocationService {
   static final LocationService _instance = LocationService._internal();
@@ -48,9 +53,34 @@ class LocationService {
   // 위치 요청 상태
   bool _isRequesting = false;
   Timer? _requestTimer;
+  Completer<LocationResult>? _currentRequest;
 
   // 캐시 유효 시간 (기본 30초)
   static const Duration _cacheValidDuration = Duration(seconds: 30);
+
+  // 🔥 위치 전송 성공 콜백들
+  final List<LocationSentCallback> _locationSentCallbacks = [];
+
+  /// 🔥 위치 전송 성공 콜백 등록
+  void addLocationSentCallback(LocationSentCallback callback) {
+    _locationSentCallbacks.add(callback);
+  }
+
+  /// 🔥 위치 전송 성공 콜백 제거
+  void removeLocationSentCallback(LocationSentCallback callback) {
+    _locationSentCallbacks.remove(callback);
+  }
+
+  /// 🔥 위치 전송 성공 시 모든 콜백 호출
+  void _notifyLocationSent(bool success, DateTime timestamp) {
+    for (final callback in _locationSentCallbacks) {
+      try {
+        callback(success, timestamp);
+      } catch (e) {
+        debugPrint('❌ 위치 전송 콜백 오류: $e');
+      }
+    }
+  }
 
   /// 🔥 위치 데이터 유효성 검증 (static 메서드)
   static bool isValidLocation(loc.LocationData? locationData) {
@@ -89,12 +119,16 @@ class LocationService {
     return true;
   }
 
-  /// 🔥 서버로 위치 전송 (좌표 매핑 수정 적용)
+  /// 🔥 서버로 위치 전송 (개선된 버전 - 콜백 포함)
   static Future<bool> sendLocationToServer({
     required String userId,
     required double latitude,
     required double longitude,
+    LocationSentCallback? onComplete,
   }) async {
+    final timestamp = DateTime.now();
+    bool success = false;
+
     try {
       debugPrint('📤 서버로 위치 전송 시작...');
       debugPrint('👤 사용자 ID: $userId');
@@ -118,6 +152,7 @@ class LocationService {
         'id': userId,
         'x': latitude, // 서버에서 x에 위도를 기대
         'y': longitude, // 서버에서 y에 경도를 기대
+        'timestamp': timestamp.millisecondsSinceEpoch,
       };
 
       debugPrint('📋 요청 URL: $url');
@@ -148,41 +183,45 @@ class LocationService {
       switch (response.statusCode) {
         case 200:
           debugPrint('✅ 위치 전송 성공 (좌표 매핑 수정됨)');
-          return true;
+          success = true;
+          break;
         case 400:
           debugPrint('❌ 잘못된 요청 데이터: ${response.body}');
-          return false;
+          break;
         case 404:
           debugPrint('❌ 사용자를 찾을 수 없음: ${response.body}');
-          return false;
+          break;
         case 500:
           debugPrint('❌ 서버 내부 오류: ${response.body}');
-          return false;
+          break;
         default:
           debugPrint('❌ 서버 오류: ${response.statusCode} - ${response.body}');
-          return false;
+          break;
       }
     } on SocketException catch (e) {
       debugPrint('❌ 네트워크 연결 오류: $e');
-      return false;
     } on TimeoutException catch (e) {
       debugPrint('❌ 요청 타임아웃: $e');
-      return false;
     } on FormatException catch (e) {
       debugPrint('❌ 데이터 형식 오류: $e');
-      return false;
     } catch (e) {
       debugPrint('❌ 위치 전송 알 수 없는 오류: $e');
-      return false;
+    } finally {
+      // 🔥 콜백 호출 및 전역 콜백 알림
+      onComplete?.call(success, timestamp);
+      LocationService()._notifyLocationSent(success, timestamp);
     }
+
+    return success;
   }
 
-  /// 🔥 재시도 로직이 포함된 위치 전송
+  /// 🔥 재시도 로직이 포함된 위치 전송 (개선된 버전)
   static Future<bool> sendLocationWithRetry({
     required String userId,
     required double latitude,
     required double longitude,
     int maxRetries = 3,
+    LocationSentCallback? onComplete,
   }) async {
     for (int attempt = 1; attempt <= maxRetries; attempt++) {
       debugPrint('🔄 위치 전송 시도 $attempt/$maxRetries');
@@ -191,6 +230,7 @@ class LocationService {
         userId: userId,
         latitude: latitude,
         longitude: longitude,
+        onComplete: attempt == maxRetries ? onComplete : null, // 마지막 시도에만 콜백
       );
 
       if (success) {
@@ -241,6 +281,7 @@ class LocationService {
       'id': userId.trim(),
       'x': latitude, // 서버에서 x에 위도를 기대
       'y': longitude, // 서버에서 y에 경도를 기대
+      'timestamp': DateTime.now().millisecondsSinceEpoch,
     };
   }
 
@@ -270,35 +311,44 @@ class LocationService {
     }
   }
 
-  /// 현재 위치 획득 (메인 메서드)
+  /// 🔥 현재 위치 획득 (메인 메서드 - 중복 요청 방지 강화)
   Future<LocationResult> getCurrentLocation({
     bool forceRefresh = false,
     Duration? timeout,
   }) async {
     debugPrint('📍 위치 획득 요청 - forceRefresh: $forceRefresh');
 
-    // 중복 요청 방지
-    if (_isRequesting) {
-      debugPrint('⏳ 이미 위치 요청 중...');
-      await _waitForCurrentRequest();
-      return LocationResult(locationData: _cachedLocation);
+    // 🔥 중복 요청 방지 - 이미 진행 중인 요청이 있으면 대기
+    if (_isRequesting && _currentRequest != null) {
+      debugPrint('⏳ 이미 위치 요청 중... 기존 요청 대기');
+      return await _currentRequest!.future;
     }
 
     // 캐시된 위치 확인
     if (!forceRefresh && _isCacheValid()) {
       debugPrint('⚡ 캐시된 위치 사용');
-      return LocationResult(locationData: _cachedLocation, isFromCache: true);
+      return LocationResult(
+        locationData: _cachedLocation,
+        isFromCache: true,
+        timestamp: _cacheTime!,
+      );
     }
 
     return await _requestLocationWithRetry(timeout: timeout);
   }
 
-  /// 재시도가 포함된 위치 요청
+  /// 🔥 재시도가 포함된 위치 요청 (개선된 버전)
   Future<LocationResult> _requestLocationWithRetry({
     Duration? timeout,
     int maxRetries = 3,
   }) async {
+    if (_isRequesting) {
+      debugPrint('⚠️ 이미 위치 요청 중');
+      return LocationResult(error: LocationError.unknown);
+    }
+
     _isRequesting = true;
+    _currentRequest = Completer<LocationResult>();
 
     try {
       for (int attempt = 1; attempt <= maxRetries; attempt++) {
@@ -330,7 +380,13 @@ class LocationService {
               debugPrint('⚠️ Fallback 위치일 가능성 있음');
             }
 
-            return LocationResult(locationData: locationData);
+            final result = LocationResult(
+              locationData: locationData,
+              timestamp: DateTime.now(),
+            );
+            
+            _currentRequest!.complete(result);
+            return result;
           }
 
           debugPrint('⚠️ 유효하지 않은 위치 데이터 (시도 $attempt)');
@@ -344,16 +400,35 @@ class LocationService {
           }
 
           // 마지막 시도에서 실패
-          return LocationResult(error: _mapExceptionToError(e));
+          final result = LocationResult(error: _mapExceptionToError(e));
+          _currentRequest!.complete(result);
+          return result;
         }
       }
 
-      return const LocationResult(error: LocationError.noLocationFound);
+      final result = LocationResult(error: LocationError.noLocationFound);
+      _currentRequest!.complete(result);
+      return result;
     } finally {
       _isRequesting = false;
       _requestTimer?.cancel();
       _requestTimer = null;
+      _currentRequest = null;
     }
+  }
+
+  /// 🔥 즉시 위치 새로고침 (UI 갱신용)
+  Future<LocationResult> forceRefreshLocation({Duration? timeout}) async {
+    debugPrint('🔄 강제 위치 새로고침 시작...');
+    
+    // 캐시 무효화
+    invalidateCache();
+    
+    // 새로운 위치 요청
+    return await getCurrentLocation(
+      forceRefresh: true,
+      timeout: timeout ?? const Duration(seconds: 10),
+    );
   }
 
   /// 기본 위치 제공 (우송대학교)
@@ -374,7 +449,10 @@ class LocationService {
 
     _updateCache(fallbackLocation);
 
-    return LocationResult(locationData: fallbackLocation);
+    return LocationResult(
+      locationData: fallbackLocation,
+      timestamp: DateTime.now(),
+    );
   }
 
   /// 위치 데이터 유효성 검증 (instance 메서드)
@@ -396,17 +474,6 @@ class LocationService {
   void _updateCache(loc.LocationData locationData) {
     _cachedLocation = locationData;
     _cacheTime = DateTime.now();
-  }
-
-  /// 현재 요청 완료까지 대기
-  Future<void> _waitForCurrentRequest() async {
-    int waitCount = 0;
-    const maxWait = 50; // 최대 5초 대기
-
-    while (_isRequesting && waitCount < maxWait) {
-      await Future.delayed(const Duration(milliseconds: 100));
-      waitCount++;
-    }
   }
 
   /// 예외를 LocationError로 변환
@@ -453,6 +520,9 @@ class LocationService {
     _requestTimer?.cancel();
     _requestTimer = null;
     _isRequesting = false;
+    _currentRequest?.complete(LocationResult(error: LocationError.unknown));
+    _currentRequest = null;
+    _locationSentCallbacks.clear();
     debugPrint('🧹 LocationService 정리 완료');
   }
 }
