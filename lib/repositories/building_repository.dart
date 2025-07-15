@@ -1,4 +1,4 @@
-// lib/repositories/building_repository.dart - Result 패턴 완전 적용
+// lib/repositories/building_repository.dart - Result 패턴 완전 적용 + 생명주기 관리 개선
 import 'package:flutter/material.dart';
 import '../models/building.dart';
 import '../services/building_api_service.dart';
@@ -8,8 +8,16 @@ import '../core/app_logger.dart';
 
 /// 건물 데이터의 단일 진실 공급원 (Single Source of Truth)
 class BuildingRepository extends ChangeNotifier {
-  static final BuildingRepository _instance = BuildingRepository._internal();
-  factory BuildingRepository() => _instance;
+  static BuildingRepository? _instance;
+
+  factory BuildingRepository() {
+    // dispose된 인스턴스면 새로 생성
+    if (_instance == null || _instance!._isDisposed) {
+      _instance = BuildingRepository._internal();
+    }
+    return _instance!;
+  }
+
   BuildingRepository._internal();
 
   // 🔥 단일 데이터 저장소
@@ -18,6 +26,7 @@ class BuildingRepository extends ChangeNotifier {
   bool _isLoading = false;
   String? _lastError;
   DateTime? _lastLoadTime;
+  bool _isDisposed = false;
 
   // 🔥 서비스 인스턴스들
   final BuildingDataService _buildingDataService = BuildingDataService();
@@ -33,13 +42,45 @@ class BuildingRepository extends ChangeNotifier {
   String? get lastError => _lastError;
   DateTime? get lastLoadTime => _lastLoadTime;
   int get buildingCount => _allBuildings.length;
+  bool get isDisposed => _isDisposed;
+
+  /// 🔥 안전한 notifyListeners 호출
+  void _safeNotifyListeners() {
+    if (!_isDisposed) {
+      notifyListeners();
+    }
+  }
+
+  /// 🔥 Repository 재초기화
+  void _reinitialize() {
+    if (_isDisposed) {
+      AppLogger.info('BuildingRepository 재초기화', tag: 'REPO');
+      _allBuildings.clear();
+      _isLoaded = false;
+      _isLoading = false;
+      _lastError = null;
+      _lastLoadTime = null;
+      _dataChangeListeners.clear();
+      _isDisposed = false;
+    }
+  }
 
   /// 🔥 메인 데이터 로딩 메서드 - Result 패턴 완전 적용
-  Future<Result<List<Building>>> getAllBuildings({bool forceRefresh = false}) async {
+  Future<Result<List<Building>>> getAllBuildings({
+    bool forceRefresh = false,
+  }) async {
     return await ResultHelper.runSafelyAsync(() async {
+      // dispose 상태 확인 및 재초기화
+      if (_isDisposed) {
+        _reinitialize();
+      }
+
       // 이미 로딩된 데이터가 있고 강제 새로고침이 아니면 캐시 반환
       if (_isLoaded && _allBuildings.isNotEmpty && !forceRefresh) {
-        AppLogger.info('BuildingRepository: 캐시된 데이터 반환 (${_allBuildings.length}개)', tag: 'REPO');
+        AppLogger.info(
+          'BuildingRepository: 캐시된 데이터 반환 (${_allBuildings.length}개)',
+          tag: 'REPO',
+        );
         return _getCurrentBuildingsWithOperatingStatus();
       }
 
@@ -55,10 +96,14 @@ class BuildingRepository extends ChangeNotifier {
 
   /// 🔥 동기식 건물 데이터 반환 (기존 호환성 유지)
   List<Building> getAllBuildingsSync() {
+    if (_isDisposed) {
+      _reinitialize();
+    }
+
     if (_isLoaded && _allBuildings.isNotEmpty) {
       return _getCurrentBuildingsWithOperatingStatus();
     }
-    
+
     // 데이터가 없으면 fallback 반환
     return _getFallbackBuildings().map((building) {
       final autoStatus = _getAutoOperatingStatus(building.baseStatus);
@@ -70,39 +115,39 @@ class BuildingRepository extends ChangeNotifier {
   Future<List<Building>> _loadBuildingsFromServer() async {
     _isLoading = true;
     _lastError = null;
-    notifyListeners();
+    _safeNotifyListeners();
 
     try {
-      AppLogger.info('BuildingRepository: 서버에서 건물 데이터 로딩 시작...', tag: 'REPO');
-      
       List<Building> buildings = [];
 
-      // 1단계: BuildingApiService 시도
+      // 1단계: 일반 API 시도
       final apiResult = await ResultHelper.runSafelyAsync(() async {
         return await BuildingApiService.getAllBuildings();
       }, 'BuildingApiService.getAllBuildings');
 
       if (apiResult.isSuccess) {
         buildings = apiResult.data!;
-        AppLogger.info('BuildingApiService에서 ${buildings.length}개 로딩 성공', tag: 'REPO');
+        debugPrint('✅ 일반 API 성공: ${buildings.length}개');
+        debugPrint(
+          '🔍 API 응답 건물 목록: ${buildings.map((b) => b.name).join(', ')}',
+        );
       } else {
-        AppLogger.warning('BuildingApiService 실패: ${apiResult.error}', tag: 'REPO');
-        
+        debugPrint('❌ 일반 API 실패: ${apiResult.error}');
+
         // 2단계: BuildingDataService 시도
         final dataServiceResult = await ResultHelper.runSafelyAsync(() async {
           await _buildingDataService.loadBuildings();
-          if (_buildingDataService.hasData) {
-            return _buildingDataService.buildings;
-          } else {
-            throw Exception('BuildingDataService has no data');
-          }
+          return _buildingDataService.buildings;
         }, 'BuildingDataService.loadBuildings');
 
         if (dataServiceResult.isSuccess) {
           buildings = dataServiceResult.data!;
-          AppLogger.info('BuildingDataService에서 ${buildings.length}개 로딩 성공', tag: 'REPO');
+          debugPrint('✅ DataService 성공: ${buildings.length}개');
+          debugPrint(
+            '🔍 DataService 응답 건물 목록: ${buildings.map((b) => b.name).join(', ')}',
+          );
         } else {
-          AppLogger.error('BuildingDataService도 실패: ${dataServiceResult.error}', tag: 'REPO');
+          debugPrint('❌ DataService 실패: ${dataServiceResult.error}');
         }
       }
 
@@ -111,27 +156,31 @@ class BuildingRepository extends ChangeNotifier {
         _allBuildings = buildings;
         _isLoaded = true;
         _lastLoadTime = DateTime.now();
-        AppLogger.info('BuildingRepository: 서버 데이터 저장 완료 (${buildings.length}개)', tag: 'REPO');
-        
-        // 데이터 변경 리스너들에게 알림
-        _notifyDataChangeListeners();
+        debugPrint('✅ 서버 데이터 저장 완료: ${buildings.length}개');
       } else {
-        // 4단계: Fallback 데이터 사용
+        // 4단계: 확장된 Fallback 데이터 사용
         _allBuildings = _getFallbackBuildings();
         _isLoaded = true;
         _lastLoadTime = DateTime.now();
-        _lastError = '서버 데이터 없음, Fallback 사용';
-        AppLogger.warning('BuildingRepository: Fallback 데이터 사용 (${_allBuildings.length}개)', tag: 'REPO');
+        _lastError = '서버 데이터 없음, 확장된 Fallback 사용';
+        debugPrint('⚠️ 확장된 Fallback 데이터 사용: ${_allBuildings.length}개');
+        debugPrint(
+          '🔍 Fallback 건물 목록: ${_allBuildings.map((b) => b.name).join(', ')}',
+        );
       }
 
+      // 데이터 변경 리스너들에게 알림
+      _notifyDataChangeListeners();
     } catch (e) {
       _lastError = e.toString();
       _allBuildings = _getFallbackBuildings();
       _isLoaded = true;
-      AppLogger.error('BuildingRepository: 로딩 실패, Fallback 사용', tag: 'REPO', error: e);
+      debugPrint('❌ 로딩 실패, 확장된 Fallback 사용: ${_allBuildings.length}개');
+      debugPrint('🔍 오류 내용: $e');
+      _notifyDataChangeListeners();
     } finally {
       _isLoading = false;
-      notifyListeners();
+      _safeNotifyListeners();
     }
 
     return _getCurrentBuildingsWithOperatingStatus();
@@ -151,11 +200,11 @@ class BuildingRepository extends ChangeNotifier {
     if (baseStatus == '24시간' || baseStatus == '임시휴무' || baseStatus == '휴무') {
       return baseStatus;
     }
-    
+
     // 현재 시간 가져오기
     final now = DateTime.now();
     final currentHour = now.hour;
-    
+
     // 09:00 ~ 18:00 운영중, 나머지는 운영종료
     if (currentHour >= 9 && currentHour < 18) {
       return '운영중';
@@ -164,14 +213,14 @@ class BuildingRepository extends ChangeNotifier {
     }
   }
 
-  /// 🔥 Fallback 건물 데이터
+  /// 🔥 확장된 Fallback 건물 데이터 (22개 건물)
   List<Building> _getFallbackBuildings() {
     return [
       Building(
         name: '우송도서관(W1)',
         info: '도서관 및 학습 공간',
-        lat: 36.337000,
-        lng: 127.445000,
+        lat: 36.338076,
+        lng: 127.446452,
         category: '학습시설',
         baseStatus: '운영중',
         hours: '09:00-18:00',
@@ -180,16 +229,256 @@ class BuildingRepository extends ChangeNotifier {
         description: '메인 도서관',
       ),
       Building(
-        name: '서캠퍼스앤디컷빌딩(W19)',
-        info: '강의실 및 실습실',
-        lat: 36.337200,
-        lng: 127.445200,
+        name: '산학혁신관(W2)',
+        info: '산학협력 관련 시설',
+        lat: 36.339589,
+        lng: 127.447295,
         category: '강의시설',
         baseStatus: '운영중',
         hours: '09:00-18:00',
         phone: '042-821-5602',
         imageUrl: null,
-        description: '강의동',
+        description: '산학혁신관',
+      ),
+      Building(
+        name: '학군단(W2-1)',
+        info: '학군단 시설',
+        lat: 36.339537,
+        lng: 127.447746,
+        category: '행정시설',
+        baseStatus: '운영중',
+        hours: '09:00-18:00',
+        phone: '042-821-5603',
+        imageUrl: null,
+        description: '학군단',
+      ),
+      Building(
+        name: '유학생기숙사(W3)',
+        info: '유학생 기숙사',
+        lat: 36.339464,
+        lng: 127.446453,
+        category: '기숙사',
+        baseStatus: '24시간',
+        hours: '24시간',
+        phone: '042-821-5604',
+        imageUrl: null,
+        description: '유학생기숙사',
+      ),
+      Building(
+        name: '철도물류관(W4)',
+        info: '철도물류 관련 강의실',
+        lat: 36.33876,
+        lng: 127.445511,
+        category: '강의시설',
+        baseStatus: '운영중',
+        hours: '09:00-18:00',
+        phone: '042-821-5605',
+        imageUrl: null,
+        description: '철도물류관',
+      ),
+      Building(
+        name: '보건의료과학관(W5)',
+        info: '보건의료 관련 강의실',
+        lat: 36.338067,
+        lng: 127.444903,
+        category: '강의시설',
+        baseStatus: '운영중',
+        hours: '09:00-18:00',
+        phone: '042-821-5606',
+        imageUrl: null,
+        description: '보건의료과학관',
+      ),
+      Building(
+        name: '교양교육관(W6)',
+        info: '교양교육 관련 강의실',
+        lat: 36.337507,
+        lng: 127.445761,
+        category: '강의시설',
+        baseStatus: '운영중',
+        hours: '09:00-18:00',
+        phone: '042-821-5607',
+        imageUrl: null,
+        description: '교양교육관',
+      ),
+      Building(
+        name: '우송관(W7)',
+        info: '우송관 강의실',
+        lat: 36.337149,
+        lng: 127.44507,
+        category: '강의시설',
+        baseStatus: '운영중',
+        hours: '09:00-18:00',
+        phone: '042-821-5608',
+        imageUrl: null,
+        description: '우송관',
+      ),
+      Building(
+        name: '우송유치원(W8)',
+        info: '우송유치원',
+        lat: 36.33749,
+        lng: 127.444353,
+        category: '교육시설',
+        baseStatus: '운영중',
+        hours: '09:00-18:00',
+        phone: '042-821-5609',
+        imageUrl: null,
+        description: '우송유치원',
+      ),
+      Building(
+        name: '정례원(W9)',
+        info: '정례원 강의실',
+        lat: 36.3371,
+        lng: 127.444062,
+        category: '강의시설',
+        baseStatus: '운영중',
+        hours: '09:00-18:00',
+        phone: '042-821-5610',
+        imageUrl: null,
+        description: '정례원',
+      ),
+      Building(
+        name: '사회복지융합관(W10)',
+        info: '사회복지 관련 강의실',
+        lat: 36.336656,
+        lng: 127.443852,
+        category: '강의시설',
+        baseStatus: '운영중',
+        hours: '09:00-18:00',
+        phone: '042-821-5611',
+        imageUrl: null,
+        description: '사회복지융합관',
+      ),
+      Building(
+        name: '체육관(W11)',
+        info: '체육관 시설',
+        lat: 36.335822,
+        lng: 127.443289,
+        category: '체육시설',
+        baseStatus: '운영중',
+        hours: '06:00-22:00',
+        phone: '042-821-5612',
+        imageUrl: null,
+        description: '체육관(서캠)',
+      ),
+      Building(
+        name: 'SICA(W12)',
+        info: 'SICA 시설',
+        lat: 36.335513,
+        lng: 127.443778,
+        category: '강의시설',
+        baseStatus: '운영중',
+        hours: '09:00-18:00',
+        phone: '042-821-5613',
+        imageUrl: null,
+        description: 'SICA',
+      ),
+      Building(
+        name: '우송타워(W13)',
+        info: '우송타워',
+        lat: 36.335634,
+        lng: 127.444357,
+        category: '강의시설',
+        baseStatus: '운영중',
+        hours: '09:00-18:00',
+        phone: '042-821-5614',
+        imageUrl: null,
+        description: '우송타워',
+      ),
+      Building(
+        name: 'Culinary Center(W14)',
+        info: '요리 관련 시설',
+        lat: 36.335419,
+        lng: 127.444638,
+        category: '강의시설',
+        baseStatus: '운영중',
+        hours: '09:00-18:00',
+        phone: '042-821-5615',
+        imageUrl: null,
+        description: 'Culinary Center',
+      ),
+      Building(
+        name: '식품건축관(W15)',
+        info: '식품 및 건축 관련 강의실',
+        lat: 36.335441,
+        lng: 127.445383,
+        category: '강의시설',
+        baseStatus: '운영중',
+        hours: '09:00-18:00',
+        phone: '042-821-5616',
+        imageUrl: null,
+        description: '식품건축관',
+      ),
+      Building(
+        name: '학생회관(W16)',
+        info: '학생회관 및 편의시설',
+        lat: 36.33604,
+        lng: 127.44497,
+        category: '학생시설',
+        baseStatus: '운영중',
+        hours: '09:00-18:00',
+        phone: '042-821-5617',
+        imageUrl: null,
+        description: '학생회관',
+      ),
+      Building(
+        name: 'W17 동관(W17-동관)',
+        info: 'W17 동관 시설',
+        lat: 36.3358485,
+        lng: 127.4456995,
+        category: '강의시설',
+        baseStatus: '운영중',
+        hours: '09:00-18:00',
+        phone: '042-821-5618',
+        imageUrl: null,
+        description: 'W17 동관',
+      ),
+      Building(
+        name: '미디어융합관(W17-서관)',
+        info: '미디어융합관 시설',
+        lat: 36.3359085,
+        lng: 127.4455097,
+        category: '강의시설',
+        baseStatus: '운영중',
+        hours: '09:00-18:00',
+        phone: '042-821-5619',
+        imageUrl: null,
+        description: '미디어융합관',
+      ),
+      Building(
+        name: '우송예술회관(W18)',
+        info: '예술 관련 시설',
+        lat: 36.336346,
+        lng: 127.446151,
+        category: '문화시설',
+        baseStatus: '운영중',
+        hours: '09:00-18:00',
+        phone: '042-821-5620',
+        imageUrl: null,
+        description: '우송예술회관',
+      ),
+      Building(
+        name: '앤디cut 아저씨 빌딩(W19)',
+        info: '강의실 및 실습실',
+        lat: 36.3365,
+        lng: 127.4455372,
+        category: '강의시설',
+        baseStatus: '운영중',
+        hours: '09:00-18:00',
+        phone: '042-821-5621',
+        imageUrl: null,
+        description: '앤디cut 아저씨 빌딩',
+      ),
+      Building(
+        name: '청운2숙',
+        info: '기숙사 시설',
+        lat: 36.3398982,
+        lng: 127.4470519,
+        category: '기숙사',
+        baseStatus: '24시간',
+        hours: '24시간',
+        phone: '042-821-5622',
+        imageUrl: null,
+        description: '기숙사',
       ),
       Building(
         name: '24시간 편의점',
@@ -210,12 +499,12 @@ class BuildingRepository extends ChangeNotifier {
   Future<List<Building>> _waitForLoadingComplete() async {
     int attempts = 0;
     const maxAttempts = 50; // 최대 5초 대기
-    
+
     while (_isLoading && attempts < maxAttempts) {
       await Future.delayed(const Duration(milliseconds: 100));
       attempts++;
     }
-    
+
     return _getCurrentBuildingsWithOperatingStatus();
   }
 
@@ -225,7 +514,7 @@ class BuildingRepository extends ChangeNotifier {
       AppLogger.info('BuildingRepository: 강제 새로고침', tag: 'REPO');
       _allBuildings.clear();
       _isLoaded = false;
-      
+
       final result = await getAllBuildings(forceRefresh: true);
       if (result.isFailure) {
         throw Exception('Refresh failed: ${result.error}');
@@ -237,14 +526,14 @@ class BuildingRepository extends ChangeNotifier {
   Result<List<Building>> searchBuildings(String query) {
     return ResultHelper.runSafely(() {
       if (query.isEmpty) return _getCurrentBuildingsWithOperatingStatus();
-      
+
       final lowercaseQuery = query.toLowerCase();
       final filtered = _allBuildings.where((building) {
         return building.name.toLowerCase().contains(lowercaseQuery) ||
-               building.info.toLowerCase().contains(lowercaseQuery) ||
-               building.category.toLowerCase().contains(lowercaseQuery);
+            building.info.toLowerCase().contains(lowercaseQuery) ||
+            building.category.toLowerCase().contains(lowercaseQuery);
       }).toList();
-      
+
       return filtered.map((building) {
         final autoStatus = _getAutoOperatingStatus(building.baseStatus);
         return building.copyWith(baseStatus: autoStatus);
@@ -258,7 +547,7 @@ class BuildingRepository extends ChangeNotifier {
       final filtered = _allBuildings.where((building) {
         return building.category == category;
       }).toList();
-      
+
       return filtered.map((building) {
         final autoStatus = _getAutoOperatingStatus(building.baseStatus);
         return building.copyWith(baseStatus: autoStatus);
@@ -270,18 +559,24 @@ class BuildingRepository extends ChangeNotifier {
   Result<List<Building>> getOperatingBuildings() {
     return ResultHelper.runSafely(() {
       final current = _getCurrentBuildingsWithOperatingStatus();
-      return current.where((building) => 
-        building.baseStatus == '운영중' || building.baseStatus == '24시간'
-      ).toList();
+      return current
+          .where(
+            (building) =>
+                building.baseStatus == '운영중' || building.baseStatus == '24시간',
+          )
+          .toList();
     }, 'BuildingRepository.getOperatingBuildings');
   }
 
   Result<List<Building>> getClosedBuildings() {
     return ResultHelper.runSafely(() {
       final current = _getCurrentBuildingsWithOperatingStatus();
-      return current.where((building) => 
-        building.baseStatus == '운영종료' || building.baseStatus == '임시휴무'
-      ).toList();
+      return current
+          .where(
+            (building) =>
+                building.baseStatus == '운영종료' || building.baseStatus == '임시휴무',
+          )
+          .toList();
     }, 'BuildingRepository.getClosedBuildings');
   }
 
@@ -291,7 +586,8 @@ class BuildingRepository extends ChangeNotifier {
       try {
         final current = _getCurrentBuildingsWithOperatingStatus();
         return current.firstWhere(
-          (building) => building.name.toLowerCase().contains(name.toLowerCase()),
+          (building) =>
+              building.name.toLowerCase().contains(name.toLowerCase()),
         );
       } catch (e) {
         return null;
@@ -301,19 +597,34 @@ class BuildingRepository extends ChangeNotifier {
 
   /// 🔥 데이터 변경 리스너 관리
   void addDataChangeListener(Function(List<Building>) listener) {
+    if (_isDisposed) return;
+
     _dataChangeListeners.add(listener);
-    AppLogger.debug('데이터 변경 리스너 추가 (총 ${_dataChangeListeners.length}개)', tag: 'REPO');
+    AppLogger.debug(
+      '데이터 변경 리스너 추가 (총 ${_dataChangeListeners.length}개)',
+      tag: 'REPO',
+    );
   }
 
   void removeDataChangeListener(Function(List<Building>) listener) {
+    if (_isDisposed) return;
+
     _dataChangeListeners.remove(listener);
-    AppLogger.debug('데이터 변경 리스너 제거 (총 ${_dataChangeListeners.length}개)', tag: 'REPO');
+    AppLogger.debug(
+      '데이터 변경 리스너 제거 (총 ${_dataChangeListeners.length}개)',
+      tag: 'REPO',
+    );
   }
 
   void _notifyDataChangeListeners() {
+    if (_isDisposed) return;
+
     final currentBuildings = _getCurrentBuildingsWithOperatingStatus();
-    AppLogger.debug('데이터 변경 리스너들에게 알림 (${_dataChangeListeners.length}개)', tag: 'REPO');
-    
+    AppLogger.debug(
+      '데이터 변경 리스너들에게 알림 (${_dataChangeListeners.length}개)',
+      tag: 'REPO',
+    );
+
     for (final listener in _dataChangeListeners) {
       try {
         listener(currentBuildings);
@@ -331,7 +642,7 @@ class BuildingRepository extends ChangeNotifier {
       _isLoaded = false;
       _lastLoadTime = null;
       _lastError = null;
-      notifyListeners();
+      _safeNotifyListeners();
     }, 'BuildingRepository.invalidateCache');
   }
 
@@ -340,11 +651,11 @@ class BuildingRepository extends ChangeNotifier {
     return ResultHelper.runSafely(() {
       final current = _getCurrentBuildingsWithOperatingStatus();
       final stats = <String, int>{};
-      
+
       for (final building in current) {
         stats[building.category] = (stats[building.category] ?? 0) + 1;
       }
-      
+
       AppLogger.debug('카테고리 통계: $stats', tag: 'REPO');
       return stats;
     }, 'BuildingRepository.getCategoryStats');
@@ -354,20 +665,23 @@ class BuildingRepository extends ChangeNotifier {
     return ResultHelper.runSafely(() {
       final current = _getCurrentBuildingsWithOperatingStatus();
       final stats = <String, int>{};
-      
+
       for (final building in current) {
         stats[building.baseStatus] = (stats[building.baseStatus] ?? 0) + 1;
       }
-      
+
       AppLogger.debug('운영 상태 통계: $stats', tag: 'REPO');
       return stats;
     }, 'BuildingRepository.getOperatingStats');
   }
 
-  /// 🔥 Repository 정리
+  /// 🔥 Repository 정리 - 안전한 dispose
   @override
   void dispose() {
+    if (_isDisposed) return;
+
     AppLogger.info('BuildingRepository 정리', tag: 'REPO');
+    _isDisposed = true;
     _dataChangeListeners.clear();
     _allBuildings.clear();
     super.dispose();
