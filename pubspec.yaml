@@ -32,6 +32,7 @@ dependencies:
   # http 패키지는 최신 버전인 ^1.2.1로 통합했습니다.
   # 중요: 0.13.6 버전과 큰 차이가 있으므로, http 통신 관련 코드를 수정해야 할 수 있습니다.
   http: ^1.2.1
+  uuid: ^4.5.1
 
 dev_dependencies:
   flutter_test:

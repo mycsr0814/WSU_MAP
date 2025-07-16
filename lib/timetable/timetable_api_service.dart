@@ -1,9 +1,8 @@
-//timetable_api_service.dart
-
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'timetable_item.dart';
 import 'package:flutter_application_1/config/api_config.dart';
+import 'package:uuid/uuid.dart'; // 👈 추가
 
 class TimetableApiService {
   static String get timetableBase => ApiConfig.timetableBase;
@@ -15,7 +14,16 @@ class TimetableApiService {
     final res = await http.get(Uri.parse('$timetableBase/$userId'));
     if (res.statusCode != 200) throw Exception('시간표 조회 실패');
     final List data = jsonDecode(res.body);
-    return data.map((e) => ScheduleItem.fromJson(e)).toList();
+
+    // 👇👈 요 부분만 고쳤습니다!
+    final uuid = Uuid();
+    return data.map((e) {
+      // id가 없으면 uuid 추가
+      if (e['id'] == null) {
+        e['id'] = uuid.v4();
+      }
+      return ScheduleItem.fromJson(e);
+    }).toList();
   }
 
   /// 시간표 항목 추가
@@ -73,18 +81,6 @@ class TimetableApiService {
       throw Exception('시간표 삭제 실패');
     }
   }
-
-  // 건물에 해당하는 층 조회
-  // Future<List<String>> fetchFloors(String building) async {
-  //   // 서버 확정 엔드포인트 사용!
-  //   final res = await http.get(Uri.parse('$baseUrl/floor/names/$building'));
-  //   if (res.statusCode != 200) throw Exception('층수 조회 실패');
-  //   // 서버 응답이 배열(예: ["2","3","4"])면 아래 코드 사용
-  //   final arr = jsonDecode(res.body) as List;
-  //   return arr.map((e) => e.toString()).toList();
-  //   // 만약 [{"floor":"2"}, ...] 구조면
-  //   // return arr.map((e) => e['floor'].toString()).toList();
-  // }
 
   /// 건물에 해당하는 층 조회 - (GET /floor/names/:building) 서버 구조에 100% 맞춤
   Future<List<String>> fetchFloors(String building) async {

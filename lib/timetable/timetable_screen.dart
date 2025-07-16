@@ -97,17 +97,28 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     await _loadScheduleItems();
   }
 
-  bool _isOverlapped(ScheduleItem newItem, {int? ignoreId}) {
+  bool _isOverlapped(ScheduleItem newItem, {String? ignoreId}) {
     final newStart = _parseTime(newItem.startTime);
     final newEnd = _parseTime(newItem.endTime);
 
     for (final item in _scheduleItems) {
-      if (ignoreId != null && item.id == ignoreId) continue;
+      print('item.id="${item.id}" ignoreId="$ignoreId"');
+      if (ignoreId != null &&
+          item.id != null &&
+          item.id!.trim() == ignoreId.trim())
+        continue;
       if (item.dayOfWeek != newItem.dayOfWeek) continue;
+
       final existStart = _parseTime(item.startTime);
       final existEnd = _parseTime(item.endTime);
 
+      // 걸치면 무조건 중복(에브리타임, 네이버캘린더식)
       if (newStart < existEnd && newEnd > existStart) {
+        // 디버그 로깅(실전 문제 추적용)
+        print(
+          '중복! 비교중 item.id=${item.id} vs ignoreId=$ignoreId / '
+          'start=$existStart, end=$existEnd <-> newStart=$newStart, newEnd=$newEnd',
+        );
         return true;
       }
     }
@@ -865,12 +876,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                         endTime: endTime,
                         color: selectedColor,
                       );
-                      if (_isOverlapped(
-                        newItem,
-                        ignoreId: initialItem?.id != null
-                            ? int.tryParse(initialItem!.id!)
-                            : null,
-                      )) {
+                      if (_isOverlapped(newItem, ignoreId: initialItem?.id)) {
                         Navigator.pop(context);
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
