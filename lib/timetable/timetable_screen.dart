@@ -514,7 +514,11 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       'W19',
     ];
 
-    // 초기 수정 모드인 경우 건물과 층 목록 미리 세팅
+    // 컨트롤러 변수 선언 (builder 컨트롤러 저장용)
+    TextEditingController? buildingFieldController;
+    TextEditingController? floorFieldController;
+    TextEditingController? roomFieldController;
+
     if (initialItem != null && initialItem.buildingName != null) {
       floorList = await _apiService.fetchFloors(initialItem.buildingName);
       if (initialItem.floorNumber != null) {
@@ -556,6 +560,8 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                       ),
                     ),
                     const SizedBox(height: 16),
+
+                    // ----------- [ 건물명 자동완성 입력창 ] -----------
                     TypeAheadField<String>(
                       suggestionsCallback: (pattern) async => buildingCodes
                           .where(
@@ -566,20 +572,9 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                           .toList(),
                       itemBuilder: (context, suggestion) =>
                           ListTile(title: Text(suggestion)),
-                      onSelected: (suggestion) async {
-                        selectedBuilding = suggestion;
-                        selectedFloor = null;
-                        selectedRoom = null;
-                        final fetchedFloors = await _apiService.fetchFloors(
-                          suggestion,
-                        );
-                        setState(() {
-                          floorList = fetchedFloors;
-                          roomList = [];
-                        });
-                      },
+                      // ✅ builder에서 넘겨준 controller를 builder 밖 변수에 저장!
                       builder: (context, controller, focusNode) {
-                        //controller.text = selectedBuilding ?? '';
+                        buildingFieldController = controller;
                         return TextFormField(
                           controller: controller,
                           focusNode: focusNode,
@@ -591,6 +586,10 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                             selectedBuilding = value;
                             selectedFloor = null;
                             selectedRoom = null;
+                            setState(() {
+                              floorList = [];
+                              roomList = [];
+                            });
                             if (buildingCodes.contains(value)) {
                               final fetchedFloors = await _apiService
                                   .fetchFloors(value);
@@ -598,40 +597,45 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                                 floorList = fetchedFloors;
                                 roomList = [];
                               });
-                            } else {
-                              setState(() {
-                                floorList = [];
-                                roomList = [];
-                              });
                             }
                           },
                         );
                       },
-                    ),
-                    const SizedBox(height: 8),
-                    TypeAheadField<String>(
-                      suggestionsCallback: (pattern) async => floorList
-                          .where(
-                            (floor) => floor.toLowerCase().contains(
-                              pattern.toLowerCase(),
-                            ),
-                          )
-                          .toList(),
-                      itemBuilder: (context, suggestion) =>
-                          ListTile(title: Text(suggestion)),
+                      // ✅ onSelected에서 그 controller를 활용
                       onSelected: (suggestion) async {
-                        selectedFloor = suggestion;
+                        selectedBuilding = suggestion;
+                        buildingFieldController?.text = suggestion;
+                        selectedFloor = null;
                         selectedRoom = null;
-                        final fetchedRooms = await _apiService.fetchRooms(
-                          selectedBuilding!,
+                        floorFieldController?.text = '';
+                        roomFieldController?.text = '';
+                        final fetchedFloors = await _apiService.fetchFloors(
                           suggestion,
                         );
                         setState(() {
-                          roomList = fetchedRooms;
+                          floorList = fetchedFloors;
+                          roomList = [];
                         });
                       },
+                    ),
+
+                    // ----------- [ 층 자동완성 입력창 ] -----------
+                    const SizedBox(height: 8),
+                    TypeAheadField<String>(
+                      suggestionsCallback: (pattern) async {
+                        if (pattern.trim().isEmpty) return floorList;
+                        return floorList
+                            .where(
+                              (floor) => floor.toLowerCase().contains(
+                                pattern.toLowerCase(),
+                              ),
+                            )
+                            .toList();
+                      },
+                      itemBuilder: (context, suggestion) =>
+                          ListTile(title: Text(suggestion)),
                       builder: (context, controller, focusNode) {
-                        //controller.text = selectedFloor ?? '';
+                        floorFieldController = controller;
                         return TextFormField(
                           controller: controller,
                           focusNode: focusNode,
@@ -640,26 +644,56 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                             labelText: l10n?.floor_number ?? 'Floor',
                             border: const OutlineInputBorder(),
                           ),
-                          onChanged: (value) => selectedFloor = value,
+                          onChanged: (value) async {
+                            selectedFloor = value;
+                            selectedRoom = null;
+                            roomFieldController?.text = '';
+                            setState(() => roomList = []);
+                            // **리스트에 존재하는 값만 fetchRooms**
+                            if (floorList.contains(value)) {
+                              final fetchedRooms = await _apiService.fetchRooms(
+                                selectedBuilding!,
+                                value,
+                              );
+                              setState(() {
+                                roomList = fetchedRooms;
+                              });
+                            }
+                          },
                         );
                       },
+                      onSelected: (suggestion) async {
+                        selectedFloor = suggestion;
+                        floorFieldController?.text = suggestion;
+                        selectedRoom = null;
+                        roomFieldController?.text = '';
+                        final fetchedRooms = await _apiService.fetchRooms(
+                          selectedBuilding!,
+                          suggestion,
+                        );
+                        setState(() {
+                          roomList = fetchedRooms;
+                        });
+                      },
                     ),
+
+                    // ----------- [ 강의실 자동완성 입력창 ] -----------
                     const SizedBox(height: 8),
                     TypeAheadField<String>(
-                      suggestionsCallback: (pattern) async => roomList
-                          .where(
-                            (room) => room.toLowerCase().contains(
-                              pattern.toLowerCase(),
-                            ),
-                          )
-                          .toList(),
+                      suggestionsCallback: (pattern) async {
+                        if (pattern.trim().isEmpty) return roomList;
+                        return roomList
+                            .where(
+                              (room) => room.toLowerCase().contains(
+                                pattern.toLowerCase(),
+                              ),
+                            )
+                            .toList();
+                      },
                       itemBuilder: (context, suggestion) =>
                           ListTile(title: Text(suggestion)),
-                      onSelected: (suggestion) {
-                        setState(() => selectedRoom = suggestion);
-                      },
                       builder: (context, controller, focusNode) {
-                        //controller.text = selectedRoom ?? '';
+                        roomFieldController = controller;
                         return TextFormField(
                           controller: controller,
                           focusNode: focusNode,
@@ -671,7 +705,14 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                           onChanged: (value) => selectedRoom = value,
                         );
                       },
+                      onSelected: (suggestion) {
+                        selectedRoom = suggestion;
+                        roomFieldController?.text = suggestion;
+                        setState(() {});
+                      },
                     ),
+
+                    // -------------------- 이하 생략(동일) --------------------
                     const SizedBox(height: 16),
                     DropdownButtonFormField<int>(
                       decoration: InputDecoration(
