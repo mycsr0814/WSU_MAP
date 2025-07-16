@@ -1,3 +1,5 @@
+// timetable_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
 import '../generated/app_localizations.dart';
@@ -448,404 +450,34 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     );
   }
 
-  // 여기부터 다이얼로그 부분이 바뀝니다
-  void _showAddScheduleDialog() {
+  Future<void> _showScheduleFormDialog({
+    ScheduleItem? initialItem,
+    required Future<void> Function(ScheduleItem) onSubmit,
+  }) async {
     final l10n = AppLocalizations.of(context);
-    final titleController = TextEditingController();
-    final professorController = TextEditingController();
 
-    String? selectedBuilding, selectedFloor, selectedRoom;
-    List<String> floorList = [];
-    List<String> roomList = [];
-
-    int selectedDay = 1;
-    String startTime = '09:00';
-    String endTime = '10:30';
-    Color selectedColor = const Color(0xFF3B82F6);
-
-    final colors = [
-      const Color(0xFF3B82F6),
-      const Color(0xFF10B981),
-      const Color(0xFFEF4444),
-      const Color(0xFF8B5CF6),
-      const Color(0xFFF59E0B),
-      const Color(0xFF06B6D4),
-      const Color(0xFFEC4899),
-      const Color(0xFF84CC16),
-    ];
-
-    final List<String> buildingCodes = [
-      'W1',
-      'W2',
-      'W2-1',
-      'W3',
-      'W4',
-      'W5',
-      'W6',
-      'W7',
-      'W8',
-      'W9',
-      'W10',
-      'W11',
-      'W12',
-      'W13',
-      'W14',
-      'W15',
-      'W16',
-      'W17-동관',
-      'W17-서관',
-      'W18',
-      'W19',
-    ];
-
-    showDialog(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          title: Text(l10n?.add_class ?? 'Add Class'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: titleController,
-                  decoration: InputDecoration(
-                    labelText: l10n?.class_name ?? 'Class Name',
-                    border: const OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: professorController,
-                  decoration: InputDecoration(
-                    labelText: l10n?.professor_name ?? 'Professor',
-                    border: const OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // ------ 건물 선택(하드코딩, 검색형) -----
-                TypeAheadField<String>(
-                  suggestionsCallback: (pattern) async {
-                    return buildingCodes
-                        .where(
-                          (code) => code.toLowerCase().contains(
-                            pattern.toLowerCase(),
-                          ),
-                        )
-                        .toList();
-                  },
-                  itemBuilder: (context, suggestion) =>
-                      ListTile(title: Text(suggestion)),
-                  onSelected: (suggestion) async {
-                    setState(() {
-                      selectedBuilding = suggestion;
-                      selectedFloor = null;
-                      selectedRoom = null;
-                      floorList = [];
-                      roomList = [];
-                    });
-                    floorList = await _apiService.fetchFloors(
-                      selectedBuilding!,
-                    );
-                    setState(() {});
-                  },
-                  builder: (context, controller, focusNode) {
-                    controller.text = selectedBuilding ?? '';
-                    return TextFormField(
-                      controller: controller,
-                      focusNode: focusNode,
-                      decoration: InputDecoration(
-                        labelText: l10n?.building_name ?? 'Building',
-                        border: const OutlineInputBorder(),
-                      ),
-                      readOnly: false,
-                      onChanged: (value) {
-                        selectedBuilding = value;
-                      },
-                    );
-                  },
-                ),
-                const SizedBox(height: 8),
-
-                // ------ 층 선택(서버, 검색형) -----
-                TypeAheadField<String>(
-                  suggestionsCallback: (pattern) async {
-                    return floorList
-                        .where(
-                          (floor) => floor.toLowerCase().contains(
-                            pattern.toLowerCase(),
-                          ),
-                        )
-                        .toList();
-                  },
-                  itemBuilder: (context, suggestion) =>
-                      ListTile(title: Text(suggestion)),
-                  onSelected: (suggestion) async {
-                    setState(() {
-                      selectedFloor = suggestion;
-                      selectedRoom = null;
-                      roomList = [];
-                    });
-                    if (selectedBuilding != null && selectedFloor != null) {
-                      roomList = await _apiService.fetchRooms(
-                        selectedBuilding!,
-                        selectedFloor!,
-                      );
-                      setState(() {});
-                    }
-                  },
-                  builder: (context, controller, focusNode) {
-                    controller.text = selectedFloor ?? '';
-                    return TextFormField(
-                      controller: controller,
-                      focusNode: focusNode,
-                      enabled: selectedBuilding != null,
-                      decoration: InputDecoration(
-                        labelText: l10n?.floor_number ?? 'Floor',
-                        border: const OutlineInputBorder(),
-                      ),
-                      readOnly: false,
-                      onChanged: (value) {
-                        selectedFloor = value;
-                      },
-                    );
-                  },
-                ),
-                const SizedBox(height: 8),
-
-                // ------ 방 선택(서버, 검색형) -----
-                TypeAheadField<String>(
-                  suggestionsCallback: (pattern) async {
-                    return roomList
-                        .where(
-                          (room) => room.toLowerCase().contains(
-                            pattern.toLowerCase(),
-                          ),
-                        )
-                        .toList();
-                  },
-                  itemBuilder: (context, suggestion) =>
-                      ListTile(title: Text(suggestion)),
-                  onSelected: (suggestion) {
-                    setState(() {
-                      selectedRoom = suggestion;
-                    });
-                  },
-                  builder: (context, controller, focusNode) {
-                    controller.text = selectedRoom ?? '';
-                    return TextFormField(
-                      controller: controller,
-                      focusNode: focusNode,
-                      enabled: selectedFloor != null,
-                      decoration: InputDecoration(
-                        labelText: l10n?.room_name ?? 'Room',
-                        border: const OutlineInputBorder(),
-                      ),
-                      readOnly: false,
-                      onChanged: (value) {
-                        selectedRoom = value;
-                      },
-                    );
-                  },
-                ),
-                const SizedBox(height: 16),
-
-                // ----- 나머지는 그대로 -----
-                DropdownButtonFormField<int>(
-                  decoration: InputDecoration(
-                    labelText: l10n?.day_of_week ?? 'Day',
-                    border: const OutlineInputBorder(),
-                  ),
-                  value: selectedDay,
-                  items: [
-                    DropdownMenuItem(
-                      value: 1,
-                      child: Text(l10n?.monday_full ?? 'Monday'),
-                    ),
-                    DropdownMenuItem(
-                      value: 2,
-                      child: Text(l10n?.tuesday_full ?? 'Tuesday'),
-                    ),
-                    DropdownMenuItem(
-                      value: 3,
-                      child: Text(l10n?.wednesday_full ?? 'Wednesday'),
-                    ),
-                    DropdownMenuItem(
-                      value: 4,
-                      child: Text(l10n?.thursday_full ?? 'Thursday'),
-                    ),
-                    DropdownMenuItem(
-                      value: 5,
-                      child: Text(l10n?.friday_full ?? 'Friday'),
-                    ),
-                  ],
-                  onChanged: (value) {
-                    setState(() => selectedDay = value!);
-                  },
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: DropdownButtonFormField<String>(
-                        decoration: InputDecoration(
-                          labelText: l10n?.start_time ?? 'Start Time',
-                          border: const OutlineInputBorder(),
-                        ),
-                        value: startTime,
-                        items: _generateTimeSlots()
-                            .map(
-                              (time) => DropdownMenuItem(
-                                value: time,
-                                child: Text(time),
-                              ),
-                            )
-                            .toList(),
-                        onChanged: (value) {
-                          setState(() {
-                            startTime = value!;
-                            var slotList = _generateTimeSlots();
-                            int idx = slotList.indexOf(startTime);
-                            if (_parseTime(endTime) <= _parseTime(startTime)) {
-                              endTime = (idx + 1 < slotList.length)
-                                  ? slotList[idx + 1]
-                                  : slotList[idx];
-                            }
-                          });
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: DropdownButtonFormField<String>(
-                        decoration: InputDecoration(
-                          labelText: l10n?.end_time ?? 'End Time',
-                          border: const OutlineInputBorder(),
-                        ),
-                        value: endTime,
-                        items: _generateTimeSlots()
-                            .where(
-                              (time) =>
-                                  _parseTime(time) > _parseTime(startTime),
-                            )
-                            .map(
-                              (time) => DropdownMenuItem(
-                                value: time,
-                                child: Text(time),
-                              ),
-                            )
-                            .toList(),
-                        onChanged: (value) {
-                          setState(() => endTime = value!);
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  l10n?.color_selection ?? 'Select Color',
-                  style: const TextStyle(fontWeight: FontWeight.w600),
-                ),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  children: colors.map((color) {
-                    return GestureDetector(
-                      onTap: () => setState(() => selectedColor = color),
-                      child: Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: color,
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: selectedColor == color
-                                ? Colors.black54
-                                : Colors.transparent,
-                            width: 2,
-                          ),
-                        ),
-                        child: selectedColor == color
-                            ? const Icon(
-                                Icons.check,
-                                color: Colors.white,
-                                size: 20,
-                              )
-                            : null,
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(l10n?.cancel ?? 'Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                if (titleController.text.isNotEmpty &&
-                    selectedBuilding?.isNotEmpty == true &&
-                    selectedFloor?.isNotEmpty == true &&
-                    selectedRoom?.isNotEmpty == true) {
-                  final newItem = ScheduleItem(
-                    title: titleController.text,
-                    professor: professorController.text,
-                    buildingName: selectedBuilding!,
-                    floorNumber: selectedFloor!,
-                    roomName: selectedRoom!,
-                    dayOfWeek: selectedDay,
-                    startTime: startTime,
-                    endTime: endTime,
-                    color: selectedColor,
-                  );
-                  if (_isOverlapped(newItem)) {
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          l10n?.overlap_message ?? '이미 같은 시간에 등록된 수업이 있습니다.',
-                        ),
-                      ),
-                    );
-                    return;
-                  }
-                  await _addScheduleItem(newItem);
-                  Navigator.pop(context);
-                }
-              },
-              child: Text(l10n?.add ?? 'Add'),
-            ),
-          ],
-        ),
-      ),
+    final titleController = TextEditingController(
+      text: initialItem?.title ?? '',
     );
-  }
+    final professorController = TextEditingController(
+      text: initialItem?.professor ?? '',
+    );
 
-  // 편집 다이얼로그도 동일 원리 적용!
-  void _showEditScheduleDialog(ScheduleItem item) {
-    final l10n = AppLocalizations.of(context);
-    final titleController = TextEditingController(text: item.title);
-    final professorController = TextEditingController(text: item.professor);
+    String? selectedBuilding = initialItem?.buildingName;
+    String? selectedFloor = initialItem?.floorNumber;
+    String? selectedRoom = initialItem?.roomName;
 
-    String? selectedBuilding = item.buildingName;
-    String? selectedFloor = item.floorNumber;
-    String? selectedRoom = item.roomName;
     List<String> floorList = [];
     List<String> roomList = [];
 
-    int selectedDay = item.dayOfWeek;
-    String startTime = item.startTime.length >= 5
-        ? item.startTime.substring(0, 5)
-        : item.startTime;
-    String endTime = item.endTime.length >= 5
-        ? item.endTime.substring(0, 5)
-        : item.endTime;
-    Color selectedColor = item.color;
+    int selectedDay = initialItem?.dayOfWeek ?? 1;
+    String startTime = initialItem?.startTime.length == 5
+        ? initialItem!.startTime
+        : '09:00';
+    String endTime = initialItem?.endTime.length == 5
+        ? initialItem!.endTime
+        : '10:30';
+    Color selectedColor = initialItem?.color ?? const Color(0xFF3B82F6);
 
     final colors = [
       const Color(0xFF3B82F6),
@@ -882,353 +514,361 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       'W19',
     ];
 
-    Future<void> loadFloorList() async {
-      if (selectedBuilding != null && floorList.isEmpty) {
-        floorList = await _apiService.fetchFloors(selectedBuilding!);
-      }
-      if (selectedBuilding != null &&
-          selectedFloor != null &&
-          roomList.isEmpty) {
+    // 초기 수정 모드인 경우 건물과 층 목록 미리 세팅
+    if (initialItem != null && initialItem.buildingName != null) {
+      floorList = await _apiService.fetchFloors(initialItem.buildingName);
+      if (initialItem.floorNumber != null) {
         roomList = await _apiService.fetchRooms(
-          selectedBuilding!,
-          selectedFloor!,
+          initialItem.buildingName,
+          initialItem.floorNumber,
         );
       }
-      setState(() {});
     }
 
-    showDialog(
+    await showDialog(
       context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) {
-          loadFloorList();
-          return AlertDialog(
-            title: Text(l10n?.edit_class ?? 'Edit Class'),
-            content: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: titleController,
-                    decoration: InputDecoration(
-                      labelText: l10n?.class_name ?? 'Class Name',
-                      border: const OutlineInputBorder(),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: Text(
+                initialItem == null
+                    ? l10n?.add_class ?? 'Add Class'
+                    : l10n?.edit_class ?? 'Edit Class',
+              ),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: titleController,
+                      decoration: InputDecoration(
+                        labelText: l10n?.class_name ?? 'Class Name',
+                        border: const OutlineInputBorder(),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: professorController,
-                    decoration: InputDecoration(
-                      labelText: l10n?.professor_name ?? 'Professor',
-                      border: const OutlineInputBorder(),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: professorController,
+                      decoration: InputDecoration(
+                        labelText: l10n?.professor_name ?? 'Professor',
+                        border: const OutlineInputBorder(),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // ------ 건물 선택(하드코딩, 검색형) -----
-                  TypeAheadField<String>(
-                    suggestionsCallback: (pattern) async {
-                      return buildingCodes
+                    const SizedBox(height: 16),
+                    TypeAheadField<String>(
+                      suggestionsCallback: (pattern) async => buildingCodes
                           .where(
                             (code) => code.toLowerCase().contains(
                               pattern.toLowerCase(),
                             ),
                           )
-                          .toList();
-                    },
-                    itemBuilder: (context, suggestion) =>
-                        ListTile(title: Text(suggestion)),
-                    onSelected: (suggestion) async {
-                      setState(() {
+                          .toList(),
+                      itemBuilder: (context, suggestion) =>
+                          ListTile(title: Text(suggestion)),
+                      onSelected: (suggestion) async {
                         selectedBuilding = suggestion;
                         selectedFloor = null;
                         selectedRoom = null;
-                        floorList = [];
-                        roomList = [];
-                      });
-                      floorList = await _apiService.fetchFloors(
-                        selectedBuilding!,
-                      );
-                      setState(() {});
-                    },
-                    builder: (context, controller, focusNode) {
-                      controller.text = selectedBuilding ?? '';
-                      return TextFormField(
-                        controller: controller,
-                        focusNode: focusNode,
-                        decoration: InputDecoration(
-                          labelText: l10n?.building_name ?? 'Building',
-                          border: const OutlineInputBorder(),
-                        ),
-                        readOnly: false,
-                        onChanged: (value) {
-                          selectedBuilding = value;
-                        },
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 8),
-
-                  // ------ 층 선택(서버, 검색형) -----
-                  TypeAheadField<String>(
-                    suggestionsCallback: (pattern) async {
-                      return floorList
+                        final fetchedFloors = await _apiService.fetchFloors(
+                          suggestion,
+                        );
+                        setState(() {
+                          floorList = fetchedFloors;
+                          roomList = [];
+                        });
+                      },
+                      builder: (context, controller, focusNode) {
+                        controller.text = selectedBuilding ?? '';
+                        return TextFormField(
+                          controller: controller,
+                          focusNode: focusNode,
+                          decoration: InputDecoration(
+                            labelText: l10n?.building_name ?? 'Building',
+                            border: const OutlineInputBorder(),
+                          ),
+                          onChanged: (value) async {
+                            selectedBuilding = value;
+                            selectedFloor = null;
+                            selectedRoom = null;
+                            if (buildingCodes.contains(value)) {
+                              final fetchedFloors = await _apiService
+                                  .fetchFloors(value);
+                              setState(() {
+                                floorList = fetchedFloors;
+                                roomList = [];
+                              });
+                            } else {
+                              setState(() {
+                                floorList = [];
+                                roomList = [];
+                              });
+                            }
+                          },
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 8),
+                    TypeAheadField<String>(
+                      suggestionsCallback: (pattern) async => floorList
                           .where(
                             (floor) => floor.toLowerCase().contains(
                               pattern.toLowerCase(),
                             ),
                           )
-                          .toList();
-                    },
-                    itemBuilder: (context, suggestion) =>
-                        ListTile(title: Text(suggestion)),
-                    onSelected: (suggestion) async {
-                      setState(() {
+                          .toList(),
+                      itemBuilder: (context, suggestion) =>
+                          ListTile(title: Text(suggestion)),
+                      onSelected: (suggestion) async {
                         selectedFloor = suggestion;
                         selectedRoom = null;
-                        roomList = [];
-                      });
-                      if (selectedBuilding != null && selectedFloor != null) {
-                        roomList = await _apiService.fetchRooms(
+                        final fetchedRooms = await _apiService.fetchRooms(
                           selectedBuilding!,
-                          selectedFloor!,
+                          suggestion,
                         );
-                        setState(() {});
-                      }
-                    },
-                    builder: (context, controller, focusNode) {
-                      controller.text = selectedFloor ?? '';
-                      return TextFormField(
-                        controller: controller,
-                        focusNode: focusNode,
-                        enabled: selectedBuilding != null,
-                        decoration: InputDecoration(
-                          labelText: l10n?.floor_number ?? 'Floor',
-                          border: const OutlineInputBorder(),
-                        ),
-                        readOnly: false,
-                        onChanged: (value) {
-                          selectedFloor = value;
-                        },
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 8),
-
-                  // ------ 방 선택(서버, 검색형) -----
-                  TypeAheadField<String>(
-                    suggestionsCallback: (pattern) async {
-                      return roomList
+                        setState(() {
+                          roomList = fetchedRooms;
+                        });
+                      },
+                      builder: (context, controller, focusNode) {
+                        controller.text = selectedFloor ?? '';
+                        return TextFormField(
+                          controller: controller,
+                          focusNode: focusNode,
+                          enabled: selectedBuilding != null,
+                          decoration: InputDecoration(
+                            labelText: l10n?.floor_number ?? 'Floor',
+                            border: const OutlineInputBorder(),
+                          ),
+                          onChanged: (value) => selectedFloor = value,
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 8),
+                    TypeAheadField<String>(
+                      suggestionsCallback: (pattern) async => roomList
                           .where(
                             (room) => room.toLowerCase().contains(
                               pattern.toLowerCase(),
                             ),
                           )
-                          .toList();
-                    },
-                    itemBuilder: (context, suggestion) =>
-                        ListTile(title: Text(suggestion)),
-                    onSelected: (suggestion) {
-                      setState(() {
-                        selectedRoom = suggestion;
-                      });
-                    },
-                    builder: (context, controller, focusNode) {
-                      controller.text = selectedRoom ?? '';
-                      return TextFormField(
-                        controller: controller,
-                        focusNode: focusNode,
-                        enabled: selectedFloor != null,
-                        decoration: InputDecoration(
-                          labelText: l10n?.room_name ?? 'Room',
-                          border: const OutlineInputBorder(),
-                        ),
-                        readOnly: false,
-                        onChanged: (value) {
-                          selectedRoom = value;
-                        },
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 16),
-
-                  DropdownButtonFormField<int>(
-                    decoration: InputDecoration(
-                      labelText: l10n?.day_of_week ?? 'Day',
-                      border: const OutlineInputBorder(),
+                          .toList(),
+                      itemBuilder: (context, suggestion) =>
+                          ListTile(title: Text(suggestion)),
+                      onSelected: (suggestion) {
+                        setState(() => selectedRoom = suggestion);
+                      },
+                      builder: (context, controller, focusNode) {
+                        controller.text = selectedRoom ?? '';
+                        return TextFormField(
+                          controller: controller,
+                          focusNode: focusNode,
+                          enabled: selectedFloor != null,
+                          decoration: InputDecoration(
+                            labelText: l10n?.room_name ?? 'Room',
+                            border: const OutlineInputBorder(),
+                          ),
+                          onChanged: (value) => selectedRoom = value,
+                        );
+                      },
                     ),
-                    value: selectedDay,
-                    items: [
-                      DropdownMenuItem(
-                        value: 1,
-                        child: Text(l10n?.monday_full ?? 'Monday'),
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<int>(
+                      decoration: InputDecoration(
+                        labelText: l10n?.day_of_week ?? 'Day',
+                        border: const OutlineInputBorder(),
                       ),
-                      DropdownMenuItem(
-                        value: 2,
-                        child: Text(l10n?.tuesday_full ?? 'Tuesday'),
-                      ),
-                      DropdownMenuItem(
-                        value: 3,
-                        child: Text(l10n?.wednesday_full ?? 'Wednesday'),
-                      ),
-                      DropdownMenuItem(
-                        value: 4,
-                        child: Text(l10n?.thursday_full ?? 'Thursday'),
-                      ),
-                      DropdownMenuItem(
-                        value: 5,
-                        child: Text(l10n?.friday_full ?? 'Friday'),
-                      ),
-                    ],
-                    onChanged: (value) {
-                      setState(() => selectedDay = value!);
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: DropdownButtonFormField<String>(
-                          decoration: InputDecoration(
-                            labelText: l10n?.start_time ?? 'Start Time',
-                            border: const OutlineInputBorder(),
-                          ),
-                          value: startTime,
-                          items: _generateTimeSlots()
-                              .map(
-                                (time) => DropdownMenuItem(
-                                  value: time,
-                                  child: Text(time),
-                                ),
-                              )
-                              .toList(),
-                          onChanged: (value) {
-                            setState(() {
-                              startTime = value!;
-                              var slotList = _generateTimeSlots();
-                              int idx = slotList.indexOf(startTime);
-                              if (_parseTime(endTime) <=
-                                  _parseTime(startTime)) {
-                                endTime = (idx + 1 < slotList.length)
-                                    ? slotList[idx + 1]
-                                    : slotList[idx];
-                              }
-                            });
-                          },
+                      value: selectedDay,
+                      items: [
+                        DropdownMenuItem(
+                          value: 1,
+                          child: Text(l10n?.monday_full ?? 'Monday'),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: DropdownButtonFormField<String>(
-                          decoration: InputDecoration(
-                            labelText: l10n?.end_time ?? 'End Time',
-                            border: const OutlineInputBorder(),
-                          ),
-                          value: endTime,
-                          items: _generateTimeSlots()
-                              .where(
-                                (time) =>
-                                    _parseTime(time) > _parseTime(startTime),
-                              )
-                              .map(
-                                (time) => DropdownMenuItem(
-                                  value: time,
-                                  child: Text(time),
-                                ),
-                              )
-                              .toList(),
-                          onChanged: (value) {
-                            setState(() => endTime = value!);
-                          },
+                        DropdownMenuItem(
+                          value: 2,
+                          child: Text(l10n?.tuesday_full ?? 'Tuesday'),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    l10n?.color_selection ?? 'Select Color',
-                    style: const TextStyle(fontWeight: FontWeight.w600),
-                  ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    children: colors.map((color) {
-                      return GestureDetector(
-                        onTap: () => setState(() => selectedColor = color),
-                        child: Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: color,
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: selectedColor == color
-                                  ? Colors.black54
-                                  : Colors.transparent,
-                              width: 2,
+                        DropdownMenuItem(
+                          value: 3,
+                          child: Text(l10n?.wednesday_full ?? 'Wednesday'),
+                        ),
+                        DropdownMenuItem(
+                          value: 4,
+                          child: Text(l10n?.thursday_full ?? 'Thursday'),
+                        ),
+                        DropdownMenuItem(
+                          value: 5,
+                          child: Text(l10n?.friday_full ?? 'Friday'),
+                        ),
+                      ],
+                      onChanged: (value) =>
+                          setState(() => selectedDay = value!),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: DropdownButtonFormField<String>(
+                            decoration: InputDecoration(
+                              labelText: l10n?.start_time ?? 'Start Time',
+                              border: const OutlineInputBorder(),
+                            ),
+                            value: startTime,
+                            items: _generateTimeSlots()
+                                .map(
+                                  (time) => DropdownMenuItem(
+                                    value: time,
+                                    child: Text(time),
+                                  ),
+                                )
+                                .toList(),
+                            onChanged: (value) {
+                              setState(() {
+                                startTime = value!;
+                                var slotList = _generateTimeSlots();
+                                int idx = slotList.indexOf(startTime);
+                                if (_parseTime(endTime) <=
+                                    _parseTime(startTime)) {
+                                  endTime = (idx + 1 < slotList.length)
+                                      ? slotList[idx + 1]
+                                      : slotList[idx];
+                                }
+                              });
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: DropdownButtonFormField<String>(
+                            decoration: InputDecoration(
+                              labelText: l10n?.end_time ?? 'End Time',
+                              border: const OutlineInputBorder(),
+                            ),
+                            value: endTime,
+                            items: _generateTimeSlots()
+                                .where(
+                                  (time) =>
+                                      _parseTime(time) > _parseTime(startTime),
+                                )
+                                .map(
+                                  (time) => DropdownMenuItem(
+                                    value: time,
+                                    child: Text(time),
+                                  ),
+                                )
+                                .toList(),
+                            onChanged: (value) =>
+                                setState(() => endTime = value!),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      l10n?.color_selection ?? 'Select Color',
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      children: colors.map((color) {
+                        return GestureDetector(
+                          onTap: () => setState(() => selectedColor = color),
+                          child: Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              color: color,
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: selectedColor == color
+                                    ? Colors.black54
+                                    : Colors.transparent,
+                                width: 2,
+                              ),
+                            ),
+                            child: selectedColor == color
+                                ? const Icon(
+                                    Icons.check,
+                                    color: Colors.white,
+                                    size: 20,
+                                  )
+                                : null,
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(l10n?.cancel ?? 'Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    if (titleController.text.isNotEmpty &&
+                        selectedBuilding?.isNotEmpty == true &&
+                        selectedFloor?.isNotEmpty == true &&
+                        selectedRoom?.isNotEmpty == true) {
+                      final newItem = ScheduleItem(
+                        id: initialItem?.id,
+                        title: titleController.text,
+                        professor: professorController.text,
+                        buildingName: selectedBuilding!,
+                        floorNumber: selectedFloor!,
+                        roomName: selectedRoom!,
+                        dayOfWeek: selectedDay,
+                        startTime: startTime,
+                        endTime: endTime,
+                        color: selectedColor,
+                      );
+                      if (_isOverlapped(
+                        newItem,
+                        ignoreId: initialItem?.id != null
+                            ? int.tryParse(initialItem!.id!)
+                            : null,
+                      )) {
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              l10n?.overlap_message ??
+                                  '이미 같은 시간에 등록된 수업이 있습니다.',
                             ),
                           ),
-                          child: selectedColor == color
-                              ? const Icon(
-                                  Icons.check,
-                                  color: Colors.white,
-                                  size: 20,
-                                )
-                              : null,
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ],
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text(l10n?.cancel ?? 'Cancel'),
-              ),
-              ElevatedButton(
-                onPressed: () async {
-                  if (titleController.text.isNotEmpty &&
-                      selectedBuilding?.isNotEmpty == true &&
-                      selectedFloor?.isNotEmpty == true &&
-                      selectedRoom?.isNotEmpty == true) {
-                    final updatedItem = ScheduleItem(
-                      id: item.id,
-                      title: titleController.text,
-                      professor: professorController.text,
-                      buildingName: selectedBuilding!,
-                      floorNumber: selectedFloor!,
-                      roomName: selectedRoom!,
-                      dayOfWeek: selectedDay,
-                      startTime: startTime,
-                      endTime: endTime,
-                      color: selectedColor,
-                    );
-                    if (_isOverlapped(
-                      updatedItem,
-                      ignoreId: item.id != null ? int.tryParse(item.id!) : null,
-                    )) {
+                        );
+                        return;
+                      }
+                      await onSubmit(newItem);
                       Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            l10n?.overlap_message ?? '이미 같은 시간에 등록된 수업이 있습니다.',
-                          ),
-                        ),
-                      );
-                      return;
                     }
-                    await _updateScheduleItem(item, updatedItem);
-                    Navigator.pop(context);
-                  }
-                },
-                child: Text(l10n?.save ?? 'Save'),
-              ),
-            ],
-          );
-        },
-      ),
+                  },
+                  child: Text(
+                    initialItem == null
+                        ? l10n?.add ?? 'Add'
+                        : l10n?.save ?? 'Save',
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showAddScheduleDialog() {
+    _showScheduleFormDialog(
+      onSubmit: (item) async => await _addScheduleItem(item),
+    );
+  }
+
+  void _showEditScheduleDialog(ScheduleItem item) {
+    _showScheduleFormDialog(
+      initialItem: item,
+      onSubmit: (newItem) async => await _updateScheduleItem(item, newItem),
     );
   }
 
@@ -1239,7 +879,45 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       builder: (context) => AlertDialog(
         title: Text(item.title),
         content: Column(
-          // ... 생략, 기존과 동일 ...
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildDetailRow(
+              Icons.person,
+              l10n?.professor_name ?? 'Professor',
+              item.professor,
+            ),
+            const SizedBox(height: 10),
+            _buildDetailRow(
+              Icons.location_city,
+              l10n?.building_name ?? 'Building',
+              item.buildingName,
+            ),
+            const SizedBox(height: 10),
+            _buildDetailRow(
+              Icons.layers,
+              l10n?.floor_number ?? 'Floor',
+              item.floorNumber,
+            ),
+            const SizedBox(height: 10),
+            _buildDetailRow(
+              Icons.meeting_room,
+              l10n?.room_name ?? 'Room',
+              item.roomName,
+            ),
+            const SizedBox(height: 10),
+            _buildDetailRow(
+              Icons.calendar_today,
+              l10n?.day_of_week ?? 'Day',
+              _getDayName(item.dayOfWeek),
+            ),
+            const SizedBox(height: 10),
+            _buildDetailRow(
+              Icons.access_time,
+              l10n?.time ?? 'Time',
+              '${item.startTime} - ${item.endTime}',
+            ),
+          ],
         ),
         actions: [
           TextButton(

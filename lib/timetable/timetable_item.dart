@@ -1,3 +1,5 @@
+//timetable_item.dart
+
 import 'package:flutter/material.dart';
 
 /// 서버와 주고받는 시간표 데이터 모델
