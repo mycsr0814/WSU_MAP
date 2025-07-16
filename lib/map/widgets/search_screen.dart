@@ -1,10 +1,12 @@
-// lib/map/widgets/search_screen.dart - 통합 검색 화면
+// lib/map/widgets/search_screen.dart - 강의실 직접 이동 기능 추가
 
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/generated/app_localizations.dart';
 import 'package:flutter_application_1/models/building.dart';
 import 'package:flutter_application_1/models/search_result.dart';
 import 'package:flutter_application_1/services/integrated_search_service.dart';
+// 🔥 BuildingMapPage import 추가
+import 'package:flutter_application_1/inside/building_map_page.dart';
 
 class SearchScreen extends StatefulWidget {
   final Function(Building) onBuildingSelected;
@@ -77,15 +79,61 @@ Future<void> _onSearchChanged() async {
   }
 }
 
-
+  // 🔥 기존 _onResultSelected 메서드 수정
   void _onResultSelected(SearchResult result) {
-    // 결과 타입에 따라 적절한 Building 객체 전달
-    final building = result.isRoom 
-        ? result.toBuildingWithRoomLocation()
-        : result.building;
+    if (result.isRoom) {
+      // 🔥 강의실인 경우 BuildingMapPage로 직접 이동
+      _navigateToRoom(result);
+    } else {
+      // 건물인 경우 기존 방식대로
+      widget.onBuildingSelected(result.building);
+      Navigator.pop(context);
+    }
+  }
+
+  // 🔥 새로 추가: 강의실로 직접 이동하는 메서드
+  void _navigateToRoom(SearchResult result) {
+    final buildingCode = _extractBuildingCode(result.building.name);
     
-    widget.onBuildingSelected(building);
-    Navigator.pop(context);
+    debugPrint('🎯 강의실로 바로 이동: ${result.displayName}');
+    debugPrint('   건물: $buildingCode');
+    debugPrint('   층: ${result.floorNumber}');
+    debugPrint('   호실: ${result.roomNumber}');
+    
+    // 사용자에게 이동 중임을 알림
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('${result.displayName}로 이동 중...'),
+        duration: const Duration(seconds: 2),
+        backgroundColor: Colors.blue,
+      ),
+    );
+    
+    // BuildingMapPage로 직접 이동
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => BuildingMapPage(
+          buildingName: buildingCode,
+          targetRoomId: result.roomNumber,      // 🔥 자동 선택할 강의실
+          targetFloorNumber: result.floorNumber, // 🔥 해당 층으로 이동
+        ),
+      ),
+    );
+  }
+
+  // 🔥 건물명에서 건물 코드 추출 헬퍼 메서드
+  String _extractBuildingCode(String buildingName) {
+    final regex = RegExp(r'\(([^)]+)\)');
+    final match = regex.firstMatch(buildingName);
+    if (match != null) {
+      return match.group(1)!;
+    }
+    final spaceSplit = buildingName.trim().split(' ');
+    if (spaceSplit.isNotEmpty && RegExp(r'^[A-Za-z0-9\-]+$').hasMatch(spaceSplit[0])) {
+      return spaceSplit[0];
+    }
+    return buildingName;
   }
 
   @override
@@ -163,7 +211,6 @@ Widget build(BuildContext context) {
   );
 }
 
-
   Widget _buildBody() {
     if (!_isSearching) {
       return _buildInitialState();
@@ -203,7 +250,6 @@ Widget build(BuildContext context) {
   );
 }
 
-
 Widget _buildLoadingState() {
   final l10n = AppLocalizations.of(context)!;
 
@@ -222,7 +268,6 @@ Widget _buildLoadingState() {
   );
 }
 
-
   Widget _buildSearchResults() {
     return ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -234,6 +279,7 @@ Widget _buildLoadingState() {
     );
   }
 
+  // 🔥 검색 결과 아이템 - 강의실 표시 개선
   Widget _buildSearchResultItem(SearchResult result) {
     return Container(
       margin: const EdgeInsets.only(bottom: 1),
@@ -270,7 +316,7 @@ Widget _buildLoadingState() {
         ),
         subtitle: Text(
           result.isRoom
-              ? result.roomDescription ?? '강의실'
+              ? '${result.floorNumber}층 • ${result.roomDescription ?? '강의실'}'  // 🔥 층 정보 추가
               : result.building.info.isNotEmpty 
                   ? result.building.info 
                   : result.building.category,
@@ -281,10 +327,23 @@ Widget _buildLoadingState() {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
-        trailing: Icon(
-          Icons.chevron_right,
-          color: Colors.grey.shade400,
-          size: 20,
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // 🔥 강의실인 경우 직접 이동 표시
+            if (result.isRoom) 
+              Icon(
+                Icons.map,
+                color: Colors.green.shade600,
+                size: 16,
+              ),
+            const SizedBox(width: 4),
+            Icon(
+              Icons.chevron_right,
+              color: Colors.grey.shade400,
+              size: 20,
+            ),
+          ],
         ),
         onTap: () => _onResultSelected(result),
       ),

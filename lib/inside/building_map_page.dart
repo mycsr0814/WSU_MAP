@@ -1,4 +1,4 @@
-// lib/page/building_map_page.dart - 통합 API 적용 + 도면 표시 문제 해결 완전판
+// lib/page/building_map_page.dart - 검색 결과 호실 자동 선택 기능 추가
 
 import 'dart:async';
 import 'dart:math';
@@ -26,6 +26,10 @@ class BuildingMapPage extends StatefulWidget {
   final List<String>? navigationNodeIds;
   final bool isArrivalNavigation;
   final UnifiedNavigationController? navigationController;
+  
+  // 🔥 검색 결과에서 호실 자동 선택을 위한 새로운 파라미터들
+  final String? targetRoomId;  // 자동으로 선택할 호실 ID
+  final int? targetFloorNumber;  // 해당 호실이 있는 층 번호
 
   const BuildingMapPage({
     super.key, 
@@ -33,6 +37,8 @@ class BuildingMapPage extends StatefulWidget {
     this.navigationNodeIds,
     this.isArrivalNavigation = false,
     this.navigationController,
+    this.targetRoomId,  // 🔥 새로 추가
+    this.targetFloorNumber,  // 🔥 새로 추가
   });
 
   @override
@@ -66,28 +72,132 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
   // 🔥 통합 네비게이션 관련 새로운 상태
   bool _isNavigationMode = false;
   List<Offset> _navigationPath = [];
+  
+  // 🔥 검색 결과 자동 선택 관련 상태
+  bool _shouldAutoSelectRoom = false;
+  String? _autoSelectRoomId;
 
 @override
 void initState() {
   super.initState();
   _isNavigationMode = widget.navigationNodeIds != null;
+  
+  // 🔥 검색 결과에서 온 경우 자동 선택 준비
+  _shouldAutoSelectRoom = widget.targetRoomId != null;
+  _autoSelectRoomId = widget.targetRoomId;
+  
   if (_isNavigationMode && widget.navigationNodeIds!.isNotEmpty) {
     // 네비게이션 모드: 첫 번째 층만 지목해서 로드
     final firstNode = widget.navigationNodeIds!.firstWhere((id) => id.contains('@'), orElse: () => '');
     final floorNum = firstNode.split('@').length >= 2 ? firstNode.split('@')[1] : '1';
     _loadFloorList(widget.buildingName, targetFloorNumber: floorNum);
   } else {
-    // 일반 모드: 첫 번째 층 자동 로드
-    _loadFloorList(widget.buildingName);
+    // 🔥 일반 모드: 타겟 층이 있으면 해당 층, 없으면 첫 번째 층 자동 로드
+    final targetFloor = widget.targetFloorNumber?.toString();
+    _loadFloorList(widget.buildingName, targetFloorNumber: targetFloor);
   }
+  
   if (_isNavigationMode) {
     _setupNavigationMode();
   }
 }
 
+  // 🔥 검색 결과 호실 자동 선택 처리
+  void _handleAutoRoomSelection() {
+    if (!_shouldAutoSelectRoom || _autoSelectRoomId == null || _buttonData.isEmpty) {
+      return;
+    }
 
+    debugPrint('🎯 자동 호실 선택 시도: $_autoSelectRoomId');
 
-  // 🔥 네비게이션 모드 설정
+    // 'R' 접두사 확인 및 추가
+    final targetRoomId = _autoSelectRoomId!.startsWith('R') 
+        ? _autoSelectRoomId! 
+        : 'R$_autoSelectRoomId';
+
+    // 버튼 데이터에서 해당 호실 찾기
+    final targetButton = _buttonData.firstWhere(
+      (button) => button['id'] == targetRoomId,
+      orElse: () => <String, dynamic>{},
+    );
+
+    if (targetButton.isNotEmpty) {
+      debugPrint('✅ 자동 선택할 호실 찾음: $targetRoomId');
+      
+      // 호실 하이라이트 및 정보 시트 표시
+      setState(() {
+        _selectedRoomId = targetRoomId;
+      });
+      
+      // 🔥 호실 위치로 카메라 포커스
+      _focusOnRoom(targetButton);
+      
+      // 🔥 잠시 후 호실 정보 시트 자동 표시
+      Timer(const Duration(milliseconds: 500), () {
+        if (mounted) {
+          _showRoomInfoSheet(context, targetRoomId);
+        }
+      });
+      
+      // 자동 선택 완료 처리
+      _shouldAutoSelectRoom = false;
+      _autoSelectRoomId = null;
+    } else {
+      debugPrint('❌ 자동 선택할 호실을 찾지 못함: $targetRoomId');
+      
+      // 호실을 찾지 못한 경우 사용자에게 알림
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('호실 $_autoSelectRoomId을(를) 찾을 수 없습니다.'),
+              backgroundColor: Colors.orange,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
+      });
+      
+      _shouldAutoSelectRoom = false;
+      _autoSelectRoomId = null;
+    }
+  }
+
+  // 🔥 특정 호실에 카메라 포커스
+  void _focusOnRoom(Map<String, dynamic> roomButton) {
+    try {
+      // 호실의 중심점 계산
+      Rect bounds;
+      if (roomButton['type'] == 'path') {
+        bounds = (roomButton['path'] as Path).getBounds();
+      } else {
+        bounds = roomButton['rect'] as Rect;
+      }
+      
+      final centerX = bounds.center.dx;
+      final centerY = bounds.center.dy;
+      
+      debugPrint('📍 호실 중심점: ($centerX, $centerY)');
+      
+      // 적절한 줌 레벨과 위치로 카메라 이동
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final targetScale = 2.0; // 적절한 줌 레벨
+        final translation = Matrix4.identity()
+          ..scale(targetScale)
+          ..translate(-centerX + 100, -centerY + 100); // 중심에서 약간 오프셋
+        
+        _transformationController.value = translation;
+        
+        // 3초 후 자동으로 줌 리셋
+        _resetScaleAfterDelay();
+      });
+      
+    } catch (e) {
+      debugPrint('❌ 호실 포커스 오류: $e');
+    }
+  }
+
+  // 🔥 기존 네비게이션 모드 설정
   void _setupNavigationMode() {
     debugPrint('🧭 네비게이션 모드 설정');
     debugPrint('   노드 개수: ${widget.navigationNodeIds?.length}');
@@ -535,6 +645,11 @@ void initState() {
           _buttonData = buttons;
           _isMapLoading = false;
         });
+        
+        // 🔥 지도 데이터 로드 완료 후 자동 호실 선택 처리
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _handleAutoRoomSelection();
+        });
       }
     } catch (e) {
       if (mounted) {
@@ -544,21 +659,6 @@ void initState() {
         });
       }
     }
-  }
-
-  void _clearAllPathInfo() {
-    _promptTimer?.cancel();
-    setState(() {
-      _startPoint = null;
-      _endPoint = null;
-      _departurePath = [];
-      _arrivalPath = [];
-      _currentShortestPath = [];
-      _transitionInfo = null;
-      _showTransitionPrompt = false;
-      _transformationController.value = Matrix4.identity();
-      _navigationPath = [];
-    });
   }
 
   Future<void> _loadNodesForFloor(
@@ -762,7 +862,86 @@ void initState() {
           _buildPathInfo(),
           _buildTransitionPrompt(),
           if (_isNavigationMode) _buildNavigationStatus(),
+          // 🔥 자동 선택 진행 중일 때 로딩 표시
+          if (_shouldAutoSelectRoom) _buildAutoSelectionIndicator(),
         ],
+      ),
+    );
+  }
+
+
+  // building_map_page.dart에 추가해야 할 누락된 메서드들
+
+// 🔥 경로 정보 초기화 메서드
+void _clearAllPathInfo() {
+  setState(() {
+    _startPoint = null;
+    _endPoint = null;
+    _departurePath = [];
+    _arrivalPath = [];
+    _currentShortestPath = [];
+    _navigationPath = [];
+    _transitionInfo = null;
+    _selectedRoomId = null;
+  });
+  
+  // 변환 컨트롤러 초기화
+  _transformationController.value = Matrix4.identity();
+  
+  debugPrint('🧹 모든 경로 정보가 초기화되었습니다');
+  
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(
+      content: Text('경로가 초기화되었습니다'),
+      duration: Duration(seconds: 2),
+      backgroundColor: Colors.grey,
+    ),
+  );
+}
+
+
+  // 🔥 자동 선택 진행 중 표시 위젯
+  Widget _buildAutoSelectionIndicator() {
+    return Positioned(
+      top: 100,
+      left: 16,
+      right: 16,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.blue.withOpacity(0.9),
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.2),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                '호실 $_autoSelectRoomId을(를) 찾는 중...',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
