@@ -547,5 +547,9 @@
   "status_next_open": "Opens at 9:00 AM",
   "status_next_close": "Closes at 6:00 PM",
   "status_next_open_tomorrow": "Opens tomorrow at 9:00 AM",
-  "office_hours": "09:00 - 18:00"
+  "office_hours": "09:00 - 18:00",
+  "building_name": "Building",
+  "floor_number": "Floor",
+  "room_name": "Room",
+  "overlap_message": "A class is already registered at this time."
 }

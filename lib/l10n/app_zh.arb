@@ -446,5 +446,9 @@
   "status_next_open": "上午 9 点开始营业",
   "status_next_close": "下午 6 点结束营业",
   "status_next_open_tomorrow": "明天上午 9 点开始营业",
-  "office_hours": "09:00 - 18:00"
+  "office_hours": "09:00 - 18:00",
+  "building_name": "建筑物",
+  "floor_number": "楼层",
+  "room_name": "教室",
+  "overlap_message": "在该时间已注册课程。"
 }

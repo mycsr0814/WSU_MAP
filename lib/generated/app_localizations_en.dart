@@ -1144,4 +1144,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get office_hours => '09:00 - 18:00';
+
+  @override
+  String get building_name => 'Building';
+
+  @override
+  String get floor_number => 'Floor';
+
+  @override
+  String get room_name => 'Room';
+
+  @override
+  String get overlap_message => 'A class is already registered at this time.';
 }
