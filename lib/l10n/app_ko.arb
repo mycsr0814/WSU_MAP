@@ -446,5 +446,9 @@
 "status_next_open": "오전 9시에 운영 시작",
 "status_next_close": "오후 6시에 운영 종료",
 "status_next_open_tomorrow": "내일 오전 9시에 운영 시작",
-"office_hours": "09:00 - 18:00"
+"office_hours": "09:00 - 18:00",
+"building_name": "건물",
+"floor_number": "층",
+"room_name": "강의실",
+"overlap_message": "이미 같은 시간에 등록된 수업이 있습니다."
 }

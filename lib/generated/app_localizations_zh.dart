@@ -1116,4 +1116,16 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get office_hours => '09:00 - 18:00';
+
+  @override
+  String get building_name => '建筑物';
+
+  @override
+  String get floor_number => '楼层';
+
+  @override
+  String get room_name => '教室';
+
+  @override
+  String get overlap_message => '在该时间已注册课程。';
 }
