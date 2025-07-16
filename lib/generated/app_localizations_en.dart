@@ -1144,4 +1144,217 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get office_hours => '09:00 - 18:00';
+
+  @override
+  String get status_24hours => '24 Hours';
+
+  @override
+  String get status_temp_closed => 'Temporarily Closed';
+
+  @override
+  String get status_closed_permanently => 'Permanently Closed';
+
+  @override
+  String get label_basic_info => 'Basic Info';
+
+  @override
+  String get label_category_type => 'Category';
+
+  @override
+  String get label_status => 'Status';
+
+  @override
+  String get label_hours => 'Operating Hours';
+
+  @override
+  String get label_phone => 'Phone Number';
+
+  @override
+  String get label_coordinates => 'Coordinates';
+
+  @override
+  String get unified_navigation => 'Unified Navigation';
+
+  @override
+  String get unified_navigation_in_progress => 'Unified Navigation in Progress';
+
+  @override
+  String get search_start_location =>
+      'Search for departure location (building or room)';
+
+  @override
+  String get search_end_location => 'Search for destination (building or room)';
+
+  @override
+  String get enter_start_location => 'Enter departure location';
+
+  @override
+  String get enter_end_location => 'Enter destination';
+
+  @override
+  String get recent_searches => 'Recent Searches';
+
+  @override
+  String get clear_all => 'Clear All';
+
+  @override
+  String get searching => 'Searching...';
+
+  @override
+  String get try_different_keyword => 'Try a different keyword';
+
+  @override
+  String get my_location => 'My Location';
+
+  @override
+  String get start_from_current_location => 'Start from current location';
+
+  @override
+  String get getting_current_location => 'Getting current location...';
+
+  @override
+  String get current_location_set_as_start =>
+      'Current location set as departure';
+
+  @override
+  String get using_default_location => 'Using default location';
+
+  @override
+  String get start_unified_navigation => 'Start Unified Navigation';
+
+  @override
+  String get set_both_locations => 'Please set both departure and destination';
+
+  @override
+  String get navigation_ended => 'Navigation ended';
+
+  @override
+  String get route_preview => 'Route Preview';
+
+  @override
+  String get calculating_optimal_route => 'Calculating optimal route...';
+
+  @override
+  String get set_departure_and_destination =>
+      'Please set departure and destination\nYou can enter building name or room number';
+
+  @override
+  String get total_distance => 'Total Distance';
+
+  @override
+  String get route_type => 'Route Type';
+
+  @override
+  String get departure_indoor => 'Departure Indoor';
+
+  @override
+  String get to_building_exit => 'To building exit';
+
+  @override
+  String get outdoor_movement => 'Outdoor Movement';
+
+  @override
+  String get to_destination_building => 'To destination building';
+
+  @override
+  String get arrival_indoor => 'Arrival Indoor';
+
+  @override
+  String get to_final_destination => 'To final destination';
+
+  @override
+  String get building_to_building => 'Building to Building';
+
+  @override
+  String get room_to_building => 'Room→Building';
+
+  @override
+  String get building_to_room => 'Building→Room';
+
+  @override
+  String get room_to_room => 'Room to Room';
+
+  @override
+  String get location_to_building => 'Location→Building';
+
+  @override
+  String get unified_route => 'Unified Route';
+
+  @override
+  String preset_room_start(Object building, Object room) {
+    return '$building Room $room set as departure';
+  }
+
+  @override
+  String preset_room_end(Object building, Object room) {
+    return '$building Room $room set as destination';
+  }
+
+  @override
+  String preset_building_start(Object building) {
+    return '$building set as departure';
+  }
+
+  @override
+  String preset_building_end(Object building) {
+    return '$building set as destination';
+  }
+
+  @override
+  String floor_room(Object floor, Object room) {
+    return 'Floor $floor Room $room';
+  }
+
+  @override
+  String get available => 'Available';
+
+  @override
+  String get current_location => 'Current Location';
+
+  @override
+  String get start_navigation_from_here =>
+      'Start navigation from current location';
+
+  @override
+  String get directions => 'Directions';
+
+  @override
+  String get navigateHere => 'Navigate Here';
+
+  @override
+  String get startLocation => 'Start';
+
+  @override
+  String get endLocation => 'Destination';
+
+  @override
+  String get floor_plans => 'Floor Plans';
+
+  @override
+  String get select_floor_to_view => 'Select each floor to view detailed plans';
+
+  @override
+  String get floor_info => 'Floor Information';
+
+  @override
+  String get view_floor_plan_button => 'View Floor Plan';
+
+  @override
+  String get no_detailed_info => 'No detailed information available.';
+
+  @override
+  String get pinch_to_zoom => 'Pinch to zoom, drag to move';
+
+  @override
+  String get floor_plan_loading_failed => 'Floor Plan Loading Failed';
+
+  @override
+  String loading_floor_plan(Object floor) {
+    return 'Loading $floor floor plan...';
+  }
+
+  @override
+  String server_info(Object building, Object floor) {
+    return 'Server: $building/$floor';
+  }
 }

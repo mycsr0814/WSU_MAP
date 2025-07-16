@@ -1116,4 +1116,213 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get office_hours => '09:00 - 18:00';
+
+  @override
+  String get status_24hours => '24小时';
+
+  @override
+  String get status_temp_closed => '临时休业';
+
+  @override
+  String get status_closed_permanently => '休业';
+
+  @override
+  String get label_basic_info => '基本信息';
+
+  @override
+  String get label_category_type => '分类';
+
+  @override
+  String get label_status => '状态';
+
+  @override
+  String get label_hours => '营业时间';
+
+  @override
+  String get label_phone => '电话号码';
+
+  @override
+  String get label_coordinates => '坐标';
+
+  @override
+  String get unified_navigation => '统一导航';
+
+  @override
+  String get unified_navigation_in_progress => '统一导航进行中';
+
+  @override
+  String get search_start_location => '请搜索出发地（建筑名或房间号）';
+
+  @override
+  String get search_end_location => '请搜索目的地（建筑名或房间号）';
+
+  @override
+  String get enter_start_location => '请输入出发地';
+
+  @override
+  String get enter_end_location => '请输入目的地';
+
+  @override
+  String get recent_searches => '最近搜索';
+
+  @override
+  String get clear_all => '全部删除';
+
+  @override
+  String get searching => '搜索中...';
+
+  @override
+  String get try_different_keyword => '请尝试其他关键词';
+
+  @override
+  String get my_location => '我的位置';
+
+  @override
+  String get start_from_current_location => '从当前位置出发';
+
+  @override
+  String get getting_current_location => '正在获取当前位置...';
+
+  @override
+  String get current_location_set_as_start => '当前位置已设为出发地';
+
+  @override
+  String get using_default_location => '使用默认位置';
+
+  @override
+  String get start_unified_navigation => '开始统一导航';
+
+  @override
+  String get set_both_locations => '请设置出发地和目的地';
+
+  @override
+  String get navigation_ended => '导航已结束';
+
+  @override
+  String get route_preview => '路线预览';
+
+  @override
+  String get calculating_optimal_route => '正在计算最优路线...';
+
+  @override
+  String get set_departure_and_destination => '请设置出发地和目的地\\n可以输入建筑名或房间号';
+
+  @override
+  String get total_distance => '总距离';
+
+  @override
+  String get route_type => '路线类型';
+
+  @override
+  String get departure_indoor => '出发地室内';
+
+  @override
+  String get to_building_exit => '到建筑出口';
+
+  @override
+  String get outdoor_movement => '室外移动';
+
+  @override
+  String get to_destination_building => '到目的地建筑';
+
+  @override
+  String get arrival_indoor => '到达地室内';
+
+  @override
+  String get to_final_destination => '到最终目的地';
+
+  @override
+  String get building_to_building => '建筑间';
+
+  @override
+  String get room_to_building => '房间→建筑';
+
+  @override
+  String get building_to_room => '建筑→房间';
+
+  @override
+  String get room_to_room => '房间间';
+
+  @override
+  String get location_to_building => '位置→建筑';
+
+  @override
+  String get unified_route => '统一路线';
+
+  @override
+  String preset_room_start(Object building, Object room) {
+    return '$building $room号房间已设为出发地';
+  }
+
+  @override
+  String preset_room_end(Object building, Object room) {
+    return '$building $room号房间已设为目的地';
+  }
+
+  @override
+  String preset_building_start(Object building) {
+    return '$building已设为出发地';
+  }
+
+  @override
+  String preset_building_end(Object building) {
+    return '$building已设为目的地';
+  }
+
+  @override
+  String floor_room(Object floor, Object room) {
+    return '$floor层$room号房间';
+  }
+
+  @override
+  String get available => '可用';
+
+  @override
+  String get current_location => '当前位置';
+
+  @override
+  String get start_navigation_from_here => '从当前位置开始导航';
+
+  @override
+  String get directions => '导航';
+
+  @override
+  String get navigateHere => '导航到这里';
+
+  @override
+  String get startLocation => '起点';
+
+  @override
+  String get endLocation => '终点';
+
+  @override
+  String get floor_plans => '楼层平面图';
+
+  @override
+  String get select_floor_to_view => '选择每层查看详细平面图';
+
+  @override
+  String get floor_info => '楼层信息';
+
+  @override
+  String get view_floor_plan_button => '查看楼层平面图';
+
+  @override
+  String get no_detailed_info => '无详细信息。';
+
+  @override
+  String get pinch_to_zoom => '捏合缩放，拖动移动';
+
+  @override
+  String get floor_plan_loading_failed => '楼层平面图加载失败';
+
+  @override
+  String loading_floor_plan(Object floor) {
+    return '正在加载$floor楼层平面图...';
+  }
+
+  @override
+  String server_info(Object building, Object floor) {
+    return '服务器: $building/$floor';
+  }
 }

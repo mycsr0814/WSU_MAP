@@ -2217,6 +2217,396 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'09:00 - 18:00'**
   String get office_hours;
+
+  /// No description provided for @status_24hours.
+  ///
+  /// In en, this message translates to:
+  /// **'24 Hours'**
+  String get status_24hours;
+
+  /// No description provided for @status_temp_closed.
+  ///
+  /// In en, this message translates to:
+  /// **'Temporarily Closed'**
+  String get status_temp_closed;
+
+  /// No description provided for @status_closed_permanently.
+  ///
+  /// In en, this message translates to:
+  /// **'Permanently Closed'**
+  String get status_closed_permanently;
+
+  /// No description provided for @label_basic_info.
+  ///
+  /// In en, this message translates to:
+  /// **'Basic Info'**
+  String get label_basic_info;
+
+  /// No description provided for @label_category_type.
+  ///
+  /// In en, this message translates to:
+  /// **'Category'**
+  String get label_category_type;
+
+  /// No description provided for @label_status.
+  ///
+  /// In en, this message translates to:
+  /// **'Status'**
+  String get label_status;
+
+  /// No description provided for @label_hours.
+  ///
+  /// In en, this message translates to:
+  /// **'Operating Hours'**
+  String get label_hours;
+
+  /// No description provided for @label_phone.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone Number'**
+  String get label_phone;
+
+  /// No description provided for @label_coordinates.
+  ///
+  /// In en, this message translates to:
+  /// **'Coordinates'**
+  String get label_coordinates;
+
+  /// No description provided for @unified_navigation.
+  ///
+  /// In en, this message translates to:
+  /// **'Unified Navigation'**
+  String get unified_navigation;
+
+  /// No description provided for @unified_navigation_in_progress.
+  ///
+  /// In en, this message translates to:
+  /// **'Unified Navigation in Progress'**
+  String get unified_navigation_in_progress;
+
+  /// No description provided for @search_start_location.
+  ///
+  /// In en, this message translates to:
+  /// **'Search for departure location (building or room)'**
+  String get search_start_location;
+
+  /// No description provided for @search_end_location.
+  ///
+  /// In en, this message translates to:
+  /// **'Search for destination (building or room)'**
+  String get search_end_location;
+
+  /// No description provided for @enter_start_location.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter departure location'**
+  String get enter_start_location;
+
+  /// No description provided for @enter_end_location.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter destination'**
+  String get enter_end_location;
+
+  /// No description provided for @recent_searches.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent Searches'**
+  String get recent_searches;
+
+  /// No description provided for @clear_all.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear All'**
+  String get clear_all;
+
+  /// No description provided for @searching.
+  ///
+  /// In en, this message translates to:
+  /// **'Searching...'**
+  String get searching;
+
+  /// No description provided for @try_different_keyword.
+  ///
+  /// In en, this message translates to:
+  /// **'Try a different keyword'**
+  String get try_different_keyword;
+
+  /// No description provided for @my_location.
+  ///
+  /// In en, this message translates to:
+  /// **'My Location'**
+  String get my_location;
+
+  /// No description provided for @start_from_current_location.
+  ///
+  /// In en, this message translates to:
+  /// **'Start from current location'**
+  String get start_from_current_location;
+
+  /// No description provided for @getting_current_location.
+  ///
+  /// In en, this message translates to:
+  /// **'Getting current location...'**
+  String get getting_current_location;
+
+  /// No description provided for @current_location_set_as_start.
+  ///
+  /// In en, this message translates to:
+  /// **'Current location set as departure'**
+  String get current_location_set_as_start;
+
+  /// No description provided for @using_default_location.
+  ///
+  /// In en, this message translates to:
+  /// **'Using default location'**
+  String get using_default_location;
+
+  /// No description provided for @start_unified_navigation.
+  ///
+  /// In en, this message translates to:
+  /// **'Start Unified Navigation'**
+  String get start_unified_navigation;
+
+  /// No description provided for @set_both_locations.
+  ///
+  /// In en, this message translates to:
+  /// **'Please set both departure and destination'**
+  String get set_both_locations;
+
+  /// No description provided for @navigation_ended.
+  ///
+  /// In en, this message translates to:
+  /// **'Navigation ended'**
+  String get navigation_ended;
+
+  /// No description provided for @route_preview.
+  ///
+  /// In en, this message translates to:
+  /// **'Route Preview'**
+  String get route_preview;
+
+  /// No description provided for @calculating_optimal_route.
+  ///
+  /// In en, this message translates to:
+  /// **'Calculating optimal route...'**
+  String get calculating_optimal_route;
+
+  /// No description provided for @set_departure_and_destination.
+  ///
+  /// In en, this message translates to:
+  /// **'Please set departure and destination\nYou can enter building name or room number'**
+  String get set_departure_and_destination;
+
+  /// No description provided for @total_distance.
+  ///
+  /// In en, this message translates to:
+  /// **'Total Distance'**
+  String get total_distance;
+
+  /// No description provided for @route_type.
+  ///
+  /// In en, this message translates to:
+  /// **'Route Type'**
+  String get route_type;
+
+  /// No description provided for @departure_indoor.
+  ///
+  /// In en, this message translates to:
+  /// **'Departure Indoor'**
+  String get departure_indoor;
+
+  /// No description provided for @to_building_exit.
+  ///
+  /// In en, this message translates to:
+  /// **'To building exit'**
+  String get to_building_exit;
+
+  /// No description provided for @outdoor_movement.
+  ///
+  /// In en, this message translates to:
+  /// **'Outdoor Movement'**
+  String get outdoor_movement;
+
+  /// No description provided for @to_destination_building.
+  ///
+  /// In en, this message translates to:
+  /// **'To destination building'**
+  String get to_destination_building;
+
+  /// No description provided for @arrival_indoor.
+  ///
+  /// In en, this message translates to:
+  /// **'Arrival Indoor'**
+  String get arrival_indoor;
+
+  /// No description provided for @to_final_destination.
+  ///
+  /// In en, this message translates to:
+  /// **'To final destination'**
+  String get to_final_destination;
+
+  /// No description provided for @building_to_building.
+  ///
+  /// In en, this message translates to:
+  /// **'Building to Building'**
+  String get building_to_building;
+
+  /// No description provided for @room_to_building.
+  ///
+  /// In en, this message translates to:
+  /// **'Room→Building'**
+  String get room_to_building;
+
+  /// No description provided for @building_to_room.
+  ///
+  /// In en, this message translates to:
+  /// **'Building→Room'**
+  String get building_to_room;
+
+  /// No description provided for @room_to_room.
+  ///
+  /// In en, this message translates to:
+  /// **'Room to Room'**
+  String get room_to_room;
+
+  /// No description provided for @location_to_building.
+  ///
+  /// In en, this message translates to:
+  /// **'Location→Building'**
+  String get location_to_building;
+
+  /// No description provided for @unified_route.
+  ///
+  /// In en, this message translates to:
+  /// **'Unified Route'**
+  String get unified_route;
+
+  /// No description provided for @preset_room_start.
+  ///
+  /// In en, this message translates to:
+  /// **'{building} Room {room} set as departure'**
+  String preset_room_start(Object building, Object room);
+
+  /// No description provided for @preset_room_end.
+  ///
+  /// In en, this message translates to:
+  /// **'{building} Room {room} set as destination'**
+  String preset_room_end(Object building, Object room);
+
+  /// No description provided for @preset_building_start.
+  ///
+  /// In en, this message translates to:
+  /// **'{building} set as departure'**
+  String preset_building_start(Object building);
+
+  /// No description provided for @preset_building_end.
+  ///
+  /// In en, this message translates to:
+  /// **'{building} set as destination'**
+  String preset_building_end(Object building);
+
+  /// No description provided for @floor_room.
+  ///
+  /// In en, this message translates to:
+  /// **'Floor {floor} Room {room}'**
+  String floor_room(Object floor, Object room);
+
+  /// No description provided for @available.
+  ///
+  /// In en, this message translates to:
+  /// **'Available'**
+  String get available;
+
+  /// No description provided for @current_location.
+  ///
+  /// In en, this message translates to:
+  /// **'Current Location'**
+  String get current_location;
+
+  /// No description provided for @start_navigation_from_here.
+  ///
+  /// In en, this message translates to:
+  /// **'Start navigation from current location'**
+  String get start_navigation_from_here;
+
+  /// No description provided for @directions.
+  ///
+  /// In en, this message translates to:
+  /// **'Directions'**
+  String get directions;
+
+  /// No description provided for @navigateHere.
+  ///
+  /// In en, this message translates to:
+  /// **'Navigate Here'**
+  String get navigateHere;
+
+  /// No description provided for @startLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Start'**
+  String get startLocation;
+
+  /// No description provided for @endLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Destination'**
+  String get endLocation;
+
+  /// No description provided for @floor_plans.
+  ///
+  /// In en, this message translates to:
+  /// **'Floor Plans'**
+  String get floor_plans;
+
+  /// No description provided for @select_floor_to_view.
+  ///
+  /// In en, this message translates to:
+  /// **'Select each floor to view detailed plans'**
+  String get select_floor_to_view;
+
+  /// No description provided for @floor_info.
+  ///
+  /// In en, this message translates to:
+  /// **'Floor Information'**
+  String get floor_info;
+
+  /// No description provided for @view_floor_plan_button.
+  ///
+  /// In en, this message translates to:
+  /// **'View Floor Plan'**
+  String get view_floor_plan_button;
+
+  /// No description provided for @no_detailed_info.
+  ///
+  /// In en, this message translates to:
+  /// **'No detailed information available.'**
+  String get no_detailed_info;
+
+  /// No description provided for @pinch_to_zoom.
+  ///
+  /// In en, this message translates to:
+  /// **'Pinch to zoom, drag to move'**
+  String get pinch_to_zoom;
+
+  /// No description provided for @floor_plan_loading_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Floor Plan Loading Failed'**
+  String get floor_plan_loading_failed;
+
+  /// No description provided for @loading_floor_plan.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading {floor} floor plan...'**
+  String loading_floor_plan(Object floor);
+
+  /// No description provided for @server_info.
+  ///
+  /// In en, this message translates to:
+  /// **'Server: {building}/{floor}'**
+  String server_info(Object building, Object floor);
 }
 
 class _AppLocalizationsDelegate
