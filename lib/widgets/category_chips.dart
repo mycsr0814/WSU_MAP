@@ -111,7 +111,7 @@ class _CategoryChipsState extends State<CategoryChips> {
           debugPrint('📡 서버에서 카테고리별 건물 조회 시도...');
 
           final response = await http.get(
-            Uri.parse('http://16.176.161.244:3001/category'),
+            Uri.parse('http://3.27.162.178:3001/category'),
             headers: {'Content-Type': 'application/json'},
           ).timeout(const Duration(seconds: 5));
 

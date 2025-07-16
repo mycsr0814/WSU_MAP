@@ -27,6 +27,9 @@ class LocationController extends ChangeNotifier {
   NMarker? _myLocationMarker; // 🔥 변수명 변경
   NCircleOverlay? _myLocationCircle; // 🔥 원형 오버레이 추가
   
+  // 🔥 모든 위치 관련 오버레이 ID 추적
+  final Set<String> _locationOverlayIds = {};
+  
   LocationController({
     LocationService? locationService,
     LocationPermissionManager? permissionManager,
@@ -159,90 +162,198 @@ class LocationController extends ChangeNotifier {
     debugPrint('✅ LocationController에 지도 컨트롤러 설정 완료');
   }
 
-  /// 🔥 사용자 위치 마커 업데이트 - 기존 스타일 적용
-  void updateUserLocationMarker(NLatLng position) {
+  /// 🔥 사용자 위치 마커 업데이트 - 가장 간단하고 확실한 방법
+  void updateUserLocationMarker(NLatLng position) async {
     if (_mapController == null) {
       debugPrint('⚠️ MapController가 null입니다');
       return;
     }
 
     try {
-      // 정확도 정보 (기본값 사용)
-      final accuracy = _currentLocation?.accuracy;
+      debugPrint('📍 위치 마커 업데이트 시작: ${position.latitude}, ${position.longitude}');
       
-      // 원형 마커와 일반 마커 모두 추가
-      _addLocationCircle(position, accuracy);
-      _addLocationMarker(position);
+      // 🔥 방법 1: MapLocationService 사용 (가장 안전)
+      final locationData = loc.LocationData.fromMap({
+        'latitude': position.latitude,
+        'longitude': position.longitude,
+        'accuracy': _currentLocation?.accuracy ?? 10.0,
+      });
       
-      debugPrint('✅ 사용자 위치 마커 업데이트 완료: ${position.latitude}, ${position.longitude}');
+      await _mapLocationService.updateMyLocation(
+        locationData,
+        shouldMoveCamera: false, // 카메라는 이동하지 않음
+      );
+      
+      debugPrint('✅ MapLocationService를 통한 위치 마커 업데이트 완료');
+      
     } catch (e) {
-      debugPrint('❌ 사용자 위치 마커 업데이트 실패: $e');
+      debugPrint('❌ MapLocationService 실패, 직접 방식 시도: $e');
+      
+      try {
+        // 🔥 방법 2: 직접 제거 후 추가
+        await _forceRemoveAndRecreate(position);
+        debugPrint('✅ 직접 방식 위치 마커 업데이트 완료');
+        
+      } catch (e2) {
+        debugPrint('❌ 직접 방식도 실패: $e2');
+        
+        // 🔥 방법 3: 그냥 새로 추가 (중복 허용)
+        try {
+          final accuracy = _currentLocation?.accuracy ?? 10.0;
+          await _addLocationCircle(position, accuracy);
+          debugPrint('✅ 새 마커 추가 완료 (중복 가능)');
+        } catch (e3) {
+          debugPrint('❌ 모든 방법 실패: $e3');
+        }
+      }
     }
   }
 
-  /// 원형 위치 마커 추가 (정확도 표시)
-  Future<void> _addLocationCircle(NLatLng location, double? accuracy) async {
+  /// 🔥 강제 제거 후 재생성
+  Future<void> _forceRemoveAndRecreate(NLatLng position) async {
+    // 1. 기존 참조로 제거 시도
+    if (_myLocationMarker != null) {
+      try {
+        await _mapController!.deleteOverlay(_myLocationMarker!.info);
+        debugPrint('🗑️ 기존 마커 제거됨');
+      } catch (e) {
+        debugPrint('⚠️ 기존 마커 제거 실패: $e');
+      }
+      _myLocationMarker = null;
+    }
+    
+    if (_myLocationCircle != null) {
+      try {
+        await _mapController!.deleteOverlay(_myLocationCircle!.info);
+        debugPrint('🗑️ 기존 원형 제거됨');
+      } catch (e) {
+        debugPrint('⚠️ 기존 원형 제거 실패: $e');
+      }
+      _myLocationCircle = null;
+    }
+    
+    // 2. ID 기반 제거 시도
+    for (final overlayId in _locationOverlayIds.toList()) {
+      try {
+        final markerInfo = NOverlayInfo(type: NOverlayType.marker, id: overlayId);
+        await _mapController!.deleteOverlay(markerInfo);
+        debugPrint('🗑️ ID 마커 제거: $overlayId');
+      } catch (e1) {
+        try {
+          final circleInfo = NOverlayInfo(type: NOverlayType.circleOverlay, id: overlayId);
+          await _mapController!.deleteOverlay(circleInfo);
+          debugPrint('🗑️ ID 원형 제거: $overlayId');
+        } catch (e2) {
+          debugPrint('⚠️ ID 제거 실패: $overlayId');
+        }
+      }
+    }
+    _locationOverlayIds.clear();
+    
+    // 3. 잠시 대기
+    await Future.delayed(const Duration(milliseconds: 200));
+    
+    // 4. 새 마커 생성
+    final accuracy = _currentLocation?.accuracy ?? 10.0;
+    await _addLocationCircle(position, accuracy);
+  }
+
+  /// 🔥 모든 위치 관련 오버레이 강력 제거 - 타입별 정확한 제거
+  Future<void> _removeAllLocationOverlays() async {
+    if (_mapController == null) return;
+    
     try {
-      // 기존 원형 마커 제거
+      debugPrint('🗑️ 모든 위치 오버레이 제거 시작...');
+      
+      // 1. 마커 제거 (NMarker)
+      if (_myLocationMarker != null) {
+        try {
+          await _mapController!.deleteOverlay(_myLocationMarker!.info);
+          debugPrint('🗑️ 마커 객체 제거됨: ${_myLocationMarker!.info.id}');
+        } catch (e) {
+          debugPrint('⚠️ 마커 객체 제거 실패: $e');
+        }
+        _myLocationMarker = null;
+      }
+      
+      // 2. 원형 오버레이 제거 (NCircleOverlay)
       if (_myLocationCircle != null) {
-        _mapController!.deleteOverlay(_myLocationCircle!.info);
+        try {
+          await _mapController!.deleteOverlay(_myLocationCircle!.info);
+          debugPrint('🗑️ 원형 객체 제거됨: ${_myLocationCircle!.info.id}');
+        } catch (e) {
+          debugPrint('⚠️ 원형 객체 제거 실패: $e');
+        }
         _myLocationCircle = null;
       }
       
-      final circleRadius = accuracy != null && accuracy > 0 ? accuracy.clamp(5.0, 100.0) : 10.0;
+      // 3. ID로 추적된 모든 오버레이 제거 시도 (백업)
+      for (final overlayId in _locationOverlayIds.toList()) {
+        try {
+          // 마커 타입으로 시도
+          final markerInfo = NOverlayInfo(type: NOverlayType.marker, id: overlayId);
+          await _mapController!.deleteOverlay(markerInfo);
+          debugPrint('🗑️ 마커 ID 제거됨: $overlayId');
+        } catch (e1) {
+          try {
+            // 원형 타입으로 시도
+            final circleInfo = NOverlayInfo(type: NOverlayType.circleOverlay, id: overlayId);
+            await _mapController!.deleteOverlay(circleInfo);
+            debugPrint('🗑️ 원형 ID 제거됨: $overlayId');
+          } catch (e2) {
+            debugPrint('⚠️ 오버레이 제거 실패: $overlayId - $e2');
+          }
+        }
+      }
+      _locationOverlayIds.clear();
+      
+      // 4. 잠시 대기 (네이버맵 처리 시간)
+      await Future.delayed(const Duration(milliseconds: 150));
+      
+      debugPrint('✅ 모든 위치 오버레이 제거 완료');
+      
+    } catch (e) {
+      debugPrint('❌ 위치 오버레이 제거 중 오류: $e');
+    }
+  }
+
+  /// 원형 위치 마커 추가 (정확도 표시) - ID 추적 (fallback용) - 작은 크기
+  Future<void> _addLocationCircle(NLatLng location, double? accuracy) async {
+    try {
+      // 🔥 원 크기 줄이기: 기존 5.0~100.0 → 3.0~15.0
+      final circleRadius = accuracy != null && accuracy > 0 
+          ? accuracy.clamp(3.0, 15.0)  // 최대 15미터로 제한
+          : 8.0;  // 기본값도 8미터로 축소
       
       final circleId = 'my_location_circle_${DateTime.now().millisecondsSinceEpoch}';
       _myLocationCircle = NCircleOverlay(
         id: circleId,
         center: location,
         radius: circleRadius,
-        color: const Color(0xFF1E3A8A).withOpacity(0.3), // 파란색 투명
+        color: const Color(0xFF1E3A8A).withOpacity(0.2), // 🔥 투명도도 줄임 (0.3 → 0.2)
         outlineColor: const Color(0xFF1E3A8A),
-        outlineWidth: 2,
+        outlineWidth: 1.5, // 🔥 테두리도 얇게 (2 → 1.5)
       );
       
       await _mapController!.addOverlay(_myLocationCircle!);
+      _locationOverlayIds.add(circleId); // 🔥 ID 추적
       
-      debugPrint('✅ 위치 원형 마커 추가 (반지름: ${circleRadius}m)');
+      debugPrint('✅ 작은 위치 원형 마커 추가 (반지름: ${circleRadius}m, ID: $circleId)');
       
     } catch (e) {
       debugPrint('❌ 위치 원형 마커 추가 실패: $e');
     }
   }
 
-  /// 일반 위치 마커 추가
-  Future<void> _addLocationMarker(NLatLng location) async {
-    try {
-      // 기존 마커 제거
-      if (_myLocationMarker != null) {
-        _mapController!.deleteOverlay(_myLocationMarker!.info);
-        _myLocationMarker = null;
-      }
-      
-      final markerId = 'my_location_marker_${DateTime.now().millisecondsSinceEpoch}';
-      _myLocationMarker = NMarker(
-        id: markerId,
-        position: location,
-        caption: NOverlayCaption(
-          text: '내 위치',
-          color: Colors.white,
-          haloColor: const Color(0xFF1E3A8A),
-          textSize: 12,
-        ),
-        // 기본 마커 사용 (커스텀 아이콘 원하면 수정 가능)
-      );
-      
-      await _mapController!.addOverlay(_myLocationMarker!);
-      
-      debugPrint('✅ 위치 마커 추가');
-      
-    } catch (e) {
-      debugPrint('❌ 위치 마커 추가 실패: $e');
-    }
-  }
-
   @override
   void dispose() {
+    // 🔥 dispose 시에도 위치 오버레이 정리
+    try {
+      _forceRemoveAndRecreate(NLatLng(0, 0)); // 더미 위치로 제거만 수행
+    } catch (e) {
+      debugPrint('❌ dispose 중 오버레이 제거 실패: $e');
+    }
+    
     _permissionManager.removePermissionListener(_onPermissionChanged);
     _permissionManager.dispose();
     _locationService.dispose();
