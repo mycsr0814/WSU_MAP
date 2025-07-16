@@ -46,12 +46,6 @@ dependency_overrides:
 flutter:
   uses-material-design: true
   generate: true
-
-flutter_launcher_icons:
-  android: true
-  ios: true
-  image_path: "icon/1차아이콘.png"
-  remove_alpha_ios: true
   
   # 최종 프로젝트의 asset 목록을 그대로 유지했습니다.
   # 만약 hatesvg 프로젝트처럼 서버에서 SVG를 불러온다면 해당 asset은 제거해도 됩니다.
