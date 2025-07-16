@@ -77,6 +77,7 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
   bool _shouldAutoSelectRoom = false;
   String? _autoSelectRoomId;
 
+// 🔥 5. initState 수정 - 로딩 시작 시 사용자에게 알림
 @override
 void initState() {
   super.initState();
@@ -85,6 +86,34 @@ void initState() {
   // 🔥 검색 결과에서 온 경우 자동 선택 준비
   _shouldAutoSelectRoom = widget.targetRoomId != null;
   _autoSelectRoomId = widget.targetRoomId;
+  
+  // 🔥 로딩 시작 알림
+  if (_shouldAutoSelectRoom && widget.targetRoomId != null) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text('${widget.targetRoomId} 호실 지도를 불러오는 중...'),
+              ],
+            ),
+            duration: const Duration(seconds: 5),
+            backgroundColor: Colors.indigo,
+          ),
+        );
+      }
+    });
+  }
   
   if (_isNavigationMode && widget.navigationNodeIds!.isNotEmpty) {
     // 네비게이션 모드: 첫 번째 층만 지목해서 로드
@@ -103,99 +132,125 @@ void initState() {
 }
 
   // 🔥 검색 결과 호실 자동 선택 처리
-  void _handleAutoRoomSelection() {
-    if (!_shouldAutoSelectRoom || _autoSelectRoomId == null || _buttonData.isEmpty) {
-      return;
-    }
+  // 🔥 1. _handleAutoRoomSelection 메서드 수정 - 타이밍 최적화
+void _handleAutoRoomSelection() {
+  if (!_shouldAutoSelectRoom || _autoSelectRoomId == null || _buttonData.isEmpty) {
+    return;
+  }
 
-    debugPrint('🎯 자동 호실 선택 시도: $_autoSelectRoomId');
+  debugPrint('🎯 자동 호실 선택 시도: $_autoSelectRoomId');
 
-    // 'R' 접두사 확인 및 추가
-    final targetRoomId = _autoSelectRoomId!.startsWith('R') 
-        ? _autoSelectRoomId! 
-        : 'R$_autoSelectRoomId';
+  // 'R' 접두사 확인 및 추가
+  final targetRoomId = _autoSelectRoomId!.startsWith('R') 
+      ? _autoSelectRoomId! 
+      : 'R$_autoSelectRoomId';
 
-    // 버튼 데이터에서 해당 호실 찾기
-    final targetButton = _buttonData.firstWhere(
-      (button) => button['id'] == targetRoomId,
-      orElse: () => <String, dynamic>{},
-    );
+  // 버튼 데이터에서 해당 호실 찾기
+  final targetButton = _buttonData.firstWhere(
+    (button) => button['id'] == targetRoomId,
+    orElse: () => <String, dynamic>{},
+  );
 
-    if (targetButton.isNotEmpty) {
-      debugPrint('✅ 자동 선택할 호실 찾음: $targetRoomId');
-      
-      // 호실 하이라이트 및 정보 시트 표시
-      setState(() {
-        _selectedRoomId = targetRoomId;
-      });
-      
-      // 🔥 호실 위치로 카메라 포커스
-      _focusOnRoom(targetButton);
-      
-      // 🔥 잠시 후 호실 정보 시트 자동 표시
-      Timer(const Duration(milliseconds: 500), () {
-        if (mounted) {
-          _showRoomInfoSheet(context, targetRoomId);
-        }
-      });
-      
-      // 자동 선택 완료 처리
-      _shouldAutoSelectRoom = false;
-      _autoSelectRoomId = null;
-    } else {
-      debugPrint('❌ 자동 선택할 호실을 찾지 못함: $targetRoomId');
-      
-      // 호실을 찾지 못한 경우 사용자에게 알림
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('호실 $_autoSelectRoomId을(를) 찾을 수 없습니다.'),
-              backgroundColor: Colors.orange,
-              duration: const Duration(seconds: 3),
+  if (targetButton.isNotEmpty) {
+    debugPrint('✅ 자동 선택할 호실 찾음: $targetRoomId');
+    
+    // 🔥 즉시 호실 하이라이트 (포커스 전에)
+    setState(() {
+      _selectedRoomId = targetRoomId;
+    });
+    
+    // 🔥 로딩 표시 추가
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              ),
             ),
-          );
-        }
-      });
-      
-      _shouldAutoSelectRoom = false;
-      _autoSelectRoomId = null;
-    }
-  }
-
-  // 🔥 특정 호실에 카메라 포커스
-  void _focusOnRoom(Map<String, dynamic> roomButton) {
-    try {
-      // 호실의 중심점 계산
-      Rect bounds;
-      if (roomButton['type'] == 'path') {
-        bounds = (roomButton['path'] as Path).getBounds();
-      } else {
-        bounds = roomButton['rect'] as Rect;
+            const SizedBox(width: 12),
+            Text('$_autoSelectRoomId 호실을 찾는 중...'),
+          ],
+        ),
+        duration: const Duration(milliseconds: 1500),
+        backgroundColor: Colors.blue,
+      ),
+    );
+    
+    // 🔥 포커스를 더 빨리, 더 부드럽게
+    Future.delayed(const Duration(milliseconds: 100), () {
+      if (mounted) {
+        _focusOnRoom(targetButton);
       }
-      
-      final centerX = bounds.center.dx;
-      final centerY = bounds.center.dy;
-      
-      debugPrint('📍 호실 중심점: ($centerX, $centerY)');
-      
-      // 적절한 줌 레벨과 위치로 카메라 이동
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        final targetScale = 2.0; // 적절한 줌 레벨
-        final translation = Matrix4.identity()
-          ..scale(targetScale)
-          ..translate(-centerX + 100, -centerY + 100); // 중심에서 약간 오프셋
-        
-        _transformationController.value = translation;
-        
-        // 3초 후 자동으로 줌 리셋
-        _resetScaleAfterDelay();
-      });
-      
-    } catch (e) {
-      debugPrint('❌ 호실 포커스 오류: $e');
-    }
+    });
+    
+    // 🔥 호실 정보 시트는 포커스 완료 후
+    Future.delayed(const Duration(milliseconds: 800), () {
+      if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        _showRoomInfoSheet(context, targetRoomId);
+      }
+    });
+    
+    // 자동 선택 완료 처리
+    _shouldAutoSelectRoom = false;
+    _autoSelectRoomId = null;
+  } else {
+    debugPrint('❌ 자동 선택할 호실을 찾지 못함: $targetRoomId');
+    
+    // 호실을 찾지 못한 경우 사용자에게 알림
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('호실 $_autoSelectRoomId을(를) 찾을 수 없습니다.'),
+            backgroundColor: Colors.orange,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    });
+    
+    _shouldAutoSelectRoom = false;
+    _autoSelectRoomId = null;
   }
+}
+
+// 🔥 2. _focusOnRoom 메서드 수정 - 더 부드러운 포커스
+void _focusOnRoom(Map<String, dynamic> roomButton) {
+  try {
+    // 호실의 중심점 계산
+    Rect bounds;
+    if (roomButton['type'] == 'path') {
+      bounds = (roomButton['path'] as Path).getBounds();
+    } else {
+      bounds = roomButton['rect'] as Rect;
+    }
+    
+    final centerX = bounds.center.dx;
+    final centerY = bounds.center.dy;
+    
+    debugPrint('📍 호실 중심점: ($centerX, $centerY)');
+    
+    // 🔥 즉시 적용 (WidgetsBinding 제거)
+    final targetScale = 1.8; // 줌 레벨 살짝 줄임
+    final translation = Matrix4.identity()
+      ..scale(targetScale)
+      ..translate(-centerX + 150, -centerY + 150); // 오프셋 조정
+    
+    _transformationController.value = translation;
+    
+    // 🔥 리셋 시간 단축
+    _resetScaleAfterDelay(duration: 2000); // 2초로 단축
+    
+  } catch (e) {
+    debugPrint('❌ 호실 포커스 오류: $e');
+  }
+}
 
   // 🔥 기존 네비게이션 모드 설정
   void _setupNavigationMode() {
@@ -624,42 +679,52 @@ void initState() {
     }
   }
 
-  Future<void> _loadMapData(Map<String, dynamic> floorInfo) async {
-    setState(() => _isMapLoading = true);
+  // 🔥 4. _loadMapData 메서드 수정 - 로딩 최적화
+Future<void> _loadMapData(Map<String, dynamic> floorInfo) async {
+  setState(() => _isMapLoading = true);
 
-    try {
-      final svgUrl = floorInfo['File'] as String?;
-      if (svgUrl == null || svgUrl.isEmpty)
-        throw Exception('SVG URL이 유효하지 않습니다.');
+  try {
+    final svgUrl = floorInfo['File'] as String?;
+    if (svgUrl == null || svgUrl.isEmpty)
+      throw Exception('SVG URL이 유효하지 않습니다.');
 
-      final svgResponse = await http.get(Uri.parse(svgUrl));
-      if (svgResponse.statusCode != 200)
-        throw Exception('SVG 파일을 다운로드할 수 없습니다');
+    // 🔥 HTTP 요청 타임아웃 설정
+    final svgResponse = await http.get(
+      Uri.parse(svgUrl),
+    ).timeout(
+      const Duration(seconds: 10),
+      onTimeout: () {
+        throw Exception('SVG 로딩 시간 초과');
+      },
+    );
+    
+    if (svgResponse.statusCode != 200)
+      throw Exception('SVG 파일을 다운로드할 수 없습니다');
 
-      final svgContent = svgResponse.body;
-      final buttons = SvgDataParser.parseButtonData(svgContent);
+    final svgContent = svgResponse.body;
+    final buttons = SvgDataParser.parseButtonData(svgContent);
 
-      if (mounted) {
-        setState(() {
-          _svgUrl = svgUrl;
-          _buttonData = buttons;
-          _isMapLoading = false;
-        });
-        
-        // 🔥 지도 데이터 로드 완료 후 자동 호실 선택 처리
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          _handleAutoRoomSelection();
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isMapLoading = false;
-          _error = '지도 데이터를 불러오는 데 실패했습니다: $e';
-        });
+    if (mounted) {
+      setState(() {
+        _svgUrl = svgUrl;
+        _buttonData = buttons;
+        _isMapLoading = false;
+      });
+      
+      // 🔥 지도 데이터 로드 완료 후 즉시 자동 호실 선택 처리
+      if (_shouldAutoSelectRoom) {
+        _handleAutoRoomSelection();
       }
     }
+  } catch (e) {
+    if (mounted) {
+      setState(() {
+        _isMapLoading = false;
+        _error = '지도 데이터를 불러오는 데 실패했습니다: $e';
+      });
+    }
   }
+}
 
   Future<void> _loadNodesForFloor(
     String floorNumber,
@@ -1020,122 +1085,144 @@ void _clearAllPathInfo() {
   }
 
   // 🔥 수정된 _buildMapView - 레이어 순서 완전 변경
-  Widget _buildMapView() {
-    const double svgWidth = 210, svgHeight = 297;
+  // 🔥 6. SVG 로딩 상태 개선을 위한 _buildMapView 수정
+Widget _buildMapView() {
+  const double svgWidth = 210, svgHeight = 297;
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final baseScale = min(
-          constraints.maxWidth / svgWidth,
-          constraints.maxHeight / svgHeight,
-        );
-        final totalScale = baseScale * 1.0;
-        final svgDisplayWidth = svgWidth * totalScale * svgScale;
-        final svgDisplayHeight = svgHeight * totalScale * svgScale;
-        final leftOffset = (constraints.maxWidth - svgDisplayWidth) / 2;
-        final topOffset = (constraints.maxHeight - svgDisplayHeight) / 2;
+  return LayoutBuilder(
+    builder: (context, constraints) {
+      final baseScale = min(
+        constraints.maxWidth / svgWidth,
+        constraints.maxHeight / svgHeight,
+      );
+      final totalScale = baseScale * 1.0;
+      final svgDisplayWidth = svgWidth * totalScale * svgScale;
+      final svgDisplayHeight = svgHeight * totalScale * svgScale;
+      final leftOffset = (constraints.maxWidth - svgDisplayWidth) / 2;
+      final topOffset = (constraints.maxHeight - svgDisplayHeight) / 2;
 
-        return InteractiveViewer(
-          transformationController: _transformationController,
-          minScale: 0.5,
-          maxScale: 4.0,
-          onInteractionEnd: (details) => _resetScaleAfterDelay(),
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTapDown: (TapDownDetails details) {
-              final Offset scenePoint = _transformationController.toScene(
-                details.localPosition,
-              );
-              final Offset svgTapPosition = Offset(
-                (scenePoint.dx - leftOffset) / (totalScale * svgScale),
-                (scenePoint.dy - topOffset) / (totalScale * svgScale),
-              );
+      return InteractiveViewer(
+        transformationController: _transformationController,
+        minScale: 0.5,
+        maxScale: 4.0,
+        onInteractionEnd: (details) => _resetScaleAfterDelay(),
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTapDown: (TapDownDetails details) {
+            final Offset scenePoint = _transformationController.toScene(
+              details.localPosition,
+            );
+            final Offset svgTapPosition = Offset(
+              (scenePoint.dx - leftOffset) / (totalScale * svgScale),
+              (scenePoint.dy - topOffset) / (totalScale * svgScale),
+            );
 
-              for (var button in _buttonData.reversed) {
-                bool isHit = false;
-                if (button['type'] == 'path') {
-                  isHit = (button['path'] as Path).contains(svgTapPosition);
-                } else {
-                  isHit = (button['rect'] as Rect).contains(svgTapPosition);
-                }
-                if (isHit) {
-                  _showRoomInfoSheet(context, button['id']);
-                  break;
-                }
+            for (var button in _buttonData.reversed) {
+              bool isHit = false;
+              if (button['type'] == 'path') {
+                isHit = (button['path'] as Path).contains(svgTapPosition);
+              } else {
+                isHit = (button['rect'] as Rect).contains(svgTapPosition);
               }
-            },
-            child: SizedBox(
-              width: constraints.maxWidth,
-              height: constraints.maxHeight,
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  // 🔥 1. SVG 도면 - 최상단에 배치
+              if (isHit) {
+                _showRoomInfoSheet(context, button['id']);
+                break;
+              }
+            }
+          },
+          child: SizedBox(
+            width: constraints.maxWidth,
+            height: constraints.maxHeight,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                // 🔥 1. SVG 도면 - 로딩 최적화
+                Positioned(
+                 left: leftOffset,
+                 top: topOffset,
+                 child: SvgPicture.network(
+                   _svgUrl!,
+                   width: svgDisplayWidth,
+                   height: svgDisplayHeight,
+                   placeholderBuilder: (context) => Container(
+                     width: svgDisplayWidth,
+                     height: svgDisplayHeight,
+                     color: Colors.grey.shade100,
+                     child: Center(
+                       child: Column(
+                         mainAxisAlignment: MainAxisAlignment.center,
+                         children: [
+                           const CircularProgressIndicator(
+                             color: Colors.indigo,
+                           ),
+                           const SizedBox(height: 16),
+                           Text(
+                             '지도를 불러오는 중...',
+                             style: TextStyle(
+                               color: Colors.grey.shade600,
+                               fontSize: 14,
+                             ),
+                           ),
+                         ],
+                       ),
+                     ),
+                   ),
+                 ),
+                ),
+                
+                // 🔥 2. 경로 표시 - SVG 위에 오버레이
+                if (_currentShortestPath.isNotEmpty || _navigationPath.isNotEmpty)
                   Positioned(
                     left: leftOffset,
                     top: topOffset,
-                    child: SvgPicture.network(
-                      _svgUrl!,
-                      width: svgDisplayWidth,
-                      height: svgDisplayHeight,
-                      placeholderBuilder: (context) =>
-                          const Center(child: CircularProgressIndicator()),
-                    ),
-                  ),
-                  
-                  // 🔥 2. 경로 표시 - SVG 위에 오버레이
-                  if (_currentShortestPath.isNotEmpty || _navigationPath.isNotEmpty)
-                    Positioned(
-                      left: leftOffset,
-                      top: topOffset,
-                      child: IgnorePointer(
-                        child: CustomPaint(
-                          size: Size(svgDisplayWidth, svgDisplayHeight),
-                          painter: PathPainter(
-                            pathPoints: _navigationPath.isNotEmpty 
-                                ? _navigationPath 
-                                : _currentShortestPath,
-                            scale: totalScale * svgScale,
-                            pathColor: _isNavigationMode ? Colors.blue : null,
-                          ),
+                    child: IgnorePointer(
+                      child: CustomPaint(
+                        size: Size(svgDisplayWidth, svgDisplayHeight),
+                        painter: PathPainter(
+                          pathPoints: _navigationPath.isNotEmpty 
+                              ? _navigationPath 
+                              : _currentShortestPath,
+                          scale: totalScale * svgScale,
+                          pathColor: _isNavigationMode ? Colors.blue : null,
                         ),
                       ),
                     ),
-                  
-                  // 🔥 3. 선택된 호실 하이라이트만 - 경로 위에 오버레이
-                  if (_selectedRoomId != null)
-                    ..._buttonData.where((button) => button['id'] == _selectedRoomId).map((button) {
-                      final Rect bounds = button['type'] == 'path'
-                          ? (button['path'] as Path).getBounds()
-                          : button['rect'];
-                      final scaledRect = Rect.fromLTWH(
-                        leftOffset + bounds.left * totalScale * svgScale,
-                        topOffset + bounds.top * totalScale * svgScale,
-                        bounds.width * totalScale * svgScale,
-                        bounds.height * totalScale * svgScale,
-                      );
-                      
-                      return Positioned.fromRect(
-                        rect: scaledRect,
-                        child: IgnorePointer(
-                          child: CustomPaint(
-                            painter: RoomShapePainter(
-                              isSelected: true,
-                              shape: button['path'] ?? button['rect'],
-                            ),
-                            size: scaledRect.size,
+                  ),
+                
+                // 🔥 3. 선택된 호실 하이라이트만 - 경로 위에 오버레이
+                if (_selectedRoomId != null)
+                  ..._buttonData.where((button) => button['id'] == _selectedRoomId).map((button) {
+                    final Rect bounds = button['type'] == 'path'
+                        ? (button['path'] as Path).getBounds()
+                        : button['rect'];
+                    final scaledRect = Rect.fromLTWH(
+                      leftOffset + bounds.left * totalScale * svgScale,
+                      topOffset + bounds.top * totalScale * svgScale,
+                      bounds.width * totalScale * svgScale,
+                      bounds.height * totalScale * svgScale,
+                    );
+                    
+                    return Positioned.fromRect(
+                      rect: scaledRect,
+                      child: IgnorePointer(
+                        child: CustomPaint(
+                          painter: RoomShapePainter(
+                            isSelected: true,
+                            shape: button['path'] ?? button['rect'],
                           ),
+                          size: scaledRect.size,
                         ),
-                      );
-                    }).toList(),
-                ],
-              ),
+                      ),
+                    );
+                  }).toList(),
+              ],
             ),
           ),
-        );
-      },
-    );
-  }
+        ),
+      );
+    },
+  );
+}
 
   Widget _buildTransitionPrompt() {
     String? promptText;
@@ -1331,12 +1418,13 @@ void _clearAllPathInfo() {
     );
   }
 
-  void _resetScaleAfterDelay() {
-    _resetTimer?.cancel();
-    _resetTimer = Timer(const Duration(seconds: 3), () {
-      if (mounted) {
-        _transformationController.value = Matrix4.identity();
-      }
-    });
-  }
+  // 🔥 3. _resetScaleAfterDelay 메서드 수정 - 시간 조정 가능
+void _resetScaleAfterDelay({int duration = 3000}) {
+  _resetTimer?.cancel();
+  _resetTimer = Timer(Duration(milliseconds: duration), () {
+    if (mounted) {
+      _transformationController.value = Matrix4.identity();
+    }
+  });
+}
 }
