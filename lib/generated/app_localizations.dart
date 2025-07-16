@@ -2013,6 +2013,210 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Your account has been deleted.'**
   String get delete_account_success;
+
+  /// No description provided for @convenience_store.
+  ///
+  /// In en, this message translates to:
+  /// **'Convenience Store'**
+  String get convenience_store;
+
+  /// No description provided for @vending_machine.
+  ///
+  /// In en, this message translates to:
+  /// **'Vending Machine'**
+  String get vending_machine;
+
+  /// No description provided for @printer.
+  ///
+  /// In en, this message translates to:
+  /// **'Printer'**
+  String get printer;
+
+  /// No description provided for @copier.
+  ///
+  /// In en, this message translates to:
+  /// **'Copier'**
+  String get copier;
+
+  /// No description provided for @atm.
+  ///
+  /// In en, this message translates to:
+  /// **'ATM'**
+  String get atm;
+
+  /// No description provided for @bank_atm.
+  ///
+  /// In en, this message translates to:
+  /// **'Bank(ATM)'**
+  String get bank_atm;
+
+  /// No description provided for @medical.
+  ///
+  /// In en, this message translates to:
+  /// **'Medical'**
+  String get medical;
+
+  /// No description provided for @health_center.
+  ///
+  /// In en, this message translates to:
+  /// **'Health Center'**
+  String get health_center;
+
+  /// No description provided for @gym.
+  ///
+  /// In en, this message translates to:
+  /// **'Gym'**
+  String get gym;
+
+  /// No description provided for @fitness_center.
+  ///
+  /// In en, this message translates to:
+  /// **'Fitness Center'**
+  String get fitness_center;
+
+  /// No description provided for @lounge.
+  ///
+  /// In en, this message translates to:
+  /// **'Lounge'**
+  String get lounge;
+
+  /// No description provided for @extinguisher.
+  ///
+  /// In en, this message translates to:
+  /// **'Extinguisher'**
+  String get extinguisher;
+
+  /// No description provided for @water_purifier.
+  ///
+  /// In en, this message translates to:
+  /// **'Water Purifier'**
+  String get water_purifier;
+
+  /// No description provided for @bookstore.
+  ///
+  /// In en, this message translates to:
+  /// **'Bookstore'**
+  String get bookstore;
+
+  /// No description provided for @post_office.
+  ///
+  /// In en, this message translates to:
+  /// **'Post Office'**
+  String get post_office;
+
+  /// No description provided for @instructionExitToOutdoor.
+  ///
+  /// In en, this message translates to:
+  /// **'Go to the building exit'**
+  String get instructionExitToOutdoor;
+
+  /// No description provided for @instructionMoveToDestination.
+  ///
+  /// In en, this message translates to:
+  /// **'Go to {place}'**
+  String instructionMoveToDestination(Object place);
+
+  /// No description provided for @instructionMoveToDestinationBuilding.
+  ///
+  /// In en, this message translates to:
+  /// **'Go to {building} building'**
+  String instructionMoveToDestinationBuilding(Object building);
+
+  /// No description provided for @instructionMoveToRoom.
+  ///
+  /// In en, this message translates to:
+  /// **'Proceed to the destination room'**
+  String get instructionMoveToRoom;
+
+  /// No description provided for @instructionArrived.
+  ///
+  /// In en, this message translates to:
+  /// **'You have arrived at your destination!'**
+  String get instructionArrived;
+
+  /// No description provided for @search_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search campus buildings'**
+  String get search_hint;
+
+  /// No description provided for @searchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search by building or room'**
+  String get searchHint;
+
+  /// No description provided for @searchInitialGuide.
+  ///
+  /// In en, this message translates to:
+  /// **'Search for a building or room'**
+  String get searchInitialGuide;
+
+  /// No description provided for @searchHintExample.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. W19, Engineering Hall, Room 401'**
+  String get searchHintExample;
+
+  /// No description provided for @searchLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Searching...'**
+  String get searchLoading;
+
+  /// No description provided for @searchNoResult.
+  ///
+  /// In en, this message translates to:
+  /// **'No results found'**
+  String get searchNoResult;
+
+  /// No description provided for @searchTryAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Try a different search term'**
+  String get searchTryAgain;
+
+  /// No description provided for @lectureRoom.
+  ///
+  /// In en, this message translates to:
+  /// **'Lecture Room'**
+  String get lectureRoom;
+
+  /// No description provided for @status_open.
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get status_open;
+
+  /// No description provided for @status_closed.
+  ///
+  /// In en, this message translates to:
+  /// **'Closed'**
+  String get status_closed;
+
+  /// No description provided for @status_next_open.
+  ///
+  /// In en, this message translates to:
+  /// **'Opens at 9:00 AM'**
+  String get status_next_open;
+
+  /// No description provided for @status_next_close.
+  ///
+  /// In en, this message translates to:
+  /// **'Closes at 6:00 PM'**
+  String get status_next_close;
+
+  /// No description provided for @status_next_open_tomorrow.
+  ///
+  /// In en, this message translates to:
+  /// **'Opens tomorrow at 9:00 AM'**
+  String get status_next_open_tomorrow;
+
+  /// No description provided for @office_hours.
+  ///
+  /// In en, this message translates to:
+  /// **'09:00 - 18:00'**
+  String get office_hours;
 }
 
 class _AppLocalizationsDelegate

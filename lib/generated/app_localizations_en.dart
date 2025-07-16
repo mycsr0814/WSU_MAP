@@ -1038,4 +1038,110 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get delete_account_success => 'Your account has been deleted.';
+
+  @override
+  String get convenience_store => 'Convenience Store';
+
+  @override
+  String get vending_machine => 'Vending Machine';
+
+  @override
+  String get printer => 'Printer';
+
+  @override
+  String get copier => 'Copier';
+
+  @override
+  String get atm => 'ATM';
+
+  @override
+  String get bank_atm => 'Bank(ATM)';
+
+  @override
+  String get medical => 'Medical';
+
+  @override
+  String get health_center => 'Health Center';
+
+  @override
+  String get gym => 'Gym';
+
+  @override
+  String get fitness_center => 'Fitness Center';
+
+  @override
+  String get lounge => 'Lounge';
+
+  @override
+  String get extinguisher => 'Extinguisher';
+
+  @override
+  String get water_purifier => 'Water Purifier';
+
+  @override
+  String get bookstore => 'Bookstore';
+
+  @override
+  String get post_office => 'Post Office';
+
+  @override
+  String get instructionExitToOutdoor => 'Go to the building exit';
+
+  @override
+  String instructionMoveToDestination(Object place) {
+    return 'Go to $place';
+  }
+
+  @override
+  String instructionMoveToDestinationBuilding(Object building) {
+    return 'Go to $building building';
+  }
+
+  @override
+  String get instructionMoveToRoom => 'Proceed to the destination room';
+
+  @override
+  String get instructionArrived => 'You have arrived at your destination!';
+
+  @override
+  String get search_hint => 'Search campus buildings';
+
+  @override
+  String get searchHint => 'Search by building or room';
+
+  @override
+  String get searchInitialGuide => 'Search for a building or room';
+
+  @override
+  String get searchHintExample => 'e.g. W19, Engineering Hall, Room 401';
+
+  @override
+  String get searchLoading => 'Searching...';
+
+  @override
+  String get searchNoResult => 'No results found';
+
+  @override
+  String get searchTryAgain => 'Try a different search term';
+
+  @override
+  String get lectureRoom => 'Lecture Room';
+
+  @override
+  String get status_open => 'Open';
+
+  @override
+  String get status_closed => 'Closed';
+
+  @override
+  String get status_next_open => 'Opens at 9:00 AM';
+
+  @override
+  String get status_next_close => 'Closes at 6:00 PM';
+
+  @override
+  String get status_next_open_tomorrow => 'Opens tomorrow at 9:00 AM';
+
+  @override
+  String get office_hours => '09:00 - 18:00';
 }

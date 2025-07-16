@@ -67,23 +67,25 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
   bool _isNavigationMode = false;
   List<Offset> _navigationPath = [];
 
-  @override
-  void initState() {
-    super.initState();
-    _isNavigationMode = widget.navigationNodeIds != null;
-    if (_isNavigationMode && widget.navigationNodeIds!.isNotEmpty) {
-      // 네비게이션 모드: 첫 번째 층만 지목해서 로드
-      final firstNode = widget.navigationNodeIds!.firstWhere((id) => id.contains('@'), orElse: () => '');
-      final floorNum = firstNode.split('@').length >= 2 ? firstNode.split('@')[1] : '1';
-      _loadFloorList(widget.buildingName, targetFloorNumber: floorNum);
-    } else {
-      // 일반 모드: 첫 번째 층 자동 로드
-      _loadFloorList(widget.buildingName);
-    }
-    if (_isNavigationMode) {
-      _setupNavigationMode();
-    }
+@override
+void initState() {
+  super.initState();
+  _isNavigationMode = widget.navigationNodeIds != null;
+  if (_isNavigationMode && widget.navigationNodeIds!.isNotEmpty) {
+    // 네비게이션 모드: 첫 번째 층만 지목해서 로드
+    final firstNode = widget.navigationNodeIds!.firstWhere((id) => id.contains('@'), orElse: () => '');
+    final floorNum = firstNode.split('@').length >= 2 ? firstNode.split('@')[1] : '1';
+    _loadFloorList(widget.buildingName, targetFloorNumber: floorNum);
+  } else {
+    // 일반 모드: 첫 번째 층 자동 로드
+    _loadFloorList(widget.buildingName);
   }
+  if (_isNavigationMode) {
+    _setupNavigationMode();
+  }
+}
+
+
 
   // 🔥 네비게이션 모드 설정
   void _setupNavigationMode() {
