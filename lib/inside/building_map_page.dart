@@ -59,7 +59,7 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
   final ApiService _apiService = ApiService();
   final TransformationController _transformationController = TransformationController();
   Timer? _resetTimer;
-  static const double svgScale = 0.7;
+  static const double svgScale = 0.9;
   bool _showTransitionPrompt = false;
   Timer? _promptTimer;
 

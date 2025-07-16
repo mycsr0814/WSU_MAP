@@ -322,8 +322,8 @@ class LocationController extends ChangeNotifier {
     try {
       // 🔥 원 크기 줄이기: 기존 5.0~100.0 → 3.0~15.0
       final circleRadius = accuracy != null && accuracy > 0 
-          ? accuracy.clamp(3.0, 15.0)  // 최대 15미터로 제한
-          : 8.0;  // 기본값도 8미터로 축소
+          ? accuracy.clamp(3.0, 10.0)  // 최대 15미터로 제한
+          : 5.0;  // 기본값도 8미터로 축소
       
       final circleId = 'my_location_circle_${DateTime.now().millisecondsSinceEpoch}';
       _myLocationCircle = NCircleOverlay(
