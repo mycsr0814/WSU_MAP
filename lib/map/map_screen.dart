@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/controllers/location_controllers.dart';
 import 'package:flutter_application_1/friends/friends_screen.dart';
+import 'package:flutter_application_1/services/map/building_marker_service.dart';
 import 'package:flutter_application_1/timetable/timetable_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_application_1/map/widgets/map_view.dart';
@@ -10,7 +11,7 @@ import 'package:flutter_application_1/map/widgets/building_info_window.dart';
 import 'package:flutter_application_1/map/widgets/building_detail_sheet.dart';
 import 'package:flutter_application_1/map/widgets/building_search_bar.dart';
 import 'package:flutter_application_1/map/widgets/map_controls.dart';
-import 'package:flutter_application_1/map/widgets/directions_screen.dart'; // 🔥 DirectionsScreen import 추가
+import 'package:flutter_application_1/map/widgets/directions_screen.dart';
 import 'package:flutter_application_1/controllers/map_controller.dart';
 import 'package:flutter_application_1/profile/profile_screen.dart';
 import 'package:flutter_application_1/map/navigation_state_manager.dart';
@@ -30,9 +31,9 @@ class MapScreen extends StatefulWidget {
 class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
   late MapScreenController _controller;
   late NavigationStateManager _navigationManager;
-
-  final OverlayPortalController _infoWindowController =
-      OverlayPortalController();
+  late BuildingMarkerService _buildingMarkerService;
+  
+  final OverlayPortalController _infoWindowController = OverlayPortalController();
   int _currentNavIndex = 0;
   bool _isInitializing = false;
 
@@ -41,6 +42,8 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     super.initState();
     _controller = MapScreenController();
     _navigationManager = NavigationStateManager();
+    _buildingMarkerService = BuildingMarkerService();
+    
     WidgetsBinding.instance.addObserver(this);
     _initializeController();
   }
@@ -53,14 +56,25 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     super.dispose();
   }
 
-  /// 지도 컨트롤러 초기화
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // context가 준비된 뒤 반드시 한 번만 호출
+    _controller.setContext(context);
+  }
+
+  /// 간소화된 초기화 - 기존 자동 이동 로직 제거
   Future<void> _initializeController() async {
     if (_isInitializing) return;
+
     try {
       _isInitializing = true;
       debugPrint('🚀 MapScreen 초기화 시작...');
+
+      // LocationController 생성 및 설정
       final locationController = LocationController();
       _controller.setLocationController(locationController);
+
       await _controller.initialize();
       debugPrint('✅ MapScreen 초기화 완료');
     } catch (e) {
@@ -165,9 +179,14 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
               const SizedBox(height: 12),
               CategoryChips(
                 selectedCategory: _controller.selectedCategory,
-                onCategorySelected: (category, buildingNames) {
+                onCategorySelected: (category, buildingNames) async {
                   debugPrint('카테고리 선택: $category, 건물 이름들: $buildingNames');
+                  // 1. 기존 마커 모두 제거
+                  await _buildingMarkerService.clearAllMarkers();
+                  // 2. 선택 상태 및 정보창 정리
+                  _controller.clearSelectedBuilding();
                   _controller.closeInfoWindow(_infoWindowController);
+                  // 3. 새 카테고리 마커만 추가
                   _controller.selectCategoryByNames(category, buildingNames);
                 },
               ),
@@ -336,7 +355,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
             ),
             const SizedBox(height: 2),
             Text(
-              l10n.friends, // 이제 오류 없음!
+              l10n.friends,
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w500,
@@ -393,7 +412,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     );
   }
 
-  // 🔥 네비게이션 상태 카드 위젯
+  /// 네비게이션 상태 카드 위젯
   Widget _buildNavigationStatusCard() {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 4),
@@ -523,7 +542,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     );
   }
 
-  // 컴팩트한 정보 아이템 위젯
+  /// 컴팩트한 정보 아이템 위젯
   Widget _buildCompactInfoItem(IconData icon, String label, String value) {
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -652,7 +671,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     );
   }
 
-  /// 🔥 위치 에러 처리 - 새로운 retryLocationPermission 사용
+  /// 위치 에러 처리 - 새로운 retryLocationPermission 사용
   Widget _buildLocationError() {
     final l10n = AppLocalizations.of(context)!;
 
@@ -711,7 +730,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                   ),
                 ),
                 const SizedBox(width: 8),
-                // 🔥 새로운 재시도 버튼 - MapController의 메서드 사용
+                // 새로운 재시도 버튼 - MapController의 메서드 사용
                 Expanded(
                   child: ElevatedButton.icon(
                     onPressed: () => _controller.retryLocationPermission(),
@@ -762,7 +781,6 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
               _navigationManager.handleDirectionsResult(result, context);
             } else {
               print('잘못된 결과 타입: $result');
-              //?
             }
           },
         );

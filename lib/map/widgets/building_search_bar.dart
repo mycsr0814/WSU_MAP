@@ -1,6 +1,7 @@
 // lib/map/widgets/building_search_bar.dart - 검색 기능만 담당
 
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/generated/app_localizations.dart';
 import 'package:flutter_application_1/models/building.dart';
 import 'package:flutter_application_1/map/widgets/search_screen.dart';
 
@@ -72,13 +73,14 @@ class BuildingSearchBar extends StatelessWidget {
                           size: 22,
                         ),
                         const SizedBox(width: 12),
-                        Text(
-                          '학교 건물을 검색해주세요',
-                          style: TextStyle(
-                            color: Colors.grey.shade500,
-                            fontSize: 15,
-                          ),
-                        ),
+Text(
+  AppLocalizations.of(context)!.search_hint,
+  style: TextStyle(
+    color: Colors.grey.shade500,
+    fontSize: 15,
+  ),
+),
+
                       ],
                     ),
                   ),

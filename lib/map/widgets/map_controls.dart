@@ -1,4 +1,3 @@
-// lib/map/widgets/map_controls.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_application_1/controllers/map_controller.dart';
@@ -22,11 +21,18 @@ class MapControls extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             _buildCompactControlButton(
-              onPressed: () => controller.toggleBuildingMarkers(),
-              icon: controller.buildingMarkersVisible ? Icons.location_on : Icons.location_off,
-              color: controller.buildingMarkersVisible
-                  ? const Color(0xFF1E3A8A)
-                  : Colors.grey.shade500,
+              onPressed: () async {
+                // 카테고리가 선택되어 있으면 전체 건물만 보이도록 상태 전환
+                if (controller.selectedCategory != null) {
+                  // 카테고리 선택 해제(전체 건물만 표시)
+                  await controller.clearCategorySelection();
+                } else {
+                  // 전체 건물 마커 토글 (숨김/표시)
+                  await controller.toggleBuildingMarkers();
+                }
+              },
+              icon: _getMainMarkerButtonIcon(),
+              color: _getMainMarkerButtonColor(),
             ),
             const SizedBox(height: 12),
             _buildMyLocationButton(locationManager),
@@ -34,6 +40,30 @@ class MapControls extends StatelessWidget {
         );
       },
     );
+  }
+
+  /// 전체 건물/카테고리 상태에 따라 아이콘 변경
+  IconData _getMainMarkerButtonIcon() {
+    if (controller.selectedCategory != null) {
+      // 카테고리 선택 중이면 전체 건물로 돌아가는 느낌의 아이콘
+      return Icons.layers; // 또는 Icons.list, 아이콘은 취향에 따라
+    } else {
+      // 전체 건물 표시/숨김 토글
+      return controller.buildingMarkersVisible ? Icons.location_on : Icons.location_off;
+    }
+  }
+
+  /// 전체 건물/카테고리 상태에 따라 색상 변경
+  Color _getMainMarkerButtonColor() {
+    if (controller.selectedCategory != null) {
+      // 카테고리 선택 중이면 강조색
+      return const Color(0xFF1E3A8A);
+    } else {
+      // 전체 건물 토글
+      return controller.buildingMarkersVisible
+          ? const Color(0xFF1E3A8A)
+          : Colors.grey.shade500;
+    }
   }
 
   Widget _buildMyLocationButton(LocationManager locationManager) {

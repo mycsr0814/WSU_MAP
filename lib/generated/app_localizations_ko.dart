@@ -1014,14 +1014,108 @@ class AppLocalizationsKo extends AppLocalizations {
   String get delete_account_success => '회원탈퇴가 완료되었습니다.';
 
   @override
-  String get building_name => '건물명';
+  String get convenience_store => '편의점';
 
   @override
-  String get floor_number => '층수';
+  String get vending_machine => '자판기';
 
   @override
-  String get room_name => '강의실';
+  String get printer => '프린터';
 
   @override
-  String get overlap_message => '이미 같은 시간에 등록된 수업이 있습니다.';
+  String get copier => '복사기';
+
+  @override
+  String get atm => 'ATM';
+
+  @override
+  String get bank_atm => '은행(atm)';
+
+  @override
+  String get medical => '의료';
+
+  @override
+  String get health_center => '보건소';
+
+  @override
+  String get gym => '체육관';
+
+  @override
+  String get fitness_center => '헬스장';
+
+  @override
+  String get lounge => '라운지';
+
+  @override
+  String get extinguisher => '소화기';
+
+  @override
+  String get water_purifier => '정수기';
+
+  @override
+  String get bookstore => '서점';
+
+  @override
+  String get post_office => '우체국';
+
+  @override
+  String get instructionExitToOutdoor => '건물 출구까지 이동하세요';
+
+  @override
+  String instructionMoveToDestination(Object place) {
+    return '$place까지 이동하세요';
+  }
+
+  @override
+  String instructionMoveToDestinationBuilding(Object building) {
+    return '$building 건물까지 이동하세요';
+  }
+
+  @override
+  String get instructionMoveToRoom => '목적지 호실까지 이동하세요';
+
+  @override
+  String get instructionArrived => '목적지에 도착했습니다!';
+
+  @override
+  String get search_hint => '학교 건물을 검색해주세요';
+
+  @override
+  String get searchHint => '건물명 또는 호실을 검색해주세요';
+
+  @override
+  String get searchInitialGuide => '건물명 또는 호실을 검색해보세요';
+
+  @override
+  String get searchHintExample => '예: W19, 공학관, 401호';
+
+  @override
+  String get searchLoading => '검색 중...';
+
+  @override
+  String get searchNoResult => '검색 결과가 없습니다';
+
+  @override
+  String get searchTryAgain => '다른 검색어로 시도해보세요';
+
+  @override
+  String get lectureRoom => '강의실';
+
+  @override
+  String get status_open => '운영중';
+
+  @override
+  String get status_closed => '운영종료';
+
+  @override
+  String get status_next_open => '오전 9시에 운영 시작';
+
+  @override
+  String get status_next_close => '오후 6시에 운영 종료';
+
+  @override
+  String get status_next_open_tomorrow => '내일 오전 9시에 운영 시작';
+
+  @override
+  String get office_hours => '09:00 - 18:00';
 }

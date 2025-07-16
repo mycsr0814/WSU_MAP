@@ -1012,14 +1012,108 @@ class AppLocalizationsZh extends AppLocalizations {
   String get delete_account_success => '您的账户已被删除。';
 
   @override
-  String get building_name => '楼名';
+  String get convenience_store => '便利店';
 
   @override
-  String get floor_number => '楼层';
+  String get vending_machine => '自动售货机';
 
   @override
-  String get room_name => '教室';
+  String get printer => '打印机';
 
   @override
-  String get overlap_message => '该时间段已安排有课程。';
+  String get copier => '复印机';
+
+  @override
+  String get atm => '自动取款机';
+
+  @override
+  String get bank_atm => '银行(ATM)';
+
+  @override
+  String get medical => '医疗';
+
+  @override
+  String get health_center => '卫生所';
+
+  @override
+  String get gym => '体育馆';
+
+  @override
+  String get fitness_center => '健身中心';
+
+  @override
+  String get lounge => '休息室';
+
+  @override
+  String get extinguisher => '灭火器';
+
+  @override
+  String get water_purifier => '饮水机';
+
+  @override
+  String get bookstore => '书店';
+
+  @override
+  String get post_office => '邮局';
+
+  @override
+  String get instructionExitToOutdoor => '请前往建筑出口';
+
+  @override
+  String instructionMoveToDestination(Object place) {
+    return '前往 $place';
+  }
+
+  @override
+  String instructionMoveToDestinationBuilding(Object building) {
+    return '前往 $building 建筑';
+  }
+
+  @override
+  String get instructionMoveToRoom => '前往目标房间';
+
+  @override
+  String get instructionArrived => '您已到达目的地！';
+
+  @override
+  String get search_hint => '请搜索校区建筑';
+
+  @override
+  String get searchHint => '请输入建筑名称或房间号进行搜索';
+
+  @override
+  String get searchInitialGuide => '搜索大楼或教室';
+
+  @override
+  String get searchHintExample => '例如：W19，工程馆，401室';
+
+  @override
+  String get searchLoading => '搜索中...';
+
+  @override
+  String get searchNoResult => '未找到搜索结果';
+
+  @override
+  String get searchTryAgain => '请尝试使用其他关键词';
+
+  @override
+  String get lectureRoom => '教室';
+
+  @override
+  String get status_open => '营业中';
+
+  @override
+  String get status_closed => '已关闭';
+
+  @override
+  String get status_next_open => '上午 9 点开始营业';
+
+  @override
+  String get status_next_close => '下午 6 点结束营业';
+
+  @override
+  String get status_next_open_tomorrow => '明天上午 9 点开始营业';
+
+  @override
+  String get office_hours => '09:00 - 18:00';
 }

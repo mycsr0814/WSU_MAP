@@ -95,63 +95,73 @@ class Building {
     );
   }
 
-  factory Building.fromServerJson(Map<String, dynamic> json) {
-    try {
-      print('📋 서버 응답 원본: $json');
-      String buildingName = json['Building_Name'] ?? json['name'] ?? '';
-      String description = json['Description'] ?? json['info'] ?? json['description'] ?? '';
-      double latitude = 0.0;
-      double longitude = 0.0;
-      final locationField = json['Location'];
-      if (locationField != null) {
-        if (locationField is String) {
-          final cleanLocation = locationField.replaceAll('(', '').replaceAll(')', '');
-          final coordinates = cleanLocation.split(',');
-          if (coordinates.length == 2) {
-            latitude = double.tryParse(coordinates[0].trim()) ?? 0.0;
-            longitude = double.tryParse(coordinates[1].trim()) ?? 0.0;
-          }
-        } else if (locationField is Map<String, dynamic>) {
-          latitude = (locationField['x'] ?? locationField['lat'] ?? 0.0).toDouble();
-          longitude = (locationField['y'] ?? locationField['lng'] ?? 0.0).toDouble();
-        }
+ factory Building.fromServerJson(Map<String, dynamic> json) {
+  try {
+    print('📋 서버 응답 원본: $json');
+
+    final String buildingName = json['Building_Name'] ?? json['name'] ?? '';
+    final String description = json['Description'] ?? json['info'] ?? json['description'] ?? '';
+
+    double latitude = 0.0;
+    double longitude = 0.0;
+
+    // 좌표 값 파싱
+    final locationField = json['Location'];
+    if (locationField is String) {
+      final cleaned = locationField.replaceAll('(', '').replaceAll(')', '');
+      final coords = cleaned.split(',');
+      if (coords.length == 2) {
+        latitude = double.tryParse(coords[0].trim()) ?? 0.0;
+        longitude = double.tryParse(coords[1].trim()) ?? 0.0;
       }
-      if (latitude == 0.0 && longitude == 0.0) {
-        latitude = (json['lat'] ?? json['latitude'] ?? 0.0).toDouble();
-        longitude = (json['lng'] ?? json['longitude'] ?? 0.0).toDouble();
-      }
-      print('📍 파싱된 좌표: ($latitude, $longitude)');
-      String category = _mapBuildingNameToCategory(buildingName);
-      String baseStatus = json['baseStatus'] ?? json['status'] ?? '운영중';
-      return Building(
-        name: buildingName,
-        info: description,
-        lat: latitude,
-        lng: longitude,
-        category: category,
-        baseStatus: baseStatus,
-        hours: json['hours'] ?? '09:00 - 18:00',
-        phone: json['phone'] ?? '042-821-5678',
-        imageUrl: json['File'] ?? json['imageUrl'],
-        description: description,
-      );
-    } catch (e) {
-      print('❌ Building.fromServerJson 오류: $e');
-      print('📋 문제가 된 JSON: $json');
-      return Building(
-        name: json['Building_Name']?.toString() ?? json['name']?.toString() ?? 'Unknown',
-        info: json['Description']?.toString() ?? json['info']?.toString() ?? '',
-        lat: 36.337,
-        lng: 127.445,
-        category: '기타',
-        baseStatus: '운영중',
-        hours: '09:00 - 18:00',
-        phone: '042-821-5678',
-        imageUrl: null,
-        description: '',
-      );
+    } else if (locationField is Map<String, dynamic>) {
+      latitude = (locationField['x'] ?? locationField['lat'] ?? 0.0).toDouble();
+      longitude = (locationField['y'] ?? locationField['lng'] ?? 0.0).toDouble();
     }
+
+    if (latitude == 0.0 && longitude == 0.0) {
+      latitude = (json['lat'] ?? json['latitude'] ?? 0.0).toDouble();
+      longitude = (json['lng'] ?? json['longitude'] ?? 0.0).toDouble();
+    }
+
+    print('📍 파싱된 좌표: ($latitude, $longitude)');
+
+    // category를 다국어 키로 매핑
+    final String category = _mapBuildingNameToCategory(buildingName);
+
+    // status는 서버로부터 영어 키 혹은 상태 문자열로 받는다
+    final String baseStatus = json['baseStatus'] ?? json['status'] ?? 'open'; // English key!
+
+    return Building(
+      name: buildingName,
+      info: description,
+      lat: latitude,
+      lng: longitude,
+      category: category,
+      baseStatus: baseStatus,
+      hours: json['hours'] ?? '09:00 - 18:00',
+      phone: json['phone'] ?? '042-821-5678',
+      imageUrl: json['File'] ?? json['imageUrl'],
+      description: description,
+    );
+  } catch (e) {
+    print('❌ Building.fromServerJson 오류: $e');
+    print('📋 문제가 된 JSON: $json');
+    return Building(
+      name: json['Building_Name']?.toString() ?? json['name']?.toString() ?? 'Unknown',
+      info: json['Description']?.toString() ?? json['info']?.toString() ?? '',
+      lat: 36.337,
+      lng: 127.445,
+      category: 'etc',        // 영어 key로 fallback
+      baseStatus: 'open',
+      hours: '09:00 - 18:00',
+      phone: '042-821-5678',
+      imageUrl: null,
+      description: '',
+    );
   }
+}
+
 
   static String _mapBuildingNameToCategory(String buildingName) {
     final name = buildingName.toLowerCase();

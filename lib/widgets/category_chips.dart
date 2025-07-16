@@ -1,4 +1,3 @@
-// lib/map/widgets/category_chips.dart - 안정화된 버전
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/models/category.dart';
@@ -27,7 +26,7 @@ class _CategoryChipsState extends State<CategoryChips> {
   bool _isApiCalling = false;
   String? _selectedCategory;
   bool _useServerData = true; // 🔥 서버 데이터 사용 여부
-  
+
   @override
   void initState() {
     super.initState();
@@ -45,11 +44,10 @@ class _CategoryChipsState extends State<CategoryChips> {
     }
   }
 
-  /// 🔥 개선된 카테고리 로딩 - fallback 지원
   Future<void> _loadCategories() async {
     try {
       if (!mounted) return;
-      
+
       setState(() {
         _isLoading = true;
         _error = null;
@@ -57,7 +55,7 @@ class _CategoryChipsState extends State<CategoryChips> {
 
       List<String> categoryNames = [];
 
-      // 🔥 1단계: 서버에서 카테고리 로딩 시도
+      // 1단계: 서버에서 카테고리 로딩 시도
       try {
         final categories = await CategoryApiService.getCategories();
         categoryNames = categories
@@ -74,8 +72,8 @@ class _CategoryChipsState extends State<CategoryChips> {
         }
       } catch (e) {
         debugPrint('⚠️ 서버 카테고리 로딩 실패: $e');
-        
-        // 🔥 2단계: Fallback 데이터 사용
+
+        // 2단계: Fallback 데이터 사용
         categoryNames = CategoryFallbackData.getCategories();
         _useServerData = false;
         debugPrint('🔄 Fallback 카테고리 데이터 사용: ${categoryNames.length}개');
@@ -89,47 +87,46 @@ class _CategoryChipsState extends State<CategoryChips> {
       });
 
       debugPrint('카테고리 로딩 완료: $_categories (서버 데이터: $_useServerData)');
-      
+
     } catch (e) {
       if (!mounted) return;
-      
+
       setState(() {
         _error = e.toString();
         _isLoading = false;
-        _categories = CategoryFallbackData.getCategories(); // 🔥 최후 fallback
+        _categories = CategoryFallbackData.getCategories(); // 최후 fallback
         _useServerData = false;
       });
       debugPrint('❌ 카테고리 로딩 완전 실패, 최후 fallback 사용: $e');
     }
   }
 
-  /// 🔥 서버/Fallback 데이터를 사용한 카테고리별 건물 가져오기
   Future<List<String>> _getCategoryBuildingNames(String category) async {
     try {
       debugPrint('🎯 getCategoryBuildingNames 호출: $category (서버 데이터: $_useServerData)');
 
-      // 🔥 서버 데이터 사용 시도
+      // 서버 데이터 사용 시도
       if (_useServerData) {
         try {
           debugPrint('📡 서버에서 카테고리별 건물 조회 시도...');
-          
+
           final response = await http.get(
-            Uri.parse('http://13.211.150.88:3001/category'),
+            Uri.parse('http://16.176.161.244:3001/category'),
             headers: {'Content-Type': 'application/json'},
           ).timeout(const Duration(seconds: 5));
 
           if (response.statusCode == 200) {
             final String responseBody = utf8.decode(response.bodyBytes);
             final List<dynamic> jsonData = json.decode(responseBody);
-            
+
             debugPrint('✅ 서버 응답 성공! 데이터 개수: ${jsonData.length}개');
-            
+
             final filteredBuildings = <String>[];
-            
+
             for (final item in jsonData) {
               final categoryName = item['Category_Name']?.toString();
               final buildingName = item['Building_Name']?.toString();
-              
+
               if (categoryName == category && buildingName != null && buildingName.isNotEmpty) {
                 if (!filteredBuildings.contains(buildingName)) {
                   filteredBuildings.add(buildingName);
@@ -151,27 +148,26 @@ class _CategoryChipsState extends State<CategoryChips> {
         }
       }
 
-      // 🔥 Fallback 데이터 사용
+      // Fallback 데이터 사용
       debugPrint('🔄 Fallback 데이터에서 건물 목록 조회...');
       final buildings = CategoryFallbackData.getBuildingsByCategory(category);
       debugPrint('🏢 Fallback에서 건물 목록 반환: $buildings');
       return buildings;
-      
+
     } catch (e) {
       debugPrint('❌ 카테고리 건물 조회 완전 실패: $e');
       return [];
     }
   }
 
-  /// 🔥 카테고리 선택 처리 - 개선된 오류 처리
   void _onCategoryTap(String? category) async {
     debugPrint('🎯 카테고리 탭: $category');
-    
+
     if (_isApiCalling) {
       debugPrint('⚠️ API 호출 중이므로 무시');
       return;
     }
-    
+
     if (category == null) {
       setState(() {
         _selectedCategory = null;
@@ -188,9 +184,8 @@ class _CategoryChipsState extends State<CategoryChips> {
       return;
     }
 
-    // 🔥 API 호출 시작
     _isApiCalling = true;
-    
+
     setState(() {
       _selectedCategory = category;
       _isLoading = true;
@@ -198,37 +193,34 @@ class _CategoryChipsState extends State<CategoryChips> {
 
     try {
       debugPrint('📡 API 호출 시작: $category');
-      
+
       final buildingNames = await _getCategoryBuildingNames(category);
-      
+
       debugPrint('📡 API 호출 완료: $category, 건물 수: ${buildingNames.length}');
       debugPrint('📍 건물 이름 목록: $buildingNames');
-      
+
       setState(() {
         _isLoading = false;
       });
-      
-      // 🔥 콜백 호출
+
       widget.onCategorySelected(category, buildingNames);
-      
+
     } catch (e) {
       debugPrint('❌ API 호출 오류: $e');
       setState(() {
         _isLoading = false;
         _selectedCategory = null;
       });
-      
-      // 🔥 오류 시에도 빈 배열로 콜백 호출 (앱 크래시 방지)
+
       widget.onCategorySelected('', []);
     } finally {
       _isApiCalling = false;
     }
   }
 
-  /// 🔥 새로고침 메서드 (서버 재연결 시도)
   void refresh() {
     if (mounted) {
-      _useServerData = true; // 🔥 서버 데이터 재시도
+      _useServerData = true;
       _loadCategories();
     }
   }
@@ -286,8 +278,7 @@ class _CategoryChipsState extends State<CategoryChips> {
       margin: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
         children: [
-          // 🔥 데이터 소스 표시 (디버그용)
-          if (!_useServerData) 
+          if (!_useServerData)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               margin: const EdgeInsets.only(bottom: 4),
@@ -317,8 +308,7 @@ class _CategoryChipsState extends State<CategoryChips> {
                 ],
               ),
             ),
-          
-          // 카테고리 칩들
+
           Expanded(
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
@@ -335,7 +325,6 @@ class _CategoryChipsState extends State<CategoryChips> {
     );
   }
 
-  /// 🔥 재시도 버튼
   Widget _buildRetryButton() {
     return InkWell(
       onTap: refresh,
@@ -371,7 +360,7 @@ class _CategoryChipsState extends State<CategoryChips> {
 
   Widget _buildCategoryChip(String category) {
     final isSelected = _selectedCategory == category;
-    IconData icon = _getCategoryIcon(category);
+    final icon = CategoryFallbackData.getCategoryIcon(category);
 
     return InkWell(
       onTap: () {
@@ -387,24 +376,26 @@ class _CategoryChipsState extends State<CategoryChips> {
           color: isSelected ? const Color(0xFF1E3A8A) : Colors.white,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected 
-                ? const Color(0xFF1E3A8A) 
+            color: isSelected
+                ? const Color(0xFF1E3A8A)
                 : Colors.grey.shade300,
             width: isSelected ? 2 : 1,
           ),
-          boxShadow: isSelected ? [
-            BoxShadow(
-              color: const Color(0xFF1E3A8A).withOpacity(0.2),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ] : [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 4,
-              offset: const Offset(0, 1),
-            ),
-          ],
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: const Color(0xFF1E3A8A).withOpacity(0.2),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 4,
+                    offset: const Offset(0, 1),
+                  ),
+                ],
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -412,18 +403,14 @@ class _CategoryChipsState extends State<CategoryChips> {
             Icon(
               icon,
               size: 18,
-              color: isSelected 
-                  ? Colors.white 
-                  : Colors.indigo.shade400,
+              color: isSelected ? Colors.white : Colors.indigo.shade400,
             ),
             const SizedBox(width: 6),
             Text(
               category,
               style: TextStyle(
                 fontSize: 14,
-                color: isSelected 
-                    ? Colors.white 
-                    : Colors.grey.shade700,
+                color: isSelected ? Colors.white : Colors.grey.shade700,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
               ),
             ),
@@ -431,59 +418,6 @@ class _CategoryChipsState extends State<CategoryChips> {
         ),
       ),
     );
-  }
-
-  /// 🔥 카테고리별 아이콘 가져오기 - Fallback 데이터와 연동
-  IconData _getCategoryIcon(String category) {
-    // CategoryFallbackData에서 아이콘 코드 포인트 가져오기
-    final codePoint = CategoryFallbackData.categoryIconCodePoints[category];
-    if (codePoint != null) {
-      return IconData(codePoint, fontFamily: 'MaterialIcons');
-    }
-    
-    // 기본 아이콘들
-    switch (category) {
-      case '카페':
-        return Icons.local_cafe;
-      case '식당':
-        return Icons.restaurant;
-      case '편의점':
-        return Icons.store;
-      case '자판기':
-        return Icons.local_drink;
-      case '화장실':
-        return Icons.wc;
-      case '프린터':
-        return Icons.print;
-      case '복사기':
-        return Icons.content_copy;
-      case 'ATM':
-      case '은행':
-      case '은행(atm)':
-        return Icons.atm;
-      case '의료':
-      case '보건소':
-        return Icons.local_hospital;
-      case '도서관':
-        return Icons.local_library;
-      case '체육관':
-      case '헬스장':
-        return Icons.fitness_center;
-      case '주차장':
-        return Icons.local_parking;
-      case '우체국':
-        return Icons.local_post_office;
-      case '서점':
-        return Icons.menu_book;
-      case '정수기':
-        return Icons.water_drop;
-      case '소화기':
-        return Icons.fire_extinguisher;
-      case '라운지':
-        return Icons.weekend;
-      default:
-        return Icons.category;
-    }
   }
 
   @override

@@ -169,88 +169,86 @@ class MapScreenController extends ChangeNotifier {
   }
 
   /// 🔥 건물 이름 목록으로 카테고리 아이콘 마커 표시 - BuildingRepository 사용
-  void selectCategoryByNames(String category, List<String> buildingNames) {
-    debugPrint('=== 카테고리 선택 요청: $category ===');
-    debugPrint('🔍 받은 건물 이름들: $buildingNames');
-    
-    // 빈 배열이거나 빈 카테고리면 해제
-    if (category.isEmpty || buildingNames.isEmpty) {
-      debugPrint('⚠️ 카테고리가 비어있음 - 해제 처리');
-      clearCategorySelection();
-      return;
-    }
-    
-    if (_selectedCategory == category) {
-      debugPrint('같은 카테고리 재선택 → 해제');
-      clearCategorySelection();
-      return;
-    }
+Future<void> selectCategoryByNames(String category, List<String> buildingNames) async {
+  debugPrint('=== 카테고리 선택 요청: $category ===');
+  debugPrint('🔍 받은 건물 이름들: $buildingNames');
 
-    // 이전 카테고리 정리
-    if (_selectedCategory != null) {
-      debugPrint('이전 카테고리($_selectedCategory) 정리');
-      _clearCategoryMarkers();
-    }
-
-    _selectedCategory = category;
-    _isCategoryLoading = true;
-    notifyListeners();
-
-    // 🔥 MapService에 마지막 카테고리 선택 정보 저장
-    _mapService?.saveLastCategorySelection(category, buildingNames);
-
-    try {
-      debugPrint('기존 건물 마커들 숨기기...');
-      _hideAllBuildingMarkers();
-
-      debugPrint('카테고리 아이콘 마커들 표시...');
-      _showCategoryIconMarkers(buildingNames, category);
-      
-      debugPrint('✅ 카테고리 선택 완료: $category');
-    } catch (e) {
-      debugPrint('🚨 카테고리 선택 오류: $e');
-      clearCategorySelection();
-    } finally {
-      _isCategoryLoading = false;
-      notifyListeners();
-    }
+  // 빈 배열이거나 빈 카테고리면 해제
+  if (category.isEmpty || buildingNames.isEmpty) {
+    debugPrint('⚠️ 카테고리가 비어있음 - 해제 처리');
+    await clearCategorySelection();
+    return;
   }
 
+  if (_selectedCategory == category) {
+    debugPrint('같은 카테고리 재선택 → 해제');
+    await clearCategorySelection();
+    return;
+  }
+
+  // 이전 카테고리 정리 (마커 완전 제거)
+  if (_selectedCategory != null) {
+    debugPrint('이전 카테고리($_selectedCategory) 정리');
+    await _clearCategoryMarkers();
+  }
+
+  _selectedCategory = category;
+  _isCategoryLoading = true;
+  notifyListeners();
+
+  // MapService에 마지막 카테고리 선택 정보 저장
+  _mapService?.saveLastCategorySelection(category, buildingNames);
+
+  try {
+    debugPrint('기존 건물 마커들 숨기기...');
+    _hideAllBuildingMarkers();
+
+    debugPrint('카테고리 아이콘 마커들 표시...');
+    await _showCategoryIconMarkers(buildingNames, category);
+
+    debugPrint('✅ 카테고리 선택 완료: $category');
+  } catch (e) {
+    debugPrint('🚨 카테고리 선택 오류: $e');
+    await clearCategorySelection();
+  } finally {
+    _isCategoryLoading = false;
+    notifyListeners();
+  }
+}
+
+
   /// 🔥 카테고리 아이콘 마커들 표시 - BuildingRepository 사용
-  void _showCategoryIconMarkers(List<String> buildingNames, String category) {
+  /// 카테고리 마커가 항상 정상적으로 갱신/표시되도록 비동기(await)로 완전히 개선된 버전입니다.
+/// 
+/// 
+  Future<void> _showCategoryIconMarkers(List<String> buildingNames, String category) async {
     debugPrint('🔍 === 카테고리 매칭 디버깅 시작 ===');
     debugPrint('🔍 선택된 카테고리: $category');
     debugPrint('🔍 API에서 받은 건물 이름들: $buildingNames');
-    
-    // 🔥 BuildingRepository에서 건물 데이터 가져오기
+  
     final allBuildings = _buildingRepository.allBuildings;
     debugPrint('🔍 전체 건물 데이터 개수: ${allBuildings.length}');
-    
-    // BuildingRepository가 로딩되지 않았으면 대기
+  
+    // BuildingRepository가 로딩되지 않았으면 대기 (재귀적 재시도)
     if (!_buildingRepository.isLoaded || allBuildings.length <= 1) {
       debugPrint('⏳ BuildingRepository 데이터 대기 중... 잠시 후 재시도');
-      Timer(const Duration(seconds: 1), () {
-        if (_selectedCategory == category) {
-          _buildingRepository.getAllBuildings().then((_) {
-            if (_buildingRepository.isLoaded && _buildingRepository.allBuildings.length > 1) {
-              _showCategoryIconMarkers(buildingNames, category);
-            }
-          });
+      await Future.delayed(const Duration(seconds: 1));
+      if (_selectedCategory == category) {
+        await _buildingRepository.getAllBuildings();
+        if (_buildingRepository.isLoaded && _buildingRepository.allBuildings.length > 1) {
+          await _showCategoryIconMarkers(buildingNames, category);
         }
-      });
+      }
       return;
     }
-    
+  
     debugPrint('🔍 카테고리 아이콘 마커 표시 시작: ${buildingNames.length}개');
-
-    // 🔥 전체 건물 목록에서 해당 건물들 찾기 - 향상된 매칭
+  
     final categoryMarkerLocations = <CategoryMarkerData>[];
-    
-    for (String buildingName in buildingNames) {
+  
+    for (final buildingName in buildingNames) {
       debugPrint('🔍 건물 검색 중: "$buildingName"');
-      
-      Building? building = _findBuildingByName(buildingName, allBuildings);
-      
+      final building = _findBuildingByName(buildingName, allBuildings);
       if (building != null) {
         categoryMarkerLocations.add(CategoryMarkerData(
           buildingName: building.name,
@@ -262,20 +260,19 @@ class MapScreenController extends ChangeNotifier {
         debugPrint('✅ 카테고리 마커 추가: ${building.name} - $category 아이콘');
       }
     }
-
+  
     debugPrint('🔍 === 매칭 결과 ===');
     debugPrint('🔍 총 매칭된 건물 수: ${categoryMarkerLocations.length}/${buildingNames.length}');
-
+  
     if (categoryMarkerLocations.isEmpty) {
       debugPrint('❌ 매칭되는 건물이 없습니다 - 카테고리 해제');
-      Future.microtask(() => clearCategorySelection());
+      await clearCategorySelection();
       return;
     }
-
-    // 🔥 MapService에 카테고리 아이콘 마커들 표시 요청
+  
     debugPrint('📍 카테고리 마커 표시 시작...');
-    _mapService?.showCategoryIconMarkers(categoryMarkerLocations);
-    
+    await _mapService?.showCategoryIconMarkers(categoryMarkerLocations);
+  
     debugPrint('✅ 카테고리 아이콘 마커 표시 완료: ${categoryMarkerLocations.length}개');
     debugPrint('🔍 === 카테고리 매칭 디버깅 끝 ===');
   }
@@ -373,29 +370,26 @@ class MapScreenController extends ChangeNotifier {
   }
 
   /// 🔥 카테고리 마커들 제거
-  void _clearCategoryMarkers() {
-    debugPrint('카테고리 마커들 제거 중...');
-    _mapService?.clearCategoryMarkers();
-  }
+  Future<void> _clearCategoryMarkers() async {
+  debugPrint('카테고리 마커들 제거 중...');
+  await _mapService?.clearCategoryMarkers();
+}
 
   /// 🔥 카테고리 선택 해제 (기존 건물 마커들 다시 표시)
-  void clearCategorySelection() {
-    debugPrint('=== 카테고리 선택 해제 ===');
-    
-    if (_selectedCategory != null) {
-      debugPrint('선택 해제할 카테고리: $_selectedCategory');
-      _clearCategoryMarkers();
-    }
-    
-    _selectedCategory = null;
-    _isCategoryLoading = false;
-    
-    debugPrint('모든 건물 마커 다시 표시 시작...');
-    _showAllBuildingMarkers();
-    debugPrint('✅ 카테고리 선택 해제 완료');
-    
-    notifyListeners();
+  Future<void> clearCategorySelection() async {
+  debugPrint('=== 카테고리 선택 해제 ===');
+  if (_selectedCategory != null) {
+    debugPrint('선택 해제할 카테고리: $_selectedCategory');
+    await _clearCategoryMarkers();
   }
+  _selectedCategory = null;
+  _isCategoryLoading = false;
+  debugPrint('모든 건물 마커 다시 표시 시작...');
+  _showAllBuildingMarkers();
+  debugPrint('✅ 카테고리 선택 해제 완료');
+  notifyListeners();
+}
+
 
   /// 🔥 모든 건물 마커 다시 표시
   void _showAllBuildingMarkers() {
