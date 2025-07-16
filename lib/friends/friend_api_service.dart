@@ -1,9 +1,10 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'friend.dart';
+import 'package:flutter_application_1/config/api_config.dart';
 
 class FriendApiService {
-  static const String baseUrl = 'http://3.27.162.178:3001/friend';
+  static String get baseUrl => ApiConfig.friendBase;
 
   /// 내 친구 목록 조회
   Future<List<Friend>> fetchMyFriends(String myId) async {
