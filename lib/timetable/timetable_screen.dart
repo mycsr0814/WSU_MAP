@@ -579,7 +579,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                         });
                       },
                       builder: (context, controller, focusNode) {
-                        controller.text = selectedBuilding ?? '';
+                        //controller.text = selectedBuilding ?? '';
                         return TextFormField(
                           controller: controller,
                           focusNode: focusNode,
@@ -631,7 +631,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                         });
                       },
                       builder: (context, controller, focusNode) {
-                        controller.text = selectedFloor ?? '';
+                        //controller.text = selectedFloor ?? '';
                         return TextFormField(
                           controller: controller,
                           focusNode: focusNode,
@@ -659,7 +659,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                         setState(() => selectedRoom = suggestion);
                       },
                       builder: (context, controller, focusNode) {
-                        controller.text = selectedRoom ?? '';
+                        //controller.text = selectedRoom ?? '';
                         return TextFormField(
                           controller: controller,
                           focusNode: focusNode,
