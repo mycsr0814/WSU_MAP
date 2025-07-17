@@ -1,12 +1,12 @@
 name: flutter_application_1
 description: "A new Flutter project."
-publish_to: 'none'
+publish_to: "none"
 version: 1.0.0+1
 
 environment:
-  # sdk 버전을 최신 프로젝트의 ^3.8.1로 설정했습니다. 
+  # sdk 버전을 최신 프로젝트의 ^3.8.1로 설정했습니다.
   # hatesvg의 '>=3.0.0 <4.0.0' 범위에도 포함됩니다.
-  sdk: '>=3.8.1 <4.0.0'
+  sdk: ">=3.8.1 <4.0.0"
 
 dependencies:
   flutter:
@@ -15,7 +15,6 @@ dependencies:
     sdk: flutter
   vector_math: ^2.1.4
   flutter_typeahead: ^5.0.0
-
   # 두 프로젝트의 모든 의존성을 통합했습니다.
   cupertino_icons: ^1.0.8
   flutter_naver_map: ^1.3.0
@@ -28,7 +27,7 @@ dependencies:
   app_settings: ^5.1.1
   flutter_svg: ^1.1.6
   path_drawing: ^1.0.1
-  
+
   # http 패키지는 최신 버전인 ^1.2.1로 통합했습니다.
   # 중요: 0.13.6 버전과 큰 차이가 있으므로, http 통신 관련 코드를 수정해야 할 수 있습니다.
   http: ^1.2.1
@@ -37,7 +36,7 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  
+
   # flutter_lints는 더 높은 버전인 ^6.0.0으로 설정했습니다.
   flutter_lints: ^6.0.0
   flutter_launcher_icons: ^0.14.4
@@ -48,7 +47,7 @@ dependency_overrides:
 flutter:
   uses-material-design: true
   generate: true
-  
+
   # 최종 프로젝트의 asset 목록을 그대로 유지했습니다.
   # 만약 hatesvg 프로젝트처럼 서버에서 SVG를 불러온다면 해당 asset은 제거해도 됩니다.
   assets:
@@ -89,4 +88,3 @@ flutter:
     - lib/asset/w17-동관.jpeg
     - lib/asset/w18.jpeg
     - lib/asset/w19.jpeg
-
