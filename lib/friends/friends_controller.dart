@@ -1,18 +1,17 @@
-// friends_controller.dart
-// 친구 및 친구 요청 상태 관리, UI와 연결
-
+// lib/friends/friends_controller.dart
 import 'package:flutter/material.dart';
 import 'friend.dart';
 import 'friend_repository.dart';
 
 class FriendsController extends ChangeNotifier {
   final FriendRepository repository;
-  final String myId; // 내 ID
+  final String myId;
 
   FriendsController(this.repository, this.myId);
 
   List<Friend> friends = [];
   List<FriendRequest> friendRequests = [];
+  List<SentFriendRequest> sentFriendRequests = [];
   bool isLoading = false;
   String? errorMessage;
 
@@ -23,6 +22,7 @@ class FriendsController extends ChangeNotifier {
     try {
       friends = await repository.getMyFriends(myId);
       friendRequests = await repository.getFriendRequests(myId);
+      sentFriendRequests = await repository.getSentFriendRequests(myId);
     } catch (e) {
       errorMessage = e.toString();
     }
@@ -69,5 +69,32 @@ class FriendsController extends ChangeNotifier {
       notifyListeners();
     }
   }
-}
 
+  Future<void> cancelSentRequest(String friendId) async {
+    try {
+      await repository.cancelSentRequest(myId, friendId);
+      await loadAll();
+    } catch (e) {
+      errorMessage = e.toString();
+      notifyListeners();
+    }
+  }
+
+  Future<Friend?> getFriendInfo(String friendId) async {
+    try {
+      isLoading = true;
+      errorMessage = null;
+      notifyListeners();
+
+      final friendInfo = await repository.getFriendInfo(friendId);
+      return friendInfo;
+    } catch (e) {
+      errorMessage = e.toString();
+      print('[ERROR] 친구 정보 조회 실패: $e');
+      return null;
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
+  }
+}

@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>따라우송</string>
+	<string>Flutter Application 1</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -38,6 +38,20 @@
 		<true/>
 		<key>NSExceptionDomains</key>
 		<dict>
+			<key>3.27.162.178</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+				<key>NSExceptionMinimumTLSVersion</key>
+				<string>TLSv1.0</string>
+				<key>NSExceptionPortsDefault</key>
+				<integer>3000</integer>
+				<key>NSExceptionPortsHTTP</key>
+				<array>
+					<integer>3000</integer>
+					<integer>3001</integer>
+				</array>
+			</dict>
 			<key>map.naver.com</key>
 			<dict>
 				<key>NSExceptionAllowsInsecureHTTPLoads</key>

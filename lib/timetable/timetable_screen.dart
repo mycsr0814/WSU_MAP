@@ -533,14 +533,12 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     TextEditingController? floorFieldController;
     TextEditingController? roomFieldController;
 
-    if (initialItem != null && initialItem.buildingName != null) {
+    if (initialItem != null) {
       floorList = await _apiService.fetchFloors(initialItem.buildingName);
-      if (initialItem.floorNumber != null) {
-        roomList = await _apiService.fetchRooms(
-          initialItem.buildingName,
-          initialItem.floorNumber,
-        );
-      }
+      roomList = await _apiService.fetchRooms(
+        initialItem.buildingName,
+        initialItem.floorNumber,
+      );
     }
 
     await showDialog(

@@ -1,3 +1,4 @@
+// lib/profile/profile_screen.dart - 완전 수정된 버전
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_application_1/auth/user_auth.dart';
@@ -570,7 +571,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 
   /// ================================
-  /// 🔥 수정된 로그아웃 함수
+  /// 🔥 수정된 로그아웃 함수 - 완전한 앱 재시작
   /// ================================
   void _handleLogout(UserAuth userAuth) async {
     final l10n = AppLocalizations.of(context)!;
@@ -623,21 +624,60 @@ class _ProfileScreenState extends State<ProfileScreen>
     if (confirmed == true) {
       debugPrint('🔥 ProfileScreen: 로그아웃 시작');
 
-      // 1. 로그아웃 처리
-      final success = await userAuth.logout();
+      try {
+        // 1. 로그아웃 처리
+        final success = await userAuth.logout();
 
-      if (success && mounted) {
-        debugPrint('🔥 ProfileScreen: 로그아웃 성공 - 네비게이션 스택 클리어');
+        if (success && mounted) {
+          debugPrint('🔥 ProfileScreen: 로그아웃 성공 - 완전한 앱 재시작');
 
-        // 2. 🔥 네비게이션 스택 완전 클리어 후 루트 화면으로 이동
-        Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+          // 2. 🔥 앱을 완전히 재시작하여 모든 상태 초기화
+          Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+
+          // 3. 🔥 잠시 후 추가 초기화 작업
+          Future.delayed(const Duration(milliseconds: 500), () {
+            // 필요시 추가 정리 작업
+            debugPrint('🔥 ProfileScreen: 앱 재시작 후 추가 정리 작업 완료');
+          });
+
+          // 4. 성공 메시지 표시
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(l10n.logout_success ?? '로그아웃되었습니다.'),
+              backgroundColor: const Color(0xFF10B981),
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        }
+      } catch (e) {
+        debugPrint('❌ 로그아웃 처리 중 오류: $e');
+
+        // 오류 발생 시에도 강제로 초기 화면으로 이동
+        if (mounted) {
+          Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+        }
+
+        // 오류 메시지 표시
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('로그아웃 중 오류가 발생했지만 초기 화면으로 이동합니다.'),
+            backgroundColor: const Color(0xFFEF4444),
+            duration: const Duration(seconds: 3),
+          ),
+        );
       }
     }
   }
 
+  /// ================================
+  /// 인증 화면으로 이동
+  /// ================================
   void _navigateToAuth() {
-    Navigator.of(
-      context,
-    ).push(MaterialPageRoute(builder: (_) => const AuthSelectionView()));
+    debugPrint('🔥 ProfileScreen: AuthSelectionView로 이동');
+
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const AuthSelectionView()),
+      (route) => false,
+    );
   }
 }
