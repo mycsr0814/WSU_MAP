@@ -17,7 +17,6 @@ import 'package:flutter_application_1/profile/profile_screen.dart';
 import 'package:flutter_application_1/map/navigation_state_manager.dart';
 import '../generated/app_localizations.dart';
 import 'package:app_settings/app_settings.dart';
-import 'package:location/location.dart' as loc;
 import 'package:flutter_application_1/widgets/category_chips.dart';
 import '../auth/user_auth.dart';
 
@@ -159,6 +158,9 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
           onMapReady: (mapController) async {
             await _controller.onMapReady(mapController);
             debugPrint('🗺️ 지도 준비 완료!');
+
+            // ✅ 지도 준비 완료 후 내 위치로 자동 이동
+            await _controller.moveToMyLocation();
           },
           onTap: () => _controller.closeInfoWindow(_infoWindowController),
         ),

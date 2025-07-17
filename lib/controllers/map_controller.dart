@@ -50,6 +50,16 @@ class MapScreenController extends ChangeNotifier {
   // 언어 변경 감지
   Locale? _currentLocale;
 
+
+  // 🔥 추가된 getter들
+  LocationController? get locationController => _locationController;
+  NaverMapController? get mapController => _mapService?.getController();
+
+  // 🔥 사용자 위치 마커 업데이트 메서드 추가
+  void updateUserLocationMarker(NLatLng position) {
+    _locationController?.updateUserLocationMarker(position);
+  }
+
   // 경로 정보
   String? _routeDistance;
   String? _routeTime;
@@ -529,6 +539,7 @@ class MapScreenController extends ChangeNotifier {
 
   /// 기존 _getCategoryIcon 메서드는 그대로 유지
   IconData _getCategoryIcon(String category) {
+    debugPrint('==== [카테고리 아이콘 함수 진입] 넘어온 category: "$category"');
     switch (category) {
       case '카페':
         return Icons.local_cafe;
@@ -566,6 +577,7 @@ class MapScreenController extends ChangeNotifier {
       case '서점':
         return Icons.menu_book;
       case '우체국':
+      case 'post_office':
         return Icons.local_post_office;
       default:
         return Icons.category;
@@ -738,7 +750,7 @@ class MapScreenController extends ChangeNotifier {
 
   Future<void> _clearAllOverlays() async {
     try {
-      final controller = await _mapService?.getController();
+      final controller = await _mapService?.getControllerAsync(); // getController() → getControllerAsync()
       if (controller == null) return;
 
       if (_routeOverlays.isNotEmpty) {

@@ -25,7 +25,7 @@ dependencies:
   intl: ^0.20.2
   permission_handler: ^11.3.1
   app_settings: ^5.1.1
-  flutter_svg: ^1.1.6
+  flutter_svg: ^2.2.0
   path_drawing: ^1.0.1
 
   # http 패키지는 최신 버전인 ^1.2.1로 통합했습니다.

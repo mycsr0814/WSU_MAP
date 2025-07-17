@@ -1,4 +1,5 @@
-// lib/services/map_service.dart - 완전히 수정된 버전
+// MapService 완전한 구현 - 실제 코드 기반
+
 import 'dart:math';
 import 'dart:async';
 import 'package:flutter/material.dart';
@@ -65,7 +66,13 @@ class MapService {
     debugPrint('MapController 설정 완료');
   }
 
-  Future<NaverMapController?> getController() async {
+  /// 🔥 동기식 컨트롤러 getter (에러 해결용)
+  NaverMapController? getController() {
+    return _mapController;
+  }
+
+  /// 🔥 비동기식 컨트롤러 getter (기존 호환성 유지)
+  Future<NaverMapController?> getControllerAsync() async {
     return _mapController;
   }
 

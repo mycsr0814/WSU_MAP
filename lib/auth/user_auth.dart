@@ -1,8 +1,11 @@
-// lib/auth/user_auth.dart - 완전 수정된 버전
+// lib/auth/user_auth.dart - 위치 전송 기능 추가 버전
+
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:provider/provider.dart';
 import '../generated/app_localizations.dart';
 import '../services/auth_service.dart';
+import '../managers/location_manager.dart';
 
 /// 우송대학교 캠퍼스 네비게이터 사용자 역할 정의
 enum UserRole {
@@ -116,8 +119,98 @@ class UserAuth extends ChangeNotifier {
     debugPrint('UserAuth: notifyListeners 호출됨');
   }
 
+  /// 🔥 위치 전송 시작 (로그인 시)
+  void _startLocationSending(BuildContext context) {
+    if (_userId == null) {
+      debugPrint('⚠️ 사용자 ID가 없어 위치 전송 시작 불가');
+      return;
+    }
+
+    try {
+      final locationManager = Provider.of<LocationManager>(
+        context,
+        listen: false,
+      );
+      locationManager.startPeriodicLocationSending(userId: _userId!);
+      debugPrint('✅ 위치 전송 시작 완료 - 사용자 ID: $_userId');
+    } catch (e) {
+      debugPrint('❌ 위치 전송 시작 오류: $e');
+    }
+  }
+
+  /// 🔥 위치 전송 중지 (로그아웃 시)
+  void _stopLocationSending(BuildContext context) {
+    try {
+      final locationManager = Provider.of<LocationManager>(
+        context,
+        listen: false,
+      );
+      locationManager.stopPeriodicLocationSending();
+      debugPrint('✅ 위치 전송 중지 완료');
+    } catch (e) {
+      debugPrint('❌ 위치 전송 중지 오류: $e');
+    }
+  }
+
+  /// 🔥 서버에 자동 로그인 (저장된 정보 사용)
+  Future<bool> autoLoginToServer() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final savedUserId = prefs.getString('user_id');
+      final savedPassword = prefs.getString('user_password');
+      final rememberMe = prefs.getBool('remember_me') ?? false;
+
+      // 기억하기가 체크되어 있고 저장된 정보가 있는 경우만 자동 로그인
+      if (rememberMe && savedUserId != null && savedPassword != null) {
+        debugPrint('🔄 서버 자동 로그인 시도 - 사용자: $savedUserId');
+
+        final result = await AuthService.login(
+          id: savedUserId,
+          pw: savedPassword,
+        );
+
+        if (result.isSuccess) {
+          debugPrint('✅ 서버 자동 로그인 성공');
+          return true;
+        } else {
+          debugPrint('⚠️ 서버 자동 로그인 실패: ${result.message}');
+          return false;
+        }
+      }
+
+      return false;
+    } catch (e) {
+      debugPrint('❌ 서버 자동 로그인 오류: $e');
+      return false;
+    }
+  }
+
+  /// 🔥 서버에서만 로그아웃 (로컬 정보는 유지)
+  Future<bool> logoutServerOnly() async {
+    try {
+      if (_userId != null && _userId != 'guest' && _userId != 'admin') {
+        debugPrint('🔄 서버 전용 로그아웃 시도 - 사용자: $_userId');
+
+        final result = await AuthService.logout(id: _userId!);
+
+        if (result.isSuccess) {
+          debugPrint('✅ 서버 전용 로그아웃 성공');
+          return true;
+        } else {
+          debugPrint('⚠️ 서버 전용 로그아웃 실패: ${result.message}');
+          return false;
+        }
+      }
+
+      return true; // 게스트나 관리자는 서버 로그아웃 불필요
+    } catch (e) {
+      debugPrint('❌ 서버 전용 로그아웃 오류: $e');
+      return false;
+    }
+  }
+
   /// 초기화 - 저장된 로그인 정보 복원 (기억하기가 체크되었던 경우만)
-  Future<void> initialize() async {
+  Future<void> initialize({BuildContext? context}) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final savedUserId = prefs.getString('user_id');
@@ -135,6 +228,15 @@ class UserAuth extends ChangeNotifier {
         _userRole = UserRole.studentProfessor;
         _isLoggedIn = true;
         _isFirstLaunch = false; // 저장된 로그인 정보가 있으면 첫 실행이 아님
+
+        // 🔥 저장된 로그인 정보 복원 시 위치 전송 시작
+        if (context != null) {
+          // 약간의 지연을 주어 Provider 초기화 완료 후 실행
+          Future.delayed(const Duration(milliseconds: 500), () {
+            _startLocationSending(context);
+          });
+        }
+
         notifyListeners();
       } else {
         // 기억하기가 체크되지 않았거나 정보가 불완전한 경우 정보 삭제
@@ -145,7 +247,7 @@ class UserAuth extends ChangeNotifier {
     }
   }
 
-  /// 사용자 로그인 (서버 API 연동)
+  /// 🔥 사용자 로그인 (서버 API 연동) - 위치 전송 시작 추가
   Future<bool> loginWithCredentials({
     required String id,
     required String password,
@@ -171,6 +273,11 @@ class UserAuth extends ChangeNotifier {
             await _saveLoginInfo(rememberMe: true, password: password);
           } else {
             await _clearLoginInfo();
+          }
+
+          // 🔥 로그인 성공 시 위치 전송 시작
+          if (context != null) {
+            _startLocationSending(context);
           }
 
           notifyListeners();
@@ -202,19 +309,19 @@ class UserAuth extends ChangeNotifier {
     }
   }
 
-  /// 게스트 로그인 - 안정적 버전
+  /// 🔥 게스트 로그인 - 위치 전송 시작 추가
   Future<void> loginAsGuest({BuildContext? context}) async {
     _setLoading(true);
     _clearError();
 
     try {
-      debugPrint('🎭 게스트 로그인 시작');
+      await Future.delayed(const Duration(milliseconds: 500));
 
-      // 🔥 게스트 로그인 전 약간의 지연으로 초기화 완료 대기
-      await Future.delayed(const Duration(milliseconds: 800));
+      // 게스트 ID 생성 (타임스탬프 기반)
+      final guestId = 'guest_${DateTime.now().millisecondsSinceEpoch}';
 
       _userRole = UserRole.external;
-      _userId = 'guest';
+      _userId = guestId;
       if (context != null) {
         final l10n = AppLocalizations.of(context)!;
         _userName = l10n.guest;
@@ -224,7 +331,11 @@ class UserAuth extends ChangeNotifier {
       _isLoggedIn = true;
       _isFirstLaunch = false; // 게스트 로그인 시 첫 실행 상태 해제
 
-      debugPrint('✅ 게스트 로그인 완료');
+      // 🔥 게스트 로그인 시 위치 전송 시작
+      if (context != null) {
+        _startLocationSending(context);
+      }
+
       notifyListeners();
 
       // 🔥 게스트 로그인 완료 후 추가 지연으로 UI 안정화
@@ -237,7 +348,7 @@ class UserAuth extends ChangeNotifier {
     }
   }
 
-  /// 관리자 로그인 (개발용)
+  /// 🔥 관리자 로그인 (개발용) - 위치 전송 시작 추가
   Future<void> loginAsAdmin({BuildContext? context}) async {
     _setLoading(true);
     _clearError();
@@ -257,77 +368,27 @@ class UserAuth extends ChangeNotifier {
       _isFirstLaunch = false; // 관리자 로그인 시 첫 실행 상태 해제
 
       await _saveLoginInfo(rememberMe: true);
+
+      // 🔥 관리자 로그인 시 위치 전송 시작
+      if (context != null) {
+        _startLocationSending(context);
+      }
+
       notifyListeners();
     } finally {
       _setLoading(false);
     }
   }
 
-  /// 서버에만 로그아웃 (로컬 로그인 정보는 유지)
-  /// 앱 백그라운드/종료 시 사용
-  Future<void> logoutServerOnly() async {
-    try {
-      if (_userId != null && _userId != 'guest' && _userId != 'admin') {
-        debugPrint('📱 앱 백그라운드 진입 - 서버에만 로그아웃 요청');
-        final result = await AuthService.logout(id: _userId!);
-        if (result.isSuccess) {
-          debugPrint('✅ 서버 로그아웃 성공 - 로컬 정보는 유지');
-        } else {
-          debugPrint('❌ 서버 로그아웃 실패: ${result.message}');
-        }
-      }
-    } catch (e) {
-      debugPrint('❌ 서버 로그아웃 오류: $e');
-    }
-  }
-
-  /// 저장된 로그인 정보로 자동 서버 로그인
-  /// 앱 포그라운드 복귀 시 사용
-  Future<void> autoLoginToServer() async {
-    try {
-      if (_userId != null && _userId != 'guest' && _userId != 'admin') {
-        debugPrint('📱 앱 포그라운드 복귀 - 서버에 자동 로그인 시도');
-
-        // 현재 저장된 정보로 서버에 로그인 요청
-        final prefs = await SharedPreferences.getInstance();
-        final savedUserId = prefs.getString('user_id');
-        final savedPassword = prefs.getString('user_password');
-        final rememberMe = prefs.getBool('remember_me') ?? false;
-
-        if (rememberMe && savedUserId != null && savedPassword != null) {
-          // 기존 로그인 정보를 사용해서 서버에 로그인
-          final result = await AuthService.login(
-            id: savedUserId,
-            pw: savedPassword,
-          );
-
-          if (result.isSuccess) {
-            debugPrint('✅ 서버 자동 로그인 완료');
-          } else {
-            debugPrint('❌ 서버 자동 로그인 실패: ${result.message}');
-            // 자동 로그인 실패 시 로컬 정보도 삭제 (토큰 만료 등의 경우)
-            await _clearLoginInfo();
-            _userRole = null;
-            _userId = null;
-            _userName = null;
-            _isLoggedIn = false;
-            notifyListeners();
-          }
-        } else {
-          debugPrint('❌ 저장된 로그인 정보가 불완전함');
-        }
-      }
-    } catch (e) {
-      debugPrint('❌ 서버 자동 로그인 오류: $e');
-    }
-  }
-
-  /// 🔥 로그아웃 개선 - 완전한 상태 클리어
-  Future<bool> logout() async {
+  /// 🔥 사용자 로그아웃 - 위치 전송 중지 추가
+  Future<bool> logout({BuildContext? context}) async {
     _setLoading(true);
 
     try {
-      debugPrint('🔥 UserAuth: 로그아웃 시작');
+      // 🔥 로그아웃 시 위치 전송 중지
+      if (context != null) {
+        _stopLocationSending(context);
+      }
 
       if (_userId != null && _userId != 'guest' && _userId != 'admin') {
         final result = await AuthService.logout(id: _userId!);
@@ -354,6 +415,82 @@ class UserAuth extends ChangeNotifier {
       return false;
     } finally {
       _setLoading(false);
+    }
+  }
+
+  /// 🔥 앱 종료 시 자동 로그아웃 (기억하기 옵션이 false인 경우) - 위치 전송 중지 추가
+  Future<void> autoLogoutOnAppExit({BuildContext? context}) async {
+    debugPrint('🔄 앱 종료 감지 - 자동 로그아웃 확인');
+
+    // 1. 로그인 상태가 아니면 처리하지 않음
+    if (!_isLoggedIn) {
+      debugPrint('📝 로그인 상태가 아니므로 자동 로그아웃 스킵');
+      return;
+    }
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final rememberMe = prefs.getBool('remember_me') ?? false;
+
+      // 2. "기억하기"가 체크되어 있으면 자동 로그아웃하지 않음
+      if (rememberMe) {
+        debugPrint('✅ 기억하기 옵션이 체크되어 있어 자동 로그아웃 스킵');
+        return;
+      }
+
+      // 3. 게스트 사용자는 항상 자동 로그아웃
+      // 4. 일반 사용자는 기억하기가 false인 경우 자동 로그아웃
+      if (_userRole == UserRole.external || !rememberMe) {
+        debugPrint('🔄 자동 로그아웃 실행 - 사용자: $_userId, 역할: $_userRole');
+
+        // 🔥 자동 로그아웃 시 위치 전송 중지
+        if (context != null) {
+          _stopLocationSending(context);
+        }
+
+        // 서버에 로그아웃 요청 (게스트가 아닌 경우)
+        if (_userId != null && _userId != 'guest' && _userId != 'admin') {
+          try {
+            final result = await AuthService.logout(id: _userId!);
+            if (result.isSuccess) {
+              debugPrint('✅ 서버 로그아웃 성공');
+            } else {
+              debugPrint('⚠️ 서버 로그아웃 실패: ${result.message}');
+            }
+          } catch (e) {
+            debugPrint('⚠️ 서버 로그아웃 예외: $e');
+          }
+        }
+
+        // 로컬 상태 초기화
+        await _clearLoginInfo();
+        _userRole = null;
+        _userId = null;
+        _userName = null;
+        _isLoggedIn = false;
+        _isFirstLaunch = true;
+        _clearError();
+
+        debugPrint('✅ 자동 로그아웃 완료');
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('❌ 자동 로그아웃 오류: $e');
+    }
+  }
+
+  /// 🔥 앱 재시작 시 자동 로그아웃 처리된 상태 확인
+  Future<bool> shouldAutoLogout() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final rememberMe = prefs.getBool('remember_me') ?? false;
+      final savedUserId = prefs.getString('user_id');
+
+      // 기억하기가 false이고 로그인 정보가 있다면 자동 로그아웃 대상
+      return !rememberMe && savedUserId != null;
+    } catch (e) {
+      debugPrint('자동 로그아웃 확인 오류: $e');
+      return false;
     }
   }
 
@@ -448,7 +585,7 @@ class UserAuth extends ChangeNotifier {
     }
   }
 
-  /// 회원 탈퇴
+  /// 🔥 회원 탈퇴 - 위치 전송 중지 추가
   Future<bool> deleteAccount({BuildContext? context}) async {
     // 1. 로그인 상태가 아니면 탈퇴 불가
     if (_userId == null || !_isLoggedIn) {
@@ -465,6 +602,11 @@ class UserAuth extends ChangeNotifier {
     _clearError();
 
     try {
+      // 🔥 회원 탈퇴 시 위치 전송 중지
+      if (context != null) {
+        _stopLocationSending(context);
+      }
+
       // 2. 서버에 회원탈퇴 요청
       final result = await AuthService.deleteUser(id: _userId!);
 
