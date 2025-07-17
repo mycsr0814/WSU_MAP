@@ -696,6 +696,9 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                     // ----------- [ 강의실 자동완성 입력창 ] -----------
                     const SizedBox(height: 8),
                     TypeAheadField<String>(
+                      key: ValueKey(
+                        '${selectedBuilding}_$selectedFloor',
+                      ), // ← 여기!!
                       suggestionsCallback: (pattern) async {
                         if (pattern.trim().isEmpty) return roomList;
                         return roomList
