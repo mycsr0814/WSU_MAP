@@ -282,7 +282,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get timetable => '시간표';
 
   @override
-  String get friends => '친구창';
+  String get friends => '친구';
 
   @override
   String get my_page => 'MY';
