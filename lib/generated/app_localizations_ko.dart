@@ -1340,4 +1340,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get overlap_message => '이미 같은 시간에 등록된 수업이 있습니다.';
+
+  @override
+  String get memo => '메모';
 }

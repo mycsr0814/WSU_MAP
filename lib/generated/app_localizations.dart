@@ -2631,6 +2631,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'A class is already registered at this time.'**
   String get overlap_message;
+
+  /// No description provided for @memo.
+  ///
+  /// In en, this message translates to:
+  /// **'Memo'**
+  String get memo;
 }
 
 class _AppLocalizationsDelegate

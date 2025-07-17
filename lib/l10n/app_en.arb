@@ -615,5 +615,6 @@
   "building_name": "Building",
   "floor_number": "Floor",
   "room_name": "Room",
-  "overlap_message": "A class is already registered at this time."
+  "overlap_message": "A class is already registered at this time.",
+  "memo": "Memo"
 }

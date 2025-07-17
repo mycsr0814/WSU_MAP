@@ -526,6 +526,8 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       'W19',
     ];
 
+    final memoController = TextEditingController(text: initialItem?.memo ?? '');
+
     // 컨트롤러 변수 선언 (builder 컨트롤러 저장용)
     TextEditingController? buildingFieldController;
     TextEditingController? floorFieldController;
@@ -851,6 +853,16 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                         );
                       }).toList(),
                     ),
+                    // 👇👇👇 메모 입력란 추가 (여기가 핵심 추가 부분입니다!)
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: memoController,
+                      maxLines: 2,
+                      decoration: InputDecoration(
+                        labelText: l10n?.memo ?? 'Memo',
+                        border: const OutlineInputBorder(),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -876,6 +888,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                         startTime: startTime,
                         endTime: endTime,
                         color: selectedColor,
+                        memo: memoController.text,
                       );
                       if (_isOverlapped(newItem, ignoreId: initialItem?.id)) {
                         Navigator.pop(context);
@@ -945,7 +958,23 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(item.title),
+        titlePadding: const EdgeInsets.only(
+          top: 16,
+          left: 24,
+          right: 8,
+          bottom: 0,
+        ),
+        title: Row(
+          children: [
+            Expanded(child: Text(item.title)),
+            IconButton(
+              icon: const Icon(Icons.close),
+              onPressed: () => Navigator.pop(context),
+              splashRadius: 20,
+              tooltip: '닫기',
+            ),
+          ],
+        ),
         content: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
@@ -985,39 +1014,70 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
               l10n?.time ?? 'Time',
               '${item.startTime} - ${item.endTime}',
             ),
+            const SizedBox(height: 10),
+            if (item.memo.isNotEmpty)
+              _buildDetailRow(
+                Icons.sticky_note_2,
+                l10n?.memo ?? 'Memo',
+                item.memo,
+              ),
           ],
         ),
+        // ====== 요 아래만 바꿔주면 됩니다!! ======
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(l10n?.close ?? 'Close'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _showEditScheduleDialog(item);
-            },
-            child: Text(l10n?.edit ?? 'Edit'),
-          ),
-          TextButton(
-            onPressed: () async {
-              Navigator.pop(context);
-              await _deleteScheduleItem(item);
-            },
-            child: Text(
-              l10n?.delete ?? 'Delete',
-              style: const TextStyle(color: Colors.red),
-            ),
-          ),
-          // ✅ 추천경로 보기 버튼 추가!
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context); // 다이얼로그 닫기 (선택)
-              _showRecommendRoute(item); // 함수는 아래 직접 구현
-            },
-            child: Text('추천경로 보기'),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              // 추천경로 보기 (왼쪽)
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  _showRecommendRoute(item);
+                },
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 12,
+                  ),
+                ),
+                child: const Text('추천경로 보기'),
+              ),
+              const SizedBox(width: 8),
+              // 편집 (가운데)
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  _showEditScheduleDialog(item);
+                },
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 18,
+                    vertical: 12,
+                  ),
+                ),
+                child: Text(l10n?.edit ?? 'Edit'),
+              ),
+              const SizedBox(width: 8),
+              // 삭제 (오른쪽/빨강)
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 18,
+                    vertical: 12,
+                  ),
+                ),
+                onPressed: () async {
+                  Navigator.pop(context);
+                  await _deleteScheduleItem(item);
+                },
+                child: Text(l10n?.delete ?? 'Delete'),
+              ),
+            ],
           ),
         ],
+        actionsAlignment: MainAxisAlignment.start, // Row 사용시 이 옵션은 무시될 수 있습니다
       ),
     );
   }
