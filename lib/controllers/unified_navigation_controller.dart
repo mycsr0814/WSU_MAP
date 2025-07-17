@@ -485,8 +485,6 @@ Future<void> proceedToNextStep() async {
   }
 }
 
-
-
   @override
   void dispose() {
     stopNavigation();

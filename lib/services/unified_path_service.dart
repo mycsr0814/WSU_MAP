@@ -298,29 +298,30 @@ class UnifiedPathService {
   }
 
   /// Building 객체 간 경로 요청
-  static Future<UnifiedPathResponse?> getPathBetweenBuildings({
+static Future<UnifiedPathResponse?> getPathBetweenBuildings({
     required Building fromBuilding,
     required Building toBuilding,
   }) async {
+    
+    // 🔥 "내 위치"인 경우 좌표 기반 요청으로 변경
+    if (fromBuilding.name == '내 위치') {
+      debugPrint('🔄 "내 위치"를 좌표 기반 요청으로 변경');
+      debugPrint('   좌표: (${fromBuilding.lat}, ${fromBuilding.lng})');
+      
+      return await getPathFromLocation(
+        fromLocation: NLatLng(fromBuilding.lat, fromBuilding.lng),
+        toBuilding: toBuilding,
+      );
+    }
+    
+    // 🔥 일반 건물인 경우 기존 로직
     final request = PathRequest(
       fromBuilding: _extractBuildingCode(fromBuilding.name),
       toBuilding: _extractBuildingCode(toBuilding.name),
     );
     return await requestPath(request);
   }
-
-  /// 현재 위치에서 건물로의 경로 요청
-  static Future<UnifiedPathResponse?> getPathFromLocation({
-    required NLatLng fromLocation,
-    required Building toBuilding,
-  }) async {
-    final request = PathRequest(
-      fromLocation: fromLocation,
-      toBuilding: _extractBuildingCode(toBuilding.name),
-    );
-    return await requestPath(request);
-  }
-
+  
   /// 호실 간 경로 요청
   static Future<UnifiedPathResponse?> getPathBetweenRooms({
     required String fromBuilding,
@@ -364,14 +365,30 @@ class UnifiedPathService {
     required int toFloor,
     required String toRoom,
   }) async {
-    final request = PathRequest(
-      fromBuilding: _extractBuildingCode(fromBuilding.name),
-      toBuilding: toBuilding,
-      toFloor: toFloor,
-      toRoom: toRoom,
-    );
-    return await requestPath(request);
-  }
+    
+    // 🔥 "내 위치"인 경우 좌표 기반 요청으로 변경
+    if (fromBuilding.name == '내 위치') {
+      debugPrint('🔄 "내 위치"를 좌표 기반 요청으로 변경');
+      debugPrint('   좌표: (${fromBuilding.lat}, ${fromBuilding.lng})');
+      
+      return await getPathFromLocationToRoom(
+        fromLocation: NLatLng(fromBuilding.lat, fromBuilding.lng),
+        toBuilding: toBuilding,
+        toFloor: toFloor,
+        toRoom: toRoom,
+      );
+    }
+
+  
+  // 🔥 일반 건물인 경우 기존 로직
+  final request = PathRequest(
+    fromBuilding: _extractBuildingCode(fromBuilding.name),
+    toBuilding: toBuilding,
+    toFloor: toFloor,
+    toRoom: toRoom,
+  );
+  return await requestPath(request);
+}
 
   /// 실외 경로에서 좌표 배열 추출
   static List<NLatLng> extractOutdoorCoordinates(OutdoorPathData outdoorData) {
@@ -397,6 +414,41 @@ class UnifiedPathService {
         .where((item) => item is String)
         .cast<String>()
         .toList();
+  }
+
+    static Future<UnifiedPathResponse?> getPathFromLocation({
+    required NLatLng fromLocation,
+    required Building toBuilding,
+  }) async {
+    debugPrint('📍 현재 위치에서 건물로 경로 요청');
+    debugPrint('   출발 좌표: (${fromLocation.latitude}, ${fromLocation.longitude})');
+    debugPrint('   도착 건물: ${toBuilding.name}');
+
+    final request = PathRequest(
+      fromLocation: fromLocation,
+      toBuilding: _extractBuildingCode(toBuilding.name),
+    );
+    return await requestPath(request);
+  }
+
+  /// 현재 위치에서 호실로의 경로 요청 - 추가 메서드
+  static Future<UnifiedPathResponse?> getPathFromLocationToRoom({
+    required NLatLng fromLocation,
+    required String toBuilding,
+    required int toFloor,
+    required String toRoom,
+  }) async {
+    debugPrint('📍 현재 위치에서 호실로 경로 요청');
+    debugPrint('   출발 좌표: (${fromLocation.latitude}, ${fromLocation.longitude})');
+    debugPrint('   도착 호실: $toBuilding $toFloor층 $toRoom호');
+
+    final request = PathRequest(
+      fromLocation: fromLocation,
+      toBuilding: toBuilding,
+      toFloor: toFloor,
+      toRoom: toRoom,
+    );
+    return await requestPath(request);
   }
 
   /// 연결 테스트

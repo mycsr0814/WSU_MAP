@@ -134,101 +134,149 @@ void initState() {
   // 🔥 검색 결과 호실 자동 선택 처리
   // 🔥 1. _handleAutoRoomSelection 메서드 수정 - 타이밍 최적화
 void _handleAutoRoomSelection() {
-  if (!_shouldAutoSelectRoom || _autoSelectRoomId == null || _buttonData.isEmpty) {
-    return;
-  }
+  try {
+    if (!_shouldAutoSelectRoom || 
+        _autoSelectRoomId == null || 
+        _autoSelectRoomId!.isEmpty ||
+        _buttonData.isEmpty) {
+      debugPrint('⚠️ 자동 선택 조건 불충족');
+      return;
+    }
 
-  debugPrint('🎯 자동 호실 선택 시도: $_autoSelectRoomId');
+    debugPrint('🎯 자동 호실 선택 시도: $_autoSelectRoomId');
 
-  // 'R' 접두사 확인 및 추가
-  final targetRoomId = _autoSelectRoomId!.startsWith('R') 
-      ? _autoSelectRoomId! 
-      : 'R$_autoSelectRoomId';
+    // 'R' 접두사 확인 및 추가
+    final targetRoomId = _autoSelectRoomId!.startsWith('R') 
+        ? _autoSelectRoomId! 
+        : 'R$_autoSelectRoomId';
 
-  // 버튼 데이터에서 해당 호실 찾기
-  final targetButton = _buttonData.firstWhere(
-    (button) => button['id'] == targetRoomId,
-    orElse: () => <String, dynamic>{},
-  );
-
-  if (targetButton.isNotEmpty) {
-    debugPrint('✅ 자동 선택할 호실 찾음: $targetRoomId');
-    
-    // 🔥 즉시 호실 하이라이트 (포커스 전에)
-    setState(() {
-      _selectedRoomId = targetRoomId;
-    });
-    
-    // 🔥 로딩 표시 추가
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const SizedBox(
-              width: 16,
-              height: 16,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Text('$_autoSelectRoomId 호실을 찾는 중...'),
-          ],
-        ),
-        duration: const Duration(milliseconds: 1500),
-        backgroundColor: Colors.blue,
-      ),
-    );
-    
-    // 🔥 포커스를 더 빨리, 더 부드럽게
-    Future.delayed(const Duration(milliseconds: 100), () {
-      if (mounted) {
-        _focusOnRoom(targetButton);
+    // 🔥 안전한 버튼 찾기
+    Map<String, dynamic>? targetButton;
+    try {
+      for (final button in _buttonData) {
+        if (button['id'] == targetRoomId) {
+          targetButton = button;
+          break;
+        }
       }
-    });
-    
-    // 🔥 호실 정보 시트는 포커스 완료 후
-    Future.delayed(const Duration(milliseconds: 800), () {
-      if (mounted) {
-        ScaffoldMessenger.of(context).hideCurrentSnackBar();
-        _showRoomInfoSheet(context, targetRoomId);
-      }
-    });
-    
-    // 자동 선택 완료 처리
-    _shouldAutoSelectRoom = false;
-    _autoSelectRoomId = null;
-  } else {
-    debugPrint('❌ 자동 선택할 호실을 찾지 못함: $targetRoomId');
-    
-    // 호실을 찾지 못한 경우 사용자에게 알림
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    } catch (e) {
+      debugPrint('❌ 버튼 검색 중 오류: $e');
+      targetButton = null;
+    }
+
+    if (targetButton != null && targetButton.isNotEmpty) {
+      debugPrint('✅ 자동 선택할 호실 찾음: $targetRoomId');
+      
+      // 🔥 즉시 호실 하이라이트
+      setState(() {
+        _selectedRoomId = targetRoomId;
+      });
+      
+      // 🔥 로딩 표시 추가
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('호실 $_autoSelectRoomId을(를) 찾을 수 없습니다.'),
-            backgroundColor: Colors.orange,
-            duration: const Duration(seconds: 3),
+            content: Row(
+              children: [
+                const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text('$_autoSelectRoomId 호실을 찾는 중...'),
+              ],
+            ),
+            duration: const Duration(milliseconds: 1500),
+            backgroundColor: Colors.blue,
           ),
         );
       }
-    });
-    
+      
+      // 🔥 포커스를 더 빨리, 더 부드럽게
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (mounted) {
+          _focusOnRoom(targetButton!);
+        }
+      });
+      
+      // 🔥 호실 정보 시트는 포커스 완료 후
+      Future.delayed(const Duration(milliseconds: 800), () {
+        if (mounted) {
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          _showRoomInfoSheet(context, targetRoomId);
+        }
+      });
+      
+      // 자동 선택 완료 처리
+      _shouldAutoSelectRoom = false;
+      _autoSelectRoomId = null;
+    } else {
+      debugPrint('❌ 자동 선택할 호실을 찾지 못함: $targetRoomId');
+      
+      // 호실을 찾지 못한 경우 사용자에게 알림
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('호실 $_autoSelectRoomId을(를) 찾을 수 없습니다.'),
+              backgroundColor: Colors.orange,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
+      });
+      
+      _shouldAutoSelectRoom = false;
+      _autoSelectRoomId = null;
+    }
+  } catch (e) {
+    debugPrint('❌ _handleAutoRoomSelection 전체 오류: $e');
     _shouldAutoSelectRoom = false;
     _autoSelectRoomId = null;
+    
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('호실 자동 선택 중 오류가 발생했습니다'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 }
 
 // 🔥 2. _focusOnRoom 메서드 수정 - 더 부드러운 포커스
 void _focusOnRoom(Map<String, dynamic> roomButton) {
   try {
+    // 🔥 입력 검증
+    if (roomButton.isEmpty) {
+      debugPrint('❌ roomButton이 비어있음');
+      return;
+    }
+
     // 호실의 중심점 계산
-    Rect bounds;
-    if (roomButton['type'] == 'path') {
-      bounds = (roomButton['path'] as Path).getBounds();
-    } else {
-      bounds = roomButton['rect'] as Rect;
+    Rect? bounds;
+    try {
+      if (roomButton['type'] == 'path') {
+        final path = roomButton['path'] as Path?;
+        if (path != null) {
+          bounds = path.getBounds();
+        }
+      } else {
+        bounds = roomButton['rect'] as Rect?;
+      }
+    } catch (e) {
+      debugPrint('❌ bounds 계산 오류: $e');
+      return;
+    }
+    
+    if (bounds == null) {
+      debugPrint('❌ bounds가 null');
+      return;
     }
     
     final centerX = bounds.center.dx;
@@ -236,21 +284,26 @@ void _focusOnRoom(Map<String, dynamic> roomButton) {
     
     debugPrint('📍 호실 중심점: ($centerX, $centerY)');
     
-    // 🔥 즉시 적용 (WidgetsBinding 제거)
-    final targetScale = 1.8; // 줌 레벨 살짝 줄임
-    final translation = Matrix4.identity()
-      ..scale(targetScale)
-      ..translate(-centerX + 150, -centerY + 150); // 오프셋 조정
-    
-    _transformationController.value = translation;
-    
-    // 🔥 리셋 시간 단축
-    _resetScaleAfterDelay(duration: 2000); // 2초로 단축
+    // 🔥 변환 매트릭스 안전하게 적용
+    try {
+      final targetScale = 1.8;
+      final translation = Matrix4.identity()
+        ..scale(targetScale)
+        ..translate(-centerX + 150, -centerY + 150);
+      
+      _transformationController.value = translation;
+      
+      // 🔥 리셋 시간 설정
+      _resetScaleAfterDelay(duration: 2000);
+    } catch (e) {
+      debugPrint('❌ 변환 매트릭스 적용 오류: $e');
+    }
     
   } catch (e) {
-    debugPrint('❌ 호실 포커스 오류: $e');
+    debugPrint('❌ _focusOnRoom 전체 오류: $e');
   }
 }
+
 
   // 🔥 기존 네비게이션 모드 설정
   void _setupNavigationMode() {
@@ -309,32 +362,64 @@ void _focusOnRoom(Map<String, dynamic> roomButton) {
 
   // 🔥 노드 ID를 Offset으로 변환 (개선된 버전)
   List<Offset> _convertNodeIdsToOffsets(List<String> nodeIds, String floorNum, Map<String, Map<String, Offset>> floorNodesMap) {
+  try {
+    // 🔥 입력 값 검증
+    if (nodeIds.isEmpty) {
+      debugPrint('⚠️ nodeIds가 비어있음');
+      return [];
+    }
+    
+    if (floorNum.isEmpty) {
+      debugPrint('⚠️ floorNum이 비어있음');
+      return [];
+    }
+
     final floorNumStr = floorNum.toString();
-    final nodeMap = floorNodesMap[floorNumStr] ?? {};
-    if (nodeMap.isEmpty) {
-      debugPrint('⚠️ 층 $floorNumStr의 노드 맵이 비어있음');
+    final nodeMap = floorNodesMap[floorNumStr];
+    
+    if (nodeMap == null || nodeMap.isEmpty) {
+      debugPrint('⚠️ 층 $floorNumStr의 노드 맵이 비어있음 또는 null');
       return [];
     }
 
     final offsets = <Offset>[];
     for (String nodeId in nodeIds) {
-      String simpleId = nodeId.contains('@') ? nodeId.split('@').last : nodeId;
-      if (simpleId.startsWith('R')) {
-        simpleId = simpleId.substring(1);
-      }
+      try {
+        if (nodeId.isEmpty) {
+          debugPrint('⚠️ 빈 nodeId 건너뛰기');
+          continue;
+        }
 
-      final offset = nodeMap[simpleId];
-      if (offset != null) {
-        offsets.add(offset);
-        debugPrint('✅ 노드 변환: $nodeId -> $simpleId -> $offset');
-      } else {
-        debugPrint('❌ 노드 찾기 실패: $nodeId (simpleId: $simpleId)');
+        String simpleId = nodeId.contains('@') ? nodeId.split('@').last : nodeId;
+        if (simpleId.startsWith('R')) {
+          simpleId = simpleId.substring(1);
+        }
+
+        if (simpleId.isEmpty) {
+          debugPrint('⚠️ simpleId가 비어있음: $nodeId');
+          continue;
+        }
+
+        final offset = nodeMap[simpleId];
+        if (offset != null) {
+          offsets.add(offset);
+          debugPrint('✅ 노드 변환: $nodeId -> $simpleId -> $offset');
+        } else {
+          debugPrint('❌ 노드 찾기 실패: $nodeId (simpleId: $simpleId)');
+        }
+      } catch (e) {
+        debugPrint('❌ 개별 노드 처리 오류: $nodeId - $e');
+        continue;
       }
     }
 
     debugPrint('📊 노드 변환 결과: ${nodeIds.length}개 중 ${offsets.length}개 성공');
     return offsets;
+  } catch (e) {
+    debugPrint('❌ _convertNodeIdsToOffsets 전체 오류: $e');
+    return [];
   }
+}
 
   void _onFloorChanged(Map<String, dynamic> newFloor) {
     final newFloorNumber = newFloor['Floor_Number'].toString();
