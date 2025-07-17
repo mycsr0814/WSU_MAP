@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application_1/models/category.dart';
 import 'package:flutter_application_1/services/category_api_service.dart';
 import 'package:flutter_application_1/data/category_fallback_data.dart';
-import 'package:http/http.dart' as http;
 
 class CategoryChips extends StatefulWidget {
   final Function(String, List<String>) onCategorySelected;
@@ -87,7 +86,6 @@ class _CategoryChipsState extends State<CategoryChips> {
       });
 
       debugPrint('카테고리 로딩 완료: $_categories (서버 데이터: $_useServerData)');
-
     } catch (e) {
       if (!mounted) return;
 
@@ -105,43 +103,14 @@ class _CategoryChipsState extends State<CategoryChips> {
     try {
       debugPrint('🎯 getCategoryBuildingNames 호출: $category (서버 데이터: $_useServerData)');
 
-      // 서버 데이터 사용 시도
       if (_useServerData) {
         try {
-          debugPrint('📡 서버에서 카테고리별 건물 조회 시도...');
-
-          final response = await http.get(
-            Uri.parse('http://3.27.162.178:3001/category'),
-            headers: {'Content-Type': 'application/json'},
-          ).timeout(const Duration(seconds: 5));
-
-          if (response.statusCode == 200) {
-            final String responseBody = utf8.decode(response.bodyBytes);
-            final List<dynamic> jsonData = json.decode(responseBody);
-
-            debugPrint('✅ 서버 응답 성공! 데이터 개수: ${jsonData.length}개');
-
-            final filteredBuildings = <String>[];
-
-            for (final item in jsonData) {
-              final categoryName = item['Category_Name']?.toString();
-              final buildingName = item['Building_Name']?.toString();
-
-              if (categoryName == category && buildingName != null && buildingName.isNotEmpty) {
-                if (!filteredBuildings.contains(buildingName)) {
-                  filteredBuildings.add(buildingName);
-                }
-              }
-            }
-
-            if (filteredBuildings.isNotEmpty) {
-              debugPrint('🏢 서버에서 건물 목록 반환: $filteredBuildings');
-              return filteredBuildings;
-            } else {
-              debugPrint('⚠️ 서버에서 해당 카테고리의 건물을 찾지 못함');
-            }
+          final buildingNames = await CategoryApiService.getCategoryBuildingNames(category);
+          if (buildingNames.isNotEmpty) {
+            debugPrint('🏢 서버에서 건물 목록 반환: $buildingNames');
+            return buildingNames;
           } else {
-            debugPrint('❌ 서버 응답 오류: ${response.statusCode}');
+            debugPrint('⚠️ 서버에서 해당 카테고리의 건물을 찾지 못함, fallback 사용');
           }
         } catch (e) {
           debugPrint('❌ 서버 요청 실패: $e');
@@ -153,7 +122,6 @@ class _CategoryChipsState extends State<CategoryChips> {
       final buildings = CategoryFallbackData.getBuildingsByCategory(category);
       debugPrint('🏢 Fallback에서 건물 목록 반환: $buildings');
       return buildings;
-
     } catch (e) {
       debugPrint('❌ 카테고리 건물 조회 완전 실패: $e');
       return [];
@@ -204,7 +172,6 @@ class _CategoryChipsState extends State<CategoryChips> {
       });
 
       widget.onCategorySelected(category, buildingNames);
-
     } catch (e) {
       debugPrint('❌ API 호출 오류: $e');
       setState(() {
