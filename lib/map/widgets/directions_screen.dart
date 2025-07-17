@@ -12,8 +12,6 @@ import 'package:flutter_application_1/unified_navigation_stepper_page.dart';
 import 'package:provider/provider.dart';
 import 'dart:math' as math;
 import 'package:flutter_naver_map/flutter_naver_map.dart';
-
-// 🔥 통합 API 관련 imports
 import 'package:flutter_application_1/services/unified_path_service.dart';
 
 class DirectionsScreen extends StatefulWidget {
@@ -328,13 +326,53 @@ Future<void> _calculateRoutePreview() async {
         toRoom: _endRoomInfo!['roomName'],
       );
     } else if (_startBuilding!.name == '내 위치') {
-      final locationManager = Provider.of<LocationManager>(context, listen: false);
-      if (locationManager.hasValidLocation) {
-        final currentLocation = locationManager.currentLocation!;
-        response = await UnifiedPathService.getPathFromLocation(
-          fromLocation: NLatLng(currentLocation.latitude!, currentLocation.longitude!),
-          toBuilding: _endBuilding!,
-        );
+      // 🔥 내 위치 처리 시 안전성 강화
+      try {
+        final locationManager = Provider.of<LocationManager>(context, listen: false);
+        
+        if (locationManager.hasValidLocation && 
+            locationManager.currentLocation != null &&
+            locationManager.currentLocation!.latitude != null &&
+            locationManager.currentLocation!.longitude != null) {
+          
+          final currentLocation = locationManager.currentLocation!;
+          debugPrint('✅ 현재 위치 사용: (${currentLocation.latitude}, ${currentLocation.longitude})');
+          
+          response = await UnifiedPathService.getPathFromLocation(
+            fromLocation: NLatLng(currentLocation.latitude!, currentLocation.longitude!),
+            toBuilding: _endBuilding!,
+          );
+        } else {
+          debugPrint('⚠️ 유효한 현재 위치 없음. 기본 위치 사용.');
+          throw Exception('현재 위치를 가져올 수 없습니다');
+        }
+      } catch (e) {
+        debugPrint('❌ 내 위치 경로 계산 오류: $e');
+        
+        // 🔥 기본 캠퍼스 위치로 대체
+        const defaultLocation = NLatLng(36.338133, 127.446423);
+        debugPrint('🏫 기본 캠퍼스 위치로 대체: $defaultLocation');
+        
+        try {
+          response = await UnifiedPathService.getPathFromLocation(
+            fromLocation: defaultLocation,
+            toBuilding: _endBuilding!,
+          );
+          
+          // 🔥 사용자에게 알림 (선택적)
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('현재 위치를 가져올 수 없어 기본 위치를 사용합니다'),
+                backgroundColor: Colors.orange,
+                duration: Duration(seconds: 2),
+              ),
+            );
+          }
+        } catch (fallbackError) {
+          debugPrint('❌ 기본 위치로도 계산 실패: $fallbackError');
+          throw fallbackError;
+        }
       }
     } else {
       response = await UnifiedPathService.getPathBetweenBuildings(
@@ -347,10 +385,21 @@ Future<void> _calculateRoutePreview() async {
       _previewResponse = response;
       _calculateEstimatesFromResponse(response);
       debugPrint('✅ 경로 미리보기 계산 완료: ${response.type}');
+    } else {
+      debugPrint('⚠️ 경로 응답이 null입니다');
     }
 
   } catch (e) {
     debugPrint('❌ 경로 미리보기 계산 오류: $e');
+    
+    // 🔥 오류 상태 초기화
+    if (mounted) {
+      setState(() {
+        _previewResponse = null;
+        _estimatedDistance = '';
+        _estimatedTime = '';
+      });
+    }
   } finally {
     if (mounted) {
       setState(() => _isCalculatingPreview = false);
@@ -360,78 +409,114 @@ Future<void> _calculateRoutePreview() async {
 
   // 🔥 통합 API 응답으로부터 예상 시간과 거리 계산
   void _calculateEstimatesFromResponse(UnifiedPathResponse response) {
+  try {
     double totalDistance = 0;
     
-    // 모든 구간의 거리 합산
-    if (response.result.departureIndoor != null) {
+    // 🔥 null 체크 강화
+    if (response.result.departureIndoor?.path?.distance != null) {
       totalDistance += response.result.departureIndoor!.path.distance;
     }
-    if (response.result.outdoor != null) {
+    if (response.result.outdoor?.path?.distance != null) {
       totalDistance += response.result.outdoor!.path.distance;
     }
-    if (response.result.arrivalIndoor != null) {
+    if (response.result.arrivalIndoor?.path?.distance != null) {
       totalDistance += response.result.arrivalIndoor!.path.distance;
     }
     
-    // 거리 포맷팅
+    // 🔥 거리 포맷팅 - 안전한 계산
+    if (totalDistance <= 0) {
+      _estimatedDistance = '0m';
+      _estimatedTime = '0분';
+      return;
+    }
+    
     if (totalDistance < 1000) {
       _estimatedDistance = '${totalDistance.round()}m';
     } else {
       _estimatedDistance = '${(totalDistance / 1000).toStringAsFixed(1)}km';
     }
     
-    // 예상 시간 계산 (평균 도보 속도 4km/h 기준)
-    double walkingSpeedKmh = 4.0;
-    double timeInHours = totalDistance / 1000 / walkingSpeedKmh;
-    int timeInMinutes = (timeInHours * 60).round();
+    // 🔥 예상 시간 계산 - 안전한 계산
+    const double walkingSpeedKmh = 4.0;
+    final double timeInHours = totalDistance / 1000 / walkingSpeedKmh;
+    final int timeInMinutes = (timeInHours * 60).round();
     
-    if (timeInMinutes < 60) {
+    if (timeInMinutes <= 0) {
+      _estimatedTime = '1분 이내';
+    } else if (timeInMinutes < 60) {
       _estimatedTime = '도보 ${timeInMinutes}분';
     } else {
-      int hours = timeInMinutes ~/ 60;
-      int minutes = timeInMinutes % 60;
-      _estimatedTime = '도보 ${hours}시간 ${minutes}분';
+      final int hours = timeInMinutes ~/ 60;
+      final int minutes = timeInMinutes % 60;
+      if (minutes == 0) {
+        _estimatedTime = '도보 ${hours}시간';
+      } else {
+        _estimatedTime = '도보 ${hours}시간 ${minutes}분';
+      }
     }
     
     debugPrint('📊 통합 API 기반 예상: 거리 $_estimatedDistance, 시간 $_estimatedTime');
+    
+  } catch (e) {
+    debugPrint('❌ 거리/시간 계산 오류: $e');
+    _estimatedDistance = '계산 불가';
+    _estimatedTime = '계산 불가';
   }
+}
 
   Future<void> _onSearchChanged() async {
-    final query = _searchController.text.trim();
+  final query = _searchController.text.trim();
+  
+  if (query.isEmpty) {
+    setState(() {
+      _searchResults = [];
+      _isSearching = false;
+      _isLoading = false;
+    });
+    return;
+  }
+
+  // 🔥 "내 위치" 관련 검색은 건너뛰기
+  final lowercaseQuery = query.toLowerCase();
+  if (lowercaseQuery.contains('내 위치') || 
+      lowercaseQuery.contains('내위치') || 
+      lowercaseQuery.contains('현재위치') || 
+      lowercaseQuery.contains('현재 위치') ||
+      lowercaseQuery.contains('my location') ||
+      lowercaseQuery.contains('current location')) {
+    setState(() {
+      _searchResults = [];
+      _isSearching = false;
+      _isLoading = false;
+    });
+    debugPrint('⚠️ "내 위치" 관련 검색은 건너뛰기: $query');
+    return;
+  }
+
+  setState(() {
+    _isSearching = true;
+    _isLoading = true;
+  });
+
+  try {
+    final results = await IntegratedSearchService.search(query, context);
     
-    if (query.isEmpty) {
+    if (mounted) {
       setState(() {
-        _searchResults = [];
-        _isSearching = false;
+        _searchResults = results ?? []; // null 체크 추가
         _isLoading = false;
       });
-      return;
     }
-
-    setState(() {
-      _isSearching = true;
-      _isLoading = true;
-    });
-
-    try {
-      final results = await IntegratedSearchService.search(query, context);
-      
-      if (mounted) {
-        setState(() {
-          _searchResults = results;
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      debugPrint('검색 오류: $e');
-      if (mounted) {
-        setState(() {
-          _searchResults = [];
-          _isLoading = false;
-        });
-      }
+  } catch (e) {
+    debugPrint('❌ 검색 오류: $e');
+    if (mounted) {
+      setState(() {
+        _searchResults = [];
+        _isLoading = false;
+      });
     }
   }
+}
 
   void _selectStartLocation() {
     setState(() {
@@ -457,117 +542,164 @@ Future<void> _calculateRoutePreview() async {
 
  // 2. 검색 결과 선택 시 (건물/호실 모두 건물 코드만 사용)
 void _onSearchResultSelected(SearchResult result) {
-  Building building;
-  Map<String, dynamic>? roomInfo;
+  try {
+    Building building;
+    Map<String, dynamic>? roomInfo;
 
-  if (result.isRoom) {
-    building = result.toBuildingWithRoomLocation();
-    roomInfo = {
-      'roomName': result.roomNumber ?? '',
-      'buildingName': _extractBuildingCode(result.building.name), // 🔥 건물 코드만 사용
-      'floorNumber': result.floorNumber?.toString() ?? '1',        // 🔥 항상 문자열
-    };
-  } else {
-    final buildingCode = _extractBuildingCode(result.building.name);
-    building = Building(
-      name: buildingCode,
-      info: result.building.info,
-      lat: result.building.lat,
-      lng: result.building.lng,
-      category: result.building.category,
-      baseStatus: result.building.baseStatus,
-      hours: result.building.hours,
-      phone: result.building.phone,
-      imageUrl: result.building.imageUrl,
-      description: result.building.description,
-    );
-  }
-
-  setState(() {
-    _recentSearches.removeWhere((b) => b.name == building.name);
-    _recentSearches.insert(0, building);
-    if (_recentSearches.length > 5) {
-      _recentSearches = _recentSearches.take(5).toList();
+    if (result.isRoom) {
+      building = result.toBuildingWithRoomLocation();
+      roomInfo = {
+        'roomName': result.roomNumber ?? '',
+        'buildingName': _extractBuildingCode(result.building.name),
+        'floorNumber': result.floorNumber?.toString() ?? '1',
+      };
+    } else {
+      final buildingCode = _extractBuildingCode(result.building.name);
+      building = Building(
+        name: buildingCode,
+        info: result.building.info,
+        lat: result.building.lat,
+        lng: result.building.lng,
+        category: result.building.category,
+        baseStatus: result.building.baseStatus,
+        hours: result.building.hours,
+        phone: result.building.phone,
+        imageUrl: result.building.imageUrl,
+        description: result.building.description,
+      );
     }
-  });
 
-  if (_searchType == 'start') {
+    // 🔥 안전한 리스트 업데이트
     setState(() {
-      _startBuilding = building;
-      _startRoomInfo = roomInfo;
-      _searchType = null;
-      _isSearching = false;
-      _isLoading = false;
-      _searchResults = [];
-      _searchController.clear();
+      try {
+        _recentSearches.removeWhere((b) => b.name == building.name);
+        _recentSearches.insert(0, building);
+        if (_recentSearches.length > 5) {
+          _recentSearches = _recentSearches.take(5).toList();
+        }
+      } catch (e) {
+        debugPrint('❌ 최근 검색 목록 업데이트 오류: $e');
+        _recentSearches = [building]; // 안전하게 초기화
+      }
     });
-  } else if (_searchType == 'end') {
-    setState(() {
-      _endBuilding = building;
-      _endRoomInfo = roomInfo;
-      _searchType = null;
-      _isSearching = false;
-      _isLoading = false;
-      _searchResults = [];
-      _searchController.clear();
-    });
-  }
 
-  _focusNode.unfocus();
+    if (_searchType == 'start') {
+      setState(() {
+        _startBuilding = building;
+        _startRoomInfo = roomInfo;
+        _searchType = null;
+        _isSearching = false;
+        _isLoading = false;
+        _searchResults = [];
+        _searchController.clear();
+      });
+      debugPrint('✅ 출발지 설정: ${building.name}');
+    } else if (_searchType == 'end') {
+      setState(() {
+        _endBuilding = building;
+        _endRoomInfo = roomInfo;
+        _searchType = null;
+        _isSearching = false;
+        _isLoading = false;
+        _searchResults = [];
+        _searchController.clear();
+      });
+      debugPrint('✅ 도착지 설정: ${building.name}');
+    }
 
-  if (_startBuilding != null && _endBuilding != null) {
-    _calculateRoutePreview();
+    _focusNode.unfocus();
+
+    // 🔥 안전한 경로 미리보기 계산
+    if (_startBuilding != null && _endBuilding != null) {
+      Future.microtask(() => _calculateRoutePreview());
+    }
+    
+  } catch (e) {
+    debugPrint('❌ 검색 결과 선택 오류: $e');
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('선택 중 오류가 발생했습니다. 다시 시도해주세요.'),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
   }
 }
 
   void _onBuildingSelected(Building building) {
-  final buildingCode = _extractBuildingCode(building.name);
-  final cleanBuilding = Building(
-    name: buildingCode, // 건물 코드만 사용
-    info: building.info,
-    lat: building.lat,
-    lng: building.lng,
-    category: building.category,
-    baseStatus: building.baseStatus,
-    hours: building.hours,
-    phone: building.phone,
-    imageUrl: building.imageUrl,
-    description: building.description,
-  );
+  try {
+    final buildingCode = _extractBuildingCode(building.name);
+    final cleanBuilding = Building(
+      name: buildingCode,
+      info: building.info,
+      lat: building.lat,
+      lng: building.lng,
+      category: building.category,
+      baseStatus: building.baseStatus,
+      hours: building.hours,
+      phone: building.phone,
+      imageUrl: building.imageUrl,
+      description: building.description,
+    );
 
-  setState(() {
-    _recentSearches.removeWhere((b) => b.name == cleanBuilding.name);
-    _recentSearches.insert(0, cleanBuilding);
-    if (_recentSearches.length > 5) {
-      _recentSearches = _recentSearches.take(5).toList();
+    // 🔥 안전한 리스트 업데이트
+    setState(() {
+      try {
+        _recentSearches.removeWhere((b) => b.name == cleanBuilding.name);
+        _recentSearches.insert(0, cleanBuilding);
+        if (_recentSearches.length > 5) {
+          _recentSearches = _recentSearches.take(5).toList();
+        }
+      } catch (e) {
+        debugPrint('❌ 최근 검색 목록 업데이트 오류: $e');
+        _recentSearches = [cleanBuilding]; // 안전하게 초기화
+      }
+    });
+
+    if (_searchType == 'start') {
+      setState(() {
+        _startBuilding = cleanBuilding;
+        _startRoomInfo = null;
+        _searchType = null;
+        _isSearching = false;
+        _isLoading = false;
+        _searchResults = [];
+        _searchController.clear();
+      });
+      debugPrint('✅ 출발지 건물 설정: ${cleanBuilding.name}');
+    } else if (_searchType == 'end') {
+      setState(() {
+        _endBuilding = cleanBuilding;
+        _endRoomInfo = null;
+        _searchType = null;
+        _isSearching = false;
+        _isLoading = false;
+        _searchResults = [];
+        _searchController.clear();
+      });
+      debugPrint('✅ 도착지 건물 설정: ${cleanBuilding.name}');
     }
-  });
+    
+    _focusNode.unfocus();
 
-  if (_searchType == 'start') {
-    setState(() {
-      _startBuilding = cleanBuilding;
-      _startRoomInfo = null;
-      _searchType = null;
-      _isSearching = false;
-      _isLoading = false;
-      _searchResults = [];
-      _searchController.clear();
-    });
-  } else if (_searchType == 'end') {
-    setState(() {
-      _endBuilding = cleanBuilding;
-      _endRoomInfo = null;
-      _searchType = null;
-      _isSearching = false;
-      _isLoading = false;
-      _searchResults = [];
-      _searchController.clear();
-    });
-  }
-  _focusNode.unfocus();
-
-  if (_startBuilding != null && _endBuilding != null) {
-    _calculateRoutePreview();
+    // 🔥 안전한 경로 미리보기 계산
+    if (_startBuilding != null && _endBuilding != null) {
+      Future.microtask(() => _calculateRoutePreview());
+    }
+    
+  } catch (e) {
+    debugPrint('❌ 건물 선택 오류: $e');
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('건물 선택 중 오류가 발생했습니다. 다시 시도해주세요.'),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
   }
 }
 

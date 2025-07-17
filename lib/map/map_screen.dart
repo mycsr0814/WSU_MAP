@@ -119,8 +119,6 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                 ScheduleScreen(userId: userId),
                 // 3. 친구 화면을 전체화면으로 변경 - userId 전달
                 FriendsScreen(userId: userId),
-                // 3. 친구 화면을 전체화면으로 변경 - userId 전달
-                FriendsScreen(userId: userId),
                 const ProfileScreen(),
               ],
             ),
@@ -304,12 +302,6 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                 Icons.schedule_outlined,
                 Icons.schedule,
                 l10n.timetable,
-              ),
-              _buildNavItem(
-                2,
-                Icons.people_outline,
-                Icons.people,
-                l10n.friends,
               ),
               _buildNavItem(
                 2,
