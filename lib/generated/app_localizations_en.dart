@@ -1350,7 +1350,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String loading_floor_plan(Object floor) {
-    return 'Loading $floor floor plan...';
+    return 'Loading $floor floor plan…';
   }
 
   @override

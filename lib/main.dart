@@ -16,7 +16,7 @@ void main() async {
 
   try {
     await FlutterNaverMap().init(
-      clientId: 'a7hukqhx2a',
+      clientId: 'gxa5mf6swg',
       onAuthFailed: (ex) => debugPrint('NaverMap 인증 실패: $ex'),
     );
     debugPrint('✅ 네이버 지도 초기화 성공');
@@ -24,16 +24,16 @@ void main() async {
     debugPrint('❌ 네이버 지도 초기화 오류: $e');
   }
 
-runApp(
-  MultiProvider(
-    providers: [
-      ChangeNotifierProvider(create: (_) => UserAuth()),
-      ChangeNotifierProvider(create: (_) => AppLanguageProvider()),
-      ChangeNotifierProvider(create: (_) => LocationManager()), // 반드시 추가
-    ],
-    child: const CampusNavigatorApp(),
-  ),
-);
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => UserAuth()),
+        ChangeNotifierProvider(create: (_) => AppLanguageProvider()),
+        ChangeNotifierProvider(create: (_) => LocationManager()), // 반드시 추가
+      ],
+      child: const CampusNavigatorApp(),
+    ),
+  );
 }
 
 class CampusNavigatorApp extends StatefulWidget {
@@ -95,11 +95,7 @@ class _CampusNavigatorAppState extends State<CampusNavigatorApp> {
             ),
           ),
           locale: langProvider.locale,
-          supportedLocales: const [
-            Locale('ko'),
-            Locale('en'),
-            Locale('zh'),
-          ],
+          supportedLocales: const [Locale('ko'), Locale('en'), Locale('zh')],
           localizationsDelegates: const [
             AppLocalizations.delegate,
             GlobalMaterialLocalizations.delegate,
@@ -110,8 +106,10 @@ class _CampusNavigatorAppState extends State<CampusNavigatorApp> {
           routes: {
             '/directions': (context) {
               // arguments로 방 정보를 받아서 DirectionsScreen에 전달
-              final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-              
+              final args =
+                  ModalRoute.of(context)?.settings.arguments
+                      as Map<String, dynamic>?;
+
               if (args != null) {
                 return DirectionsScreen(roomData: args);
               } else {
@@ -145,10 +143,7 @@ class _CampusNavigatorAppState extends State<CampusNavigatorApp> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF1E3A8A),
-              Color(0xFF3B82F6),
-            ],
+            colors: [Color(0xFF1E3A8A), Color(0xFF3B82F6)],
           ),
         ),
         child: Center(
@@ -166,11 +161,7 @@ class _CampusNavigatorAppState extends State<CampusNavigatorApp> {
                     width: 2,
                   ),
                 ),
-                child: const Icon(
-                  Icons.school,
-                  size: 50,
-                  color: Colors.white,
-                ),
+                child: const Icon(Icons.school, size: 50, color: Colors.white),
               ),
               const SizedBox(height: 32),
               const Text(

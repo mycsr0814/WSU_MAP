@@ -1,4 +1,4 @@
-// lib/utils/svg_data_parser.dart (함수 이름 오류 수정 완료)
+// lib/utils/svg_data_parser.dart (null safety 오류 수정 완료)
 
 import 'dart:ui';
 import 'package:xml/xml.dart';
@@ -9,10 +9,12 @@ class SvgDataParser {
     final List<Map<String, dynamic>> buttons = [];
     final document = XmlDocument.parse(svgContent);
 
-    // 1. <rect> 태그 파싱: 기존과 동일
+    // 1. <rect> 태그 파싱: null safety 적용
     final rects = document.findAllElements('rect');
     for (var rect in rects) {
-      String? id = rect.getAttribute('inkscape:label') ?? rect.getAttribute('id');
+      String? id =
+          rect.getAttribute('inkscape:label') ?? rect.getAttribute('id');
+      // null 체크 및 조건부 호출 사용
       if (id != null && (id.startsWith('R') || int.tryParse(id) != null)) {
         final x = double.tryParse(rect.getAttribute('x') ?? '');
         final y = double.tryParse(rect.getAttribute('y') ?? '');
@@ -20,7 +22,7 @@ class SvgDataParser {
         final height = double.tryParse(rect.getAttribute('height') ?? '');
         if (x != null && y != null && width != null && height != null) {
           buttons.add({
-            'id': id,
+            'id': id, // 이제 null이 아님이 보장됨
             'type': 'rect', // [추가] 데이터 타입을 'rect'로 명시
             'rect': Rect.fromLTWH(x, y, width, height),
           });
@@ -28,18 +30,21 @@ class SvgDataParser {
       }
     }
 
-    // 2. <path> 태그 파싱
+    // 2. <path> 태그 파싱: null safety 적용
     final paths = document.findAllElements('path');
     for (var pathElement in paths) {
-      String? id = pathElement.getAttribute('inkscape:label') ?? pathElement.getAttribute('id');
+      String? id =
+          pathElement.getAttribute('inkscape:label') ??
+          pathElement.getAttribute('id');
       final dAttribute = pathElement.getAttribute('d');
+      // null 체크 및 조건부 호출 사용
       if (id != null && id.startsWith('R') && dAttribute != null) {
         try {
           final Path path = parseSvgPathData(dAttribute);
           buttons.add({
-            'id': id,
+            'id': id, // 이제 null이 아님이 보장됨
             'type': 'path', // [추가] 데이터 타입을 'path'로 명시
-            'path': path,   // [핵심] Rect가 아닌 Path 객체를 그대로 저장
+            'path': path, // [핵심] Rect가 아닌 Path 객체를 그대로 저장
           });
         } catch (e) {
           print("SVG Path 파싱 중 오류 발생 (ID: $id): $e");
@@ -49,7 +54,7 @@ class SvgDataParser {
     return buttons;
   }
 
-  /// 길찾기용 모든 노드 좌표를 파싱하는 함수 (수정 없음)
+  /// 길찾기용 모든 노드 좌표를 파싱하는 함수 (null safety 적용)
   static Map<String, Offset> parseAllNodes(String svgContent) {
     final Map<String, Offset> nodes = {};
     final document = XmlDocument.parse(svgContent);
@@ -63,8 +68,9 @@ class SvgDataParser {
     }
 
     document.descendants.whereType<XmlElement>().forEach((element) {
-      String? id = element.getAttribute('inkscape:label') ?? element.getAttribute('id');
-      if (id == null) return;
+      String? id =
+          element.getAttribute('inkscape:label') ?? element.getAttribute('id');
+      if (id == null) return; // null 체크로 조기 반환
 
       if (element.name.local == 'rect') {
         final x = double.tryParse(element.getAttribute('x') ?? '');
@@ -72,7 +78,10 @@ class SvgDataParser {
         final width = double.tryParse(element.getAttribute('width') ?? '');
         final height = double.tryParse(element.getAttribute('height') ?? '');
         if (x != null && y != null && width != null && height != null) {
-          addNode(id, Offset(x + width / 2, y + height / 2));
+          addNode(
+            id,
+            Offset(x + width / 2, y + height / 2),
+          ); // id는 null이 아님이 보장됨
         }
       } else if (element.name.local == 'path') {
         final d = element.getAttribute('d');
@@ -82,26 +91,35 @@ class SvgDataParser {
           try {
             final Path path = parseSvgPathData(d);
             if (!path.getBounds().isEmpty) {
-              final firstPoint = path.computeMetrics().first.getTangentForOffset(0)!.position;
-              addNode(id, firstPoint);
+              final firstPoint = path
+                  .computeMetrics()
+                  .first
+                  .getTangentForOffset(0)!
+                  .position;
+              addNode(id, firstPoint); // id는 null이 아님이 보장됨
             }
-          } catch(e) {
+          } catch (e) {
             // 간단한 파싱 방식 (기존 코드)
-            final parts = d.toUpperCase().replaceAll('M', '').trim().split(RegExp(r'\\s+|,'));
+            final parts = d
+                .toUpperCase()
+                .replaceAll('M', '')
+                .trim()
+                .split(RegExp(r'\\s+|,'));
             if (parts.length >= 2) {
               final x = double.tryParse(parts[0]);
               final y = double.tryParse(parts[1]);
               if (x != null && y != null) {
-                addNode(id, Offset(x, y));
+                addNode(id, Offset(x, y)); // id는 null이 아님이 보장됨
               }
             }
           }
         }
-      } else if (element.name.local == 'circle' || element.name.local == 'ellipse') {
+      } else if (element.name.local == 'circle' ||
+          element.name.local == 'ellipse') {
         final cx = double.tryParse(element.getAttribute('cx') ?? '');
         final cy = double.tryParse(element.getAttribute('cy') ?? '');
         if (cx != null && cy != null) {
-          addNode(id, Offset(cx, cy));
+          addNode(id, Offset(cx, cy)); // id는 null이 아님이 보장됨
         }
       }
     });

@@ -2599,7 +2599,7 @@ abstract class AppLocalizations {
   /// No description provided for @loading_floor_plan.
   ///
   /// In en, this message translates to:
-  /// **'Loading {floor} floor plan...'**
+  /// **'Loading {floor} floor plan…'**
   String loading_floor_plan(Object floor);
 
   /// No description provided for @server_info.

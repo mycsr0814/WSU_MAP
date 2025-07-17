@@ -1321,7 +1321,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String loading_floor_plan(Object floor) {
-    return '$floor 도면을 불러오는 중...';
+    return '$floor 도면을 불러오는 중…';
   }
 
   @override

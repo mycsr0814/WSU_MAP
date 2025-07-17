@@ -1,4 +1,5 @@
 // lib/map/map_screen.dart - 친구 화면을 전체화면으로 변경
+// lib/map/map_screen.dart - 친구 화면을 전체화면으로 변경
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/controllers/location_controllers.dart';
@@ -32,8 +33,9 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
   late MapScreenController _controller;
   late NavigationStateManager _navigationManager;
   late BuildingMarkerService _buildingMarkerService;
-  
-  final OverlayPortalController _infoWindowController = OverlayPortalController();
+
+  final OverlayPortalController _infoWindowController =
+      OverlayPortalController();
   int _currentNavIndex = 0;
   bool _isInitializing = false;
 
@@ -43,7 +45,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     _controller = MapScreenController();
     _navigationManager = NavigationStateManager();
     _buildingMarkerService = BuildingMarkerService();
-    
+
     WidgetsBinding.instance.addObserver(this);
     _initializeController();
   }
@@ -103,7 +105,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     // 1. userId를 Provider에서 받아오기
     final userId = context.read<UserAuth>().userId ?? '';
-    print('userId: $userId'); 
+    print('userId: $userId');
     return ChangeNotifierProvider.value(
       value: _controller,
       child: Consumer<MapScreenController>(
@@ -115,6 +117,8 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                 _buildMapScreen(controller),
                 // 2. userId를 ScheduleScreen에 전달
                 ScheduleScreen(userId: userId),
+                // 3. 친구 화면을 전체화면으로 변경 - userId 전달
+                FriendsScreen(userId: userId),
                 // 3. 친구 화면을 전체화면으로 변경 - userId 전달
                 FriendsScreen(userId: userId),
                 const ProfileScreen(),
@@ -300,6 +304,12 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                 Icons.schedule_outlined,
                 Icons.schedule,
                 l10n.timetable,
+              ),
+              _buildNavItem(
+                2,
+                Icons.people_outline,
+                Icons.people,
+                l10n.friends,
               ),
               _buildNavItem(
                 2,
