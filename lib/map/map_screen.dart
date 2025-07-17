@@ -32,8 +32,9 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
   late MapScreenController _controller;
   late NavigationStateManager _navigationManager;
   late BuildingMarkerService _buildingMarkerService;
-  
-  final OverlayPortalController _infoWindowController = OverlayPortalController();
+
+  final OverlayPortalController _infoWindowController =
+      OverlayPortalController();
   int _currentNavIndex = 0;
   bool _isInitializing = false;
 
@@ -43,7 +44,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     _controller = MapScreenController();
     _navigationManager = NavigationStateManager();
     _buildingMarkerService = BuildingMarkerService();
-    
+
     WidgetsBinding.instance.addObserver(this);
     _initializeController();
   }
@@ -103,7 +104,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     // 1. userId를 Provider에서 받아오기
     final userId = context.read<UserAuth>().userId ?? '';
-    print('userId: $userId'); 
+    print('userId: $userId');
     return ChangeNotifierProvider.value(
       value: _controller,
       child: Consumer<MapScreenController>(
@@ -331,16 +332,16 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     String label,
   ) {
     final isActive = _currentNavIndex == index;
-    
+
     return GestureDetector(
       onTap: () {
         // 친구 화면에 접근할 때 로그인 상태 확인
         if (index == 2) {
           final userId = context.read<UserAuth>().userId ?? '';
           if (userId.isEmpty) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('로그인 후 이용 가능합니다.')),
-            );
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(const SnackBar(content: Text('로그인 후 이용 가능합니다.')));
             return;
           }
         }

@@ -1,5 +1,6 @@
 // lib/repositories/building_repository.dart - Result 패턴 완전 적용 + 생명주기 관리 개선
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/generated/app_localizations.dart';
 import '../models/building.dart';
 import '../services/building_api_service.dart';
 import '../services/building_data_service.dart';
@@ -62,6 +63,44 @@ class BuildingRepository extends ChangeNotifier {
       _lastLoadTime = null;
       _dataChangeListeners.clear();
       _isDisposed = false;
+    }
+  }
+
+   String _getAutoOperatingStatusKey(String baseStatus) {
+    // 특별 상태는 자동 변경하지 않음
+    if (baseStatus == '24시간' || baseStatus == '임시휴무' || baseStatus == '휴무') {
+      return baseStatus;
+    }
+
+    // 현재 시간 가져오기
+    final now = DateTime.now();
+    final currentHour = now.hour;
+
+    // 09:00 ~ 18:00 운영중, 나머지는 운영종료
+    if (currentHour >= 9 && currentHour < 18) {
+      return '운영중';
+    } else {
+      return '운영종료';
+    }
+  }
+
+    String _getLocalizedOperatingStatus(BuildContext context, String baseStatus) {
+    final l10n = AppLocalizations.of(context)!;
+    
+    // 특별 상태는 자동 변경하지 않음
+    if (baseStatus == '24시간' || baseStatus == '임시휴무' || baseStatus == '휴무') {
+      return baseStatus;
+    }
+
+    // 현재 시간 가져오기
+    final now = DateTime.now();
+    final currentHour = now.hour;
+
+    // 09:00 ~ 18:00 운영중, 나머지는 운영종료
+    if (currentHour >= 9 && currentHour < 18) {
+      return l10n.status_open;  // 번역된 "운영중"
+    } else {
+      return l10n.status_closed; // 번역된 "운영종료"
     }
   }
 
@@ -187,12 +226,12 @@ class BuildingRepository extends ChangeNotifier {
   }
 
   /// 🔥 현재 시간 기준 운영상태가 적용된 건물 목록 반환
-  List<Building> _getCurrentBuildingsWithOperatingStatus() {
-    return _allBuildings.map((building) {
-      final autoStatus = _getAutoOperatingStatus(building.baseStatus);
-      return building.copyWith(baseStatus: autoStatus);
-    }).toList();
-  }
+ List<Building> _getCurrentBuildingsWithOperatingStatus() {
+  return _allBuildings.map((building) {
+    final autoStatus = _getAutoOperatingStatusWithoutContext(building.baseStatus);
+    return building.copyWith(baseStatus: autoStatus);
+  }).toList();
+}
 
   /// 🔥 자동 운영상태 결정
   String _getAutoOperatingStatus(String baseStatus) {
@@ -523,23 +562,25 @@ class BuildingRepository extends ChangeNotifier {
   }
 
   /// 🔥 검색 기능 - Result 패턴 적용
-  Result<List<Building>> searchBuildings(String query) {
-    return ResultHelper.runSafely(() {
-      if (query.isEmpty) return _getCurrentBuildingsWithOperatingStatus();
+Result<List<Building>> searchBuildings(String query) {
+  return ResultHelper.runSafely(() {
+    if (query.isEmpty) {
+      return _getCurrentBuildingsWithOperatingStatus();
+    }
 
-      final lowercaseQuery = query.toLowerCase();
-      final filtered = _allBuildings.where((building) {
-        return building.name.toLowerCase().contains(lowercaseQuery) ||
-            building.info.toLowerCase().contains(lowercaseQuery) ||
-            building.category.toLowerCase().contains(lowercaseQuery);
-      }).toList();
+    final filtered = _allBuildings.where((building) {
+      final q = query.toLowerCase();
+      return building.name.toLowerCase().contains(q) ||
+             building.info.toLowerCase().contains(q) ||
+             building.category.toLowerCase().contains(q);
+    }).toList();
 
-      return filtered.map((building) {
-        final autoStatus = _getAutoOperatingStatus(building.baseStatus);
-        return building.copyWith(baseStatus: autoStatus);
-      }).toList();
-    }, 'BuildingRepository.searchBuildings');
-  }
+    return filtered.map((b) {
+      final autoStatus = _getAutoOperatingStatusWithoutContext(b.baseStatus);
+      return b.copyWith(baseStatus: autoStatus);
+    }).toList();
+  }, 'BuildingRepository.searchBuildings');
+}
 
   /// 🔥 카테고리별 건물 필터링 - Result 패턴 적용
   Result<List<Building>> getBuildingsByCategory(String category) {
@@ -686,4 +727,30 @@ class BuildingRepository extends ChangeNotifier {
     _allBuildings.clear();
     super.dispose();
   }
+
+  /// 🔥 locale 없이 평가: fallback 용 (context 없음)
+String _getAutoOperatingStatusWithoutContext(String baseStatus) {
+  if (baseStatus == '24시간' || baseStatus == '임시휴무' || baseStatus == '휴무') {
+    return baseStatus;
+  }
+
+  final now = DateTime.now().hour;
+  return (now >= 9 && now < 18) ? '운영중' : '운영종료';
+}
+
+/// 🔥 locale 기반 상태명 평가 (context 필요)
+String _getAutoOperatingStatusWithContext(BuildContext context, String baseStatus) {
+  final l10n = AppLocalizations.of(context)!;
+  final ignoreList = [
+    l10n.status_24hours,
+    l10n.status_temp_closed,
+    l10n.status_closed_permanently
+  ];
+
+  if (ignoreList.contains(baseStatus)) return baseStatus;
+
+  final now = DateTime.now().hour;
+  return (now >= 9 && now < 18) ? l10n.status_open : l10n.status_closed;
+}
+
 }

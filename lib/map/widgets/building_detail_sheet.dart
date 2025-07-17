@@ -1,7 +1,9 @@
 // lib/map/widgets/building_detail_sheet.dart - 길찾기 버튼 수정
 
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/generated/app_localizations.dart';
 import 'package:flutter_application_1/models/building.dart';
+import 'package:flutter_application_1/utils/status_localization.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_application_1/controllers/map_controller.dart';
 import 'package:flutter_application_1/services/path_api_service.dart';
@@ -280,7 +282,7 @@ class BuildingDetailSheet extends StatelessWidget {
                       const SizedBox(height: 16),
                       
                       // 기본 정보
-                      _buildBasicInfo(),
+                      _buildBasicInfo(context),
                       
                       const SizedBox(height: 20),
                       
@@ -360,165 +362,169 @@ class BuildingDetailSheet extends StatelessWidget {
   }
 
   Widget _buildDirectionsButtons(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Colors.blue.shade50, Colors.indigo.shade50],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.blue.shade100),
+  final localizations = AppLocalizations.of(context)!;
+  
+  return Container(
+    margin: const EdgeInsets.symmetric(horizontal: 20),
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      gradient: LinearGradient(
+        colors: [Colors.blue.shade50, Colors.indigo.shade50],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
       ),
-      child: Column(
-        children: [
-          // 제목
-          Row(
-            children: [
-              Icon(
-                Icons.directions,
-                color: Colors.indigo.shade600,
-                size: 20,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                '길찾기',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.indigo.shade800,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          
-          // 버튼들
-          Row(
-            children: [
-              // 🔥 여기까지 오기 버튼 - 더 명확한 디버깅 추가
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    debugPrint('🔥 "여기까지" 버튼 클릭됨 - ${building.name}');
-                    _navigateHere(context);
-                  },
-                  icon: const Icon(Icons.near_me, size: 18),
-                  label: const Text('여기까지'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1E3A8A),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    elevation: 2,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              
-              // 출발지로 설정 버튼
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () => _setAsStartLocation(context),
-                  icon: const Icon(Icons.play_arrow, size: 18),
-                  label: const Text('출발지'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: const Color(0xFF10B981),
-                    side: const BorderSide(color: Color(0xFF10B981)),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              
-              // 도착지로 설정 버튼
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () => _setAsEndLocation(context),
-                  icon: const Icon(Icons.flag, size: 18),
-                  label: const Text('도착지'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: const Color(0xFFEF4444),
-                    side: const BorderSide(color: Color(0xFFEF4444)),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBasicInfo() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade50,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.info_outline,
-                color: Colors.grey.shade600,
-                size: 20,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                '기본 정보',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.grey.shade800,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          
-          _buildInfoRow(Icons.category, '분류', building.category),
-          _buildInfoRow(Icons.info, '상태', building.baseStatus),
-          if (building.hours.isNotEmpty)
-            _buildInfoRow(Icons.access_time, '운영시간', building.hours),
-          if (building.phone.isNotEmpty)
-            _buildInfoRow(Icons.phone, '전화번호', building.phone),
-          _buildInfoRow(Icons.gps_fixed, '좌표', 
-            '${building.lat.toStringAsFixed(6)}, ${building.lng.toStringAsFixed(6)}'),
-          
-          if (building.description.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            const Divider(),
-            const SizedBox(height: 8),
+      borderRadius: BorderRadius.circular(16),
+      border: Border.all(color: Colors.blue.shade100),
+    ),
+    child: Column(
+      children: [
+        // 제목
+        Row(
+          children: [
+            Icon(
+              Icons.directions,
+              color: Colors.indigo.shade600,
+              size: 20,
+            ),
+            const SizedBox(width: 8),
             Text(
-              building.description,
+              localizations.directions,
               style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey.shade700,
-                height: 1.4,
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Colors.indigo.shade800,
               ),
             ),
           ],
+        ),
+        const SizedBox(height: 12),
+        // 버튼들
+        Row(
+          children: [
+            // 🔥 여기까지 오기 버튼 - 더 명확한 디버깅 추가
+            Expanded(
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  debugPrint('🔥 "여기까지" 버튼 클릭됨 - ${building.name}');
+                  _navigateHere(context);
+                },
+                icon: const Icon(Icons.near_me, size: 18),
+                label: Text(localizations.navigateHere),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF1E3A8A),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  elevation: 2,
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            // 출발지로 설정 버튼
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: () => _setAsStartLocation(context),
+                icon: const Icon(Icons.play_arrow, size: 18),
+                label: Text(localizations.startLocation),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFF10B981),
+                  side: const BorderSide(color: Color(0xFF10B981)),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            // 도착지로 설정 버튼
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: () => _setAsEndLocation(context),
+                icon: const Icon(Icons.flag, size: 18),
+                label: Text(localizations.endLocation),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFFEF4444),
+                  side: const BorderSide(color: Color(0xFFEF4444)),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    ),
+  );
+}
+
+ Widget _buildBasicInfo(BuildContext context) {
+  final l10n = AppLocalizations.of(context)!;
+
+  return Container(
+    width: double.infinity,
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: Colors.grey.shade50,
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: Colors.grey.shade200),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(
+              Icons.info_outline,
+              color: Colors.grey.shade600,
+              size: 20,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              l10n.label_basic_info, // ✅ "기본 정보"
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey.shade800,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+
+        // ✅ 다국어 라벨 + 상태 번역 적용
+        _buildInfoRow(Icons.category, l10n.label_category_type, building.category),
+        _buildInfoRow(Icons.info, l10n.label_status, getLocalizedStatusText(context, building.baseStatus)),
+        if (building.hours.isNotEmpty)
+          _buildInfoRow(Icons.access_time, l10n.label_hours, building.hours),
+        if (building.phone.isNotEmpty)
+          _buildInfoRow(Icons.phone, l10n.label_phone, building.phone),
+        _buildInfoRow(Icons.gps_fixed, l10n.label_coordinates,
+          '${building.lat.toStringAsFixed(6)}, ${building.lng.toStringAsFixed(6)}'
+        ),
+
+        if (building.description.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          const Divider(),
+          const SizedBox(height: 8),
+          Text(
+            building.description,
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey.shade700,
+              height: 1.4,
+            ),
+          ),
         ],
-      ),
-    );
-  }
+      ],
+    ),
+  );
+}
+
 
   Widget _buildInfoRow(IconData icon, String label, String value) {
     return Padding(

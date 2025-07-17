@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/generated/app_localizations.dart';
 
 class Building {
   final String name;
@@ -27,7 +28,7 @@ class Building {
 
   String get status => calculateCurrentStatus();
 
-  String calculateCurrentStatus() {
+   String calculateCurrentStatus() {
     if (baseStatus != '운영중') return baseStatus;
     final now = DateTime.now();
     final currentHour = now.hour;
@@ -35,6 +36,36 @@ class Building {
       return '운영중';
     } else {
       return '운영종료';
+    }
+  }
+
+    String getLocalizedStatus(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final currentStatus = status; // 기존 status getter 사용
+    
+    switch (currentStatus) {
+      case '운영중':
+        return l10n.status_open;
+      case '운영종료':
+        return l10n.status_closed;
+      default:
+        return currentStatus; // 24시간, 임시휴무 등은 그대로
+    }
+  }
+
+    String getLocalizedNextStatusChangeTime(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final now = DateTime.now();
+    final currentHour = now.hour;
+    
+    if (baseStatus != '운영중') return getLocalizedStatus(context);
+    
+    if (currentHour < 9) {
+      return '오전 9시에 운영 시작'; // 이 부분도 필요하면 ARB에 추가
+    } else if (currentHour < 18) {
+      return '오후 6시에 운영 종료'; // 이 부분도 필요하면 ARB에 추가
+    } else {
+      return '내일 오전 9시에 운영 시작'; // 이 부분도 필요하면 ARB에 추가
     }
   }
 

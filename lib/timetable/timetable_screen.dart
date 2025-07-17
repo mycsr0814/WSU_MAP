@@ -5,6 +5,7 @@ import 'package:flutter_typeahead/flutter_typeahead.dart';
 import '../generated/app_localizations.dart';
 import 'timetable_item.dart';
 import 'timetable_api_service.dart';
+import '../map/widgets/directions_screen.dart'; // 폴더 구조에 맞게 경로 수정!
 
 class ScheduleScreen extends StatefulWidget {
   final String userId;
@@ -919,8 +920,28 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     );
   }
 
+  void _showRecommendRoute(ScheduleItem item) {
+    // DirectionsScreen에 도착지 정보를 전달하면서 이동 (예시는 roomData 파라미터 사용)
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => DirectionsScreen(
+          // 아래처럼 강의실 정보를 도착지로 전달합니다.
+          // DirectionsScreen 쪽에서 roomData, presetEnd 등 파라미터명 확인 필요!
+          roomData: {
+            "type": "end", // 도착지 역할로
+            "buildingName": item.buildingName,
+            "floorNumber": item.floorNumber,
+            "roomName": item.roomName,
+          },
+        ),
+      ),
+    );
+  }
+
   void _showScheduleDetail(ScheduleItem item) {
     final l10n = AppLocalizations.of(context);
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -987,6 +1008,14 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
               l10n?.delete ?? 'Delete',
               style: const TextStyle(color: Colors.red),
             ),
+          ),
+          // ✅ 추천경로 보기 버튼 추가!
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context); // 다이얼로그 닫기 (선택)
+              _showRecommendRoute(item); // 함수는 아래 직접 구현
+            },
+            child: Text('추천경로 보기'),
           ),
         ],
       ),

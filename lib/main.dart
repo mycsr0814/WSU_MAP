@@ -29,7 +29,7 @@ void main() async {
       providers: [
         ChangeNotifierProvider(create: (_) => UserAuth()),
         ChangeNotifierProvider(create: (_) => AppLanguageProvider()),
-        ChangeNotifierProvider(create: (_) => LocationManager()),
+        ChangeNotifierProvider(create: (_) => LocationManager()), // 반드시 추가
       ],
       child: const CampusNavigatorApp(),
     ),
@@ -194,6 +194,7 @@ class _CampusNavigatorAppState extends State<CampusNavigatorApp>
           ],
           routes: {
             '/directions': (context) {
+              // arguments로 방 정보를 받아서 DirectionsScreen에 전달
               final args =
                   ModalRoute.of(context)?.settings.arguments
                       as Map<String, dynamic>?;

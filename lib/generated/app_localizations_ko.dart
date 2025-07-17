@@ -1120,6 +1120,216 @@ class AppLocalizationsKo extends AppLocalizations {
   String get office_hours => '09:00 - 18:00';
 
   @override
+  String get status_24hours => '24시간';
+
+  @override
+  String get status_temp_closed => '임시휴무';
+
+  @override
+  String get status_closed_permanently => '휴무';
+
+  @override
+  String get label_basic_info => '기본 정보';
+
+  @override
+  String get label_category_type => '분류';
+
+  @override
+  String get label_status => '상태';
+
+  @override
+  String get label_hours => '운영시간';
+
+  @override
+  String get label_phone => '전화번호';
+
+  @override
+  String get label_coordinates => '좌표';
+
+  @override
+  String get unified_navigation => '통합 길찾기';
+
+  @override
+  String get unified_navigation_in_progress => '통합 길찾기 진행중';
+
+  @override
+  String get search_start_location => '출발지를 검색해주세요 (건물명 또는 호실)';
+
+  @override
+  String get search_end_location => '도착지를 검색해주세요 (건물명 또는 호실)';
+
+  @override
+  String get enter_start_location => '출발지를 입력해주세요';
+
+  @override
+  String get enter_end_location => '도착지를 입력해주세요';
+
+  @override
+  String get recent_searches => '최근 검색';
+
+  @override
+  String get clear_all => '전체 삭제';
+
+  @override
+  String get searching => '검색 중...';
+
+  @override
+  String get try_different_keyword => '다른 검색어로 시도해보세요';
+
+  @override
+  String get my_location => '내 위치';
+
+  @override
+  String get start_from_current_location => '현재 위치에서 출발';
+
+  @override
+  String get getting_current_location => '현재 위치를 가져오는 중...';
+
+  @override
+  String get current_location_set_as_start => '현재 위치가 출발지로 설정되었습니다';
+
+  @override
+  String get using_default_location => '기본 위치를 사용합니다';
+
+  @override
+  String get start_unified_navigation => '통합 길찾기 시작';
+
+  @override
+  String get set_both_locations => '출발지와 도착지를 모두 설정해주세요';
+
+  @override
+  String get navigation_ended => '길찾기가 종료되었습니다';
+
+  @override
+  String get route_preview => '경로 미리보기';
+
+  @override
+  String get calculating_optimal_route => '최적 경로를 계산하고 있습니다...';
+
+  @override
+  String get set_departure_and_destination =>
+      '출발지와 도착지를 설정해주세요\\n건물명 또는 호실을 입력할 수 있습니다';
+
+  @override
+  String get total_distance => '총 거리';
+
+  @override
+  String get route_type => '경로 타입';
+
+  @override
+  String get departure_indoor => '출발지 실내';
+
+  @override
+  String get to_building_exit => '건물 출구까지';
+
+  @override
+  String get outdoor_movement => '실외 이동';
+
+  @override
+  String get to_destination_building => '목적지 건물까지';
+
+  @override
+  String get arrival_indoor => '도착지 실내';
+
+  @override
+  String get to_final_destination => '최종 목적지까지';
+
+  @override
+  String get building_to_building => '건물간';
+
+  @override
+  String get room_to_building => '호실→건물';
+
+  @override
+  String get building_to_room => '건물→호실';
+
+  @override
+  String get room_to_room => '호실간';
+
+  @override
+  String get location_to_building => '현위치→건물';
+
+  @override
+  String get unified_route => '통합경로';
+
+  @override
+  String preset_room_start(Object building, Object room) {
+    return '$building $room호가 출발지로 설정되었습니다';
+  }
+
+  @override
+  String preset_room_end(Object building, Object room) {
+    return '$building $room호가 도착지로 설정되었습니다';
+  }
+
+  @override
+  String preset_building_start(Object building) {
+    return '$building이 출발지로 설정되었습니다';
+  }
+
+  @override
+  String preset_building_end(Object building) {
+    return '$building이 도착지로 설정되었습니다';
+  }
+
+  @override
+  String floor_room(Object floor, Object room) {
+    return '$floor층 $room호';
+  }
+
+  @override
+  String get available => '사용가능';
+
+  @override
+  String get current_location => '현재위치';
+
+  @override
+  String get start_navigation_from_here => '현재 위치에서 길찾기를 시작합니다';
+
+  @override
+  String get directions => '길찾기';
+
+  @override
+  String get navigateHere => '여기까지';
+
+  @override
+  String get startLocation => '출발지';
+
+  @override
+  String get endLocation => '도착지';
+
+  @override
+  String get floor_plans => '층별 도면 보기';
+
+  @override
+  String get select_floor_to_view => '각 층을 선택하여 상세 도면을 확인하세요';
+
+  @override
+  String get floor_info => '층 정보';
+
+  @override
+  String get view_floor_plan_button => '층 도면 보기';
+
+  @override
+  String get no_detailed_info => '상세 정보가 없습니다.';
+
+  @override
+  String get pinch_to_zoom => '핀치하여 확대/축소, 드래그하여 이동';
+
+  @override
+  String get floor_plan_loading_failed => '도면 로딩 실패';
+
+  @override
+  String loading_floor_plan(Object floor) {
+    return '$floor 도면을 불러오는 중…';
+  }
+
+  @override
+  String server_info(Object building, Object floor) {
+    return '서버: $building/$floor';
+  }
+
+  @override
   String get building_name => '건물';
 
   @override
