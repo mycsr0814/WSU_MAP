@@ -32,6 +32,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
   late MapScreenController _controller;
   late NavigationStateManager _navigationManager;
   late BuildingMarkerService _buildingMarkerService;
+  late LocationController _locationController;
 
   final OverlayPortalController _infoWindowController =
       OverlayPortalController();
@@ -41,12 +42,45 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
-    _controller = MapScreenController();
-    _navigationManager = NavigationStateManager();
-    _buildingMarkerService = BuildingMarkerService();
-
     WidgetsBinding.instance.addObserver(this);
-    _initializeController();
+
+    debugPrint('🗺️ MapScreen 초기화 시작');
+    _initializeMapScreen();
+  }
+
+  /// 🔥 맵 스크린 초기화 로직
+  Future<void> _initializeMapScreen() async {
+    try {
+      // UserAuth 상태 확인
+      final userAuth = context.read<UserAuth>();
+      debugPrint(
+        '🔥 MapScreen 초기화 - 사용자 상태: ${userAuth.isLoggedIn ? '로그인' : '비로그인'}',
+      );
+
+      // MapController 초기화
+      _controller = MapScreenController()..addListener(() => setState(() {}));
+
+      // 🔥 새 세션 감지 시 리셋
+      _controller.resetForNewSession();
+
+      // LocationController 설정
+      _locationController = LocationController()
+        ..addListener(() => setState(() {}));
+
+      _controller.setLocationController(_locationController);
+
+      // 기타 초기화
+      _navigationManager = NavigationStateManager();
+      _buildingMarkerService = BuildingMarkerService();
+
+      // 초기화 및 컨텍스트 설정
+      await _controller.initialize();
+      _controller.setContext(context);
+
+      debugPrint('✅ MapScreen 초기화 완료');
+    } catch (e) {
+      debugPrint('❌ MapScreen 초기화 오류: $e');
+    }
   }
 
   @override
@@ -54,35 +88,13 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     _navigationManager.dispose();
     WidgetsBinding.instance.removeObserver(this);
     _controller.dispose();
+    _locationController.dispose();
     super.dispose();
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // context가 준비된 뒤 반드시 한 번만 호출
-    _controller.setContext(context);
-  }
-
-  /// 간소화된 초기화 - 기존 자동 이동 로직 제거
-  Future<void> _initializeController() async {
-    if (_isInitializing) return;
-
-    try {
-      _isInitializing = true;
-      debugPrint('🚀 MapScreen 초기화 시작...');
-
-      // LocationController 생성 및 설정
-      final locationController = LocationController();
-      _controller.setLocationController(locationController);
-
-      await _controller.initialize();
-      debugPrint('✅ MapScreen 초기화 완료');
-    } catch (e) {
-      debugPrint('❌ MapScreen 초기화 오류: $e');
-    } finally {
-      _isInitializing = false;
-    }
   }
 
   /// 길찾기 화면 열기

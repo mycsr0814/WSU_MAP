@@ -100,7 +100,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
   }
 
   /// 친구 추가 처리 함수
-  Future<void> _handleAddFriend() async {
+  Future<void> _handleAddFriend([StateSetter? setModalState]) async {
     final id = _addController.text.trim();
 
     if (id.isEmpty) {
@@ -119,13 +119,23 @@ class _FriendsScreenState extends State<FriendsScreen> {
       _isAddingFriend = true;
     });
 
+    // 모달 상태도 업데이트
+    setModalState?.call(() {
+      _isAddingFriend = true;
+    });
+
     try {
       await controller.addFriend(id);
 
       if (controller.errorMessage == null) {
         _showSuccessMessage('$id님에게 친구 요청을 전송했습니다!');
         _addController.clear();
-        Navigator.pop(context);
+
+        // 모달 상태 업데이트
+        setModalState?.call(() {});
+
+        // 모달 닫기 주석 처리 (실시간 업데이트를 위해)
+        // Navigator.pop(context);
       } else {
         _showErrorMessage(controller.errorMessage ?? '친구 추가 중 오류가 발생했습니다.');
       }
@@ -133,6 +143,10 @@ class _FriendsScreenState extends State<FriendsScreen> {
       _showErrorMessage('네트워크 오류가 발생했습니다. 다시 시도해주세요.');
     } finally {
       setState(() {
+        _isAddingFriend = false;
+      });
+
+      setModalState?.call(() {
         _isAddingFriend = false;
       });
     }
@@ -219,7 +233,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
     );
   }
 
-  // 친구 관리 다이얼로그 - 가로 오버플로우 해결
+  // 친구 관리 다이얼로그 - DraggableScrollableSheet 적용
   Future<void> _showAddDialog() async {
     HapticFeedback.lightImpact();
 
@@ -227,146 +241,153 @@ class _FriendsScreenState extends State<FriendsScreen> {
       isScrollControlled: true,
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => DefaultTabController(
-        length: 3,
-        child: Container(
-          height: MediaQuery.of(ctx).size.height * 0.7,
-          decoration: const BoxDecoration(
-            color: Color(0xFFF8FAFC),
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-          ),
-          child: Padding(
-            padding: EdgeInsets.only(
-              bottom: MediaQuery.of(ctx).viewInsets.bottom,
-            ),
-            child: Column(
-              children: [
-                // 헤더 (고정)
-                Container(
-                  padding: const EdgeInsets.only(top: 20, bottom: 10),
-                  child: Column(
-                    children: [
-                      Container(
-                        width: 40,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: Colors.grey[300],
-                          borderRadius: BorderRadius.circular(2),
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setModalState) => DraggableScrollableSheet(
+          initialChildSize: 0.7,
+          minChildSize: 0.5,
+          maxChildSize: 0.95,
+          expand: false,
+          builder: (context, scrollController) => DefaultTabController(
+            length: 3,
+            child: Container(
+              decoration: const BoxDecoration(
+                color: Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+              ),
+              child: Column(
+                children: [
+                  // 드래그 핸들
+                  Container(
+                    padding: const EdgeInsets.only(top: 20, bottom: 10),
+                    child: Column(
+                      children: [
+                        Container(
+                          width: 40,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: Colors.grey[300],
+                            borderRadius: BorderRadius.circular(2),
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 16),
-                      const Text(
-                        '친구 관리',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF1E3A8A),
+                        const SizedBox(height: 16),
+                        const Text(
+                          '친구 관리',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF1E3A8A),
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
 
-                // 탭 바 (가로 오버플로우 해결)
-                Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 20),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: TabBar(
-                    isScrollable: true, // 스크롤 가능하게 설정
-                    tabAlignment: TabAlignment.start, // 탭 정렬
-                    labelColor: const Color(0xFF1E3A8A),
-                    unselectedLabelColor: Colors.grey,
-                    labelStyle: const TextStyle(
-                      fontSize: 12, // 폰트 크기 줄임
-                      fontWeight: FontWeight.w600,
-                    ),
-                    unselectedLabelStyle: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                    ),
-                    indicator: BoxDecoration(
-                      color: const Color(0xFF1E3A8A).withOpacity(0.1),
+                  // 탭 바 (실시간 업데이트)
+                  Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 20),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
                     ),
-                    tabs: [
-                      // 탭 1: 친구 추가
-                      Tab(
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(Icons.person_add, size: 16),
-                              const SizedBox(width: 4),
-                              const Text('추가'),
-                            ],
+                    child: TabBar(
+                      isScrollable: true,
+                      tabAlignment: TabAlignment.start,
+                      labelColor: const Color(0xFF1E3A8A),
+                      unselectedLabelColor: Colors.grey,
+                      labelStyle: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      unselectedLabelStyle: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      indicator: BoxDecoration(
+                        color: const Color(0xFF1E3A8A).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      tabs: [
+                        Tab(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.person_add, size: 16),
+                                const SizedBox(width: 4),
+                                const Text('추가'),
+                              ],
+                            ),
                           ),
                         ),
-                      ),
-                      // 탭 2: 보낸 요청
-                      Tab(
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(Icons.send, size: 16),
-                              const SizedBox(width: 4),
-                              Text(
-                                '보낸 (${controller.sentFriendRequests.length})',
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      // 탭 3: 받은 요청
-                      Tab(
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(Icons.notifications_active, size: 16),
-                              const SizedBox(width: 4),
-                              Text('받은 (${controller.friendRequests.length})'),
-                            ],
+                        Tab(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.send, size: 16),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '보낸 (${controller.sentFriendRequests.length})',
+                                ),
+                              ],
+                            ),
                           ),
                         ),
-                      ),
-                    ],
+                        Tab(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.notifications_active,
+                                  size: 16,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '받은 (${controller.friendRequests.length})',
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
 
-                // 탭 내용 (스크롤 가능)
-                Expanded(
-                  child: TabBarView(
-                    children: [
-                      _buildAddFriendTab(),
-                      _buildSentRequestsTab(),
-                      _buildReceivedRequestsTab(),
-                    ],
+                  // 탭 내용
+                  Expanded(
+                    child: TabBarView(
+                      children: [
+                        _buildAddFriendTab(setModalState, scrollController),
+                        _buildSentRequestsTab(setModalState, scrollController),
+                        _buildReceivedRequestsTab(
+                          setModalState,
+                          scrollController,
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -374,58 +395,102 @@ class _FriendsScreenState extends State<FriendsScreen> {
     );
   }
 
-  // 친구 추가 탭 - 스크롤 가능하게 수정
-  Widget _buildAddFriendTab() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const SizedBox(height: 20),
-          const Text(
-            '추가할 친구의 ID를 입력해주세요',
-            style: TextStyle(fontSize: 14, color: Colors.grey),
-          ),
-          const SizedBox(height: 20),
-
-          WoosongInputField(
-            icon: Icons.person_add_alt,
-            label: '친구 ID',
-            controller: _addController,
-            hint: '상대방 ID를 입력하세요',
-            enabled: !_isAddingFriend,
-          ),
-          const SizedBox(height: 20),
-
-          SizedBox(
-            width: double.infinity,
-            child: WoosongButton(
-              onPressed: _isAddingFriend ? null : _handleAddFriend,
-              child: _isAddingFriend
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                      ),
-                    )
-                  : const Text('친구 요청 보내기'),
+  // 친구 추가 탭 - 키보드 대응 개선
+  Widget _buildAddFriendTab(
+    StateSetter setModalState,
+    ScrollController scrollController,
+  ) {
+    return Padding(
+      padding: EdgeInsets.only(
+        left: 20,
+        right: 20,
+        top: 20,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+      ),
+      child: SingleChildScrollView(
+        controller: scrollController,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 20),
+            const Text(
+              '추가할 친구의 ID를 입력해주세요',
+              style: TextStyle(fontSize: 14, color: Colors.grey),
             ),
-          ),
+            const SizedBox(height: 20),
 
-          SizedBox(
-            height: MediaQuery.of(context).viewInsets.bottom > 0 ? 20 : 0,
-          ),
-        ],
+            // 입력 필드
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: WoosongInputField(
+                icon: Icons.person_add_alt,
+                label: '친구 ID',
+                controller: _addController,
+                hint: '상대방 ID를 입력하세요',
+                enabled: !_isAddingFriend,
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            // 버튼
+            SizedBox(
+              width: double.infinity,
+              child: WoosongButton(
+                onPressed: _isAddingFriend
+                    ? null
+                    : () => _handleAddFriend(setModalState),
+                child: _isAddingFriend
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.white,
+                          ),
+                        ),
+                      )
+                    : const Text('친구 요청 보내기'),
+              ),
+            ),
+
+            // 키보드가 올라올 때 추가 여백
+            SizedBox(
+              height: MediaQuery.of(context).viewInsets.bottom > 0
+                  ? MediaQuery.of(context).viewInsets.bottom + 40
+                  : 20,
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  // 보낸 요청 탭 - 스크롤 가능하게 수정
-  Widget _buildSentRequestsTab() {
+  // 보낸 요청 탭 - scrollController 추가
+  Widget _buildSentRequestsTab(
+    StateSetter setModalState,
+    ScrollController scrollController,
+  ) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
+      controller: scrollController,
+      padding: EdgeInsets.only(
+        left: 20,
+        right: 20,
+        top: 20,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
@@ -466,17 +531,26 @@ class _FriendsScreenState extends State<FriendsScreen> {
             )
           else
             ...controller.sentFriendRequests.map(
-              (request) => _buildSentRequestTile(request),
+              (request) => _buildSentRequestTile(request, setModalState),
             ),
         ],
       ),
     );
   }
 
-  // 받은 요청 탭 - 스크롤 가능하게 수정
-  Widget _buildReceivedRequestsTab() {
+  // 받은 요청 탭 - scrollController 추가
+  Widget _buildReceivedRequestsTab(
+    StateSetter setModalState,
+    ScrollController scrollController,
+  ) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
+      controller: scrollController,
+      padding: EdgeInsets.only(
+        left: 20,
+        right: 20,
+        top: 20,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
@@ -517,15 +591,18 @@ class _FriendsScreenState extends State<FriendsScreen> {
             )
           else
             ...controller.friendRequests.map(
-              (request) => _buildReceivedRequestTile(request),
+              (request) => _buildReceivedRequestTile(request, setModalState),
             ),
         ],
       ),
     );
   }
 
-  // 보낸 요청 타일
-  Widget _buildSentRequestTile(SentFriendRequest request) {
+  // 보낸 요청 타일 - setModalState 매개변수 추가
+  Widget _buildSentRequestTile(
+    SentFriendRequest request, [
+    StateSetter? setModalState,
+  ]) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -603,7 +680,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
                 color: Color(0xFFEF4444),
                 size: 20,
               ),
-              onPressed: () => _showCancelRequestDialog(request),
+              onPressed: () => _showCancelRequestDialog(request, setModalState),
             ),
           ),
         ],
@@ -611,8 +688,11 @@ class _FriendsScreenState extends State<FriendsScreen> {
     );
   }
 
-  // 받은 요청 타일
-  Widget _buildReceivedRequestTile(FriendRequest request) {
+  // 받은 요청 타일 - setModalState 매개변수 추가
+  Widget _buildReceivedRequestTile(
+    FriendRequest request, [
+    StateSetter? setModalState,
+  ]) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -686,6 +766,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
                   onPressed: () {
                     HapticFeedback.lightImpact();
                     controller.acceptRequest(request.fromUserId);
+                    setModalState?.call(() {});
                     _showSuccessMessage(
                       '${request.fromUserName}님의 친구 요청을 수락했습니다.',
                     );
@@ -709,6 +790,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
                   onPressed: () {
                     HapticFeedback.lightImpact();
                     controller.rejectRequest(request.fromUserId);
+                    setModalState?.call(() {});
                     _showSuccessMessage(
                       '${request.fromUserName}님의 친구 요청을 거절했습니다.',
                     );
@@ -722,8 +804,11 @@ class _FriendsScreenState extends State<FriendsScreen> {
     );
   }
 
-  // 요청 취소 다이얼로그
-  Future<void> _showCancelRequestDialog(SentFriendRequest request) async {
+  // 요청 취소 다이얼로그 - setModalState 매개변수 추가
+  Future<void> _showCancelRequestDialog(
+    SentFriendRequest request, [
+    StateSetter? setModalState,
+  ]) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -744,7 +829,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
           TextButton(
             onPressed: () => Navigator.pop(context, false),
             child: const Text(
-              '아니오',
+              '아니요',
               style: TextStyle(color: Color(0xFF64748B)),
             ),
           ),
@@ -765,6 +850,10 @@ class _FriendsScreenState extends State<FriendsScreen> {
     if (confirmed == true) {
       HapticFeedback.lightImpact();
       await controller.cancelSentRequest(request.toUserId);
+
+      // 모달 상태 즉시 업데이트
+      setModalState?.call(() {});
+
       _showSuccessMessage('${request.toUserName}님에게 보낸 친구 요청을 취소했습니다.');
     }
   }

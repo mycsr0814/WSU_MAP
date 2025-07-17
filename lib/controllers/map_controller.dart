@@ -1,4 +1,4 @@
-// lib/controllers/map_controller.dart - BuildingRepository 사용하도록 완전 수정
+// lib/controllers/map_controller.dart - 완전 수정된 버전
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/controllers/location_controllers.dart';
@@ -25,6 +25,9 @@ class MapScreenController extends ChangeNotifier {
 
   // 🔥 추가: 현재 Context 저장
   BuildContext? _currentContext;
+
+  // 🔥 마커 초기화 상태 추가
+  bool _markersInitialized = false;
 
   // 🏫 우송대학교 중심 좌표
   static const NLatLng _schoolCenter = NLatLng(36.3370, 127.4450);
@@ -68,13 +71,16 @@ class MapScreenController extends ChangeNotifier {
   Building? get startBuilding => _startBuilding;
   Building? get endBuilding => _endBuilding;
   bool get isLoading => _isLoading;
-  bool get buildingMarkersVisible => _mapService?.buildingMarkersVisible ?? true;
+  bool get buildingMarkersVisible =>
+      _mapService?.buildingMarkersVisible ?? true;
   String? get routeDistance => _routeDistance;
   String? get routeTime => _routeTime;
 
   // 🔥 내 위치 관련 새로운 Getters
-  bool get hasLocationPermissionError => _locationController?.hasLocationPermissionError ?? false;
-  bool get hasMyLocationMarker => _locationController?.hasValidLocation ?? false;
+  bool get hasLocationPermissionError =>
+      _locationController?.hasLocationPermissionError ?? false;
+  bool get hasMyLocationMarker =>
+      _locationController?.hasValidLocation ?? false;
   bool get isLocationRequesting => _locationController?.isRequesting ?? false;
   loc.LocationData? get myLocation => _locationController?.currentLocation;
 
@@ -88,6 +94,33 @@ class MapScreenController extends ChangeNotifier {
   String? get selectedCategory => _selectedCategory;
   bool get isCategoryLoading => _isCategoryLoading;
   String? get categoryError => _categoryError;
+
+  /// 🔥 로그아웃/재로그인 시 완전한 재초기화
+  void resetForNewSession() {
+    debugPrint('🔄 MapController 새 세션을 위한 리셋');
+
+    // 마커 상태 리셋
+    _markersInitialized = false;
+
+    // 선택된 상태들 클리어
+    _selectedBuilding = null;
+    _selectedCategory = null;
+    _startBuilding = null;
+    _endBuilding = null;
+    _targetBuilding = null;
+
+    // 로딩 상태들 리셋
+    _isLoading = false;
+    _isCategoryLoading = false;
+    _isNavigatingFromCurrentLocation = false;
+
+    // 에러 상태 클리어
+    _categoryError = null;
+    _hasLocationPermissionError = false;
+
+    debugPrint('✅ MapController 리셋 완료');
+    notifyListeners();
+  }
 
   /// 🚀 초기화 - 학교 중심으로 즉시 시작
   Future<void> initialize() async {
@@ -138,12 +171,14 @@ class MapScreenController extends ChangeNotifier {
   void setContext(BuildContext context) {
     _currentContext = context;
     _mapService?.setContext(context);
-    
+
     debugPrint('✅ MapController에 Context 설정 완료');
 
     final currentLocale = Localizations.localeOf(context);
     if (_currentLocale != null && _currentLocale != currentLocale) {
-      debugPrint('언어 변경 감지: ${_currentLocale?.languageCode} -> ${currentLocale.languageCode}');
+      debugPrint(
+        '언어 변경 감지: ${_currentLocale?.languageCode} -> ${currentLocale.languageCode}',
+      );
       _onLocaleChanged(currentLocale);
     }
     _currentLocale = currentLocale;
@@ -168,117 +203,275 @@ class MapScreenController extends ChangeNotifier {
     }
   }
 
+  /// 🔥 개선된 지도 준비 완료 처리
+  Future<void> onMapReady(NaverMapController mapController) async {
+    try {
+      debugPrint('🗺️ 지도 준비 완료 - 새 세션 확인');
+
+      // 기존 상태 확인 및 필요시 리셋
+      if (_markersInitialized) {
+        debugPrint('🔄 기존 마커 상태 감지 - 강제 리셋');
+        resetForNewSession();
+      }
+
+      _mapService?.setController(mapController);
+      _locationController?.setMapController(mapController);
+
+      await _moveToSchoolCenterImmediately();
+      await _ensureBuildingMarkersAdded();
+
+      debugPrint('✅ 지도 서비스 설정 완료');
+    } catch (e) {
+      debugPrint('❌ 지도 준비 오류: $e');
+    }
+  }
+
+  /// 🔥 건물 마커 추가 보장 메서드
+  Future<void> _ensureBuildingMarkersAdded() async {
+    if (_markersInitialized) {
+      debugPrint('✅ 건물 마커가 이미 초기화됨');
+      return;
+    }
+
+    try {
+      debugPrint('🏢 건물 마커 초기화 시작...');
+
+      // BuildingRepository 로딩 상태 확인 및 대기
+      await _waitForBuildingRepository();
+
+      // MapService에 콜백 등록
+      _mapService!.setCategorySelectedCallback(_handleServerDataUpdate);
+
+      // 건물 마커 추가
+      await _mapService!.addBuildingMarkers(_onBuildingMarkerTap);
+
+      _markersInitialized = true;
+      debugPrint('✅ 건물 마커 초기화 완료');
+
+      notifyListeners(); // UI 업데이트
+    } catch (e) {
+      debugPrint('❌ 건물 마커 초기화 오류: $e');
+      // 실패 시 재시도
+      _retryBuildingMarkersWithDelay();
+    }
+  }
+
+  /// 🔥 BuildingRepository 로딩 대기
+  Future<void> _waitForBuildingRepository() async {
+    int retryCount = 0;
+    const maxRetries = 10;
+    const retryDelay = Duration(milliseconds: 500);
+
+    while (!_buildingRepository.isLoaded && retryCount < maxRetries) {
+      debugPrint(
+        '⏳ BuildingRepository 로딩 대기 중... (시도: ${retryCount + 1}/$maxRetries)',
+      );
+
+      // 강제로 건물 데이터 로딩 시도
+      await _buildingRepository.getAllBuildings();
+
+      if (_buildingRepository.isLoaded &&
+          _buildingRepository.allBuildings.isNotEmpty) {
+        debugPrint(
+          '✅ BuildingRepository 로딩 완료: ${_buildingRepository.allBuildings.length}개 건물',
+        );
+        break;
+      }
+
+      await Future.delayed(retryDelay);
+      retryCount++;
+    }
+
+    if (!_buildingRepository.isLoaded) {
+      debugPrint('❌ BuildingRepository 로딩 실패 - 최대 재시도 횟수 초과');
+      throw Exception('BuildingRepository 로딩 실패');
+    }
+  }
+
+  /// 🔥 지연 후 재시도
+  void _retryBuildingMarkersWithDelay() {
+    Future.delayed(const Duration(seconds: 2), () async {
+      if (!_markersInitialized && _mapService != null) {
+        debugPrint('🔄 건물 마커 재시도 중...');
+        await _ensureBuildingMarkersAdded();
+      }
+    });
+  }
+
+  /// 🔥 수동 마커 새로고침 메서드 (UI에서 호출 가능)
+  Future<void> refreshBuildingMarkers() async {
+    debugPrint('🔄 건물 마커 수동 새로고침 시작');
+    _markersInitialized = false;
+    await _ensureBuildingMarkersAdded();
+  }
+
+  /// 🔥 강제 마커 재초기화 메서드
+  Future<void> forceReinitializeMarkers() async {
+    debugPrint('🔄 마커 강제 재초기화 시작');
+
+    // 기존 마커들 완전 제거
+    await _mapService?.clearBuildingMarkers();
+
+    // 상태 리셋
+    _markersInitialized = false;
+
+    // BuildingRepository 강제 새로고침
+    await _buildingRepository.forceRefresh();
+
+    // 마커 재추가
+    await _ensureBuildingMarkersAdded();
+
+    debugPrint('✅ 마커 강제 재초기화 완료');
+  }
+
+  void setLocationController(LocationController locationController) {
+    _locationController = locationController;
+    _locationController!.addListener(_onLocationUpdate);
+    debugPrint('✅ LocationController 설정 완료');
+  }
+
+  /// 내 위치로 이동 (단순화됨)
+  Future<void> moveToMyLocation() async {
+    await _locationController?.moveToMyLocation();
+  }
+
+  /// 위치 권한 재요청 (단순화됨)
+  Future<void> retryLocationPermission() async {
+    await _locationController?.retryLocationPermission();
+  }
+
+  /// 🏫 즉시 학교 중심으로 이동
+  Future<void> _moveToSchoolCenterImmediately() async {
+    try {
+      debugPrint('🏫 즉시 학교 중심으로 이동');
+      await _mapService?.moveCamera(_schoolCenter, zoom: _schoolZoomLevel);
+      debugPrint('✅ 학교 중심 이동 완료');
+    } catch (e) {
+      debugPrint('❌ 학교 중심 이동 실패: $e');
+    }
+  }
+
   /// 🔥 건물 이름 목록으로 카테고리 아이콘 마커 표시 - BuildingRepository 사용
-Future<void> selectCategoryByNames(String category, List<String> buildingNames) async {
-  debugPrint('=== 카테고리 선택 요청: $category ===');
-  debugPrint('🔍 받은 건물 이름들: $buildingNames');
+  Future<void> selectCategoryByNames(
+    String category,
+    List<String> buildingNames,
+  ) async {
+    debugPrint('=== 카테고리 선택 요청: $category ===');
+    debugPrint('🔍 받은 건물 이름들: $buildingNames');
 
-  // 빈 배열이거나 빈 카테고리면 해제
-  if (category.isEmpty || buildingNames.isEmpty) {
-    debugPrint('⚠️ 카테고리가 비어있음 - 해제 처리');
-    await clearCategorySelection();
-    return;
-  }
+    // 빈 배열이거나 빈 카테고리면 해제
+    if (category.isEmpty || buildingNames.isEmpty) {
+      debugPrint('⚠️ 카테고리가 비어있음 - 해제 처리');
+      await clearCategorySelection();
+      return;
+    }
 
-  if (_selectedCategory == category) {
-    debugPrint('같은 카테고리 재선택 → 해제');
-    await clearCategorySelection();
-    return;
-  }
+    if (_selectedCategory == category) {
+      debugPrint('같은 카테고리 재선택 → 해제');
+      await clearCategorySelection();
+      return;
+    }
 
-  // 이전 카테고리 정리 (마커 완전 제거)
-  if (_selectedCategory != null) {
-    debugPrint('이전 카테고리($_selectedCategory) 정리');
-    await _clearCategoryMarkers();
-  }
+    // 이전 카테고리 정리 (마커 완전 제거)
+    if (_selectedCategory != null) {
+      debugPrint('이전 카테고리($_selectedCategory) 정리');
+      await _clearCategoryMarkers();
+    }
 
-  _selectedCategory = category;
-  _isCategoryLoading = true;
-  notifyListeners();
-
-  // MapService에 마지막 카테고리 선택 정보 저장
-  _mapService?.saveLastCategorySelection(category, buildingNames);
-
-  try {
-    debugPrint('기존 건물 마커들 숨기기...');
-    _hideAllBuildingMarkers();
-
-    debugPrint('카테고리 아이콘 마커들 표시...');
-    await _showCategoryIconMarkers(buildingNames, category);
-
-    debugPrint('✅ 카테고리 선택 완료: $category');
-  } catch (e) {
-    debugPrint('🚨 카테고리 선택 오류: $e');
-    await clearCategorySelection();
-  } finally {
-    _isCategoryLoading = false;
+    _selectedCategory = category;
+    _isCategoryLoading = true;
     notifyListeners();
-  }
-}
 
+    // MapService에 마지막 카테고리 선택 정보 저장
+    _mapService?.saveLastCategorySelection(category, buildingNames);
+
+    try {
+      debugPrint('기존 건물 마커들 숨기기...');
+      _hideAllBuildingMarkers();
+
+      debugPrint('카테고리 아이콘 마커들 표시...');
+      await _showCategoryIconMarkers(buildingNames, category);
+
+      debugPrint('✅ 카테고리 선택 완료: $category');
+    } catch (e) {
+      debugPrint('🚨 카테고리 선택 오류: $e');
+      await clearCategorySelection();
+    } finally {
+      _isCategoryLoading = false;
+      notifyListeners();
+    }
+  }
 
   /// 🔥 카테고리 아이콘 마커들 표시 - BuildingRepository 사용
-  /// 카테고리 마커가 항상 정상적으로 갱신/표시되도록 비동기(await)로 완전히 개선된 버전입니다.
-/// 
-/// 
-  Future<void> _showCategoryIconMarkers(List<String> buildingNames, String category) async {
+  Future<void> _showCategoryIconMarkers(
+    List<String> buildingNames,
+    String category,
+  ) async {
     debugPrint('🔍 === 카테고리 매칭 디버깅 시작 ===');
     debugPrint('🔍 선택된 카테고리: $category');
     debugPrint('🔍 API에서 받은 건물 이름들: $buildingNames');
-  
+
     final allBuildings = _buildingRepository.allBuildings;
     debugPrint('🔍 전체 건물 데이터 개수: ${allBuildings.length}');
-  
+
     // BuildingRepository가 로딩되지 않았으면 대기 (재귀적 재시도)
     if (!_buildingRepository.isLoaded || allBuildings.length <= 1) {
       debugPrint('⏳ BuildingRepository 데이터 대기 중... 잠시 후 재시도');
       await Future.delayed(const Duration(seconds: 1));
       if (_selectedCategory == category) {
         await _buildingRepository.getAllBuildings();
-        if (_buildingRepository.isLoaded && _buildingRepository.allBuildings.length > 1) {
+        if (_buildingRepository.isLoaded &&
+            _buildingRepository.allBuildings.length > 1) {
           await _showCategoryIconMarkers(buildingNames, category);
         }
       }
       return;
     }
-  
+
     debugPrint('🔍 카테고리 아이콘 마커 표시 시작: ${buildingNames.length}개');
-  
+
     final categoryMarkerLocations = <CategoryMarkerData>[];
-  
+
     for (final buildingName in buildingNames) {
       debugPrint('🔍 건물 검색 중: "$buildingName"');
       final building = _findBuildingByName(buildingName, allBuildings);
       if (building != null) {
-        categoryMarkerLocations.add(CategoryMarkerData(
-          buildingName: building.name,
-          lat: building.lat,
-          lng: building.lng,
-          category: category,
-          icon: _getCategoryIcon(category),
-        ));
+        categoryMarkerLocations.add(
+          CategoryMarkerData(
+            buildingName: building.name,
+            lat: building.lat,
+            lng: building.lng,
+            category: category,
+            icon: _getCategoryIcon(category),
+          ),
+        );
         debugPrint('✅ 카테고리 마커 추가: ${building.name} - $category 아이콘');
       }
     }
-  
+
     debugPrint('🔍 === 매칭 결과 ===');
-    debugPrint('🔍 총 매칭된 건물 수: ${categoryMarkerLocations.length}/${buildingNames.length}');
-  
+    debugPrint(
+      '🔍 총 매칭된 건물 수: ${categoryMarkerLocations.length}/${buildingNames.length}',
+    );
+
     if (categoryMarkerLocations.isEmpty) {
       debugPrint('❌ 매칭되는 건물이 없습니다 - 카테고리 해제');
       await clearCategorySelection();
       return;
     }
-  
+
     debugPrint('📍 카테고리 마커 표시 시작...');
     await _mapService?.showCategoryIconMarkers(categoryMarkerLocations);
-  
+
     debugPrint('✅ 카테고리 아이콘 마커 표시 완료: ${categoryMarkerLocations.length}개');
     debugPrint('🔍 === 카테고리 매칭 디버깅 끝 ===');
   }
 
   /// 🔥 향상된 건물 찾기 메서드 - BuildingRepository 사용
-  Building? _findBuildingByName(String buildingName, List<Building> allBuildings) {
+  Building? _findBuildingByName(
+    String buildingName,
+    List<Building> allBuildings,
+  ) {
     try {
       // 1. 정확한 매칭 시도
       return allBuildings.firstWhere(
@@ -307,19 +500,29 @@ Future<void> selectCategoryByNames(String category, List<String> buildingNames) 
   /// 🔥 BuildingRepository 데이터 변경 리스너
   void _onBuildingDataChanged(List<Building> buildings) {
     debugPrint('🔄 BuildingRepository 데이터 변경 감지: ${buildings.length}개');
-    
+
     // 현재 선택된 카테고리가 있으면 재매칭
     if (_selectedCategory != null) {
       debugPrint('🔁 데이터 변경 후 카테고리 재매칭: $_selectedCategory');
-      
+
       // 저장된 건물 이름들로 재매칭 시도
-      final savedBuildingNames = _mapService?.getAllBuildings()
-          .where((b) => b.category.toLowerCase() == _selectedCategory!.toLowerCase())
-          .map((b) => b.name)
-          .toList() ?? [];
-      
+      final savedBuildingNames =
+          _mapService
+              ?.getAllBuildings()
+              .where(
+                (b) =>
+                    b.category.toLowerCase() ==
+                    _selectedCategory!.toLowerCase(),
+              )
+              .map((b) => b.name)
+              .toList() ??
+          [];
+
       if (savedBuildingNames.isNotEmpty) {
-        Future.microtask(() => _showCategoryIconMarkers(savedBuildingNames, _selectedCategory!));
+        Future.microtask(
+          () =>
+              _showCategoryIconMarkers(savedBuildingNames, _selectedCategory!),
+        );
       }
     }
   }
@@ -371,25 +574,24 @@ Future<void> selectCategoryByNames(String category, List<String> buildingNames) 
 
   /// 🔥 카테고리 마커들 제거
   Future<void> _clearCategoryMarkers() async {
-  debugPrint('카테고리 마커들 제거 중...');
-  await _mapService?.clearCategoryMarkers();
-}
+    debugPrint('카테고리 마커들 제거 중...');
+    await _mapService?.clearCategoryMarkers();
+  }
 
   /// 🔥 카테고리 선택 해제 (기존 건물 마커들 다시 표시)
   Future<void> clearCategorySelection() async {
-  debugPrint('=== 카테고리 선택 해제 ===');
-  if (_selectedCategory != null) {
-    debugPrint('선택 해제할 카테고리: $_selectedCategory');
-    await _clearCategoryMarkers();
+    debugPrint('=== 카테고리 선택 해제 ===');
+    if (_selectedCategory != null) {
+      debugPrint('선택 해제할 카테고리: $_selectedCategory');
+      await _clearCategoryMarkers();
+    }
+    _selectedCategory = null;
+    _isCategoryLoading = false;
+    debugPrint('모든 건물 마커 다시 표시 시작...');
+    _showAllBuildingMarkers();
+    debugPrint('✅ 카테고리 선택 해제 완료');
+    notifyListeners();
   }
-  _selectedCategory = null;
-  _isCategoryLoading = false;
-  debugPrint('모든 건물 마커 다시 표시 시작...');
-  _showAllBuildingMarkers();
-  debugPrint('✅ 카테고리 선택 해제 완료');
-  notifyListeners();
-}
-
 
   /// 🔥 모든 건물 마커 다시 표시
   void _showAllBuildingMarkers() {
@@ -406,79 +608,17 @@ Future<void> selectCategoryByNames(String category, List<String> buildingNames) 
     notifyListeners();
   }
 
-  /// 🚀 지도 준비 완료 - 즉시 학교 중심으로 이동
-  Future<void> onMapReady(NaverMapController mapController) async {
-    try {
-      debugPrint('🗺️ 지도 준비 완료');
-      _mapService?.setController(mapController);
-      
-      // 🔥 LocationController에 지도 컨트롤러 설정
-      _locationController?.setMapController(mapController);
-
-      await _moveToSchoolCenterImmediately();
-      _addBuildingMarkersInBackground();
-      
-      debugPrint('✅ 지도 서비스 설정 완료');
-    } catch (e) {
-      debugPrint('❌ 지도 준비 오류: $e');
-    }
-  }
-
-  void setLocationController(LocationController locationController) {
-    _locationController = locationController;
-    _locationController!.addListener(_onLocationUpdate);
-    debugPrint('✅ LocationController 설정 완료');
-  }
-
-  /// 내 위치로 이동 (단순화됨)
-  Future<void> moveToMyLocation() async {
-    await _locationController?.moveToMyLocation();
-  }
-
-  /// 위치 권한 재요청 (단순화됨)
-  Future<void> retryLocationPermission() async {
-    await _locationController?.retryLocationPermission();
-  }
-
-  /// 🏫 즉시 학교 중심으로 이동
-  Future<void> _moveToSchoolCenterImmediately() async {
-    try {
-      debugPrint('🏫 즉시 학교 중심으로 이동');
-      await _mapService?.moveCamera(_schoolCenter, zoom: _schoolZoomLevel);
-      debugPrint('✅ 학교 중심 이동 완료');
-    } catch (e) {
-      debugPrint('❌ 학교 중심 이동 실패: $e');
-    }
-  }
-
-  /// 🔥 건물 마커를 백그라운드에서 추가 - BuildingRepository 사용
-  void _addBuildingMarkersInBackground() {
-    Future.microtask(() async {
-      try {
-        debugPrint('🏢 건물 마커 추가 시작...');
-        
-        // 🔥 MapService에 콜백 등록 (BuildingRepository 데이터 변경 시 자동 재실행)
-        _mapService!.setCategorySelectedCallback(_handleServerDataUpdate);
-        
-        await _mapService!.addBuildingMarkers(_onBuildingMarkerTap);
-        debugPrint('✅ 건물 마커 추가 완료');
-      } catch (e) {
-        debugPrint('❌ 건물 마커 추가 오류: $e');
-      }
-    });
-  }
-
   /// 🔥 서버 데이터 도착 시 카테고리 재매칭
   void _handleServerDataUpdate(String category, List<String> buildingNames) {
     debugPrint('🔄 서버 데이터 도착 - 카테고리 재매칭 중...');
-    
+
     // 🔥 현재 선택된 카테고리가 있으면 재매칭
     if (_selectedCategory != null && _selectedCategory == category) {
       debugPrint('🔁 서버 데이터 도착 후 카테고리 재매칭: $_selectedCategory');
       _showCategoryIconMarkers(buildingNames, category);
     }
   }
-  
+
   void _onBuildingMarkerTap(NMarker marker, Building building) async {
     await _mapService?.highlightBuildingMarker(marker);
     _selectedBuilding = building;
@@ -509,32 +649,35 @@ Future<void> selectCategoryByNames(String category, List<String> buildingNames) 
     debugPrint('🚪 InfoWindow 닫기 완료');
   }
 
-Future<void> navigateFromCurrentLocation(Building targetBuilding) async {
-  if (_locationController == null || _locationController!.currentLocation == null) {
-    debugPrint('내 위치 정보가 없습니다.');
-    return;
-  }
-
-  try {
-    _setLoading(true);
-
-    final myLoc = _locationController!.currentLocation!;
-    final myLatLng = NLatLng(myLoc.latitude!, myLoc.longitude!);
-
-    final pathCoordinates = await PathApiService.getRouteFromLocation(myLatLng, targetBuilding);
-
-    if (pathCoordinates.isNotEmpty) {
-      await _mapService?.drawPath(pathCoordinates);
-      await _mapService?.moveCameraToPath(pathCoordinates);
+  Future<void> navigateFromCurrentLocation(Building targetBuilding) async {
+    if (_locationController == null ||
+        _locationController!.currentLocation == null) {
+      debugPrint('내 위치 정보가 없습니다.');
+      return;
     }
-  } catch (e) {
-    debugPrint('내 위치 경로 계산 실패: $e');
-  } finally {
-    _setLoading(false);
-    notifyListeners();
-  }
-}
 
+    try {
+      _setLoading(true);
+
+      final myLoc = _locationController!.currentLocation!;
+      final myLatLng = NLatLng(myLoc.latitude!, myLoc.longitude!);
+
+      final pathCoordinates = await PathApiService.getRouteFromLocation(
+        myLatLng,
+        targetBuilding,
+      );
+
+      if (pathCoordinates.isNotEmpty) {
+        await _mapService?.drawPath(pathCoordinates);
+        await _mapService?.moveCameraToPath(pathCoordinates);
+      }
+    } catch (e) {
+      debugPrint('내 위치 경로 계산 실패: $e');
+    } finally {
+      _setLoading(false);
+      notifyListeners();
+    }
+  }
 
   void setStartBuilding(Building building) {
     _startBuilding = building;
@@ -555,7 +698,10 @@ Future<void> navigateFromCurrentLocation(Building targetBuilding) async {
 
     try {
       _setLoading(true);
-      final pathCoordinates = await PathApiService.getRoute(_startBuilding!, _endBuilding!);
+      final pathCoordinates = await PathApiService.getRoute(
+        _startBuilding!,
+        _endBuilding!,
+      );
 
       if (pathCoordinates.isNotEmpty) {
         await _mapService?.drawPath(pathCoordinates);
@@ -631,22 +777,18 @@ Future<void> navigateFromCurrentLocation(Building targetBuilding) async {
     return _buildingRepository.searchBuildings(query);
   }
 
-void searchByCategory(String category) {
-  // ❌ 이렇게 되어 있을 것:
-  // final buildings = _buildingRepository.getBuildingsByCategory(category);
-  
-  // ✅ 이렇게 수정:
-  final result = _buildingRepository.getBuildingsByCategory(category);
-  final buildings = result.isSuccess ? result.data! : [];
-  
-  debugPrint('카테고리 검색: $category, 결과: ${buildings.length}개');
+  void searchByCategory(String category) {
+    final result = _buildingRepository.getBuildingsByCategory(category);
+    final buildings = result.isSuccess ? result.data! : [];
 
-  if (buildings.isNotEmpty) {
-    selectBuilding(buildings.first);
-    final location = NLatLng(buildings.first.lat, buildings.first.lng);
-    _mapService?.moveCamera(location, zoom: 16);
+    debugPrint('카테고리 검색: $category, 결과: ${buildings.length}개');
+
+    if (buildings.isNotEmpty) {
+      selectBuilding(buildings.first);
+      final location = NLatLng(buildings.first.lat, buildings.first.lng);
+      _mapService?.moveCamera(location, zoom: 16);
+    }
   }
-}
 
   void _setLoading(bool loading) {
     if (_isLoading != loading) {

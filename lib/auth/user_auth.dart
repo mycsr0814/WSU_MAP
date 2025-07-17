@@ -1,5 +1,4 @@
-// lib/auth/user_auth.dart - 수정된 버전
-
+// lib/auth/user_auth.dart - 완전 수정된 버전
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../generated/app_localizations.dart';
@@ -203,13 +202,16 @@ class UserAuth extends ChangeNotifier {
     }
   }
 
-  /// 게스트 로그인
+  /// 게스트 로그인 - 안정적 버전
   Future<void> loginAsGuest({BuildContext? context}) async {
     _setLoading(true);
     _clearError();
 
     try {
-      await Future.delayed(const Duration(milliseconds: 500));
+      debugPrint('🎭 게스트 로그인 시작');
+
+      // 🔥 게스트 로그인 전 약간의 지연으로 초기화 완료 대기
+      await Future.delayed(const Duration(milliseconds: 800));
 
       _userRole = UserRole.external;
       _userId = 'guest';
@@ -222,7 +224,14 @@ class UserAuth extends ChangeNotifier {
       _isLoggedIn = true;
       _isFirstLaunch = false; // 게스트 로그인 시 첫 실행 상태 해제
 
+      debugPrint('✅ 게스트 로그인 완료');
       notifyListeners();
+
+      // 🔥 게스트 로그인 완료 후 추가 지연으로 UI 안정화
+      await Future.delayed(const Duration(milliseconds: 200));
+    } catch (e) {
+      debugPrint('❌ 게스트 로그인 오류: $e');
+      _setError('게스트 로그인 중 오류가 발생했습니다.');
     } finally {
       _setLoading(false);
     }
@@ -313,11 +322,13 @@ class UserAuth extends ChangeNotifier {
     }
   }
 
-  /// 사용자 로그아웃
+  /// 🔥 로그아웃 개선 - 완전한 상태 클리어
   Future<bool> logout() async {
     _setLoading(true);
 
     try {
+      debugPrint('🔥 UserAuth: 로그아웃 시작');
+
       if (_userId != null && _userId != 'guest' && _userId != 'admin') {
         final result = await AuthService.logout(id: _userId!);
         if (!result.isSuccess) {
@@ -331,10 +342,12 @@ class UserAuth extends ChangeNotifier {
       _userId = null;
       _userName = null;
       _isLoggedIn = false;
-      _isFirstLaunch = true; // 로그아웃 시 Welcome 페이지로 돌아가도록 설정
+      _isFirstLaunch = true;
       _clearError();
 
+      debugPrint('🔥 UserAuth: 로그아웃 완료 - 상태 리셋');
       notifyListeners();
+
       return true;
     } catch (e) {
       debugPrint('로그아웃 오류: $e');
@@ -462,7 +475,6 @@ class UserAuth extends ChangeNotifier {
         _userId = null;
         _userName = null;
         _isLoggedIn = false;
-
         notifyListeners();
         return true;
       } else {
