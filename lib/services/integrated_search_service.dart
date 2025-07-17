@@ -62,10 +62,15 @@ static Future<List<SearchResult>> search(String query, BuildContext context) asy
   ];
 
   // 🔁 건물 및 호실 결과 생성
-  for (final building in sortedBuildings) {
-    results.add(SearchResult.fromBuilding(building));
-    await _addAllRoomsForBuilding(building, results);
-  }
+for (final building in sortedBuildings) {
+  results.add(SearchResult.fromBuilding(building));  // 건물은 바로 추가
+}
+
+List<Future<void>> futures = [];
+for (final building in sortedBuildings) {
+  futures.add(_addAllRoomsForBuilding(building, results));  // 병렬로 수집
+}
+await Future.wait(futures);  // 병렬 실행
 
   // ✅ 중복 제거 후 반환
   return _removeDuplicates(results);

@@ -1,6 +1,7 @@
 // lib/map/widgets/directions_screen.dart - 통합 API 적용 버전 (수정됨)
 
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/generated/app_localizations.dart';
 import 'package:flutter_application_1/inside/building_map_page.dart';
 import 'package:flutter_application_1/models/building.dart';
 import 'package:flutter_application_1/models/search_result.dart';
@@ -691,6 +692,7 @@ void _startUnifiedNavigation() {
   }
 
   @override
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
@@ -700,6 +702,8 @@ void _startUnifiedNavigation() {
   }
 
   PreferredSizeWidget _buildAppBar() {
+    final l10n = AppLocalizations.of(context)!;
+    
     if (_searchType != null) {
       return AppBar(
         backgroundColor: Colors.white,
@@ -721,8 +725,8 @@ void _startUnifiedNavigation() {
             onChanged: (_) => _onSearchChanged(),
             decoration: InputDecoration(
               hintText: _searchType == 'start' 
-                  ? '출발지를 검색해주세요 (건물명 또는 호실)' 
-                  : '도착지를 검색해주세요 (건물명 또는 호실)',
+                  ? l10n.search_start_location 
+                  : l10n.search_end_location,
               hintStyle: TextStyle(
                 color: Colors.grey.shade500,
                 fontSize: 14,
@@ -777,7 +781,7 @@ void _startUnifiedNavigation() {
           icon: const Icon(Icons.arrow_back, color: Colors.black87),
         ),
         title: Text(
-          _isNavigationActive ? '통합 길찾기 진행중' : '통합 길찾기',
+          _isNavigationActive ? l10n.unified_navigation_in_progress : l10n.unified_navigation,
           style: const TextStyle(
             color: Colors.black87,
             fontSize: 18,
@@ -802,6 +806,8 @@ void _startUnifiedNavigation() {
   }
 
   Widget _buildSearchView() {
+    final l10n = AppLocalizations.of(context)!;
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -812,9 +818,9 @@ void _startUnifiedNavigation() {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  '최근 검색',
-                  style: TextStyle(
+                Text(
+                  l10n.recent_searches,
+                  style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: Colors.black87,
@@ -827,7 +833,7 @@ void _startUnifiedNavigation() {
                     });
                   },
                   child: Text(
-                    '전체 삭제',
+                    l10n.clear_all,
                     style: TextStyle(
                       color: Colors.grey.shade500,
                       fontSize: 12,
@@ -846,6 +852,7 @@ void _startUnifiedNavigation() {
     );
   }
 
+
   Widget _buildSearchContent() {
     if (!_isSearching) {
       return _buildRecentSearches();
@@ -862,18 +869,20 @@ void _startUnifiedNavigation() {
     return _buildSearchResults();
   }
 
-  Widget _buildLoadingState() {
-    return const Center(
+Widget _buildLoadingState() {
+    final l10n = AppLocalizations.of(context)!;
+    
+    return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          CircularProgressIndicator(
+          const CircularProgressIndicator(
             color: Colors.indigo,
           ),
-          SizedBox(height: 16),
+          const SizedBox(height: 16),
           Text(
-            '검색 중...',
-            style: TextStyle(
+            l10n.searching,
+            style: const TextStyle(
               color: Colors.grey,
               fontSize: 16,
             ),
@@ -909,7 +918,7 @@ void _startUnifiedNavigation() {
     );
   }
 
-  Widget _buildSearchResultItem(SearchResult result) {
+ Widget _buildSearchResultItem(SearchResult result) {
     return Container(
       margin: const EdgeInsets.only(bottom: 1),
       decoration: const BoxDecoration(
@@ -945,7 +954,7 @@ void _startUnifiedNavigation() {
         ),
         subtitle: Text(
           result.isRoom
-              ? result.roomDescription ?? '강의실'
+              ? result.roomDescription ?? AppLocalizations.of(context)!.classroom
               : result.building.info.isNotEmpty 
                   ? result.building.info 
                   : result.building.category,
@@ -1028,7 +1037,9 @@ void _startUnifiedNavigation() {
     );
   }
 
-  Widget _buildNoResults() {
+    Widget _buildNoResults() {
+    final l10n = AppLocalizations.of(context)!;
+    
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -1040,7 +1051,7 @@ void _startUnifiedNavigation() {
           ),
           const SizedBox(height: 16),
           Text(
-            '검색 결과가 없습니다',
+            l10n.no_search_results,
             style: TextStyle(
               color: Colors.grey.shade600,
               fontSize: 16,
@@ -1049,7 +1060,7 @@ void _startUnifiedNavigation() {
           ),
           const SizedBox(height: 8),
           Text(
-            '다른 검색어로 시도해보세요',
+            l10n.try_different_keyword,
             style: TextStyle(
               color: Colors.grey.shade500,
               fontSize: 14,
@@ -1060,14 +1071,16 @@ void _startUnifiedNavigation() {
     );
   }
 
-  Widget _buildDirectionsView() {
+   Widget _buildDirectionsView() {
+    final l10n = AppLocalizations.of(context)!;
+    
     return Stack(
       children: [
         Column(
           children: [
             const SizedBox(height: 16),
             
-            // 🔥 preset 및 호실 알림 메시지
+            // preset 및 호실 알림 메시지
             if (widget.presetStart != null || widget.presetEnd != null || widget.roomData != null) ...[
               Container(
                 margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -1105,13 +1118,13 @@ void _startUnifiedNavigation() {
             _buildLocationInput(
               icon: Icons.my_location,
               iconColor: const Color(0xFF10B981),
-              hint: '출발지를 입력해주세요',
+              hint: l10n.enter_start_location,
               selectedBuilding: _startBuilding,
               roomInfo: _startRoomInfo,
               onTap: _selectStartLocation,
             ),
             
-            // 교환 버튼
+            // 교환 버튼 (기존 그대로)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Row(
@@ -1153,7 +1166,7 @@ void _startUnifiedNavigation() {
             _buildLocationInput(
               icon: Icons.location_on,
               iconColor: const Color(0xFFEF4444),
-              hint: '도착지를 입력해주세요',
+              hint: l10n.enter_end_location,
               selectedBuilding: _endBuilding,
               roomInfo: _endRoomInfo,
               onTap: _selectEndLocation,
@@ -1161,7 +1174,7 @@ void _startUnifiedNavigation() {
             
             const Spacer(),
             
-            // 🔥 통합 API 경로 미리보기 정보
+            // 통합 API 경로 미리보기 정보
             if (_previewResponse != null && !_isCalculatingPreview) ...[
               Container(
                 margin: const EdgeInsets.all(16),
@@ -1190,7 +1203,7 @@ void _startUnifiedNavigation() {
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          '경로 미리보기',
+                          l10n.route_preview,
                           style: TextStyle(
                             color: Colors.blue.shade700,
                             fontSize: 16,
@@ -1227,9 +1240,9 @@ void _startUnifiedNavigation() {
                       ),
                     ),
                     const SizedBox(width: 12),
-                    const Text(
-                      '최적 경로를 계산하고 있습니다...',
-                      style: TextStyle(
+                    Text(
+                      l10n.calculating_optimal_route,
+                      style: const TextStyle(
                         fontSize: 14,
                         color: Colors.grey,
                       ),
@@ -1256,7 +1269,7 @@ void _startUnifiedNavigation() {
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        '출발지와 도착지를 설정해주세요\n건물명 또는 호실을 입력할 수 있습니다',
+                        l10n.set_departure_and_destination,
                         style: TextStyle(
                           color: Colors.grey.shade600,
                           fontSize: 14,
@@ -1304,7 +1317,7 @@ void _startUnifiedNavigation() {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  '통합 길찾기 시작',
+                  l10n.start_unified_navigation,
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -1323,6 +1336,8 @@ void _startUnifiedNavigation() {
 
   // 🔥 경로 미리보기 위젯
   Widget _buildRoutePreview() {
+    final l10n = AppLocalizations.of(context)!;
+    
     if (_previewResponse == null) return Container();
 
     final result = _previewResponse!.result;
@@ -1332,9 +1347,9 @@ void _startUnifiedNavigation() {
     if (result.departureIndoor != null) {
       steps.add(_buildRouteStep(
         icon: Icons.home,
-        title: '출발지 실내',
+        title: l10n.departure_indoor,
         distance: '${result.departureIndoor!.path.distance.toStringAsFixed(0)}m',
-        description: '건물 출구까지',
+        description: l10n.to_building_exit,
         color: Colors.green,
       ));
     }
@@ -1343,9 +1358,9 @@ void _startUnifiedNavigation() {
     if (result.outdoor != null) {
       steps.add(_buildRouteStep(
         icon: Icons.directions_walk,
-        title: '실외 이동',
+        title: l10n.outdoor_movement,
         distance: '${result.outdoor!.path.distance.toStringAsFixed(0)}m',
-        description: '목적지 건물까지',
+        description: l10n.to_destination_building,
         color: Colors.blue,
       ));
     }
@@ -1354,9 +1369,9 @@ void _startUnifiedNavigation() {
     if (result.arrivalIndoor != null) {
       steps.add(_buildRouteStep(
         icon: Icons.location_on,
-        title: '도착지 실내',
+        title: l10n.arrival_indoor,
         distance: '${result.arrivalIndoor!.path.distance.toStringAsFixed(0)}m',
-        description: '최종 목적지까지',
+        description: l10n.to_final_destination,
         color: Colors.orange,
       ));
     }
@@ -1367,9 +1382,9 @@ void _startUnifiedNavigation() {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            _buildSummaryItem('총 거리', _estimatedDistance),
-            _buildSummaryItem('예상 시간', _estimatedTime),
-            _buildSummaryItem('경로 타입', _getRouteTypeDescription()),
+            _buildSummaryItem(l10n.total_distance, _estimatedDistance),
+            _buildSummaryItem(l10n.estimated_time, _estimatedTime),
+            _buildSummaryItem(l10n.route_type, _getRouteTypeDescription()),
           ],
         ),
         const SizedBox(height: 16),
@@ -1461,21 +1476,23 @@ void _startUnifiedNavigation() {
   }
 
   String _getRouteTypeDescription() {
+    final l10n = AppLocalizations.of(context)!;
+    
     if (_previewResponse == null) return '';
     
     switch (_previewResponse!.type) {
       case 'building-building':
-        return '건물간';
+        return l10n.building_to_building;
       case 'room-building':
-        return '호실→건물';
+        return l10n.room_to_building;
       case 'building-room':
-        return '건물→호실';
+        return l10n.building_to_room;
       case 'room-room':
-        return '호실간';
+        return l10n.room_to_room;
       case 'location-building':
-        return '현위치→건물';
+        return l10n.location_to_building;
       default:
-        return '통합경로';
+        return l10n.unified_route;
     }
   }
 
