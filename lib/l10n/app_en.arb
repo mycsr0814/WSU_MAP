@@ -612,5 +612,9 @@
   "pinch_to_zoom": "Pinch to zoom, drag to move",
   "floor_plan_loading_failed": "Floor Plan Loading Failed",
   "loading_floor_plan": "Loading {floor} floor plan...",
-  "server_info": "Server: {building}/{floor}"
+  "server_info": "Server: {building}/{floor}",
+    "building_name": "Building",
+  "floor_number": "Floor",
+  "room_name": "Room",
+  "overlap_message": "A class is already registered at this time."
 }

@@ -948,7 +948,7 @@ class BuildingDetailSheet extends StatelessWidget {
   Future<void> _showFloorPlan(BuildContext context, String floor, String detail) async {
     final floorNumber = _extractFloorNumber(floor);
     final buildingCode = _extractBuildingCode(building.name);
-    final apiUrl = 'http://3.27.162.178.:3000/floor/$floorNumber/$buildingCode';
+    final apiUrl = 'http://54.252.240.31.:3000/floor/$floorNumber/$buildingCode';
     
     debugPrint('🚀 도면 로딩 시작');
     debugPrint('📍 층: $floor → $floorNumber');

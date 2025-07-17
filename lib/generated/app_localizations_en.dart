@@ -1357,4 +1357,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String server_info(Object building, Object floor) {
     return 'Server: $building/$floor';
   }
+
+  @override
+  String get building_name => 'Building';
+
+  @override
+  String get floor_number => 'Floor';
+
+  @override
+  String get room_name => 'Room';
+
+  @override
+  String get overlap_message => 'A class is already registered at this time.';
 }

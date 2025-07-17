@@ -511,5 +511,9 @@
   "pinch_to_zoom": "핀치하여 확대/축소, 드래그하여 이동",
   "floor_plan_loading_failed": "도면 로딩 실패",
   "loading_floor_plan": "{floor} 도면을 불러오는 중...",
-  "server_info": "서버: {building}/{floor}"
+  "server_info": "서버: {building}/{floor}",
+  "building_name": "건물",
+"floor_number": "층",
+"room_name": "강의실",
+"overlap_message": "이미 같은 시간에 등록된 수업이 있습니다."
 }

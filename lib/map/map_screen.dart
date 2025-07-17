@@ -1,4 +1,4 @@
-// lib/map/map_screen.dart - 길찾기 버튼 기능 추가
+// lib/map/map_screen.dart - 친구 화면을 전체화면으로 변경
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/controllers/location_controllers.dart';
@@ -115,15 +115,8 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                 _buildMapScreen(controller),
                 // 2. userId를 ScheduleScreen에 전달
                 ScheduleScreen(userId: userId),
-                // 친구 바텀시트는 네비게이션에서 띄우니 여긴 텍스트만
-                Container(
-                  color: Colors.white,
-                  child: Center(
-                    child: Text(
-                      AppLocalizations.of(context)!.friends_screen_bottom_sheet,
-                    ),
-                  ),
-                ),
+                // 3. 친구 화면을 전체화면으로 변경 - userId 전달
+                FriendsScreen(userId: userId),
                 const ProfileScreen(),
               ],
             ),
@@ -308,7 +301,12 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                 Icons.schedule,
                 l10n.timetable,
               ),
-              _buildFriendsNavItem(), // 친구 바텀시트 진입 버튼
+              _buildNavItem(
+                2,
+                Icons.people_outline,
+                Icons.people,
+                l10n.friends,
+              ),
               _buildNavItem(
                 3,
                 Icons.person_outline,
@@ -322,52 +320,6 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     );
   }
 
-  /// 친구 바텀시트 진입 버튼
-  Widget _buildFriendsNavItem() {
-    final myId = context.read<UserAuth>().userId ?? '';
-    final l10n = AppLocalizations.of(context)!;
-    return GestureDetector(
-      onTap: () {
-        if (myId.isEmpty) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text('로그인 후 이용 가능합니다.')));
-          return;
-        }
-        FriendsBottomSheet.show(context, myId);
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(7),
-              decoration: BoxDecoration(
-                color: Colors.transparent,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(
-                Icons.people_outline,
-                size: 22,
-                color: Colors.grey[600],
-              ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              l10n.friends,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w500,
-                color: Colors.grey[600],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   /// 일반 네비게이션 바 아이템
   Widget _buildNavItem(
     int index,
@@ -376,8 +328,21 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     String label,
   ) {
     final isActive = _currentNavIndex == index;
+    
     return GestureDetector(
-      onTap: () => setState(() => _currentNavIndex = index),
+      onTap: () {
+        // 친구 화면에 접근할 때 로그인 상태 확인
+        if (index == 2) {
+          final userId = context.read<UserAuth>().userId ?? '';
+          if (userId.isEmpty) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('로그인 후 이용 가능합니다.')),
+            );
+            return;
+          }
+        }
+        setState(() => _currentNavIndex = index);
+      },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
         child: Column(

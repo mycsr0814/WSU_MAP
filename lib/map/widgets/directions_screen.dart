@@ -1692,7 +1692,7 @@ Widget _buildLoadingState() {
                             behavior: SnackBarBehavior.floating,
                             margin: const EdgeInsets.all(16),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
+                            borderRadius: BorderRadius.circular(10),
                             ),
                           ),
                         );
