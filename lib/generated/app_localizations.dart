@@ -2599,7 +2599,7 @@ abstract class AppLocalizations {
   /// No description provided for @loading_floor_plan.
   ///
   /// In en, this message translates to:
-  /// **'Loading {floor} floor plan...'**
+  /// **'Loading {floor} floor plan…'**
   String loading_floor_plan(Object floor);
 
   /// No description provided for @server_info.
@@ -2607,6 +2607,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Server: {building}/{floor}'**
   String server_info(Object building, Object floor);
+
+  /// No description provided for @building_name.
+  ///
+  /// In en, this message translates to:
+  /// **'Building'**
+  String get building_name;
+
+  /// No description provided for @floor_number.
+  ///
+  /// In en, this message translates to:
+  /// **'Floor'**
+  String get floor_number;
+
+  /// No description provided for @room_name.
+  ///
+  /// In en, this message translates to:
+  /// **'Room'**
+  String get room_name;
+
+  /// No description provided for @overlap_message.
+  ///
+  /// In en, this message translates to:
+  /// **'A class is already registered at this time.'**
+  String get overlap_message;
 }
 
 class _AppLocalizationsDelegate

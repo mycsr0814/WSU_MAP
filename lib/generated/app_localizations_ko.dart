@@ -1321,11 +1321,23 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String loading_floor_plan(Object floor) {
-    return '$floor 도면을 불러오는 중...';
+    return '$floor 도면을 불러오는 중…';
   }
 
   @override
   String server_info(Object building, Object floor) {
     return '서버: $building/$floor';
   }
+
+  @override
+  String get building_name => '건물';
+
+  @override
+  String get floor_number => '층';
+
+  @override
+  String get room_name => '강의실';
+
+  @override
+  String get overlap_message => '이미 같은 시간에 등록된 수업이 있습니다.';
 }

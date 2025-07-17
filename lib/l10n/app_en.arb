@@ -112,38 +112,38 @@
   "destination": "Destination",
   "clear_route": "Clear Route",
   "location_permission_denied": "Location permission denied.\nPlease allow location permission in settings.",
-"finding_route_to_building": "Finding route to {building}...",
-"@finding_route_to_building": {
-  "placeholders": {
-    "building": {
-      "type": "String"
+  "finding_route_to_building": "Finding route to {building}...",
+  "@finding_route_to_building": {
+    "placeholders": {
+      "building": {
+        "type": "String"
+      }
     }
-  }
-},
-"route_displayed_to_building": "Route to {building} displayed",
-"@route_displayed_to_building": {
-  "placeholders": {
-    "building": {
-      "type": "String"
+  },
+  "route_displayed_to_building": "Route to {building} displayed",
+  "@route_displayed_to_building": {
+    "placeholders": {
+      "building": {
+        "type": "String"
+      }
     }
-  }
-},
-"set_as_departure": "Set {building} as departure.",
-"@set_as_departure": {
-  "placeholders": {
-    "building": {
-      "type": "String"
+  },
+  "set_as_departure": "Set {building} as departure.",
+  "@set_as_departure": {
+    "placeholders": {
+      "building": {
+        "type": "String"
+      }
     }
-  }
-},
-"set_as_destination": "Set {building} as destination.",
-"@set_as_destination": {
-  "placeholders": {
-    "building": {
-      "type": "String"
+  },
+  "set_as_destination": "Set {building} as destination.",
+  "@set_as_destination": {
+    "placeholders": {
+      "building": {
+        "type": "String"
+      }
     }
-  }
-},
+  },
   "woosong_library_w1": "Woosong Library (W1)",
   "woosong_library_info": "B2F\tParking\nB1F\tSmall auditorium, Equipment room, Electrical room, Parking\n1F\tCareer Support Center (630-9976), Loan desk, Information lounge\n2F\tGeneral reading room, Group study room\n3F\tGeneral reading room\n4F\tLiterature books/Western books",
   "woosong_library_desc": "Woosong University Central Library",
@@ -221,7 +221,7 @@
   "building_details": "Details",
   "parking": "Parking",
   "accessibility": "Accessibility",
-  "facilities": "Facilities", 
+  "facilities": "Facilities",
   "elevator": "Elevator",
   "restroom": "Restroom",
   "navigate_from_current_location": "Navigate from current location",
@@ -249,8 +249,8 @@
   "no": "No",
   "feature_in_progress": "feature is under development.",
   "delete_feature_in_progress": "Account deletion feature is under development.",
-   "app_info": "App Info",
-  "app_version": "App Version", 
+  "app_info": "App Info",
+  "app_version": "App Version",
   "developer": "Developer",
   "developer_name": "Name: Hong Gil-dong",
   "developer_email": "Email: example@email.com",
@@ -299,7 +299,7 @@
       }
     }
   },
-   "view_on_map": "View on Map",
+  "view_on_map": "View on Map",
   "location": "Location",
   "schedule_time": "Time",
   "schedule_day": "Day",
@@ -369,7 +369,7 @@
       }
     }
   },
-"add": "Add",
+  "add": "Add",
   "@add": {
     "description": "Add button text"
   },
@@ -498,7 +498,6 @@
       }
     }
   },
-
   "open_settings": "Open Settings",
   "location_error": "Unable to find your location.",
   "view_floor_plan": "View Floor Plan",
@@ -534,15 +533,15 @@
   "instructionMoveToDestinationBuilding": "Go to {building} building",
   "instructionMoveToRoom": "Proceed to the destination room",
   "instructionArrived": "You have arrived at your destination!",
-    "search_hint": "Search campus buildings",
-      "searchHint": "Search by building or room",
+  "search_hint": "Search campus buildings",
+  "searchHint": "Search by building or room",
   "searchInitialGuide": "Search for a building or room",
   "searchHintExample": "e.g. W19, Engineering Hall, Room 401",
   "searchLoading": "Searching...",
   "searchNoResult": "No results found",
   "searchTryAgain": "Try a different search term",
   "lectureRoom": "Lecture Room",
-    "status_open": "Open",
+  "status_open": "Open",
   "status_closed": "Closed",
   "status_next_open": "Opens at 9:00 AM",
   "status_next_close": "Closes at 6:00 PM",
@@ -552,7 +551,7 @@
   "status_temp_closed": "Temporarily Closed",
   "status_closed_permanently": "Permanently Closed",
   "label_basic_info": "Basic Info",
-    "label_category_type": "Category",
+  "label_category_type": "Category",
   "label_status": "Status",
   "label_hours": "Operating Hours",
   "label_phone": "Phone Number",
@@ -611,6 +610,10 @@
   "no_detailed_info": "No detailed information available.",
   "pinch_to_zoom": "Pinch to zoom, drag to move",
   "floor_plan_loading_failed": "Floor Plan Loading Failed",
-  "loading_floor_plan": "Loading {floor} floor plan...",
-  "server_info": "Server: {building}/{floor}"
+  "loading_floor_plan": "Loading {floor} floor plan…",
+  "server_info": "Server: {building}/{floor}",
+  "building_name": "Building",
+  "floor_number": "Floor",
+  "room_name": "Room",
+  "overlap_message": "A class is already registered at this time."
 }

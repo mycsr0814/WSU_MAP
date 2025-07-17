@@ -1350,11 +1350,23 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String loading_floor_plan(Object floor) {
-    return 'Loading $floor floor plan...';
+    return 'Loading $floor floor plan…';
   }
 
   @override
   String server_info(Object building, Object floor) {
     return 'Server: $building/$floor';
   }
+
+  @override
+  String get building_name => 'Building';
+
+  @override
+  String get floor_number => 'Floor';
+
+  @override
+  String get room_name => 'Room';
+
+  @override
+  String get overlap_message => 'A class is already registered at this time.';
 }
