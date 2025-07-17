@@ -3,8 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application_1/models/category.dart';
 import 'package:flutter_application_1/services/category_api_service.dart';
 import 'package:flutter_application_1/data/category_fallback_data.dart';
-import 'package:flutter_application_1/utils/categorylocalization.dart';
-import 'package:http/http.dart' as http;
+import 'package:flutter_application_1/utils/CategoryLocalization.dart';
 
 class CategoryChips extends StatefulWidget {
   final Function(String, List<String>) onCategorySelected;
@@ -56,7 +55,6 @@ class _CategoryChipsState extends State<CategoryChips> {
 
       List<String> categoryNames = [];
 
-      // 1단계: 서버에서 카테고리 로딩 시도
       try {
         final categories = await CategoryApiService.getCategories();
         categoryNames = categories
@@ -73,8 +71,6 @@ class _CategoryChipsState extends State<CategoryChips> {
         }
       } catch (e) {
         debugPrint('⚠️ 서버 카테고리 로딩 실패: $e');
-
-        // 2단계: Fallback 데이터 사용
         categoryNames = CategoryFallbackData.getCategories();
         _useServerData = false;
         debugPrint('🔄 Fallback 카테고리 데이터 사용: ${categoryNames.length}개');
@@ -88,14 +84,13 @@ class _CategoryChipsState extends State<CategoryChips> {
       });
 
       debugPrint('카테고리 로딩 완료: $_categories (서버 데이터: $_useServerData)');
-
     } catch (e) {
       if (!mounted) return;
 
       setState(() {
         _error = e.toString();
         _isLoading = false;
-        _categories = CategoryFallbackData.getCategories(); // 최후 fallback
+        _categories = CategoryFallbackData.getCategories();
         _useServerData = false;
       });
       debugPrint('❌ 카테고리 로딩 완전 실패, 최후 fallback 사용: $e');
@@ -105,56 +100,23 @@ class _CategoryChipsState extends State<CategoryChips> {
   Future<List<String>> _getCategoryBuildingNames(String category) async {
     try {
       debugPrint('🎯 getCategoryBuildingNames 호출: $category (서버 데이터: $_useServerData)');
-
-      // 서버 데이터 사용 시도
       if (_useServerData) {
         try {
-          debugPrint('📡 서버에서 카테고리별 건물 조회 시도...');
-
-          final response = await http.get(
-            Uri.parse('http://54.252.240.31:3001/category'),
-            headers: {'Content-Type': 'application/json'},
-          ).timeout(const Duration(seconds: 5));
-
-          if (response.statusCode == 200) {
-            final String responseBody = utf8.decode(response.bodyBytes);
-            final List<dynamic> jsonData = json.decode(responseBody);
-
-            debugPrint('✅ 서버 응답 성공! 데이터 개수: ${jsonData.length}개');
-
-            final filteredBuildings = <String>[];
-
-            for (final item in jsonData) {
-              final categoryName = item['Category_Name']?.toString();
-              final buildingName = item['Building_Name']?.toString();
-
-              if (categoryName == category && buildingName != null && buildingName.isNotEmpty) {
-                if (!filteredBuildings.contains(buildingName)) {
-                  filteredBuildings.add(buildingName);
-                }
-              }
-            }
-
-            if (filteredBuildings.isNotEmpty) {
-              debugPrint('🏢 서버에서 건물 목록 반환: $filteredBuildings');
-              return filteredBuildings;
-            } else {
-              debugPrint('⚠️ 서버에서 해당 카테고리의 건물을 찾지 못함');
-            }
+          final buildingNames = await CategoryApiService.getCategoryBuildingNames(category);
+          if (buildingNames.isNotEmpty) {
+            debugPrint('🏢 서버에서 건물 목록 반환: $buildingNames');
+            return buildingNames;
           } else {
-            debugPrint('❌ 서버 응답 오류: ${response.statusCode}');
+            debugPrint('⚠️ 서버에서 해당 카테고리의 건물을 찾지 못함, fallback 사용');
           }
         } catch (e) {
           debugPrint('❌ 서버 요청 실패: $e');
         }
       }
-
-      // Fallback 데이터 사용
       debugPrint('🔄 Fallback 데이터에서 건물 목록 조회...');
       final buildings = CategoryFallbackData.getBuildingsByCategory(category);
       debugPrint('🏢 Fallback에서 건물 목록 반환: $buildings');
       return buildings;
-
     } catch (e) {
       debugPrint('❌ 카테고리 건물 조회 완전 실패: $e');
       return [];
@@ -205,7 +167,6 @@ class _CategoryChipsState extends State<CategoryChips> {
       });
 
       widget.onCategorySelected(category, buildingNames);
-
     } catch (e) {
       debugPrint('❌ API 호출 오류: $e');
       setState(() {
@@ -359,65 +320,65 @@ class _CategoryChipsState extends State<CategoryChips> {
     );
   }
 
- Widget _buildCategoryChip(String category) {
-  final isSelected = _selectedCategory == category;
-  final icon = CategoryFallbackData.getCategoryIcon(category);
+  Widget _buildCategoryChip(String category) {
+    final isSelected = _selectedCategory == category;
+    final icon = CategoryFallbackData.getCategoryIcon(category);
 
-  return InkWell(
-    onTap: () {
-      if (mounted) {
-        _onCategoryTap(category);
-      }
-    },
-    borderRadius: BorderRadius.circular(20),
-    child: AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: isSelected ? const Color(0xFF1E3A8A) : Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: isSelected ? const Color(0xFF1E3A8A) : Colors.grey.shade300,
-          width: isSelected ? 2 : 1,
+    return InkWell(
+      onTap: () {
+        if (mounted) {
+          _onCategoryTap(category);
+        }
+      },
+      borderRadius: BorderRadius.circular(20),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFF1E3A8A) : Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected ? const Color(0xFF1E3A8A) : Colors.grey.shade300,
+            width: isSelected ? 2 : 1,
+          ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: const Color(0xFF1E3A8A).withOpacity(0.2),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 4,
+                    offset: const Offset(0, 1),
+                  ),
+                ],
         ),
-        boxShadow: isSelected
-            ? [
-                BoxShadow(
-                  color: const Color(0xFF1E3A8A).withOpacity(0.2),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ]
-            : [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 4,
-                  offset: const Offset(0, 1),
-                ),
-              ],
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            size: 18,
-            color: isSelected ? Colors.white : Colors.indigo.shade400,
-          ),
-          const SizedBox(width: 6),
-          Text(
-            CategoryLocalization.getLabel(context, category), // ✅ 변경됨!
-            style: TextStyle(
-              fontSize: 14,
-              color: isSelected ? Colors.white : Colors.grey.shade700,
-              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 18,
+              color: isSelected ? Colors.white : Colors.indigo.shade400,
             ),
-          ),
-        ],
+            const SizedBox(width: 6),
+            Text(
+              CategoryLocalization.getLabel(context, category),
+              style: TextStyle(
+                fontSize: 14,
+                color: isSelected ? Colors.white : Colors.grey.shade700,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   @override
   void dispose() {

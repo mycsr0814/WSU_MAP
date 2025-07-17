@@ -1050,62 +1050,115 @@ Widget _buildLoadingState() {
     );
   }
 
- Widget _buildSearchResultItem(SearchResult result) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 1),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.zero,
+  // 🔥 수정된 _buildSearchResultItem 메서드 - 강의실 직접 이동 기능 추가
+
+  // directions_screen.dart에서 _buildSearchResultItem의 onTap 부분을 다음과 같이 수정
+
+// directions_screen.dart에서 _buildSearchResultItem의 onTap 부분을 다음과 같이 수정
+
+Widget _buildSearchResultItem(SearchResult result) {
+  return Container(
+    margin: const EdgeInsets.only(bottom: 1),
+    decoration: const BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.zero,
+    ),
+    child: ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      leading: Container(
+        width: 32,
+        height: 32,
+        decoration: BoxDecoration(
+          color: result.isBuilding
+              ? const Color(0xFF3B82F6).withOpacity(0.1)
+              : const Color(0xFF10B981).withOpacity(0.1),
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Icon(
+          result.isBuilding ? Icons.business : Icons.room,
+          color: result.isBuilding
+              ? const Color(0xFF3B82F6)
+              : const Color(0xFF10B981),
+          size: 18,
+        ),
       ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        leading: Container(
-          width: 32,
-          height: 32,
-          decoration: BoxDecoration(
-            color: result.isBuilding
-                ? const Color(0xFF3B82F6).withOpacity(0.1)
-                : const Color(0xFF10B981).withOpacity(0.1),
-            borderRadius: BorderRadius.circular(6),
-          ),
-          child: Icon(
-            result.isBuilding ? Icons.business : Icons.room,
-            color: result.isBuilding
-                ? const Color(0xFF3B82F6)
-                : const Color(0xFF10B981),
-            size: 18,
-          ),
+      title: Text(
+        result.displayName,
+        style: const TextStyle(
+          fontSize: 15,
+          fontWeight: FontWeight.w500,
+          color: Colors.black87,
         ),
-        title: Text(
-          result.displayName,
-          style: const TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w500,
-            color: Colors.black87,
-          ),
-        ),
-        subtitle: Text(
-          result.isRoom
-              ? result.roomDescription ?? AppLocalizations.of(context)!.classroom
-              : result.building.info.isNotEmpty 
-                  ? result.building.info 
-                  : result.building.category,
-          style: TextStyle(
-            fontSize: 13,
-            color: Colors.grey.shade600,
-          ),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-        trailing: Icon(
-          Icons.chevron_right,
-          color: Colors.grey.shade400,
-          size: 20,
-        ),
-        onTap: () => _onSearchResultSelected(result),
       ),
-    );
-  }
+      subtitle: Text(
+        result.isRoom
+            ? result.roomDescription ?? '강의실'
+            : result.building.info.isNotEmpty 
+                ? result.building.info 
+                : result.building.category,
+        style: TextStyle(
+          fontSize: 13,
+          color: Colors.grey.shade600,
+        ),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
+      trailing: Icon(
+        Icons.chevron_right,
+        color: Colors.grey.shade400,
+        size: 20,
+      ),
+      // 🔥 이 부분을 수정
+      onTap: () {
+        if (_searchType != null) {
+          // 길찾기 모드: 출발지/도착지 설정
+          _onSearchResultSelected(result);
+        } else {
+          // 🔥 단독 검색 모드: 강의실이면 바로 이동
+          if (result.isRoom) {
+            _navigateToRoomDirectly(result);
+          } else {
+            // 건물이면 길찾기 화면으로 이동하거나 다른 처리
+            _onSearchResultSelected(result);
+          }
+        }
+      },
+    ),
+  );
+}
+
+// 🔥 강의실로 바로 이동하는 메서드 추가
+void _navigateToRoomDirectly(SearchResult result) {
+  if (!result.isRoom) return;
+  
+  final buildingCode = _extractBuildingCode(result.building.name);
+  
+  debugPrint('🎯 강의실로 바로 이동: ${result.displayName}');
+  debugPrint('   건물: $buildingCode');
+  debugPrint('   층: ${result.floorNumber}');
+  debugPrint('   호실: ${result.roomNumber}');
+  
+  // 사용자에게 이동 중임을 알림
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text('${result.displayName}로 이동 중...'),
+      duration: const Duration(seconds: 2),
+      backgroundColor: Colors.blue,
+    ),
+  );
+  
+  // BuildingMapPage로 직접 이동
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => BuildingMapPage(
+        buildingName: buildingCode,
+        targetRoomId: result.roomNumber,      // 🔥 자동 선택할 강의실
+        targetFloorNumber: result.floorNumber, // 🔥 해당 층으로 이동
+      ),
+    ),
+  );
+}
 
   Widget _buildBuildingResultItem(Building building, {bool isRecent = false}) {
     return Container(

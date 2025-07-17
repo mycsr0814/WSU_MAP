@@ -1,4 +1,3 @@
-// lib/services/category_api_service.dart - 안정화된 버전
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/config/api_config.dart';
@@ -15,15 +14,26 @@ class CategoryApiService {
   static DateTime? _lastConnectionCheck;
   static const Duration _connectionCacheTime = Duration(minutes: 5);
 
-  /// 🔥 개선된 카테고리 목록 조회 - fallback 지원
-  static Future<List<Category>> getCategories() async {
+  // 🔥 카테고리/건물 캐시
+  static List<Category>? _cachedCategories;
+  static Map<String, List<String>> _cachedBuildingNames = {};
+
+  /// 🔥 카테고리 목록 조회 (메모리 캐시 활용, fallback 지원)
+  static Future<List<Category>> getCategories({bool forceRefresh = false}) async {
+    if (!forceRefresh && _cachedCategories != null) {
+      debugPrint('✔️ 캐시된 카테고리 반환');
+      return _cachedCategories!;
+    }
+
     try {
       debugPrint('🔍 getCategories 시작');
 
       final isConnected = await _checkConnection();
       if (!isConnected) {
         debugPrint('⚠️ 서버 연결 불가, fallback 데이터 사용');
-        return _getFallbackCategories();
+        final fallback = _getFallbackCategories();
+        _cachedCategories = fallback;
+        return fallback;
       }
 
       final response = await http.get(
@@ -52,24 +62,36 @@ class CategoryApiService {
         if (categoryNames.isNotEmpty) {
           final categories = categoryNames.map((name) => Category(categoryName: name)).toList();
           debugPrint('✅ 서버에서 카테고리 로딩 성공: ${categories.length}개');
+          _cachedCategories = categories;
           return categories;
         } else {
           debugPrint('⚠️ 서버 응답은 성공했지만 카테고리가 비어있음');
-          return _getFallbackCategories();
+          final fallback = _getFallbackCategories();
+          _cachedCategories = fallback;
+          return fallback;
         }
 
       } else {
         debugPrint('❌ 서버 응답 오류: ${response.statusCode}');
-        return _getFallbackCategories();
+        final fallback = _getFallbackCategories();
+        _cachedCategories = fallback;
+        return fallback;
       }
     } catch (e) {
       debugPrint('🚨 getCategories 에러: $e');
-      return _getFallbackCategories();
+      final fallback = _getFallbackCategories();
+      _cachedCategories = fallback;
+      return fallback;
     }
   }
 
-  /// 🔥 개선된 카테고리별 건물 이름 조회 - fallback 지원
-  static Future<List<String>> getCategoryBuildingNames(String categoryId) async {
+  /// 🔥 카테고리별 건물 이름 조회 (메모리 캐시 활용, fallback 지원)
+  static Future<List<String>> getCategoryBuildingNames(String categoryId, {bool forceRefresh = false}) async {
+    if (!forceRefresh && _cachedBuildingNames.containsKey(categoryId)) {
+      debugPrint('✔️ 캐시된 건물 목록 반환: $categoryId');
+      return _cachedBuildingNames[categoryId]!;
+    }
+
     try {
       debugPrint('🎯 getCategoryBuildingNames 호출: $categoryId');
 
@@ -77,7 +99,9 @@ class CategoryApiService {
       final isConnected = await _checkConnection();
       if (!isConnected) {
         debugPrint('⚠️ 서버 연결 불가, fallback 데이터에서 건물 조회');
-        return CategoryFallbackData.getBuildingsByCategory(categoryId);
+        final fallback = CategoryFallbackData.getBuildingsByCategory(categoryId);
+        _cachedBuildingNames[categoryId] = fallback;
+        return fallback;
       }
 
       // ✅ 영어 ID → 한글 변환 (서버 요청용)
@@ -105,24 +129,40 @@ class CategoryApiService {
 
         if (buildingNames.isNotEmpty) {
           debugPrint('🏢 서버에서 건물 목록 조회 성공: $buildingNames');
+          _cachedBuildingNames[categoryId] = buildingNames;
           return buildingNames;
         } else {
           debugPrint('⚠️ 서버에서 해당 카테고리의 건물을 찾지 못함, fallback 사용');
-          return CategoryFallbackData.getBuildingsByCategory(categoryId);
+          final fallback = CategoryFallbackData.getBuildingsByCategory(categoryId);
+          _cachedBuildingNames[categoryId] = fallback;
+          return fallback;
         }
 
       } else if (response.statusCode == 404) {
         debugPrint('⚠️ 카테고리 "$categoryParam"를 서버에서 찾지 못함, fallback 사용');
-        return CategoryFallbackData.getBuildingsByCategory(categoryId);
+        final fallback = CategoryFallbackData.getBuildingsByCategory(categoryId);
+        _cachedBuildingNames[categoryId] = fallback;
+        return fallback;
       } else {
         debugPrint('❌ 서버 응답 오류: ${response.statusCode}, fallback 사용');
-        return CategoryFallbackData.getBuildingsByCategory(categoryId);
+        final fallback = CategoryFallbackData.getBuildingsByCategory(categoryId);
+        _cachedBuildingNames[categoryId] = fallback;
+        return fallback;
       }
 
     } catch (e) {
       debugPrint('🚨 getCategoryBuildingNames 에러: $e, fallback 사용');
-      return CategoryFallbackData.getBuildingsByCategory(categoryId);
+      final fallback = CategoryFallbackData.getBuildingsByCategory(categoryId);
+      _cachedBuildingNames[categoryId] = fallback;
+      return fallback;
     }
+  }
+
+  /// 🧹 캐시 명시적 삭제
+  static void clearCache() {
+    _cachedCategories = null;
+    _cachedBuildingNames.clear();
+    debugPrint('🗑️ 전체 데이터 캐시 비움');
   }
 
   /// 🧠 ID에서 한글명 찾기 (없으면 그대로 반환)

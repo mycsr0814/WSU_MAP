@@ -148,6 +148,9 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
           onMapReady: (mapController) async {
             await _controller.onMapReady(mapController);
             debugPrint('🗺️ 지도 준비 완료!');
+
+            // ✅ 지도 준비 완료 후 내 위치로 자동 이동
+            await _controller.moveToMyLocation();
           },
           onTap: () => _controller.closeInfoWindow(_infoWindowController),
         ),
