@@ -152,6 +152,63 @@ class UserAuth extends ChangeNotifier {
     }
   }
 
+  /// 🔥 서버에 자동 로그인 (저장된 정보 사용)
+  Future<bool> autoLoginToServer() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final savedUserId = prefs.getString('user_id');
+      final savedPassword = prefs.getString('user_password');
+      final rememberMe = prefs.getBool('remember_me') ?? false;
+
+      // 기억하기가 체크되어 있고 저장된 정보가 있는 경우만 자동 로그인
+      if (rememberMe && savedUserId != null && savedPassword != null) {
+        debugPrint('🔄 서버 자동 로그인 시도 - 사용자: $savedUserId');
+
+        final result = await AuthService.login(
+          id: savedUserId,
+          pw: savedPassword,
+        );
+
+        if (result.isSuccess) {
+          debugPrint('✅ 서버 자동 로그인 성공');
+          return true;
+        } else {
+          debugPrint('⚠️ 서버 자동 로그인 실패: ${result.message}');
+          return false;
+        }
+      }
+
+      return false;
+    } catch (e) {
+      debugPrint('❌ 서버 자동 로그인 오류: $e');
+      return false;
+    }
+  }
+
+  /// 🔥 서버에서만 로그아웃 (로컬 정보는 유지)
+  Future<bool> logoutServerOnly() async {
+    try {
+      if (_userId != null && _userId != 'guest' && _userId != 'admin') {
+        debugPrint('🔄 서버 전용 로그아웃 시도 - 사용자: $_userId');
+
+        final result = await AuthService.logout(id: _userId!);
+
+        if (result.isSuccess) {
+          debugPrint('✅ 서버 전용 로그아웃 성공');
+          return true;
+        } else {
+          debugPrint('⚠️ 서버 전용 로그아웃 실패: ${result.message}');
+          return false;
+        }
+      }
+
+      return true; // 게스트나 관리자는 서버 로그아웃 불필요
+    } catch (e) {
+      debugPrint('❌ 서버 전용 로그아웃 오류: $e');
+      return false;
+    }
+  }
+
   /// 초기화 - 저장된 로그인 정보 복원 (기억하기가 체크되었던 경우만)
   Future<void> initialize({BuildContext? context}) async {
     try {
@@ -213,7 +270,7 @@ class UserAuth extends ChangeNotifier {
 
           // 기억하기 옵션이 체크된 경우에만 로그인 정보 저장
           if (rememberMe) {
-            await _saveLoginInfo(rememberMe: true);
+            await _saveLoginInfo(rememberMe: true, password: password);
           } else {
             await _clearLoginInfo();
           }
@@ -280,6 +337,12 @@ class UserAuth extends ChangeNotifier {
       }
 
       notifyListeners();
+
+      // 🔥 게스트 로그인 완료 후 추가 지연으로 UI 안정화
+      await Future.delayed(const Duration(milliseconds: 200));
+    } catch (e) {
+      debugPrint('❌ 게스트 로그인 오류: $e');
+      _setError('게스트 로그인 중 오류가 발생했습니다.');
     } finally {
       _setLoading(false);
     }
@@ -340,10 +403,12 @@ class UserAuth extends ChangeNotifier {
       _userId = null;
       _userName = null;
       _isLoggedIn = false;
-      _isFirstLaunch = true; // 로그아웃 시 Welcome 페이지로 돌아가도록 설정
+      _isFirstLaunch = true;
       _clearError();
 
+      debugPrint('🔥 UserAuth: 로그아웃 완료 - 상태 리셋');
       notifyListeners();
+
       return true;
     } catch (e) {
       debugPrint('로그아웃 오류: $e');
@@ -552,7 +617,6 @@ class UserAuth extends ChangeNotifier {
         _userId = null;
         _userName = null;
         _isLoggedIn = false;
-
         notifyListeners();
         return true;
       } else {
@@ -632,14 +696,23 @@ class UserAuth extends ChangeNotifier {
     _lastError = null;
   }
 
-  /// 로그인 정보 저장
-  Future<void> _saveLoginInfo({bool rememberMe = false}) async {
+  /// 로그인 정보 저장 (수정됨 - 패스워드 저장 추가)
+  Future<void> _saveLoginInfo({
+    bool rememberMe = false,
+    String? password,
+  }) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('user_id', _userId ?? '');
       await prefs.setString('user_name', _userName ?? '');
       await prefs.setBool('is_logged_in', _isLoggedIn);
       await prefs.setBool('remember_me', rememberMe);
+
+      // 🔐 보안 주의: 실제 운영 환경에서는 패스워드 저장 대신
+      // 토큰 기반 인증 시스템 사용을 권장합니다.
+      if (rememberMe && password != null) {
+        await prefs.setString('user_password', password);
+      }
     } catch (e) {
       debugPrint('로그인 정보 저장 오류: $e');
     }
@@ -653,6 +726,7 @@ class UserAuth extends ChangeNotifier {
       await prefs.remove('user_name');
       await prefs.remove('is_logged_in');
       await prefs.remove('remember_me');
+      await prefs.remove('user_password'); // 패스워드도 삭제
     } catch (e) {
       debugPrint('로그인 정보 삭제 오류: $e');
     }
