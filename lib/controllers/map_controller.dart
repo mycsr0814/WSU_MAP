@@ -336,6 +336,7 @@ Future<void> selectCategoryByNames(String category, List<String> buildingNames) 
 
   /// 기존 _getCategoryIcon 메서드는 그대로 유지
   IconData _getCategoryIcon(String category) {
+    debugPrint('==== [카테고리 아이콘 함수 진입] 넘어온 category: "$category"');
     switch (category) {
       case '카페':
         return Icons.local_cafe;
@@ -373,6 +374,7 @@ Future<void> selectCategoryByNames(String category, List<String> buildingNames) 
       case '서점':
         return Icons.menu_book;
       case '우체국':
+      case 'post_office':
         return Icons.local_post_office;
       default:
         return Icons.category;
