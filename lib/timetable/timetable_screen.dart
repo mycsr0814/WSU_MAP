@@ -10,7 +10,6 @@ import '../map/widgets/directions_screen.dart'; // 폴더 구조에 맞게 경�
 class ScheduleScreen extends StatefulWidget {
   final String userId;
   const ScheduleScreen({required this.userId, super.key});
-
   @override
   State<ScheduleScreen> createState() => _ScheduleScreenState();
 }
@@ -103,7 +102,6 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     final newEnd = _parseTime(newItem.endTime);
 
     for (final item in _scheduleItems) {
-      print('item.id="${item.id}" ignoreId="$ignoreId"');
       if (ignoreId != null &&
           item.id != null &&
           item.id!.trim() == ignoreId.trim())
@@ -113,13 +111,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       final existStart = _parseTime(item.startTime);
       final existEnd = _parseTime(item.endTime);
 
-      // 걸치면 무조건 중복(에브리타임, 네이버캘린더식)
       if (newStart < existEnd && newEnd > existStart) {
-        // 디버그 로깅(실전 문제 추적용)
-        print(
-          '중복! 비교중 item.id=${item.id} vs ignoreId=$ignoreId / '
-          'start=$existStart, end=$existEnd <-> newStart=$newStart, newEnd=$newEnd',
-        );
         return true;
       }
     }
@@ -462,6 +454,8 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     );
   }
 
+  /// ===== 핵심! 입력 다이얼로그(수정/추가) 부분만 아래처럼 수정! =====
+
   Future<void> _showScheduleFormDialog({
     ScheduleItem? initialItem,
     required Future<void> Function(ScheduleItem) onSubmit,
@@ -475,12 +469,17 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       text: initialItem?.professor ?? '',
     );
 
+    final memoController = TextEditingController(text: initialItem?.memo ?? '');
+
+    // 컨트롤러 변수
+    TextEditingController? buildingFieldController;
+    TextEditingController? floorFieldController;
+    TextEditingController? roomFieldController;
+
+    // [여기서 관리!] 선택/목록 관련 변수
     String? selectedBuilding = initialItem?.buildingName;
     String? selectedFloor = initialItem?.floorNumber;
     String? selectedRoom = initialItem?.roomName;
-
-    List<String> floorList = [];
-    List<String> roomList = [];
 
     int selectedDay = initialItem?.dayOfWeek ?? 1;
     String startTime = initialItem?.startTime.length == 5
@@ -526,12 +525,9 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       'W19',
     ];
 
-    final memoController = TextEditingController(text: initialItem?.memo ?? '');
-
-    // 컨트롤러 변수 선언 (builder 컨트롤러 저장용)
-    TextEditingController? buildingFieldController;
-    TextEditingController? floorFieldController;
-    TextEditingController? roomFieldController;
+    // **[이 부분이 중요!] 목록은 빌더 안 setState로 바꿔줘야 함**
+    List<String> floorList = [];
+    List<String> roomList = [];
 
     if (initialItem != null) {
       floorList = await _apiService.fetchFloors(initialItem.buildingName);
@@ -543,10 +539,15 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
 
     await showDialog(
       context: context,
-      builder: (context) {
-        return StatefulBuilder(
+      builder: (context) => SafeArea(
+        child: StatefulBuilder(
           builder: (context, setState) {
             return AlertDialog(
+              insetPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 24,
+              ),
+              contentPadding: const EdgeInsets.fromLTRB(20, 30, 20, 8),
               title: Text(
                 initialItem == null
                     ? l10n?.add_class ?? 'Add Class'
@@ -556,12 +557,18 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    const SizedBox(height: 12),
                     TextField(
                       controller: titleController,
                       decoration: InputDecoration(
                         labelText: l10n?.class_name ?? 'Class Name',
                         border: const OutlineInputBorder(),
+                        contentPadding: const EdgeInsets.symmetric(
+                          vertical: 12,
+                          horizontal: 16,
+                        ),
                       ),
+                      autofocus: true,
                     ),
                     const SizedBox(height: 16),
                     TextField(
@@ -572,7 +579,6 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                       ),
                     ),
                     const SizedBox(height: 16),
-
                     // ----------- [ 건물명 자동완성 입력창 ] -----------
                     TypeAheadField<String>(
                       suggestionsCallback: (pattern) async => buildingCodes
@@ -595,8 +601,8 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                           ),
                           onChanged: (value) async {
                             selectedBuilding = value;
+                            // 목록/텍스트 초기화
                             setState(() {
-                              // 👇 아래 5줄 추가 ※※
                               selectedFloor = null;
                               selectedRoom = null;
                               floorFieldController?.text = '';
@@ -614,7 +620,6 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                           },
                         );
                       },
-                      // onSelected 아래처럼 수정!
                       onSelected: (suggestion) async {
                         selectedBuilding = suggestion;
                         setState(() {
@@ -634,11 +639,10 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                         });
                       },
                     ),
-
-                    // ----------- [ 층 자동완성 입력창 ] -----------
                     const SizedBox(height: 8),
+                    // ----------- [ 층 자동완성 입력창 ] -----------
                     TypeAheadField<String>(
-                      key: ValueKey(selectedBuilding), // 👈👈👈 중요!!
+                      key: ValueKey(selectedBuilding), // key 꼭!
                       suggestionsCallback: (pattern) async {
                         if (pattern.trim().isEmpty) return floorList;
                         return floorList
@@ -692,13 +696,10 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                         });
                       },
                     ),
-
                     // ----------- [ 강의실 자동완성 입력창 ] -----------
                     const SizedBox(height: 8),
                     TypeAheadField<String>(
-                      key: ValueKey(
-                        '${selectedBuilding}_$selectedFloor',
-                      ), // ← 여기!!
+                      key: ValueKey('${selectedBuilding}_$selectedFloor'),
                       suggestionsCallback: (pattern) async {
                         if (pattern.trim().isEmpty) return roomList;
                         return roomList
@@ -731,7 +732,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                       },
                     ),
 
-                    // -------------------- 이하 생략(동일) --------------------
+                    // -------------------- 이하 동등하게 유지 --------------------
                     const SizedBox(height: 16),
                     DropdownButtonFormField<int>(
                       decoration: InputDecoration(
@@ -858,7 +859,6 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                         );
                       }).toList(),
                     ),
-                    // 👇👇👇 메모 입력란 추가 (여기가 핵심 추가 부분입니다!)
                     const SizedBox(height: 16),
                     TextField(
                       controller: memoController,
@@ -920,10 +920,12 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
               ],
             );
           },
-        );
-      },
+        ),
+      ),
     );
   }
+
+  // ----------- 이하 기존과 동일 ---------------------
 
   void _showAddScheduleDialog() {
     _showScheduleFormDialog(
@@ -939,15 +941,12 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   }
 
   void _showRecommendRoute(ScheduleItem item) {
-    // DirectionsScreen에 도착지 정보를 전달하면서 이동 (예시는 roomData 파라미터 사용)
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => DirectionsScreen(
-          // 아래처럼 강의실 정보를 도착지로 전달합니다.
-          // DirectionsScreen 쪽에서 roomData, presetEnd 등 파라미터명 확인 필요!
           roomData: {
-            "type": "end", // 도착지 역할로
+            "type": "end",
             "buildingName": item.buildingName,
             "floorNumber": item.floorNumber,
             "roomName": item.roomName,
@@ -1028,12 +1027,10 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
               ),
           ],
         ),
-        // ====== 요 아래만 바꿔주면 됩니다!! ======
         actions: [
           Row(
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
-              // 추천경로 보기 (왼쪽)
               ElevatedButton(
                 onPressed: () {
                   Navigator.pop(context);
@@ -1048,7 +1045,6 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                 child: const Text('추천경로 보기'),
               ),
               const SizedBox(width: 8),
-              // 편집 (가운데)
               ElevatedButton(
                 onPressed: () {
                   Navigator.pop(context);
@@ -1063,7 +1059,6 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                 child: Text(l10n?.edit ?? 'Edit'),
               ),
               const SizedBox(width: 8),
-              // 삭제 (오른쪽/빨강)
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.red,
@@ -1082,7 +1077,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
             ],
           ),
         ],
-        actionsAlignment: MainAxisAlignment.start, // Row 사용시 이 옵션은 무시될 수 있습니다
+        actionsAlignment: MainAxisAlignment.start,
       ),
     );
   }
