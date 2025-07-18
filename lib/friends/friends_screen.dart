@@ -1,4 +1,4 @@
-// lib/screens/friends_screen.dart - 위치 표시 버튼이 추가된 전체 코드
+// lib/screens/friends_screen.dart - 위치 제거 버튼이 추가된 완전한 코드
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_application_1/components/woosong_button.dart';
@@ -24,7 +24,6 @@ class FriendsScreen extends StatefulWidget {
   State<FriendsScreen> createState() => _FriendsScreenState();
 }
 
-// _showFriendLocationOnMap 메서드 수정
 class _FriendsScreenState extends State<FriendsScreen>
     with WidgetsBindingObserver {
   late final FriendsController controller;
@@ -140,9 +139,18 @@ class _FriendsScreenState extends State<FriendsScreen>
     );
   }
 
-  /// 🔥 친구 상세 정보 다이얼로그 - 위치 표시 버튼 추가
+  /// 🔥 친구 상세 정보 다이얼로그 - 위치 제거 버튼 추가
   Future<void> _showFriendDetailsDialog(Friend friend) async {
     HapticFeedback.lightImpact();
+
+    // 🔥 친구 위치 표시 상태 확인
+    final mapController = Provider.of<MapScreenController>(
+      context,
+      listen: false,
+    );
+    final isLocationDisplayed = mapController.isFriendLocationDisplayed(
+      friend.userId,
+    );
 
     await showDialog(
       context: context,
@@ -260,37 +268,73 @@ class _FriendsScreenState extends State<FriendsScreen>
                 ),
               ),
 
-              // 🔥 버튼 영역 - 위치 표시 버튼 추가
+              // 🔥 버튼 영역 - 위치 제거 버튼 추가
               Padding(
                 padding: const EdgeInsets.only(left: 24, right: 24, bottom: 24),
-                child: Row(
+                child: Column(
                   children: [
-                    // 위치 표시 버튼
+                    // 위치 관련 버튼들
                     if (friend.lastLocation.isNotEmpty) ...[
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed: () async {
-                            Navigator.of(context).pop();
-                            await _showFriendLocationOnMap(friend);
-                          },
-                          icon: const Icon(Icons.location_on, size: 18),
-                          label: const Text('위치 보기'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF10B981),
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
+                      Row(
+                        children: [
+                          // 위치 표시 버튼
+                          if (!isLocationDisplayed) ...[
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                onPressed: () async {
+                                  Navigator.of(context).pop();
+                                  await _showFriendLocationOnMap(friend);
+                                },
+                                icon: const Icon(Icons.location_on, size: 18),
+                                label: const Text('위치 보기'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF10B981),
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 12,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  elevation: 2,
+                                ),
+                              ),
                             ),
-                            elevation: 2,
-                          ),
-                        ),
+                          ],
+
+                          // 위치 제거 버튼
+                          if (isLocationDisplayed) ...[
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                onPressed: () async {
+                                  Navigator.of(context).pop();
+                                  await _removeFriendLocationFromMap(friend);
+                                },
+                                icon: const Icon(Icons.location_off, size: 18),
+                                label: const Text('위치 제거'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFFEF4444),
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 12,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  elevation: 2,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                          ],
+                        ],
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(height: 12),
                     ],
 
                     // 닫기 버튼
-                    Expanded(
+                    SizedBox(
+                      width: double.infinity,
                       child: ElevatedButton.icon(
                         onPressed: () => Navigator.of(context).pop(),
                         icon: const Icon(Icons.close, size: 18),
@@ -377,6 +421,24 @@ class _FriendsScreenState extends State<FriendsScreen>
     } catch (e) {
       debugPrint('❌ 친구 위치 표시 오류: $e');
       _showErrorMessage('친구 위치를 표시할 수 없습니다.');
+    }
+  }
+
+  /// 🔥 친구 위치를 지도에서 제거
+  Future<void> _removeFriendLocationFromMap(Friend friend) async {
+    try {
+      final mapController = Provider.of<MapScreenController>(
+        context,
+        listen: false,
+      );
+      await mapController.removeFriendLocationMarker(friend.userId);
+
+      _showSuccessMessage('${friend.userName}님의 위치를 지도에서 제거했습니다.');
+
+      debugPrint('✅ 친구 위치 제거 완료: ${friend.userName}');
+    } catch (e) {
+      debugPrint('❌ 친구 위치 제거 오류: $e');
+      _showErrorMessage('친구 위치를 제거할 수 없습니다.');
     }
   }
 
@@ -480,9 +542,9 @@ class _FriendsScreenState extends State<FriendsScreen>
                     ),
                     Row(
                       children: [
-                        Text(
+                        const Text(
                           '친구 관리 및 요청',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 14,
                             color: Colors.grey,
                             fontWeight: FontWeight.w500,
@@ -549,7 +611,6 @@ class _FriendsScreenState extends State<FriendsScreen>
               ),
             ],
           ),
-
           // 🔥 실시간 업데이트 정보 표시
           if (controller.isRealTimeEnabled) ...[
             const SizedBox(height: 8),
@@ -639,7 +700,7 @@ class _FriendsScreenState extends State<FriendsScreen>
                               Container(
                                 width: 8,
                                 height: 8,
-                                decoration: BoxDecoration(
+                                decoration: const BoxDecoration(
                                   color: Colors.green,
                                   shape: BoxShape.circle,
                                 ),
@@ -688,12 +749,12 @@ class _FriendsScreenState extends State<FriendsScreen>
                                 horizontal: 8,
                                 vertical: 4,
                               ),
-                              child: Row(
+                              child: const Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  const Icon(Icons.person_add, size: 16),
-                                  const SizedBox(width: 4),
-                                  const Text('추가'),
+                                  Icon(Icons.person_add, size: 16),
+                                  SizedBox(width: 4),
+                                  Text('추가'),
                                 ],
                               ),
                             ),

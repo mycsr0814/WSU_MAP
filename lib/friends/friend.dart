@@ -34,7 +34,7 @@ class Friend {
         'isLogin',
         'online',
       ]),
-      lastLocation: _extractString(json, [
+      lastLocation: _extractLocation(json, [
         'last_location',
         'Last_Location',
         'lastLocation',
@@ -170,4 +170,33 @@ bool _extractBool(Map<String, dynamic> json, List<String> keys) {
     }
   }
   return false;
+}
+
+/// 위치 정보를 안전하게 추출하는 헬퍼 함수 (새로 추가)
+String _extractLocation(Map<String, dynamic> json, List<String> keys) {
+  for (String key in keys) {
+    if (json.containsKey(key)) {
+      final value = json[key];
+      if (value != null) {
+        // JSON 객체인 경우 처리: {"x": 36.3360047, "y": 127.4453375}
+        if (value is Map<String, dynamic>) {
+          final x = value['x'];
+          final y = value['y'];
+          if (x != null && y != null) {
+            // 표준 JSON 형태로 변환
+            return '{x: $x, y: $y}';
+          }
+        }
+        // 문자열인 경우 그대로 반환
+        else if (value is String) {
+          return value.trim();
+        }
+        // 기타 타입은 문자열로 변환
+        else {
+          return value.toString().trim();
+        }
+      }
+    }
+  }
+  return '';
 }

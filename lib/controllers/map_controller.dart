@@ -1,4 +1,4 @@
-// lib/controllers/map_controller.dart - 완전 수정된 버전
+// lib/controllers/map_controller.dart - 친구 위치 마커 기능 완전 추가
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/controllers/location_controllers.dart';
@@ -185,10 +185,13 @@ class MapScreenController extends ChangeNotifier {
     });
   }
 
-  /// Context 설정 - 카테고리 아이콘 사전 생성 포함
+  /// 🔥 Context 설정 - 친구 위치 마커 서비스에도 Context 설정
   void setContext(BuildContext context) {
     _currentContext = context;
     _mapService?.setContext(context);
+
+    // 🔥 친구 위치 마커 서비스에도 Context 설정
+    _friendLocationMarkerService.setContext(context);
 
     debugPrint('✅ MapController에 Context 설정 완료');
 
@@ -235,8 +238,21 @@ class MapScreenController extends ChangeNotifier {
       _mapService?.setController(mapController);
       _locationController?.setMapController(mapController);
 
-      // 🔥 친구 위치 마커 서비스 설정
+      // 🔥 친구 위치 마커 서비스 설정 및 초기화
       _friendLocationMarkerService.setMapController(mapController);
+
+      // 🔥 Context가 설정되어 있으면 친구 위치 마커 서비스에도 설정
+      if (_currentContext != null) {
+        _friendLocationMarkerService.setContext(_currentContext!);
+      }
+
+      // 마커 아이콘이 로딩되지 않았다면 다시 로딩
+      try {
+        await _friendLocationMarkerService.loadMarkerIcon();
+        debugPrint('✅ 친구 위치 마커 아이콘 로딩 완료');
+      } catch (e) {
+        debugPrint('❌ 친구 위치 마커 아이콘 로딩 실패: $e');
+      }
 
       await _moveToSchoolCenterImmediately();
       await _ensureBuildingMarkersAdded();
@@ -247,27 +263,98 @@ class MapScreenController extends ChangeNotifier {
     }
   }
 
-  /// 🔥 친구 위치 표시
+  /// 🔥 친구 위치 표시 (개선된 버전)
   Future<void> showFriendLocation(Friend friend) async {
     try {
-      debugPrint('📍 친구 위치 표시: ${friend.userName} - ${friend.lastLocation}');
+      debugPrint('=== 친구 위치 표시 시작 ===');
+      debugPrint('친구 이름: ${friend.userName}');
+      debugPrint('친구 ID: ${friend.userId}');
+      debugPrint('원본 위치 데이터: "${friend.lastLocation}"');
 
+      // 1. 기본 검증
       if (friend.lastLocation.isEmpty) {
         debugPrint('❌ 친구의 위치 정보가 없습니다');
-        return;
+        throw Exception('친구의 위치 정보가 없습니다');
       }
 
+      // 2. 지도 컨트롤러 확인
+      final mapController = _mapService?.getController();
+      debugPrint('지도 컨트롤러 상태: ${mapController != null ? '설정됨' : '없음'}');
+
+      if (mapController == null) {
+        debugPrint('❌ 지도 컨트롤러가 설정되지 않음');
+        throw Exception('지도가 아직 준비되지 않았습니다');
+      }
+
+      // 3. 마커 서비스 준비 확인
+      debugPrint('친구 위치 마커 서비스 상태: 준비됨');
+
+      // 4. 기존 친구 마커들 모두 제거
+      debugPrint('기존 친구 마커들 제거 중...');
+      await _friendLocationMarkerService.clearAllFriendLocationMarkers();
+
+      // 5. 새로운 친구 마커 추가
+      debugPrint('새로운 친구 마커 추가 중...');
       await _friendLocationMarkerService.addFriendLocationMarker(friend);
-      debugPrint('✅ 친구 위치 마커 표시 완료');
+
+      debugPrint('✅ 친구 위치 마커 표시 완료: ${friend.userName}');
+      debugPrint('=== 친구 위치 표시 완료 ===');
+
+      // 6. UI 업데이트
+      notifyListeners();
     } catch (e) {
       debugPrint('❌ 친구 위치 표시 실패: $e');
+      debugPrint('=== 친구 위치 표시 실패 ===');
+
+      // 사용자에게 알림
+      if (_currentContext != null) {
+        ScaffoldMessenger.of(_currentContext!).showSnackBar(
+          SnackBar(
+            content: Text('친구 위치를 표시할 수 없습니다: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+
+      throw Exception('친구 위치를 표시할 수 없습니다: $e');
     }
+  }
+
+  /// 🔥 특정 친구 위치 마커 제거
+  Future<void> removeFriendLocationMarker(String userId) async {
+    await _friendLocationMarkerService.removeFriendLocationMarker(userId);
+    notifyListeners();
+  }
+
+  /// 🔥 친구 위치 마커 표시 상태 확인
+  bool isFriendLocationDisplayed(String userId) {
+    return _friendLocationMarkerService.isFriendLocationDisplayed(userId);
   }
 
   /// 🔥 친구 위치 마커 모두 제거
   Future<void> clearFriendLocationMarkers() async {
     await _friendLocationMarkerService.clearAllFriendLocationMarkers();
+    notifyListeners();
   }
+
+  /// 🔥 특정 친구 위치로 카메라 이동
+  Future<void> moveCameraToFriend(String userId) async {
+    await _friendLocationMarkerService.moveCameraToFriend(userId);
+  }
+
+  /// 🔥 모든 친구 위치를 포함하는 영역으로 카메라 이동
+  Future<void> moveCameraToAllFriends() async {
+    await _friendLocationMarkerService.moveCameraToAllFriends();
+  }
+
+  /// 🔥 현재 표시된 친구 위치 마커 개수
+  int get displayedFriendCount =>
+      _friendLocationMarkerService.displayedFriendCount;
+
+  /// 🔥 현재 표시된 친구 위치 마커 목록
+  List<String> get displayedFriendIds =>
+      _friendLocationMarkerService.getDisplayedFriendIds();
 
   /// 🔥 건물 마커 추가 보장 메서드
   Future<void> _ensureBuildingMarkersAdded() async {
@@ -835,6 +922,7 @@ class MapScreenController extends ChangeNotifier {
     }
   }
 
+  /// 🔥 로딩 상태 설정 메서드
   void _setLoading(bool loading) {
     if (_isLoading != loading) {
       _isLoading = loading;
