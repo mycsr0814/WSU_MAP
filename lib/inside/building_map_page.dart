@@ -1032,46 +1032,23 @@ void _focusOnRoom(Map<String, dynamic> roomButton) {
     });
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          _isNavigationMode
-              ? '${widget.buildingName} 네비게이션'
-              : '${widget.buildingName} 실내 안내도',
-        ),
-        backgroundColor: _isNavigationMode ? Colors.blue : Colors.indigo,
-        actions: [
-          if (_isNavigationMode) ...[
-            IconButton(
-              icon: const Icon(Icons.check_circle),
-              onPressed: _completeNavigation,
-              tooltip: '네비게이션 완료',
-            ),
-          ] else ...[
-            IconButton(
-              icon: const Icon(Icons.refresh),
-              onPressed: _clearAllPathInfo,
-              tooltip: '초기화',
-            ),
-          ],
-        ],
-      ),
-      body: Stack(
-        children: [
-          Center(child: _buildBodyContent()),
-          if (!_isFloorListLoading && _error == null)
-            Positioned(left: 16, bottom: 120, child: _buildFloorSelector()),
-          _buildPathInfo(),
-          _buildTransitionPrompt(),
-          if (_isNavigationMode) _buildNavigationStatus(),
-          // 🔥 자동 선택 진행 중일 때 로딩 표시
-          if (_shouldAutoSelectRoom) _buildAutoSelectionIndicator(),
-        ],
-      ),
-    );
-  }
+
+@override
+Widget build(BuildContext context) {
+  return Scaffold(
+    // 🔥 AppBar 완전 제거
+    body: Stack(
+      children: [
+        Center(child: _buildBodyContent()),
+        if (!_isFloorListLoading && _error == null)
+          Positioned(left: 16, bottom: 120, child: _buildFloorSelector()),
+        _buildPathInfo(),
+        _buildTransitionPrompt(),
+        if (_shouldAutoSelectRoom) _buildAutoSelectionIndicator(),
+      ],
+    ),
+  );
+}
 
   // building_map_page.dart에 추가해야 할 누락된 메서드들
 
@@ -1102,104 +1079,93 @@ void _focusOnRoom(Map<String, dynamic> roomButton) {
     );
   }
 
+  // 🔥 네비게이션 모드용 출발지 라벨
+String _getNavigationStartLabel() {
+  if (widget.isArrivalNavigation) {
+    return '건물 입구';
+  } else {
+    return '현재 위치';
+  }
+}
+
+// 🔥 네비게이션 모드용 도착지 라벨
+String _getNavigationEndLabel() {
+  if (widget.isArrivalNavigation) {
+    if (widget.targetRoomId != null) {
+      final floorText = widget.targetFloorNumber != null 
+          ? '${widget.targetFloorNumber}층 ' 
+          : '';
+      return '${floorText}${widget.targetRoomId}호';
+    }
+    return '목적지';
+  } else {
+    return '건물 출구';
+  }
+}
+
+// 🔥 네비게이션 모드용 포인트 정보 표시
+Widget _buildNavigationPointInfo(String title, String label, Color color) {
+  return Column(
+    children: [
+      Text(title, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+      const SizedBox(height: 4),
+      Text(
+        label,
+        style: TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+          color: color,
+        ),
+      ),
+    ],
+  );
+}
+
   // 🔥 자동 선택 진행 중 표시 위젯
   Widget _buildAutoSelectionIndicator() {
-    return Positioned(
-      top: 100,
-      left: 16,
-      right: 16,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.blue.withOpacity(0.9),
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.2),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            const SizedBox(
-              width: 20,
-              height: 20,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                '호실 $_autoSelectRoomId을(를) 찾는 중...',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ],
-        ),
+  return Positioned(
+    top: 100,
+    left: 16,
+    right: 16,
+    child: Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.blue.withOpacity(0.9),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-    );
-  }
-
-  // 🔥 네비게이션 상태 표시 위젯
-  Widget _buildNavigationStatus() {
-    return Positioned(
-      top: 16,
-      left: 16,
-      right: 16,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.blue.withOpacity(0.9),
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.2),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
+      child: Row(
+        children: [
+          const SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
             ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Icon(
-              widget.isArrivalNavigation
-                  ? Icons.location_on
-                  : Icons.my_location,
-              color: Colors.white,
-              size: 24,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                widget.isArrivalNavigation ? '목적지 건물 내부 안내' : '출발지에서 건물 출구까지',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              '호실 $_autoSelectRoomId을(를) 찾는 중...',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
               ),
             ),
-            TextButton(
-              onPressed: _completeNavigation,
-              style: TextButton.styleFrom(
-                backgroundColor: Colors.white.withOpacity(0.2),
-                foregroundColor: Colors.white,
-              ),
-              child: const Text('완료'),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildBodyContent() {
     if (_isFloorListLoading)
@@ -1473,54 +1439,9 @@ void _focusOnRoom(Map<String, dynamic> roomButton) {
     }
   }
 
-  Widget _buildPathInfo() {
-    // 🔥 네비게이션 모드에서는 다른 정보 표시
-    if (_isNavigationMode) {
-      return Positioned(
-        bottom: 16,
-        left: 16,
-        right: 16,
-        child: Card(
-          elevation: 6,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.navigation, color: Colors.blue, size: 20),
-                    const SizedBox(width: 8),
-                    Text(
-                      '네비게이션 진행 중',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.blue[700],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  widget.isArrivalNavigation
-                      ? '목적지 건물 내부를 안내합니다'
-                      : '건물 출구까지 안내합니다',
-                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-    }
-
-    // 기존 경로 정보 표시
+Widget _buildPathInfo() {
+  // 🔥 네비게이션 모드일 때 적절한 정보 표시
+  if (_isNavigationMode) {
     return Positioned(
       bottom: 16,
       left: 16,
@@ -1533,32 +1454,64 @@ void _focusOnRoom(Map<String, dynamic> roomButton) {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildPointInfo("출발", _startPoint?['roomId'], Colors.green),
+              _buildNavigationPointInfo(
+                "출발", 
+                _getNavigationStartLabel(), 
+                Colors.green
+              ),
               const Icon(Icons.arrow_forward_rounded, color: Colors.grey),
-              _buildPointInfo("도착", _endPoint?['roomId'], Colors.blue),
+              _buildNavigationPointInfo(
+                "도착", 
+                _getNavigationEndLabel(), 
+                Colors.blue
+              ),
             ],
           ),
         ),
       ),
     );
   }
-
-  Widget _buildPointInfo(String title, String? id, Color color) {
-    return Column(
-      children: [
-        Text(title, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-        const SizedBox(height: 4),
-        Text(
-          id ?? '미지정',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: color,
-          ),
+  
+  // 🔥 일반 모드일 때 기존 방식
+  return Positioned(
+    bottom: 16,
+    left: 16,
+    right: 16,
+    child: Card(
+      elevation: 6,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            _buildPointInfo("출발", _startPoint?['roomId'], Colors.green),
+            const Icon(Icons.arrow_forward_rounded, color: Colors.grey),
+            _buildPointInfo("도착", _endPoint?['roomId'], Colors.blue),
+          ],
         ),
-      ],
-    );
-  }
+      ),
+    ),
+  );
+}
+
+
+Widget _buildPointInfo(String title, String? id, Color color) {
+  return Column(
+    children: [
+      Text(title, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+      const SizedBox(height: 4),
+      Text(
+        id ?? '미지정',
+        style: TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+          color: color,
+        ),
+      ),
+    ],
+  );
+}
 
   // 🔥 3. _resetScaleAfterDelay 메서드 수정 - 시간 조정 가능
   void _resetScaleAfterDelay({int duration = 3000}) {

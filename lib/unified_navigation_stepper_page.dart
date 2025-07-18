@@ -122,40 +122,110 @@ class _UnifiedNavigationStepperPageState extends State<UnifiedNavigationStepperP
         isArrivalNavigation: currentStep.isArrival,
       );
     } else {
+      String startLabel = '내 위치';
+      String endLabel = widget.arrivalBuilding;
+      
+      if (widget.departureBuilding.isNotEmpty) {
+        startLabel = widget.departureBuilding;
+      }
+      
       content = OutdoorMapPage(
         path: convertToNLatLngList(currentStep.outdoorPath!),
         distance: currentStep.outdoorDistance!,
+        showMarkers: true,
+        startLabel: startLabel,
+        endLabel: endLabel,
       );
     }
 
     return Scaffold(
-      body: content,
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            // 항상 이전 버튼 표시 (첫 단계만 비활성화)
-            ElevatedButton(
-              onPressed: _currentStepIndex > 0 ? _goToPreviousStep : null,
-              child: const Text('이전'),
-            ),
-            if (!isLastStep)
-              ElevatedButton(
-                onPressed: _goToNextStep,
-                child: const Text('다음'),
-              ),
-            if (isLastStep)
-              ElevatedButton(
-                onPressed: _finishNavigation,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  foregroundColor: Colors.white,
+      appBar: AppBar(
+        title: Text(_getCurrentStepTitle()),
+        backgroundColor: currentStep.type == StepType.indoor ? Colors.indigo : Colors.blue,
+        elevation: 0,
+        actions: [
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.only(right: 16),
+              child: Text(
+                '${_currentStepIndex + 1}/${_steps.length}',
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
                 ),
-                child: const Text('완료'),
               ),
-          ],
-        ),
+            ),
+          ),
+        ],
+      ),
+      body: content,
+      bottomNavigationBar: _buildSimpleBottomBar(currentStep, isLastStep),
+    );
+  }
+
+  String _getCurrentStepTitle() {
+    final currentStep = _steps[_currentStepIndex];
+    
+    if (currentStep.type == StepType.indoor) {
+      if (currentStep.isArrival) {
+        return '${currentStep.building} 실내 도착';
+      } else {
+        return '${currentStep.building} 실내 출발';
+      }
+    } else {
+      return '길찾기'; // 🔥 실외에서는 단순하게 "길찾기"만 표시
+    }
+  }
+
+  // 🔥 실외에서는 버튼만, 실내에서는 기존 방식
+  Widget _buildSimpleBottomBar(_StepData currentStep, bool isLastStep) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 4,
+            offset: const Offset(0, -2),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          // 🔥 이전 버튼
+          ElevatedButton(
+            onPressed: _currentStepIndex > 0 ? _goToPreviousStep : null,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.grey.shade600,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('이전'),
+          ),
+          
+          // 🔥 다음/완료 버튼
+          if (!isLastStep)
+            ElevatedButton(
+              onPressed: _goToNextStep,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: currentStep.type == StepType.indoor 
+                    ? Colors.indigo 
+                    : Colors.blue,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('다음'),
+            ),
+          if (isLastStep)
+            ElevatedButton(
+              onPressed: _finishNavigation,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('완료'),
+            ),
+        ],
       ),
     );
   }
