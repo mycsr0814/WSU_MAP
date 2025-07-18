@@ -513,7 +513,8 @@
   "loading_floor_plan": "{floor} 도면을 불러오는 중…",
   "server_info": "서버: {building}/{floor}",
   "building_name": "건물",
-"floor_number": "층",
-"room_name": "강의실",
-"overlap_message": "이미 같은 시간에 등록된 수업이 있습니다."
+  "floor_number": "층",
+  "room_name": "강의실",
+  "overlap_message": "이미 같은 시간에 등록된 수업이 있습니다.",
+  "memo": "메모"
 }

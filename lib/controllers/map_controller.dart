@@ -11,6 +11,8 @@ import 'package:flutter_application_1/models/building.dart';
 import 'package:flutter_application_1/models/category.dart';
 import 'package:flutter_application_1/models/category_marker_data.dart';
 import 'package:flutter_application_1/repositories/building_repository.dart';
+import 'package:flutter_application_1/services/map/friend_location_marker_service.dart';
+import 'package:flutter_application_1/friends/friend.dart';
 import 'dart:math' as math;
 import 'package:flutter_application_1/core/result.dart';
 
@@ -28,6 +30,10 @@ class MapScreenController extends ChangeNotifier {
 
   // 🔥 마커 초기화 상태 추가
   bool _markersInitialized = false;
+
+  // 🔥 친구 위치 마커 서비스 추가
+  final FriendLocationMarkerService _friendLocationMarkerService =
+      FriendLocationMarkerService();
 
   // 🏫 우송대학교 중심 좌표
   static const NLatLng _schoolCenter = NLatLng(36.3370, 127.4450);
@@ -49,7 +55,6 @@ class MapScreenController extends ChangeNotifier {
 
   // 언어 변경 감지
   Locale? _currentLocale;
-
 
   // 🔥 추가된 getter들
   LocationController? get locationController => _locationController;
@@ -143,6 +148,9 @@ class MapScreenController extends ChangeNotifier {
       _mapService = MapService();
       _routeService = RouteService();
 
+      // 🔥 친구 위치 마커 서비스 초기화
+      await _friendLocationMarkerService.loadMarkerIcon();
+
       // 🔥 BuildingRepository 데이터 변경 리스너 등록
       _buildingRepository.addDataChangeListener(_onBuildingDataChanged);
 
@@ -227,6 +235,9 @@ class MapScreenController extends ChangeNotifier {
       _mapService?.setController(mapController);
       _locationController?.setMapController(mapController);
 
+      // 🔥 친구 위치 마커 서비스 설정
+      _friendLocationMarkerService.setMapController(mapController);
+
       await _moveToSchoolCenterImmediately();
       await _ensureBuildingMarkersAdded();
 
@@ -234,6 +245,28 @@ class MapScreenController extends ChangeNotifier {
     } catch (e) {
       debugPrint('❌ 지도 준비 오류: $e');
     }
+  }
+
+  /// 🔥 친구 위치 표시
+  Future<void> showFriendLocation(Friend friend) async {
+    try {
+      debugPrint('📍 친구 위치 표시: ${friend.userName} - ${friend.lastLocation}');
+
+      if (friend.lastLocation.isEmpty) {
+        debugPrint('❌ 친구의 위치 정보가 없습니다');
+        return;
+      }
+
+      await _friendLocationMarkerService.addFriendLocationMarker(friend);
+      debugPrint('✅ 친구 위치 마커 표시 완료');
+    } catch (e) {
+      debugPrint('❌ 친구 위치 표시 실패: $e');
+    }
+  }
+
+  /// 🔥 친구 위치 마커 모두 제거
+  Future<void> clearFriendLocationMarkers() async {
+    await _friendLocationMarkerService.clearAllFriendLocationMarkers();
   }
 
   /// 🔥 건물 마커 추가 보장 메서드
@@ -750,7 +783,7 @@ class MapScreenController extends ChangeNotifier {
 
   Future<void> _clearAllOverlays() async {
     try {
-      final controller = await _mapService?.getControllerAsync(); // getController() → getControllerAsync()
+      final controller = await _mapService?.getControllerAsync();
       if (controller == null) return;
 
       if (_routeOverlays.isNotEmpty) {
@@ -816,6 +849,10 @@ class MapScreenController extends ChangeNotifier {
     _buildingRepository.removeDataChangeListener(_onBuildingDataChanged);
     _buildingRepository.dispose();
     _mapService?.dispose();
+
+    // 🔥 친구 위치 마커 서비스 정리
+    _friendLocationMarkerService.dispose();
+
     super.dispose();
   }
 }

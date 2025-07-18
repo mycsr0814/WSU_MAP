@@ -1,9 +1,9 @@
-// lib/map/map_screen.dart - 친구 화면을 전체화면으로 변경
-// lib/map/map_screen.dart - 친구 화면을 전체화면으로 변경
+// lib/map/map_screen.dart - 친구 위치 표시 기능이 추가된 완전한 코드
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/controllers/location_controllers.dart';
 import 'package:flutter_application_1/friends/friends_screen.dart';
+import 'package:flutter_application_1/friends/friend.dart';
 import 'package:flutter_application_1/services/map/building_marker_service.dart';
 import 'package:flutter_application_1/timetable/timetable_screen.dart';
 import 'package:provider/provider.dart';
@@ -83,6 +83,83 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     }
   }
 
+  /// 🔥 친구 위치 표시 및 지도 화면 전환 메서드
+  Future<void> _showFriendLocationAndSwitchToMap(Friend friend) async {
+    try {
+      debugPrint('📍 친구 위치 표시 및 지도 전환: ${friend.userName}');
+
+      // 1. 지도 화면으로 전환
+      setState(() {
+        _currentNavIndex = 0;
+      });
+
+      // 2. 잠시 후 친구 위치 표시 (지도 로딩 대기)
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      // 3. 친구 위치 마커 표시
+      await _controller.showFriendLocation(friend);
+
+      // 4. 성공 메시지 표시
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.location_on, color: Colors.white, size: 20),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    '${friend.userName}님의 위치를 지도에 표시했습니다.',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w500,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: const Color(0xFF10B981),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+
+      debugPrint('✅ 친구 위치 표시 완료');
+    } catch (e) {
+      debugPrint('❌ 친구 위치 표시 실패: $e');
+
+      // 에러 메시지 표시
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.error_outline, color: Colors.white, size: 20),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Text(
+                    '친구 위치를 표시할 수 없습니다.',
+                    style: TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: const Color(0xFFEF4444),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    }
+  }
+
   @override
   void dispose() {
     _navigationManager.dispose();
@@ -90,6 +167,22 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     _controller.dispose();
     _locationController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    switch (state) {
+      case AppLifecycleState.resumed:
+        debugPrint('🔄 앱 복귀 - 위치 서비스 재시작');
+        _locationController.resumeLocationUpdates();
+        break;
+      case AppLifecycleState.paused:
+        debugPrint('⏸️ 앱 일시정지 - 위치 서비스 중단');
+        _locationController.pauseLocationUpdates();
+        break;
+      default:
+        break;
+    }
   }
 
   @override
@@ -117,6 +210,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     // 1. userId를 Provider에서 받아오기
     final userId = context.read<UserAuth>().userId ?? '';
     print('userId: $userId');
+
     return ChangeNotifierProvider.value(
       value: _controller,
       child: Consumer<MapScreenController>(
@@ -126,10 +220,14 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
               index: _currentNavIndex,
               children: [
                 _buildMapScreen(controller),
-                // 2. userId를 ScheduleScreen에 전달
+                // 2. 🔥 ScheduleScreen 사용 (TimetableScreen 대신)
                 ScheduleScreen(userId: userId),
-                // 3. 친구 화면을 전체화면으로 변경 - userId 전달
-                FriendsScreen(userId: userId),
+                // 3. 🔥 친구 화면 래퍼 사용 - 콜백 함수 전달
+                _FriendScreenWrapper(
+                  userId: userId,
+                  controller: _controller,
+                  onShowFriendLocation: _showFriendLocationAndSwitchToMap,
+                ),
                 const ProfileScreen(),
               ],
             ),
@@ -347,7 +445,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     
     return GestureDetector(
       onTap: () {
-        // 친구 화면에 접근할 때 로그인 상태 확인
+        // 🔥 친구 화면에 접근할 때 로그인 상태 확인
         if (index == 2) {
           final userId = context.read<UserAuth>().userId ?? '';
           if (userId.isEmpty) {
@@ -357,6 +455,12 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
             return;
           }
         }
+
+        // 🔥 지도 화면으로 전환 시 친구 위치 마커 정리
+        if (index == 0) {
+          _controller.clearFriendLocationMarkers();
+        }
+
         setState(() => _currentNavIndex = index);
       },
       child: Container(
@@ -766,6 +870,30 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
           },
         );
       },
+    );
+  }
+}
+
+// 🔥 친구 화면 래퍼 클래스
+class _FriendScreenWrapper extends StatelessWidget {
+  final String userId;
+  final MapScreenController controller;
+  final Function(Friend) onShowFriendLocation;
+
+  const _FriendScreenWrapper({
+    required this.userId,
+    required this.controller,
+    required this.onShowFriendLocation,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ChangeNotifierProvider.value(
+      value: controller,
+      child: FriendsScreen(
+        userId: userId,
+        onShowFriendLocation: onShowFriendLocation,
+      ),
     );
   }
 }

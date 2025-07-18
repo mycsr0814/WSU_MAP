@@ -515,6 +515,6 @@
   "building_name": "建筑物",
   "floor_number": "楼层",
   "room_name": "教室",
-  "overlap_message": "在该时间已注册课程。"
-
+  "overlap_message": "在该时间已注册课程。",
+  "memo": "备注"
 }

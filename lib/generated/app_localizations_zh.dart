@@ -1337,4 +1337,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get overlap_message => '在该时间已注册课程。';
+
+  @override
+  String get memo => '备注';
 }

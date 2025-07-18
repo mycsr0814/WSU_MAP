@@ -14,6 +14,7 @@ class ScheduleItem {
   final String startTime;
   final String endTime;
   final Color color;
+  final String memo;
 
   ScheduleItem({
     this.id,
@@ -26,6 +27,7 @@ class ScheduleItem {
     required this.startTime,
     required this.endTime,
     required this.color,
+    this.memo = '',
   });
 
   /// int(1~5) → 영어 요일 변환
@@ -53,6 +55,7 @@ class ScheduleItem {
       startTime: json['start_time'],
       endTime: json['end_time'],
       color: Color(int.parse(json['color'], radix: 16)),
+      memo: json['memo'] ?? '',
     );
   }
 
@@ -83,6 +86,7 @@ class ScheduleItem {
       'start_time': startTime,
       'end_time': endTime,
       'color': color.value.toRadixString(16),
+      'memo': memo,
     };
     if (id != null) {
       map['id'] = id!;

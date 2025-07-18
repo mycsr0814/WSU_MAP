@@ -1,4 +1,4 @@
-// lib/map/widgets/building_detail_sheet.dart - 길찾기 버튼 수정
+// lib/map/widgets/building_detail_sheet.dart - API Config 적용
 
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/generated/app_localizations.dart';
@@ -10,6 +10,7 @@ import 'package:http/http.dart' as http;
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_application_1/map/widgets/directions_screen.dart';
+import 'package:flutter_application_1/config/api_config.dart'; // ✅ ApiConfig 임포트 추가
 
 class BuildingDetailSheet extends StatelessWidget {
   final Building building;
@@ -928,7 +929,7 @@ class BuildingDetailSheet extends StatelessWidget {
     );
   }
 
-  // 서버에서 도면 가져오기
+  // ✅ 서버에서 도면 가져오기 - ApiConfig 사용
   Future<void> _showFloorPlan(
     BuildContext context,
     String floor,
@@ -936,8 +937,10 @@ class BuildingDetailSheet extends StatelessWidget {
   ) async {
     final floorNumber = _extractFloorNumber(floor);
     final buildingCode = _extractBuildingCode(building.name);
-    final apiUrl = 'http://54.252.240.31.:3000/floor/$floorNumber/$buildingCode';
-    
+
+    // ✅ ApiConfig 사용하여 URL 구성
+    final apiUrl = '${ApiConfig.floorBase}/$floorNumber/$buildingCode';
+
     debugPrint('🚀 도면 로딩 시작');
     debugPrint('📍 층: $floor → $floorNumber');
     debugPrint('🏢 건물: ${building.name} → $buildingCode');

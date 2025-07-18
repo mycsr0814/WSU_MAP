@@ -1369,4 +1369,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get overlap_message => 'A class is already registered at this time.';
+
+  @override
+  String get memo => 'Memo';
 }
