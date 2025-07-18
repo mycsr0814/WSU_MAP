@@ -1,10 +1,11 @@
-// lib/auth/user_auth.dart - 위치 전송 기능 추가 버전
+// lib/auth/user_auth.dart - 웹소켓 연결 추가 버전
 
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
 import '../generated/app_localizations.dart';
 import '../services/auth_service.dart';
+import '../services/websocket_service.dart';
 import '../managers/location_manager.dart';
 
 /// 우송대학교 캠퍼스 네비게이터 사용자 역할 정의
@@ -119,10 +120,43 @@ class UserAuth extends ChangeNotifier {
     debugPrint('UserAuth: notifyListeners 호출됨');
   }
 
-  /// 🔥 위치 전송 시작 (로그인 시)
+  /// 🔥 웹소켓 연결 시작 (게스트 제외)
+  void _startWebSocketConnection() {
+    if (_userId == null ||
+        _userRole == UserRole.external ||
+        _userId!.startsWith('guest_')) {
+      debugPrint('⚠️ 게스트 사용자는 웹소켓 연결 제외');
+      return;
+    }
+
+    try {
+      WebSocketService().connect(_userId!);
+      debugPrint('✅ 웹소켓 연결 시작 - 사용자 ID: $_userId');
+    } catch (e) {
+      debugPrint('❌ 웹소켓 연결 시작 오류: $e');
+    }
+  }
+
+  /// 🔥 웹소켓 연결 해제
+  void _stopWebSocketConnection() {
+    try {
+      WebSocketService().disconnect();
+      debugPrint('✅ 웹소켓 연결 해제 완료');
+    } catch (e) {
+      debugPrint('❌ 웹소켓 연결 해제 오류: $e');
+    }
+  }
+
+  /// 🔥 위치 전송 시작 (게스트 제외)
   void _startLocationSending(BuildContext context) {
     if (_userId == null) {
       debugPrint('⚠️ 사용자 ID가 없어 위치 전송 시작 불가');
+      return;
+    }
+
+    // 🔥 게스트 사용자는 위치 전송 제외
+    if (_userRole == UserRole.external || _userId!.startsWith('guest_')) {
+      debugPrint('⚠️ 게스트 사용자는 위치 전송 제외');
       return;
     }
 
@@ -209,7 +243,7 @@ class UserAuth extends ChangeNotifier {
     }
   }
 
-  /// 초기화 - 저장된 로그인 정보 복원 (기억하기가 체크되었던 경우만)
+  /// 초기화 - 저장된 로그인 정보 복원 (게스트 제외)
   Future<void> initialize({BuildContext? context}) async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -218,28 +252,29 @@ class UserAuth extends ChangeNotifier {
       final savedIsLoggedIn = prefs.getBool('is_logged_in') ?? false;
       final rememberMe = prefs.getBool('remember_me') ?? false;
 
-      // 기억하기가 체크되어 있고, 로그인 정보가 모두 있는 경우에만 복원
+      // 🔥 게스트 사용자는 위치 전송 제외
       if (rememberMe &&
           savedIsLoggedIn &&
           savedUserId != null &&
-          savedUserName != null) {
+          savedUserName != null &&
+          !savedUserId.startsWith('guest_')) {
+        // 게스트 ID 체크 추가
         _userId = savedUserId;
         _userName = savedUserName;
         _userRole = UserRole.studentProfessor;
         _isLoggedIn = true;
-        _isFirstLaunch = false; // 저장된 로그인 정보가 있으면 첫 실행이 아님
+        _isFirstLaunch = false;
 
-        // 🔥 저장된 로그인 정보 복원 시 위치 전송 시작
+        // 🔥 게스트가 아닌 경우에만 위치 전송 및 웹소켓 연결 시작
         if (context != null) {
-          // 약간의 지연을 주어 Provider 초기화 완료 후 실행
           Future.delayed(const Duration(milliseconds: 500), () {
             _startLocationSending(context);
+            _startWebSocketConnection();
           });
         }
 
         notifyListeners();
       } else {
-        // 기억하기가 체크되지 않았거나 정보가 불완전한 경우 정보 삭제
         await _clearLoginInfo();
       }
     } catch (e) {
@@ -247,7 +282,7 @@ class UserAuth extends ChangeNotifier {
     }
   }
 
-  /// 🔥 사용자 로그인 (서버 API 연동) - 위치 전송 시작 추가
+  /// 🔥 사용자 로그인 (서버 API 연동) - 위치 전송 시작 및 웹소켓 연결 추가
   Future<bool> loginWithCredentials({
     required String id,
     required String password,
@@ -266,18 +301,18 @@ class UserAuth extends ChangeNotifier {
           _userName = result.userName!;
           _userRole = UserRole.studentProfessor;
           _isLoggedIn = true;
-          _isFirstLaunch = false; // 로그인 성공 시 첫 실행 상태 해제
+          _isFirstLaunch = false;
 
-          // 기억하기 옵션이 체크된 경우에만 로그인 정보 저장
           if (rememberMe) {
             await _saveLoginInfo(rememberMe: true, password: password);
           } else {
             await _clearLoginInfo();
           }
 
-          // 🔥 로그인 성공 시 위치 전송 시작
+          // 🔥 로그인 성공 시 위치 전송 시작 및 웹소켓 연결
           if (context != null) {
             _startLocationSending(context);
+            _startWebSocketConnection();
           }
 
           notifyListeners();
@@ -309,7 +344,7 @@ class UserAuth extends ChangeNotifier {
     }
   }
 
-  /// 🔥 게스트 로그인 - 위치 전송 시작 추가
+  /// 🔥 게스트 로그인 - 위치 전송 및 웹소켓 연결 제거
   Future<void> loginAsGuest({BuildContext? context}) async {
     _setLoading(true);
     _clearError();
@@ -329,16 +364,12 @@ class UserAuth extends ChangeNotifier {
         _userName = '게스트';
       }
       _isLoggedIn = true;
-      _isFirstLaunch = false; // 게스트 로그인 시 첫 실행 상태 해제
+      _isFirstLaunch = false;
 
-      // 🔥 게스트 로그인 시 위치 전송 시작
-      if (context != null) {
-        _startLocationSending(context);
-      }
-
+      // 🔥 게스트 로그인 시 위치 전송 및 웹소켓 연결 시작 제거
+      debugPrint('✅ 게스트 로그인 완료 - 위치 전송 및 웹소켓 연결 없음');
       notifyListeners();
 
-      // 🔥 게스트 로그인 완료 후 추가 지연으로 UI 안정화
       await Future.delayed(const Duration(milliseconds: 200));
     } catch (e) {
       debugPrint('❌ 게스트 로그인 오류: $e');
@@ -348,7 +379,7 @@ class UserAuth extends ChangeNotifier {
     }
   }
 
-  /// 🔥 관리자 로그인 (개발용) - 위치 전송 시작 추가
+  /// 🔥 관리자 로그인 (개발용) - 위치 전송 시작 및 웹소켓 연결 추가
   Future<void> loginAsAdmin({BuildContext? context}) async {
     _setLoading(true);
     _clearError();
@@ -365,13 +396,14 @@ class UserAuth extends ChangeNotifier {
         _userName = '관리자';
       }
       _isLoggedIn = true;
-      _isFirstLaunch = false; // 관리자 로그인 시 첫 실행 상태 해제
+      _isFirstLaunch = false;
 
       await _saveLoginInfo(rememberMe: true);
 
-      // 🔥 관리자 로그인 시 위치 전송 시작
+      // 🔥 관리자 로그인 시 위치 전송 시작 및 웹소켓 연결
       if (context != null) {
         _startLocationSending(context);
+        _startWebSocketConnection();
       }
 
       notifyListeners();
@@ -380,14 +412,15 @@ class UserAuth extends ChangeNotifier {
     }
   }
 
-  /// 🔥 사용자 로그아웃 - 위치 전송 중지 추가
+  /// 🔥 사용자 로그아웃 - 위치 전송 중지 및 웹소켓 연결 해제 추가
   Future<bool> logout({BuildContext? context}) async {
     _setLoading(true);
 
     try {
-      // 🔥 로그아웃 시 위치 전송 중지
+      // 🔥 로그아웃 시 위치 전송 중지 및 웹소켓 연결 해제
       if (context != null) {
         _stopLocationSending(context);
+        _stopWebSocketConnection();
       }
 
       if (_userId != null && _userId != 'guest' && _userId != 'admin') {
@@ -418,11 +451,10 @@ class UserAuth extends ChangeNotifier {
     }
   }
 
-  /// 🔥 앱 종료 시 자동 로그아웃 (기억하기 옵션이 false인 경우) - 위치 전송 중지 추가
+  /// 🔥 앱 종료 시 자동 로그아웃 (기억하기 옵션이 false인 경우) - 위치 전송 중지 및 웹소켓 연결 해제 추가
   Future<void> autoLogoutOnAppExit({BuildContext? context}) async {
     debugPrint('🔄 앱 종료 감지 - 자동 로그아웃 확인');
 
-    // 1. 로그인 상태가 아니면 처리하지 않음
     if (!_isLoggedIn) {
       debugPrint('📝 로그인 상태가 아니므로 자동 로그아웃 스킵');
       return;
@@ -432,23 +464,20 @@ class UserAuth extends ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       final rememberMe = prefs.getBool('remember_me') ?? false;
 
-      // 2. "기억하기"가 체크되어 있으면 자동 로그아웃하지 않음
       if (rememberMe) {
         debugPrint('✅ 기억하기 옵션이 체크되어 있어 자동 로그아웃 스킵');
         return;
       }
 
-      // 3. 게스트 사용자는 항상 자동 로그아웃
-      // 4. 일반 사용자는 기억하기가 false인 경우 자동 로그아웃
       if (_userRole == UserRole.external || !rememberMe) {
         debugPrint('🔄 자동 로그아웃 실행 - 사용자: $_userId, 역할: $_userRole');
 
-        // 🔥 자동 로그아웃 시 위치 전송 중지
+        // 🔥 자동 로그아웃 시 위치 전송 중지 및 웹소켓 연결 해제
         if (context != null) {
           _stopLocationSending(context);
+          _stopWebSocketConnection();
         }
 
-        // 서버에 로그아웃 요청 (게스트가 아닌 경우)
         if (_userId != null && _userId != 'guest' && _userId != 'admin') {
           try {
             final result = await AuthService.logout(id: _userId!);
@@ -462,7 +491,6 @@ class UserAuth extends ChangeNotifier {
           }
         }
 
-        // 로컬 상태 초기화
         await _clearLoginInfo();
         _userRole = null;
         _userId = null;
@@ -486,7 +514,6 @@ class UserAuth extends ChangeNotifier {
       final rememberMe = prefs.getBool('remember_me') ?? false;
       final savedUserId = prefs.getString('user_id');
 
-      // 기억하기가 false이고 로그인 정보가 있다면 자동 로그아웃 대상
       return !rememberMe && savedUserId != null;
     } catch (e) {
       debugPrint('자동 로그아웃 확인 오류: $e');
@@ -585,13 +612,12 @@ class UserAuth extends ChangeNotifier {
     }
   }
 
-  /// 🔥 회원 탈퇴 - 위치 전송 중지 추가
+  /// 🔥 회원 탈퇴 - 위치 전송 중지 및 웹소켓 연결 해제 추가
   Future<bool> deleteAccount({BuildContext? context}) async {
-    // 1. 로그인 상태가 아니면 탈퇴 불가
     if (_userId == null || !_isLoggedIn) {
       if (context != null) {
         final l10n = AppLocalizations.of(context)!;
-        _setError(l10n.login_required); // 다국어 에러 메시지
+        _setError(l10n.login_required);
       } else {
         _setError('로그인이 필요합니다.');
       }
@@ -602,16 +628,15 @@ class UserAuth extends ChangeNotifier {
     _clearError();
 
     try {
-      // 🔥 회원 탈퇴 시 위치 전송 중지
+      // 🔥 회원 탈퇴 시 위치 전송 중지 및 웹소켓 연결 해제
       if (context != null) {
         _stopLocationSending(context);
+        _stopWebSocketConnection();
       }
 
-      // 2. 서버에 회원탈퇴 요청
       final result = await AuthService.deleteUser(id: _userId!);
 
       if (result.isSuccess) {
-        // 3. 로컬 사용자 정보 및 SharedPreferences 삭제
         await _clearLoginInfo();
         _userRole = null;
         _userId = null;
@@ -620,12 +645,10 @@ class UserAuth extends ChangeNotifier {
         notifyListeners();
         return true;
       } else {
-        // 4. 서버에서 실패 메시지 반환 시 에러 기록
         _setError(result.message);
         return false;
       }
     } catch (e) {
-      // 5. 예외 발생 시 에러 메시지 기록
       if (context != null) {
         final l10n = AppLocalizations.of(context)!;
         _setError(l10n.delete_error);
@@ -708,8 +731,6 @@ class UserAuth extends ChangeNotifier {
       await prefs.setBool('is_logged_in', _isLoggedIn);
       await prefs.setBool('remember_me', rememberMe);
 
-      // 🔐 보안 주의: 실제 운영 환경에서는 패스워드 저장 대신
-      // 토큰 기반 인증 시스템 사용을 권장합니다.
       if (rememberMe && password != null) {
         await prefs.setString('user_password', password);
       }
@@ -726,7 +747,7 @@ class UserAuth extends ChangeNotifier {
       await prefs.remove('user_name');
       await prefs.remove('is_logged_in');
       await prefs.remove('remember_me');
-      await prefs.remove('user_password'); // 패스워드도 삭제
+      await prefs.remove('user_password');
     } catch (e) {
       debugPrint('로그인 정보 삭제 오류: $e');
     }

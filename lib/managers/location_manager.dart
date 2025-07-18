@@ -538,6 +538,26 @@ class LocationManager extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// 🔥 강제 위치 전송 중지 (앱 종료 시)
+  void forceStopLocationSending() {
+    debugPrint('🚫 강제 위치 전송 중지');
+
+    // 모든 타이머 즉시 중지
+    _locationSendTimer?.cancel();
+    _locationSendTimer = null;
+
+    // 모든 상태 초기화
+    _isLocationSendingEnabled = false;
+    _currentUserId = null;
+    _locationSendFailureCount = 0;
+
+    // 실시간 위치 추적도 중지
+    stopLocationTracking();
+
+    debugPrint('✅ 강제 위치 전송 중지 완료');
+    notifyListeners();
+  }
+
   /// 🔥 개선된 현재 위치를 서버로 전송 (즉시 UI 갱신 포함)
   Future<void> _sendCurrentLocationToServerImproved() async {
     if (!_isLocationSendingEnabled || _currentUserId == null) {
@@ -743,7 +763,7 @@ class LocationManager extends ChangeNotifier {
       // 🔥 콜백 호출 후 UI 갱신 요청
       _requestImmediateUIUpdate();
     } catch (e) {
-      debugPrint('❌ 위치 콜백 실행 오료: $e');
+      debugPrint('❌ 위치 콜백 실행 오류: $e');
       onLocationError?.call('위치 콜백 실행 오류: $e');
     }
   }
@@ -780,12 +800,13 @@ class LocationManager extends ChangeNotifier {
 
       case AppLifecycleState.paused:
         debugPrint('📱 앱 일시정지');
-        // 백그라운드에서도 위치 전송 계속
+        // 🔥 백그라운드에서도 위치 전송 중지
+        forceStopLocationSending();
         break;
 
       case AppLifecycleState.detached:
         debugPrint('📱 앱 종료');
-        stopPeriodicLocationSending();
+        forceStopLocationSending();
         break;
 
       default:

@@ -7,10 +7,12 @@ import 'package:flutter_application_1/welcome_view.dart';
 import 'package:flutter_application_1/selection/auth_selection_view.dart';
 import 'package:flutter_application_1/map/widgets/directions_screen.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
+import 'services/websocket_service.dart';
 import 'auth/user_auth.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'generated/app_localizations.dart';
 import 'providers/app_language_provider.dart';
+import 'dart:io';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -82,13 +84,13 @@ class _CampusNavigatorAppState extends State<CampusNavigatorApp>
         break;
 
       case AppLifecycleState.paused:
-        debugPrint('📱 앱 백그라운드 이동');
-        _handleAppPausedOrDetached();
+        debugPrint('📱 앱 백그라운드 이동 (iOS: 스와이프 / Android: 홈 버튼)');
+        _handleAppPaused();
         break;
 
       case AppLifecycleState.detached:
-        debugPrint('📱 앱 종료(detached)');
-        _handleAppPausedOrDetached();
+        debugPrint('📱 앱 완전 종료');
+        _handleAppDetached();
         break;
 
       default:
@@ -99,37 +101,85 @@ class _CampusNavigatorAppState extends State<CampusNavigatorApp>
   // ---------- 상태별 처리 ----------
   /// 포그라운드 복귀
   Future<void> _handleAppResumed() async {
-    if (!_userAuth.isLoggedIn || _userAuth.userId == 'guest') return;
+    debugPrint('📱 앱 포그라운드 복귀');
+
+    // 🔥 게스트 사용자는 위치 전송 및 웹소켓 연결 제외
+    if (!_userAuth.isLoggedIn ||
+        _userAuth.userRole == UserRole.external ||
+        _userAuth.userId == null ||
+        _userAuth.userId!.startsWith('guest_')) {
+      debugPrint('⚠️ 게스트 사용자 - 위치 전송 및 웹소켓 연결 제외');
+      return;
+    }
 
     try {
-      // rememberMe 저장돼 있으면 서버 재로그인
+      // 저장된 로그인 정보가 있으면 서버 재로그인
       if (await _userAuth.hasSavedLoginInfo()) {
         await _userAuth.autoLoginToServer();
       }
 
-      // 🔥 위치 전송 재시작 (userId 전달)
-      if (_userAuth.userId != null) {
-        _locationManager.startPeriodicLocationSending(
-          userId: _userAuth.userId!,
-        );
-      }
+      // 위치 전송 및 웹소켓 연결 재시작
+      _locationManager.startPeriodicLocationSending(userId: _userAuth.userId!);
+      WebSocketService().connect(_userAuth.userId!);
+
+      debugPrint('✅ 일반 사용자 위치 전송 및 웹소켓 연결 재시작');
     } catch (e) {
       debugPrint('❌ 포그라운드 복귀 처리 오류: $e');
     }
   }
 
-  /// 백그라운드 이동 ‑ 또는 프로세스가 종료 직전(detached)
-  Future<void> _handleAppPausedOrDetached() async {
-    if (!_userAuth.isLoggedIn || _userAuth.userId == 'guest') return;
+  /// 🔥 백그라운드 이동 시 - 플랫폼 무관하게 위치 전송 및 웹소켓 연결 중지
+  Future<void> _handleAppPaused() async {
+    debugPrint('📱 앱 백그라운드 이동 - 위치 전송 및 웹소켓 연결 중지');
+    debugPrint('🔍 플랫폼: ${Platform.isIOS ? 'iOS' : 'Android'}');
 
+    // 🔥 모든 사용자의 위치 전송 및 웹소켓 연결 무조건 중지 (플랫폼 무관)
     try {
-      // 주기적 위치 전송 중지
       _locationManager.stopPeriodicLocationSending();
-
-      // 서버에만 is_login false 처리 (토큰/로컬 세션 유지)
-      await _userAuth.logoutServerOnly();
+      WebSocketService().disconnect();
+      debugPrint('✅ 위치 전송 및 웹소켓 연결 중지 완료');
     } catch (e) {
-      debugPrint('❌ 백그라운드/종료 처리 오류: $e');
+      debugPrint('❌ 위치 전송 및 웹소켓 연결 중지 오류: $e');
+    }
+
+    // 🔥 일반 사용자만 서버 로그아웃 처리
+    if (_userAuth.isLoggedIn &&
+        _userAuth.userRole != UserRole.external &&
+        _userAuth.userId != null &&
+        !_userAuth.userId!.startsWith('guest_')) {
+      try {
+        await _userAuth.logoutServerOnly();
+        debugPrint('✅ 서버 로그아웃 완료');
+      } catch (e) {
+        debugPrint('❌ 서버 로그아웃 오류: $e');
+      }
+    }
+  }
+
+  /// 🔥 앱 완전 종료 시 - 강제 중지
+  Future<void> _handleAppDetached() async {
+    debugPrint('📱 앱 완전 종료 - 모든 연결 강제 중지');
+
+    // 🔥 강제 위치 전송 및 웹소켓 연결 중지
+    try {
+      _locationManager.forceStopLocationSending();
+      WebSocketService().disconnect();
+      debugPrint('✅ 모든 연결 강제 중지 완료');
+    } catch (e) {
+      debugPrint('❌ 연결 강제 중지 오류: $e');
+    }
+
+    // 🔥 일반 사용자만 서버 로그아웃 처리
+    if (_userAuth.isLoggedIn &&
+        _userAuth.userRole != UserRole.external &&
+        _userAuth.userId != null &&
+        !_userAuth.userId!.startsWith('guest_')) {
+      try {
+        await _userAuth.logoutServerOnly();
+        debugPrint('✅ 서버 로그아웃 완료');
+      } catch (e) {
+        debugPrint('❌ 서버 로그아웃 오류: $e');
+      }
     }
   }
 
@@ -139,16 +189,22 @@ class _CampusNavigatorAppState extends State<CampusNavigatorApp>
       debugPrint('=== 앱 초기화 시작 ===');
       await _userAuth.initialize();
 
-      // 이미 로그인돼 있으면 서버에 세션 알림 + 위치 전송 시작
+      // 🔥 게스트가 아닌 로그인 사용자에게만 위치 전송 및 웹소켓 연결
       if (_userAuth.isLoggedIn &&
-          _userAuth.userId != 'guest' &&
-          _userAuth.userId != null) {
+          _userAuth.userId != null &&
+          _userAuth.userRole != UserRole.external && // 게스트 제외
+          !_userAuth.userId!.startsWith('guest_')) {
+        // 게스트 ID 체크
         await _userAuth.autoLoginToServer();
 
-        // 🔥 위치 전송 시작 (userId 전달)
         _locationManager.startPeriodicLocationSending(
           userId: _userAuth.userId!,
         );
+        WebSocketService().connect(_userAuth.userId!);
+        debugPrint('✅ 일반 사용자 위치 전송 및 웹소켓 연결 시작');
+      } else if (_userAuth.isLoggedIn &&
+          _userAuth.userRole == UserRole.external) {
+        debugPrint('⚠️ 게스트 사용자 - 위치 전송 및 웹소켓 연결 제외');
       }
 
       debugPrint('=== 앱 초기화 완료 ===');
