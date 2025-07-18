@@ -85,11 +85,13 @@ class FriendsController extends ChangeNotifier {
     debugPrint('🔌 웹소켓 연결 상태 변경: $isConnected');
 
     if (isConnected) {
-      debugPrint('✅ 웹소켓 연결됨 - 실시간 모드 활성화');
-      // 연결 복구 시 즉시 데이터 동기화
+      debugPrint('✅ 웹소켓 연결됨 - 폴링 중지됨');
+      // 폴링 타이머는 유지하되, 실제 API 호출은 스킵
+      // 한 번만 동기화
       quickUpdate();
     } else {
       debugPrint('❌ 웹소켓 연결 끊어짐 - 폴링 모드로 전환');
+      // 폴링이 이미 돌고 있으니 추가 작업 불필요
     }
 
     notifyListeners();
@@ -149,10 +151,17 @@ class FriendsController extends ChangeNotifier {
 
   // 🔄 실시간 업데이트 시작 (웹소켓이 없을 때 폴백)
   void _startRealTimeUpdates() {
-    debugPrint('🔄 폴백 폴링 시작 (웹소켓 보조용)');
+    debugPrint('🔄 실시간 업데이트 시작');
     _updateTimer?.cancel();
     _updateTimer = Timer.periodic(_updateInterval, (timer) {
-      if (_isRealTimeEnabled && !isWebSocketConnected) {
+      // 웹소켓이 연결되어 있으면 폴링 중지
+      if (isWebSocketConnected) {
+        debugPrint('📡 웹소켓 연결됨 - 폴링 스킵');
+        return; // 폴링하지 않음
+      }
+
+      // 웹소켓이 연결되어 있지 않을 때만 폴링
+      if (_isRealTimeEnabled) {
         debugPrint('📡 폴링 모드로 업데이트 (웹소켓 비활성)');
         _silentUpdate();
       }

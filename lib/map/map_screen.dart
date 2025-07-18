@@ -442,16 +442,57 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     String label,
   ) {
     final isActive = _currentNavIndex == index;
-    
+    final userAuth = context.read<UserAuth>();
+
     return GestureDetector(
       onTap: () {
-        // 🔥 친구 화면에 접근할 때 로그인 상태 확인
-        if (index == 2) {
-          final userId = context.read<UserAuth>().userId ?? '';
+        // 🔥 게스트 사용자 접근 제한 - 시간표와 친구 화면
+        if (userAuth.isGuest && (index == 1 || index == 2)) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  const Icon(Icons.info_outline, color: Colors.white, size: 20),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      index == 1
+                          ? '시간표 기능은 로그인 후 이용 가능합니다.'
+                          : '친구 기능은 로그인 후 이용 가능합니다.',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w500,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              backgroundColor: const Color(0xFFEF4444),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+              duration: const Duration(seconds: 3),
+              action: SnackBarAction(
+                label: '로그인',
+                textColor: Colors.white,
+                onPressed: () {
+                  // 로그인 화면으로 이동하는 로직 추가 가능
+                  Navigator.of(context).pop(); // 현재 화면 닫기
+                },
+              ),
+            ),
+          );
+          return;
+        }
+
+        // 🔥 일반 로그인 사용자의 친구 화면 접근 확인 (기존 코드 유지)
+        if (index == 2 && !userAuth.isGuest) {
+          final userId = userAuth.userId ?? '';
           if (userId.isEmpty) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('로그인 후 이용 가능합니다.')),
-            );
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(const SnackBar(content: Text('로그인 후 이용 가능합니다.')));
             return;
           }
         }
@@ -479,7 +520,11 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
               child: Icon(
                 isActive ? activeIcon : icon,
                 size: 22,
-                color: isActive ? const Color(0xFF1E3A8A) : Colors.grey[600],
+                color: isActive
+                    ? const Color(0xFF1E3A8A)
+                    : (userAuth.isGuest && (index == 1 || index == 2))
+                    ? Colors.grey[400] // 게스트일 때 비활성화된 색상
+                    : Colors.grey[600],
               ),
             ),
             const SizedBox(height: 2),
@@ -488,7 +533,11 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
-                color: isActive ? const Color(0xFF1E3A8A) : Colors.grey[600],
+                color: isActive
+                    ? const Color(0xFF1E3A8A)
+                    : (userAuth.isGuest && (index == 1 || index == 2))
+                    ? Colors.grey[400] // 게스트일 때 비활성화된 색상
+                    : Colors.grey[600],
               ),
             ),
           ],
