@@ -11,8 +11,6 @@ import 'package:flutter_application_1/managers/location_manager.dart';
 import 'package:flutter_application_1/unified_navigation_stepper_page.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
-
-// 🔥 통합 API 관련 imports
 import 'package:flutter_application_1/services/unified_path_service.dart';
 
 class DirectionsScreen extends StatefulWidget {
@@ -311,149 +309,434 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
 
   // 🔥 통합 API를 사용한 경로 미리보기 계산
   // 3. 경로 미리보기 계산 시 (건물 코드/층번호 일치 보장)
-  Future<void> _calculateRoutePreview() async {
-    if (_startBuilding == null || _endBuilding == null) return;
+Future<void> _calculateRoutePreview() async {
+  try {
+    if (_startBuilding == null || _endBuilding == null) {
+      debugPrint('⚠️ 출발지 또는 도착지가 없어서 경로 계산 불가');
+      return;
+    }
 
     setState(() => _isCalculatingPreview = true);
+    setState(() => _isCalculatingPreview = true);
 
-    try {
-      debugPrint('🔍 경로 미리보기 계산 시작');
+    debugPrint('🔍 경로 미리보기 계산 시작');
+    debugPrint('   출발지: ${_startBuilding!.name}');
+    debugPrint('   도착지: ${_endBuilding!.name}');
+    debugPrint('   출발 호실: ${_startRoomInfo?['roomName'] ?? 'None'}');
+    debugPrint('   도착 호실: ${_endRoomInfo?['roomName'] ?? 'None'}');
 
       UnifiedPathResponse? response;
 
-      if (_startRoomInfo != null && _endRoomInfo != null) {
-        response = await UnifiedPathService.getPathBetweenRooms(
-          fromBuilding: _startRoomInfo!['buildingName'],
-          fromFloor: int.tryParse(_startRoomInfo!['floorNumber'] ?? '1') ?? 1,
-          fromRoom: _startRoomInfo!['roomName'],
-          toBuilding: _endRoomInfo!['buildingName'],
-          toFloor: int.tryParse(_endRoomInfo!['floorNumber'] ?? '1') ?? 1,
-          toRoom: _endRoomInfo!['roomName'],
-        );
-      } else if (_startRoomInfo != null) {
-        response = await UnifiedPathService.getPathFromRoom(
-          fromBuilding: _startRoomInfo!['buildingName'],
-          fromFloor: int.tryParse(_startRoomInfo!['floorNumber'] ?? '1') ?? 1,
-          fromRoom: _startRoomInfo!['roomName'],
-          toBuilding: _endBuilding!,
-        );
-      } else if (_endRoomInfo != null) {
-        response = await UnifiedPathService.getPathToRoom(
-          fromBuilding: _startBuilding!,
-          toBuilding: _endRoomInfo!['buildingName'],
-          toFloor: int.tryParse(_endRoomInfo!['floorNumber'] ?? '1') ?? 1,
-          toRoom: _endRoomInfo!['roomName'],
-        );
-      } else if (_startBuilding!.name == '내 위치') {
-        final locationManager = Provider.of<LocationManager>(
-          context,
-          listen: false,
-        );
-        if (locationManager.hasValidLocation) {
-          final currentLocation = locationManager.currentLocation!;
-          response = await UnifiedPathService.getPathFromLocation(
-            fromLocation: NLatLng(
-              currentLocation.latitude!,
-              currentLocation.longitude!,
-            ),
-            toBuilding: _endBuilding!,
-          );
-        }
-      } else {
-        response = await UnifiedPathService.getPathBetweenBuildings(
-          fromBuilding: _startBuilding!,
-          toBuilding: _endBuilding!,
-        );
-      }
+    // 🔥 1. 호실-호실 경로
+    if (_startRoomInfo != null && _endRoomInfo != null) {
+      response = await _calculateRoomToRoomPath();
+    }
+    // 🔥 2. 호실-건물 경로  
+    else if (_startRoomInfo != null) {
+      response = await _calculateRoomToBuildingPath();
+    }
+    // 🔥 3. 건물-호실 경로 (내 위치 → 호실 포함)
+    else if (_endRoomInfo != null) {
+      response = await _calculateBuildingToRoomPath();
+    }
+    // 🔥 4. 건물-건물 경로 (내 위치 → 건물 포함)
+    else {
+      response = await _calculateBuildingToBuildingPath();
+    }
 
-      if (response != null && mounted) {
-        _previewResponse = response;
-        _calculateEstimatesFromResponse(response);
-        debugPrint('✅ 경로 미리보기 계산 완료: ${response.type}');
-      }
-    } catch (e) {
-      debugPrint('❌ 경로 미리보기 계산 오류: $e');
-    } finally {
-      if (mounted) {
-        setState(() => _isCalculatingPreview = false);
-      }
+    // 🔥 응답 처리 및 검증
+    await _processRouteResponse(response);
+
+  } catch (e) {
+    debugPrint('❌ 경로 미리보기 계산 전체 오류: $e');
+    await _handleRouteCalculationError(e);
+  } finally {
+    if (mounted) {
+      setState(() => _isCalculatingPreview = false);
     }
   }
+}
+
+Future<UnifiedPathResponse?> _calculateRoomToRoomPath() async {
+  try {
+    debugPrint('🏠 호실-호실 경로 계산');
+    
+    // 🔥 안전한 호실 정보 추출
+    final fromBuilding = _safeExtractRoomData(_startRoomInfo!, 'buildingName');
+    final fromFloor = _safeExtractFloorNumber(_startRoomInfo!, 'floorNumber');
+    final fromRoom = _safeExtractRoomData(_startRoomInfo!, 'roomName');
+    
+    final toBuilding = _safeExtractRoomData(_endRoomInfo!, 'buildingName');
+    final toFloor = _safeExtractFloorNumber(_endRoomInfo!, 'floorNumber');
+    final toRoom = _safeExtractRoomData(_endRoomInfo!, 'roomName');
+    
+    // 🔥 필수 정보 검증
+    if (fromBuilding.isEmpty || fromRoom.isEmpty || 
+        toBuilding.isEmpty || toRoom.isEmpty) {
+      throw Exception('호실 정보가 불완전합니다: from($fromBuilding-$fromRoom) to($toBuilding-$toRoom)');
+    }
+    
+    if (fromFloor < 1 || toFloor < 1) {
+      throw Exception('층 번호가 유효하지 않습니다: from($fromFloor층) to($toFloor층)');
+    }
+    
+    debugPrint('✅ 호실-호실 경로: $fromBuilding $fromFloor층 $fromRoom호 → $toBuilding $toFloor층 $toRoom호');
+    
+    final response = await UnifiedPathService.getPathBetweenRooms(
+      fromBuilding: fromBuilding,
+      fromFloor: fromFloor,
+      fromRoom: fromRoom,
+      toBuilding: toBuilding,
+      toFloor: toFloor,
+      toRoom: toRoom,
+    );
+    
+    if (response == null) {
+      throw Exception('호실 간 경로 API 응답이 null입니다');
+    }
+    
+    return response;
+  } catch (e) {
+    debugPrint('❌ 호실-호실 경로 계산 오류: $e');
+    throw Exception('호실 간 경로 계산 실패: $e');
+  }
+}
+
+// 🔥 호실-건물 경로 계산
+Future<UnifiedPathResponse?> _calculateRoomToBuildingPath() async {
+  try {
+    debugPrint('🏠 호실-건물 경로 계산');
+    
+    final fromBuilding = _safeExtractRoomData(_startRoomInfo!, 'buildingName');
+    final fromFloor = _safeExtractFloorNumber(_startRoomInfo!, 'floorNumber');
+    final fromRoom = _safeExtractRoomData(_startRoomInfo!, 'roomName');
+    
+    if (fromBuilding.isEmpty || fromRoom.isEmpty) {
+      throw Exception('출발 호실 정보가 불완전합니다: $fromBuilding-$fromRoom');
+    }
+    
+    if (fromFloor < 1) {
+      throw Exception('출발 층 번호가 유효하지 않습니다: $fromFloor층');
+    }
+    
+    debugPrint('✅ 호실-건물 경로: $fromBuilding $fromFloor층 $fromRoom호 → ${_endBuilding!.name}');
+    
+    final response = await UnifiedPathService.getPathFromRoom(
+      fromBuilding: fromBuilding,
+      fromFloor: fromFloor,
+      fromRoom: fromRoom,
+      toBuilding: _endBuilding!,
+    );
+    
+    if (response == null) {
+      throw Exception('호실-건물 경로 API 응답이 null입니다');
+    }
+    
+    return response;
+  } catch (e) {
+    debugPrint('❌ 호실-건물 경로 계산 오류: $e');
+    throw Exception('호실에서 건물로의 경로 계산 실패: $e');
+  }
+}
+
+// 🔥 건물-호실 경로 계산
+// 🔥 _calculateBuildingToRoomPath 간단 수정 - "내 위치" 체크 추가
+
+Future<UnifiedPathResponse?> _calculateBuildingToRoomPath() async {
+  try {
+    debugPrint('🏠 건물-호실 경로 계산');
+    
+    final toBuilding = _safeExtractRoomData(_endRoomInfo!, 'buildingName');
+    final toFloor = _safeExtractFloorNumber(_endRoomInfo!, 'floorNumber');
+    final toRoom = _safeExtractRoomData(_endRoomInfo!, 'roomName');
+    
+    if (toBuilding.isEmpty || toRoom.isEmpty) {
+      throw Exception('도착 호실 정보가 불완전합니다: $toBuilding-$toRoom');
+    }
+    
+    if (toFloor < 1) {
+      throw Exception('도착 층 번호가 유효하지 않습니다: $toFloor층');
+    }
+    
+    // 🔥 "내 위치"든 일반 건물이든 동일하게 처리
+    debugPrint('✅ 건물-호실 경로: ${_startBuilding!.name} → $toBuilding $toFloor층 $toRoom호');
+    
+    final response = await UnifiedPathService.getPathToRoom(
+      fromBuilding: _startBuilding!,  // "내 위치"도 그대로 전달
+      toBuilding: toBuilding,
+      toFloor: toFloor,
+      toRoom: toRoom,
+    );
+    
+    if (response == null) {
+      throw Exception('건물-호실 경로 API 응답이 null입니다');
+    }
+    
+    return response;
+  } catch (e) {
+    debugPrint('❌ 건물-호실 경로 계산 오류: $e');
+    throw Exception('건물에서 호실로의 경로 계산 실패: $e');
+  }
+}
+
+// 🔥 건물-건물 경로 계산
+Future<UnifiedPathResponse?> _calculateBuildingToBuildingPath() async {
+  try {
+    debugPrint('🏢 건물-건물 경로 계산');
+    
+    final startName = _startBuilding!.name;
+    final endName = _endBuilding!.name;
+    
+    if (startName.isEmpty || endName.isEmpty) {
+      throw Exception('건물 이름이 비어있습니다: start($startName) end($endName)');
+    }
+    
+    // 🔥 "내 위치"든 일반 건물이든 동일하게 처리
+    debugPrint('✅ 건물-건물 경로: $startName → $endName');
+    
+    final response = await UnifiedPathService.getPathBetweenBuildings(
+      fromBuilding: _startBuilding!,  // "내 위치"도 그대로 전달
+      toBuilding: _endBuilding!,
+    );
+    
+    if (response == null) {
+      throw Exception('건물 간 경로 API 응답이 null입니다');
+    }
+    
+    return response;
+  } catch (e) {
+    debugPrint('❌ 건물-건물 경로 계산 오류: $e');
+    throw Exception('건물 간 경로 계산 실패: $e');
+  }
+}
+
+// 🔥 경로 응답 처리 및 검증
+Future<void> _processRouteResponse(UnifiedPathResponse? response) async {
+  try {
+    if (response == null) {
+      throw Exception('경로 계산 API 응답이 null입니다');
+    }
+    
+    // 🔥 응답 데이터 유효성 검사
+    if (response.result == null) {
+      throw Exception('응답의 result가 null입니다');
+    }
+    
+    if (!mounted) {
+      debugPrint('⚠️ 컴포넌트가 unmounted 상태입니다');
+      return;
+    }
+    
+    // 🔥 성공적으로 응답 처리
+    setState(() {
+      _previewResponse = response;
+    });
+    
+    // 🔥 거리/시간 계산
+    _calculateEstimatesFromResponse(response);
+    
+    debugPrint('✅ 경로 미리보기 계산 완료');
+    debugPrint('   경로 타입: ${response.type}');
+    debugPrint('   예상 거리: $_estimatedDistance');
+    debugPrint('   예상 시간: $_estimatedTime');
+    
+  } catch (e) {
+    debugPrint('❌ 경로 응답 처리 오류: $e');
+    throw Exception('경로 응답 처리 실패: $e');
+  }
+}
+
+// 🔥 경로 계산 오류 처리
+Future<void> _handleRouteCalculationError(dynamic error) async {
+  try {
+    if (!mounted) return;
+    
+    // 🔥 오류 상태 초기화
+    setState(() {
+      _previewResponse = null;
+      _estimatedDistance = '';
+      _estimatedTime = '';
+    });
+    
+    final errorMessage = error.toString();
+    debugPrint('🚨 경로 계산 오류 처리: $errorMessage');
+    
+    // 🔥 오류 타입별 사용자 알림
+    String userMessage;
+    Color messageColor;
+    
+    if (errorMessage.contains('호실')) {
+      userMessage = '호실 경로 계산 중 오류가 발생했습니다. 건물 단위로 검색해보세요.';
+      messageColor = Colors.orange;
+    } else if (errorMessage.contains('위치')) {
+      userMessage = '현재 위치를 확인할 수 없습니다. 다시 시도해주세요.';
+      messageColor = Colors.blue;
+    } else if (errorMessage.contains('API') || errorMessage.contains('null')) {
+      userMessage = '서버 연결에 문제가 있습니다. 잠시 후 다시 시도해주세요.';
+      messageColor = Colors.red;
+    } else {
+      userMessage = '경로 계산 중 오류가 발생했습니다. 다시 시도해주세요.';
+      messageColor = Colors.red;
+    }
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(userMessage),
+        backgroundColor: messageColor,
+        duration: const Duration(seconds: 4),
+        action: SnackBarAction(
+          label: '다시 시도',
+          textColor: Colors.white,
+          onPressed: () {
+            _calculateRoutePreview();
+          },
+        ),
+      ),
+    );
+    
+  } catch (e) {
+    debugPrint('❌ 오류 처리 중 추가 오류: $e');
+  }
+}
+
+String _safeExtractRoomData(Map<String, dynamic> roomInfo, String key) {
+  try {
+    final value = roomInfo[key];
+    if (value == null) return '';
+    return value.toString().trim();
+  } catch (e) {
+    debugPrint('❌ 호실 데이터 추출 오류 ($key): $e');
+    return '';
+  }
+}
+
+/// 🔥 안전한 층 번호 추출 헬퍼 메서드
+int _safeExtractFloorNumber(Map<String, dynamic> roomInfo, String key) {
+  try {
+    final value = roomInfo[key];
+    if (value == null) return 1;
+    
+    final floorStr = value.toString().trim();
+    if (floorStr.isEmpty) return 1;
+    
+    final floorNumber = int.tryParse(floorStr);
+    return floorNumber ?? 1;
+  } catch (e) {
+    debugPrint('❌ 층 번호 추출 오류 ($key): $e');
+    return 1;
+  }
+}
 
   // 🔥 통합 API 응답으로부터 예상 시간과 거리 계산
   void _calculateEstimatesFromResponse(UnifiedPathResponse response) {
+  try {
     double totalDistance = 0;
-
-    // 모든 구간의 거리 합산
-    if (response.result.departureIndoor != null) {
+    
+    // 🔥 null 체크 강화
+    if (response.result.departureIndoor?.path?.distance != null) {
       totalDistance += response.result.departureIndoor!.path.distance;
     }
-    if (response.result.outdoor != null) {
+    if (response.result.outdoor?.path?.distance != null) {
       totalDistance += response.result.outdoor!.path.distance;
     }
-    if (response.result.arrivalIndoor != null) {
+    if (response.result.arrivalIndoor?.path?.distance != null) {
       totalDistance += response.result.arrivalIndoor!.path.distance;
     }
-
-    // 거리 포맷팅
+    
+    // 🔥 거리 포맷팅 - 안전한 계산
+    if (totalDistance <= 0) {
+      _estimatedDistance = '0m';
+      _estimatedTime = '0분';
+      return;
+    }
+    
     if (totalDistance < 1000) {
       _estimatedDistance = '${totalDistance.round()}m';
     } else {
       _estimatedDistance = '${(totalDistance / 1000).toStringAsFixed(1)}km';
     }
-
-    // 예상 시간 계산 (평균 도보 속도 4km/h 기준)
-    double walkingSpeedKmh = 4.0;
-    double timeInHours = totalDistance / 1000 / walkingSpeedKmh;
-    int timeInMinutes = (timeInHours * 60).round();
-
-    if (timeInMinutes < 60) {
+    
+    // 🔥 예상 시간 계산 - 안전한 계산
+    const double walkingSpeedKmh = 4.0;
+    final double timeInHours = totalDistance / 1000 / walkingSpeedKmh;
+    final int timeInMinutes = (timeInHours * 60).round();
+    
+    if (timeInMinutes <= 0) {
+      _estimatedTime = '1분 이내';
+    } else if (timeInMinutes < 60) {
       _estimatedTime = '도보 ${timeInMinutes}분';
     } else {
-      int hours = timeInMinutes ~/ 60;
-      int minutes = timeInMinutes % 60;
-      _estimatedTime = '도보 ${hours}시간 ${minutes}분';
+      final int hours = timeInMinutes ~/ 60;
+      final int minutes = timeInMinutes % 60;
+      if (minutes == 0) {
+        _estimatedTime = '도보 ${hours}시간';
+      } else {
+        _estimatedTime = '도보 ${hours}시간 ${minutes}분';
+      }
     }
 
     debugPrint('📊 통합 API 기반 예상: 거리 $_estimatedDistance, 시간 $_estimatedTime');
+    
+  } catch (e) {
+    debugPrint('❌ 거리/시간 계산 오류: $e');
+    _estimatedDistance = '계산 불가';
+    _estimatedTime = '계산 불가';
   }
+}
 
   Future<void> _onSearchChanged() async {
-    final query = _searchController.text.trim();
+  final query = _searchController.text.trim();
+  
+  if (query.isEmpty) {
+    setState(() {
+      _searchResults = [];
+      _isSearching = false;
+      _isLoading = false;
+    });
+    return;
+  }
 
-    if (query.isEmpty) {
+  // 🔥 "내 위치" 관련 검색은 건너뛰기
+  final lowercaseQuery = query.toLowerCase();
+  if (lowercaseQuery.contains('내 위치') || 
+      lowercaseQuery.contains('내위치') || 
+      lowercaseQuery.contains('현재위치') || 
+      lowercaseQuery.contains('현재 위치') ||
+      lowercaseQuery.contains('my location') ||
+      lowercaseQuery.contains('current location')) {
+    setState(() {
+      _searchResults = [];
+      _isSearching = false;
+      _isLoading = false;
+    });
+    debugPrint('⚠️ "내 위치" 관련 검색은 건너뛰기: $query');
+    return;
+  }
+
+  setState(() {
+    _isSearching = true;
+    _isLoading = true;
+  });
+
+  try {
+    final results = await IntegratedSearchService.search(query, context);
+    
+    if (mounted) {
       setState(() {
-        _searchResults = [];
-        _isSearching = false;
+        _searchResults = results ?? []; // null 체크 추가
         _isLoading = false;
       });
-      return;
     }
-
-    setState(() {
-      _isSearching = true;
-      _isLoading = true;
-    });
-
-    try {
-      final results = await IntegratedSearchService.search(query, context);
-
-      if (mounted) {
-        setState(() {
-          _searchResults = results;
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      debugPrint('검색 오류: $e');
-      if (mounted) {
-        setState(() {
-          _searchResults = [];
-          _isLoading = false;
-        });
-      }
+  } catch (e) {
+    debugPrint('❌ 검색 오류: $e');
+    if (mounted) {
+      setState(() {
+        _searchResults = [];
+        _isLoading = false;
+      });
     }
   }
+}
 
   void _selectStartLocation() {
     setState(() {
@@ -477,8 +760,9 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
     _focusNode.requestFocus();
   }
 
-  // 2. 검색 결과 선택 시 (건물/호실 모두 건물 코드만 사용)
-  void _onSearchResultSelected(SearchResult result) {
+ // 2. 검색 결과 선택 시 (건물/호실 모두 건물 코드만 사용)
+void _onSearchResultSelected(SearchResult result) {
+  try {
     Building building;
     Map<String, dynamic>? roomInfo;
 
@@ -486,10 +770,8 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
       building = result.toBuildingWithRoomLocation();
       roomInfo = {
         'roomName': result.roomNumber ?? '',
-        'buildingName': _extractBuildingCode(
-          result.building.name,
-        ), // 🔥 건물 코드만 사용
-        'floorNumber': result.floorNumber?.toString() ?? '1', // 🔥 항상 문자열
+        'buildingName': _extractBuildingCode(result.building.name),
+        'floorNumber': result.floorNumber?.toString() ?? '1',
       };
     } else {
       final buildingCode = _extractBuildingCode(result.building.name);
@@ -507,11 +789,17 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
       );
     }
 
+    // 🔥 안전한 리스트 업데이트
     setState(() {
-      _recentSearches.removeWhere((b) => b.name == building.name);
-      _recentSearches.insert(0, building);
-      if (_recentSearches.length > 5) {
-        _recentSearches = _recentSearches.take(5).toList();
+      try {
+        _recentSearches.removeWhere((b) => b.name == building.name);
+        _recentSearches.insert(0, building);
+        if (_recentSearches.length > 5) {
+          _recentSearches = _recentSearches.take(5).toList();
+        }
+      } catch (e) {
+        debugPrint('❌ 최근 검색 목록 업데이트 오류: $e');
+        _recentSearches = [building]; // 안전하게 초기화
       }
     });
 
@@ -525,6 +813,7 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
         _searchResults = [];
         _searchController.clear();
       });
+      debugPrint('✅ 출발지 설정: ${building.name}');
     } else if (_searchType == 'end') {
       setState(() {
         _endBuilding = building;
@@ -535,19 +824,36 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
         _searchResults = [];
         _searchController.clear();
       });
+      debugPrint('✅ 도착지 설정: ${building.name}');
     }
 
     _focusNode.unfocus();
+    _focusNode.unfocus();
 
+    // 🔥 안전한 경로 미리보기 계산
     if (_startBuilding != null && _endBuilding != null) {
-      _calculateRoutePreview();
+      Future.microtask(() => _calculateRoutePreview());
+    }
+    
+  } catch (e) {
+    debugPrint('❌ 검색 결과 선택 오류: $e');
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('선택 중 오류가 발생했습니다. 다시 시도해주세요.'),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 2),
+        ),
+      );
     }
   }
+}
 
   void _onBuildingSelected(Building building) {
+  try {
     final buildingCode = _extractBuildingCode(building.name);
     final cleanBuilding = Building(
-      name: buildingCode, // 건물 코드만 사용
+      name: buildingCode,
       info: building.info,
       lat: building.lat,
       lng: building.lng,
@@ -559,11 +865,17 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
       description: building.description,
     );
 
+    // 🔥 안전한 리스트 업데이트
     setState(() {
-      _recentSearches.removeWhere((b) => b.name == cleanBuilding.name);
-      _recentSearches.insert(0, cleanBuilding);
-      if (_recentSearches.length > 5) {
-        _recentSearches = _recentSearches.take(5).toList();
+      try {
+        _recentSearches.removeWhere((b) => b.name == cleanBuilding.name);
+        _recentSearches.insert(0, cleanBuilding);
+        if (_recentSearches.length > 5) {
+          _recentSearches = _recentSearches.take(5).toList();
+        }
+      } catch (e) {
+        debugPrint('❌ 최근 검색 목록 업데이트 오류: $e');
+        _recentSearches = [cleanBuilding]; // 안전하게 초기화
       }
     });
 
@@ -577,6 +889,7 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
         _searchResults = [];
         _searchController.clear();
       });
+      debugPrint('✅ 출발지 건물 설정: ${cleanBuilding.name}');
     } else if (_searchType == 'end') {
       setState(() {
         _endBuilding = cleanBuilding;
@@ -587,13 +900,29 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
         _searchResults = [];
         _searchController.clear();
       });
+      debugPrint('✅ 도착지 건물 설정: ${cleanBuilding.name}');
     }
+    
     _focusNode.unfocus();
 
+    // 🔥 안전한 경로 미리보기 계산
     if (_startBuilding != null && _endBuilding != null) {
-      _calculateRoutePreview();
+      Future.microtask(() => _calculateRoutePreview());
+    }
+    
+  } catch (e) {
+    debugPrint('❌ 건물 선택 오류: $e');
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('건물 선택 중 오류가 발생했습니다. 다시 시도해주세요.'),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 2),
+        ),
+      );
     }
   }
+}
 
   void _swapLocations() {
     if (_startBuilding != null && _endBuilding != null) {
@@ -614,78 +943,14 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
   }
 
   // 🔥 통합 네비게이션 시작 (기존 _startNavigation 대체)
-  void _startUnifiedNavigation() {
+void _startUnifiedNavigation() {
+  try {
     debugPrint('=== 통합 네비게이션 시작 ===');
-    debugPrint(
-      '출발지: ${_startBuilding?.name} (호실: ${_startRoomInfo?['roomName'] ?? 'None'})',
-    );
-    debugPrint(
-      '도착지: ${_endBuilding?.name} (호실: ${_endRoomInfo?['roomName'] ?? 'None'})',
-    );
+    debugPrint('출발지: ${_startBuilding?.name} (호실: ${_startRoomInfo?['roomName'] ?? 'None'})');
+    debugPrint('도착지: ${_endBuilding?.name} (호실: ${_endRoomInfo?['roomName'] ?? 'None'})');
+    debugPrint('PathResponse 상태: ${_previewResponse != null ? '있음' : 'null'}');
 
-    if (_startBuilding != null && _endBuilding != null) {
-      // 🔥 통합 네비게이션 데이터 구성
-      final unifiedNavigationData = {
-        'type': 'unified_navigation',
-        'start': _startBuilding,
-        'end': _endBuilding,
-        'startRoomInfo': _startRoomInfo,
-        'endRoomInfo': _endRoomInfo,
-        'useCurrentLocation': _startBuilding!.name == '내 위치',
-        'estimatedDistance': _estimatedDistance,
-        'estimatedTime': _estimatedTime,
-        'pathResponse': _previewResponse,
-        'showNavigationStatus': true,
-      };
-
-      debugPrint('✅ 통합 네비게이션 데이터 구성 완료');
-      debugPrint('전달 데이터: $unifiedNavigationData');
-
-      // === 단계별 네비게이션 데이터 추출 ===
-      final departureIndoor = _previewResponse?.result?.departureIndoor;
-      final outdoor = _previewResponse?.result?.outdoor;
-      final arrivalIndoor = _previewResponse?.result?.arrivalIndoor;
-
-      // 출발 실내 노드 리스트
-      final List<String> departureNodeIds = (departureIndoor?.path?.path ?? [])
-          .map((e) => e.toString())
-          .toList();
-
-      // 실외 경로 좌표 리스트 (List<Map<String, dynamic>>)
-      final List<Map<String, dynamic>> outdoorPath = (outdoor?.path?.path ?? [])
-          .cast<Map<String, dynamic>>();
-
-      // 실외 거리
-      final double outdoorDistance = outdoor?.path?.distance ?? 0.0;
-
-      // 도착 실내 노드 리스트
-      final List<String> arrivalNodeIds = (arrivalIndoor?.path?.path ?? [])
-          .map((e) => e.toString())
-          .toList();
-
-      // 출발/도착 건물 코드만 추출해서 전달
-      final String departureBuilding = _extractBuildingCode(
-        _startBuilding?.name ?? '',
-      );
-      final String arrivalBuilding = _extractBuildingCode(
-        _endBuilding?.name ?? '',
-      );
-
-      // 단계별 네비게이션 Wrapper로 이동
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => UnifiedNavigationStepperPage(
-            departureBuilding: departureBuilding,
-            departureNodeIds: departureNodeIds,
-            outdoorPath: outdoorPath,
-            outdoorDistance: outdoorDistance,
-            arrivalBuilding: arrivalBuilding,
-            arrivalNodeIds: arrivalNodeIds,
-          ),
-        ),
-      );
-    } else {
+    if (_startBuilding == null || _endBuilding == null) {
       debugPrint('❌ 출발지 또는 도착지가 설정되지 않음');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -693,8 +958,175 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
           backgroundColor: Colors.red,
         ),
       );
+      return;
     }
+
+    // 🔥 pathResponse null 체크 및 재계산
+    if (_previewResponse == null) {
+      debugPrint('⚠️ pathResponse가 null입니다. 경로를 다시 계산합니다...');
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Row(
+            children: [
+              SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              ),
+              SizedBox(width: 12),
+              Text('경로를 계산하는 중...'),
+            ],
+          ),
+          backgroundColor: Colors.blue,
+          duration: Duration(seconds: 3),
+        ),
+      );
+
+      // 경로 재계산 후 네비게이션 시작
+      _calculateRoutePreview().then((_) {
+        if (_previewResponse != null) {
+          _proceedWithNavigation();
+        } else {
+          _handleNavigationFailure();
+        }
+      }).catchError((error) {
+        debugPrint('❌ 경로 재계산 실패: $error');
+        _handleNavigationFailure();
+      });
+      
+      return;
+    }
+
+    // pathResponse가 있으면 바로 진행
+    _proceedWithNavigation();
+
+  } catch (e) {
+    debugPrint('❌ _startUnifiedNavigation 전체 오류: $e');
+    _handleNavigationFailure();
   }
+}
+
+void _proceedWithNavigation() {
+  try {
+    debugPrint('✅ 경로 데이터로 네비게이션 시작');
+
+    // 🔥 통합 네비게이션 데이터 구성
+    final unifiedNavigationData = {
+      'type': 'unified_navigation',
+      'start': _startBuilding,
+      'end': _endBuilding,
+      'startRoomInfo': _startRoomInfo,
+      'endRoomInfo': _endRoomInfo,
+      'useCurrentLocation': _startBuilding!.name == '내 위치',
+      'estimatedDistance': _estimatedDistance,
+      'estimatedTime': _estimatedTime,
+      'pathResponse': _previewResponse,
+      'showNavigationStatus': true,
+    };
+
+    debugPrint('✅ 통합 네비게이션 데이터 구성 완료');
+
+    // === 안전한 단계별 네비게이션 데이터 추출 ===
+    final departureIndoor = _previewResponse?.result?.departureIndoor;
+    final outdoor = _previewResponse?.result?.outdoor;
+    final arrivalIndoor = _previewResponse?.result?.arrivalIndoor;
+
+    // 🔥 안전한 출발 실내 노드 리스트
+    final List<String> departureNodeIds = [];
+    if (departureIndoor?.path?.path != null) {
+      try {
+        departureNodeIds.addAll(
+          (departureIndoor!.path.path).map((e) => e.toString()).toList()
+        );
+      } catch (e) {
+        debugPrint('❌ 출발 실내 노드 추출 오류: $e');
+      }
+    }
+
+    // 🔥 안전한 실외 경로 좌표 리스트
+    final List<Map<String, dynamic>> outdoorPath = [];
+    if (outdoor?.path?.path != null) {
+      try {
+        final pathData = outdoor!.path.path;
+        if (pathData is List) {
+          for (final item in pathData) {
+            if (item is Map<String, dynamic>) {
+              outdoorPath.add(item);
+            }
+          }
+        }
+      } catch (e) {
+        debugPrint('❌ 실외 경로 추출 오류: $e');
+      }
+    }
+
+    // 🔥 안전한 실외 거리
+    final double outdoorDistance = outdoor?.path?.distance ?? 0.0;
+
+    // 🔥 안전한 도착 실내 노드 리스트
+    final List<String> arrivalNodeIds = [];
+    if (arrivalIndoor?.path?.path != null) {
+      try {
+        arrivalNodeIds.addAll(
+          (arrivalIndoor!.path.path).map((e) => e.toString()).toList()
+        );
+      } catch (e) {
+        debugPrint('❌ 도착 실내 노드 추출 오류: $e');
+      }
+    }
+
+    // 🔥 안전한 건물 코드 추출
+    final String departureBuilding = _extractBuildingCode(_startBuilding?.name ?? '');
+    final String arrivalBuilding = _extractBuildingCode(_endBuilding?.name ?? '');
+
+    debugPrint('📊 네비게이션 데이터 요약:');
+    debugPrint('   출발 노드: ${departureNodeIds.length}개');
+    debugPrint('   실외 경로: ${outdoorPath.length}개 좌표');
+    debugPrint('   실외 거리: ${outdoorDistance}m');
+    debugPrint('   도착 노드: ${arrivalNodeIds.length}개');
+
+    // 🔥 최소한의 데이터 검증
+    if (departureBuilding.isEmpty || arrivalBuilding.isEmpty) {
+      throw Exception('건물 정보가 불완전합니다');
+    }
+
+    // 단계별 네비게이션 Wrapper로 이동
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => UnifiedNavigationStepperPage(
+          departureBuilding: departureBuilding,
+          departureNodeIds: departureNodeIds,
+          outdoorPath: outdoorPath,
+          outdoorDistance: outdoorDistance,
+          arrivalBuilding: arrivalBuilding,
+          arrivalNodeIds: arrivalNodeIds,
+        ),
+      ),
+    );
+
+  } catch (e) {
+    debugPrint('❌ 네비게이션 진행 오류: $e');
+    _handleNavigationFailure();
+  }
+}
+
+void _handleNavigationFailure() {
+  if (mounted) {
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('네비게이션을 시작할 수 없습니다. 경로를 다시 확인해주세요.'),
+        backgroundColor: Colors.red,
+        duration: Duration(seconds: 4),
+      ),
+    );
+  }
+}
 
   void _cancelSearch() {
     setState(() {
@@ -937,92 +1369,138 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
 
   // directions_screen.dart에서 _buildSearchResultItem의 onTap 부분을 다음과 같이 수정
 
-  Widget _buildSearchResultItem(SearchResult result) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 1),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.zero,
+Widget _buildSearchResultItem(SearchResult result) {
+  return Container(
+    margin: const EdgeInsets.only(bottom: 1),
+    decoration: const BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.zero,
+    ),
+    child: ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      leading: Container(
+        width: 32,
+        height: 32,
+        decoration: BoxDecoration(
+          color: result.isBuilding
+              ? const Color(0xFF3B82F6).withOpacity(0.1)
+              : const Color(0xFF10B981).withOpacity(0.1),
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Icon(
+          result.isBuilding ? Icons.business : Icons.room,
+          color: result.isBuilding
+              ? const Color(0xFF3B82F6)
+              : const Color(0xFF10B981),
+          size: 18,
+        ),
       ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 12,
+      title: Text(
+        result.displayName ?? '이름 없음', // 🔥 null 체크 추가
+        style: const TextStyle(
+          fontSize: 15,
+          fontWeight: FontWeight.w500,
+          color: Colors.black87,
         ),
-        leading: Container(
-          width: 32,
-          height: 32,
-          decoration: BoxDecoration(
-            color: result.isBuilding
-                ? const Color(0xFF3B82F6).withOpacity(0.1)
-                : const Color(0xFF10B981).withOpacity(0.1),
-            borderRadius: BorderRadius.circular(6),
-          ),
-          child: Icon(
-            result.isBuilding ? Icons.business : Icons.room,
-            color: result.isBuilding
-                ? const Color(0xFF3B82F6)
-                : const Color(0xFF10B981),
-            size: 18,
-          ),
-        ),
-        title: Text(
-          result.displayName,
-          style: const TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w500,
-            color: Colors.black87,
-          ),
-        ),
-        subtitle: Text(
-          result.isRoom
-              ? result.roomDescription ?? '강의실'
-              : result.building.info.isNotEmpty
-              ? result.building.info
-              : result.building.category,
-          style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-        trailing: Icon(
-          Icons.chevron_right,
-          color: Colors.grey.shade400,
-          size: 20,
-        ),
-        // 🔥 이 부분을 수정
-        onTap: () {
-          if (_searchType != null) {
-            // 길찾기 모드: 출발지/도착지 설정
-            _onSearchResultSelected(result);
-          } else {
-            // 🔥 단독 검색 모드: 강의실이면 바로 이동
-            if (result.isRoom) {
-              _navigateToRoomDirectly(result);
-            } else {
-              // 건물이면 길찾기 화면으로 이동하거나 다른 처리
-              _onSearchResultSelected(result);
-            }
-          }
-        },
       ),
-    );
-  }
+      subtitle: Text(
+        _buildSafeSubtitle(result), // 🔥 안전한 subtitle 생성
+        style: TextStyle(
+          fontSize: 13,
+          color: Colors.grey.shade600,
+        ),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
+      trailing: Icon(
+        Icons.chevron_right,
+        color: Colors.grey.shade400,
+        size: 20,
+      ),
+      onTap: () => _handleSearchResultTap(result), // 🔥 안전한 탭 처리
+    ),
+  );
+}
 
-  // 🔥 강의실로 바로 이동하는 메서드 추가
-  void _navigateToRoomDirectly(SearchResult result) {
-    if (!result.isRoom) return;
+String _buildSafeSubtitle(SearchResult result) {
+  try {
+    if (result.isRoom) {
+      return result.roomDescription?.isNotEmpty == true 
+          ? result.roomDescription! 
+          : '강의실';
+    } else {
+      return result.building.info.isNotEmpty 
+          ? result.building.info 
+          : result.building.category.isNotEmpty 
+              ? result.building.category 
+              : '건물';
+    }
+  } catch (e) {
+    debugPrint('❌ subtitle 생성 오류: $e');
+    return '정보 없음';
+  }
+}
+
+void _handleSearchResultTap(SearchResult result) {
+  try {
+    if (_searchType != null) {
+      // 길찾기 모드: 출발지/도착지 설정
+      _onSearchResultSelected(result);
+    } else {
+      // 🔥 단독 검색 모드: 강의실이면 바로 이동
+      if (result.isRoom) {
+        _navigateToRoomDirectly(result);
+      } else {
+        // 건물이면 길찾기 모드로 설정
+        _onSearchResultSelected(result);
+      }
+    }
+  } catch (e) {
+    debugPrint('❌ 검색 결과 탭 처리 오류: $e');
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('항목 선택 중 오류가 발생했습니다'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+}
+
+
+// 🔥 강의실로 바로 이동하는 메서드 추가
+void _navigateToRoomDirectly(SearchResult result) {
+  try {
+    if (!result.isRoom || result.building == null) {
+      debugPrint('❌ 유효하지 않은 강의실 정보');
+      return;
+    }
 
     final buildingCode = _extractBuildingCode(result.building.name);
+    final roomNumber = result.roomNumber ?? '';
+    final floorNumber = result.floorNumber ?? 1;
+
+    if (buildingCode.isEmpty || roomNumber.isEmpty) {
+      debugPrint('❌ 필수 정보 누락: 건물($buildingCode), 호실($roomNumber)');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('강의실 정보가 불완전합니다'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
 
     debugPrint('🎯 강의실로 바로 이동: ${result.displayName}');
     debugPrint('   건물: $buildingCode');
-    debugPrint('   층: ${result.floorNumber}');
-    debugPrint('   호실: ${result.roomNumber}');
+    debugPrint('   층: $floorNumber');
+    debugPrint('   호실: $roomNumber');
 
     // 사용자에게 이동 중임을 알림
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('${result.displayName}로 이동 중...'),
+        content: Text('${result.displayName ?? roomNumber}로 이동 중...'),
         duration: const Duration(seconds: 2),
         backgroundColor: Colors.blue,
       ),
@@ -1034,12 +1512,24 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
       MaterialPageRoute(
         builder: (context) => BuildingMapPage(
           buildingName: buildingCode,
-          targetRoomId: result.roomNumber, // 🔥 자동 선택할 강의실
-          targetFloorNumber: result.floorNumber, // 🔥 해당 층으로 이동
+          targetRoomId: roomNumber,
+          targetFloorNumber: floorNumber,
         ),
       ),
     );
+  } catch (e) {
+    debugPrint('❌ 강의실 직접 이동 오류: $e');
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('강의실 이동 중 오류가 발생했습니다'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
+}
+
 
   Widget _buildBuildingResultItem(Building building, {bool isRecent = false}) {
     return Container(
@@ -1754,7 +2244,7 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
                             behavior: SnackBarBehavior.floating,
                             margin: const EdgeInsets.all(16),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
+                            borderRadius: BorderRadius.circular(10),
                             ),
                           ),
                         );

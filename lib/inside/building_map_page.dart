@@ -138,63 +138,77 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
 
   // 🔥 검색 결과 호실 자동 선택 처리
   // 🔥 1. _handleAutoRoomSelection 메서드 수정 - 타이밍 최적화
-  void _handleAutoRoomSelection() {
-    if (!_shouldAutoSelectRoom ||
-        _autoSelectRoomId == null ||
+void _handleAutoRoomSelection() {
+  try {
+    if (!_shouldAutoSelectRoom || 
+        _autoSelectRoomId == null || 
+        _autoSelectRoomId!.isEmpty ||
         _buttonData.isEmpty) {
+      debugPrint('⚠️ 자동 선택 조건 불충족');
       return;
     }
 
     debugPrint('🎯 자동 호실 선택 시도: $_autoSelectRoomId');
+    debugPrint('🎯 자동 호실 선택 시도: $_autoSelectRoomId');
 
     // 'R' 접두사 확인 및 추가
-    final targetRoomId = _autoSelectRoomId!.startsWith('R')
-        ? _autoSelectRoomId!
+    final targetRoomId = _autoSelectRoomId!.startsWith('R') 
+        ? _autoSelectRoomId! 
         : 'R$_autoSelectRoomId';
 
-    // 버튼 데이터에서 해당 호실 찾기
-    final targetButton = _buttonData.firstWhere(
-      (button) => button['id'] == targetRoomId,
-      orElse: () => <String, dynamic>{},
-    );
+    // 🔥 안전한 버튼 찾기
+    Map<String, dynamic>? targetButton;
+    try {
+      for (final button in _buttonData) {
+        if (button['id'] == targetRoomId) {
+          targetButton = button;
+          break;
+        }
+      }
+    } catch (e) {
+      debugPrint('❌ 버튼 검색 중 오류: $e');
+      targetButton = null;
+    }
 
-    if (targetButton.isNotEmpty) {
+    if (targetButton != null && targetButton.isNotEmpty) {
       debugPrint('✅ 자동 선택할 호실 찾음: $targetRoomId');
-
-      // 🔥 즉시 호실 하이라이트 (포커스 전에)
+      
+      // 🔥 즉시 호실 하이라이트
       setState(() {
         _selectedRoomId = targetRoomId;
       });
-
+      
       // 🔥 로딩 표시 추가
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const SizedBox(
-                width: 16,
-                height: 16,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Text('$_autoSelectRoomId 호실을 찾는 중...'),
-            ],
+                const SizedBox(width: 12),
+                Text('$_autoSelectRoomId 호실을 찾는 중...'),
+              ],
+            ),
+            duration: const Duration(milliseconds: 1500),
+            backgroundColor: Colors.blue,
           ),
-          duration: const Duration(milliseconds: 1500),
-          backgroundColor: Colors.blue,
-        ),
-      );
-
+        );
+      }
+      
       // 🔥 포커스를 더 빨리, 더 부드럽게
       Future.delayed(const Duration(milliseconds: 100), () {
         if (mounted) {
-          _focusOnRoom(targetButton);
+          _focusOnRoom(targetButton!);
         }
       });
-
+      
       // 🔥 호실 정보 시트는 포커스 완료 후
       Future.delayed(const Duration(milliseconds: 800), () {
         if (mounted) {
@@ -202,13 +216,13 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
           _showRoomInfoSheet(context, targetRoomId);
         }
       });
-
+      
       // 자동 선택 완료 처리
       _shouldAutoSelectRoom = false;
       _autoSelectRoomId = null;
     } else {
       debugPrint('❌ 자동 선택할 호실을 찾지 못함: $targetRoomId');
-
+      
       // 호실을 찾지 못한 경우 사용자에게 알림
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
@@ -221,42 +235,81 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
           );
         }
       });
-
+      
       _shouldAutoSelectRoom = false;
       _autoSelectRoomId = null;
     }
-  }
-
-  // 🔥 2. _focusOnRoom 메서드 수정 - 더 부드러운 포커스
-  void _focusOnRoom(Map<String, dynamic> roomButton) {
-    try {
-      // 호실의 중심점 계산
-      Rect bounds;
-      if (roomButton['type'] == 'path') {
-        bounds = (roomButton['path'] as Path).getBounds();
-      } else {
-        bounds = roomButton['rect'] as Rect;
-      }
-
-      final centerX = bounds.center.dx;
-      final centerY = bounds.center.dy;
-
-      debugPrint('📍 호실 중심점: ($centerX, $centerY)');
-
-      // 🔥 즉시 적용 (WidgetsBinding 제거)
-      final targetScale = 1.8; // 줌 레벨 살짝 줄임
-      final translation = Matrix4.identity()
-        ..scale(targetScale)
-        ..translate(-centerX + 150, -centerY + 150); // 오프셋 조정
-
-      _transformationController.value = translation;
-
-      // 🔥 리셋 시간 단축
-      _resetScaleAfterDelay(duration: 2000); // 2초로 단축
-    } catch (e) {
-      debugPrint('❌ 호실 포커스 오류: $e');
+  } catch (e) {
+    debugPrint('❌ _handleAutoRoomSelection 전체 오류: $e');
+    _shouldAutoSelectRoom = false;
+    _autoSelectRoomId = null;
+    
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('호실 자동 선택 중 오류가 발생했습니다'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
+}
+
+// 🔥 2. _focusOnRoom 메서드 수정 - 더 부드러운 포커스
+void _focusOnRoom(Map<String, dynamic> roomButton) {
+  try {
+    // 🔥 입력 검증
+    if (roomButton.isEmpty) {
+      debugPrint('❌ roomButton이 비어있음');
+      return;
+    }
+
+    // 호실의 중심점 계산
+    Rect? bounds;
+    try {
+      if (roomButton['type'] == 'path') {
+        final path = roomButton['path'] as Path?;
+        if (path != null) {
+          bounds = path.getBounds();
+        }
+      } else {
+        bounds = roomButton['rect'] as Rect?;
+      }
+    } catch (e) {
+      debugPrint('❌ bounds 계산 오류: $e');
+      return;
+    }
+    
+    if (bounds == null) {
+      debugPrint('❌ bounds가 null');
+      return;
+    }
+    
+    final centerX = bounds.center.dx;
+    final centerY = bounds.center.dy;
+    
+    debugPrint('📍 호실 중심점: ($centerX, $centerY)');
+    
+    // 🔥 변환 매트릭스 안전하게 적용
+    try {
+      final targetScale = 1.8;
+      final translation = Matrix4.identity()
+        ..scale(targetScale)
+        ..translate(-centerX + 150, -centerY + 150);
+      
+      _transformationController.value = translation;
+      
+      // 🔥 리셋 시간 설정
+      _resetScaleAfterDelay(duration: 2000);
+    } catch (e) {
+      debugPrint('❌ 변환 매트릭스 적용 오류: $e');
+    }
+    
+  } catch (e) {
+    debugPrint('❌ _focusOnRoom 전체 오류: $e');
+  }
+}
+
 
   // 🔥 기존 네비게이션 모드 설정
   void _setupNavigationMode() {
@@ -322,37 +375,65 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
   }
 
   // 🔥 노드 ID를 Offset으로 변환 (개선된 버전)
-  List<Offset> _convertNodeIdsToOffsets(
-    List<String> nodeIds,
-    String floorNum,
-    Map<String, Map<String, Offset>> floorNodesMap,
-  ) {
+  List<Offset> _convertNodeIdsToOffsets(List<String> nodeIds, String floorNum, Map<String, Map<String, Offset>> floorNodesMap) {
+  try {
+    // 🔥 입력 값 검증
+    if (nodeIds.isEmpty) {
+      debugPrint('⚠️ nodeIds가 비어있음');
+      return [];
+    }
+    
+    if (floorNum.isEmpty) {
+      debugPrint('⚠️ floorNum이 비어있음');
+      return [];
+    }
+
     final floorNumStr = floorNum.toString();
-    final nodeMap = floorNodesMap[floorNumStr] ?? {};
-    if (nodeMap.isEmpty) {
-      debugPrint('⚠️ 층 $floorNumStr의 노드 맵이 비어있음');
+    final nodeMap = floorNodesMap[floorNumStr];
+    
+    if (nodeMap == null || nodeMap.isEmpty) {
+      debugPrint('⚠️ 층 $floorNumStr의 노드 맵이 비어있음 또는 null');
       return [];
     }
 
     final offsets = <Offset>[];
     for (String nodeId in nodeIds) {
-      String simpleId = nodeId.contains('@') ? nodeId.split('@').last : nodeId;
-      if (simpleId.startsWith('R')) {
-        simpleId = simpleId.substring(1);
-      }
+      try {
+        if (nodeId.isEmpty) {
+          debugPrint('⚠️ 빈 nodeId 건너뛰기');
+          continue;
+        }
 
-      final offset = nodeMap[simpleId];
-      if (offset != null) {
-        offsets.add(offset);
-        debugPrint('✅ 노드 변환: $nodeId -> $simpleId -> $offset');
-      } else {
-        debugPrint('❌ 노드 찾기 실패: $nodeId (simpleId: $simpleId)');
+        String simpleId = nodeId.contains('@') ? nodeId.split('@').last : nodeId;
+        if (simpleId.startsWith('R')) {
+          simpleId = simpleId.substring(1);
+        }
+
+        if (simpleId.isEmpty) {
+          debugPrint('⚠️ simpleId가 비어있음: $nodeId');
+          continue;
+        }
+
+        final offset = nodeMap[simpleId];
+        if (offset != null) {
+          offsets.add(offset);
+          debugPrint('✅ 노드 변환: $nodeId -> $simpleId -> $offset');
+        } else {
+          debugPrint('❌ 노드 찾기 실패: $nodeId (simpleId: $simpleId)');
+        }
+      } catch (e) {
+        debugPrint('❌ 개별 노드 처리 오류: $nodeId - $e');
+        continue;
       }
     }
 
     debugPrint('📊 노드 변환 결과: ${nodeIds.length}개 중 ${offsets.length}개 성공');
     return offsets;
+  } catch (e) {
+    debugPrint('❌ _convertNodeIdsToOffsets 전체 오류: $e');
+    return [];
   }
+}
 
   void _onFloorChanged(Map<String, dynamic> newFloor) {
     final newFloorNumber = newFloor['Floor_Number'].toString();
@@ -951,46 +1032,23 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
     });
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          _isNavigationMode
-              ? '${widget.buildingName} 네비게이션'
-              : '${widget.buildingName} 실내 안내도',
-        ),
-        backgroundColor: _isNavigationMode ? Colors.blue : Colors.indigo,
-        actions: [
-          if (_isNavigationMode) ...[
-            IconButton(
-              icon: const Icon(Icons.check_circle),
-              onPressed: _completeNavigation,
-              tooltip: '네비게이션 완료',
-            ),
-          ] else ...[
-            IconButton(
-              icon: const Icon(Icons.refresh),
-              onPressed: _clearAllPathInfo,
-              tooltip: '초기화',
-            ),
-          ],
-        ],
-      ),
-      body: Stack(
-        children: [
-          Center(child: _buildBodyContent()),
-          if (!_isFloorListLoading && _error == null)
-            Positioned(left: 16, bottom: 120, child: _buildFloorSelector()),
-          _buildPathInfo(),
-          _buildTransitionPrompt(),
-          if (_isNavigationMode) _buildNavigationStatus(),
-          // 🔥 자동 선택 진행 중일 때 로딩 표시
-          if (_shouldAutoSelectRoom) _buildAutoSelectionIndicator(),
-        ],
-      ),
-    );
-  }
+
+@override
+Widget build(BuildContext context) {
+  return Scaffold(
+    // 🔥 AppBar 완전 제거
+    body: Stack(
+      children: [
+        Center(child: _buildBodyContent()),
+        if (!_isFloorListLoading && _error == null)
+          Positioned(left: 16, bottom: 120, child: _buildFloorSelector()),
+        _buildPathInfo(),
+        _buildTransitionPrompt(),
+        if (_shouldAutoSelectRoom) _buildAutoSelectionIndicator(),
+      ],
+    ),
+  );
+}
 
   // building_map_page.dart에 추가해야 할 누락된 메서드들
 
@@ -1021,104 +1079,93 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
     );
   }
 
+  // 🔥 네비게이션 모드용 출발지 라벨
+String _getNavigationStartLabel() {
+  if (widget.isArrivalNavigation) {
+    return '건물 입구';
+  } else {
+    return '현재 위치';
+  }
+}
+
+// 🔥 네비게이션 모드용 도착지 라벨
+String _getNavigationEndLabel() {
+  if (widget.isArrivalNavigation) {
+    if (widget.targetRoomId != null) {
+      final floorText = widget.targetFloorNumber != null 
+          ? '${widget.targetFloorNumber}층 ' 
+          : '';
+      return '${floorText}${widget.targetRoomId}호';
+    }
+    return '목적지';
+  } else {
+    return '건물 출구';
+  }
+}
+
+// 🔥 네비게이션 모드용 포인트 정보 표시
+Widget _buildNavigationPointInfo(String title, String label, Color color) {
+  return Column(
+    children: [
+      Text(title, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+      const SizedBox(height: 4),
+      Text(
+        label,
+        style: TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+          color: color,
+        ),
+      ),
+    ],
+  );
+}
+
   // 🔥 자동 선택 진행 중 표시 위젯
   Widget _buildAutoSelectionIndicator() {
-    return Positioned(
-      top: 100,
-      left: 16,
-      right: 16,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.blue.withOpacity(0.9),
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.2),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            const SizedBox(
-              width: 20,
-              height: 20,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                '호실 $_autoSelectRoomId을(를) 찾는 중...',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ],
-        ),
+  return Positioned(
+    top: 100,
+    left: 16,
+    right: 16,
+    child: Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.blue.withOpacity(0.9),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-    );
-  }
-
-  // 🔥 네비게이션 상태 표시 위젯
-  Widget _buildNavigationStatus() {
-    return Positioned(
-      top: 16,
-      left: 16,
-      right: 16,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.blue.withOpacity(0.9),
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.2),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
+      child: Row(
+        children: [
+          const SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
             ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Icon(
-              widget.isArrivalNavigation
-                  ? Icons.location_on
-                  : Icons.my_location,
-              color: Colors.white,
-              size: 24,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                widget.isArrivalNavigation ? '목적지 건물 내부 안내' : '출발지에서 건물 출구까지',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              '호실 $_autoSelectRoomId을(를) 찾는 중...',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
               ),
             ),
-            TextButton(
-              onPressed: _completeNavigation,
-              style: TextButton.styleFrom(
-                backgroundColor: Colors.white.withOpacity(0.2),
-                foregroundColor: Colors.white,
-              ),
-              child: const Text('완료'),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildBodyContent() {
     if (_isFloorListLoading)
@@ -1392,54 +1439,9 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
     }
   }
 
-  Widget _buildPathInfo() {
-    // 🔥 네비게이션 모드에서는 다른 정보 표시
-    if (_isNavigationMode) {
-      return Positioned(
-        bottom: 16,
-        left: 16,
-        right: 16,
-        child: Card(
-          elevation: 6,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.navigation, color: Colors.blue, size: 20),
-                    const SizedBox(width: 8),
-                    Text(
-                      '네비게이션 진행 중',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.blue[700],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  widget.isArrivalNavigation
-                      ? '목적지 건물 내부를 안내합니다'
-                      : '건물 출구까지 안내합니다',
-                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-    }
-
-    // 기존 경로 정보 표시
+Widget _buildPathInfo() {
+  // 🔥 네비게이션 모드일 때 적절한 정보 표시
+  if (_isNavigationMode) {
     return Positioned(
       bottom: 16,
       left: 16,
@@ -1452,32 +1454,64 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildPointInfo("출발", _startPoint?['roomId'], Colors.green),
+              _buildNavigationPointInfo(
+                "출발", 
+                _getNavigationStartLabel(), 
+                Colors.green
+              ),
               const Icon(Icons.arrow_forward_rounded, color: Colors.grey),
-              _buildPointInfo("도착", _endPoint?['roomId'], Colors.blue),
+              _buildNavigationPointInfo(
+                "도착", 
+                _getNavigationEndLabel(), 
+                Colors.blue
+              ),
             ],
           ),
         ),
       ),
     );
   }
-
-  Widget _buildPointInfo(String title, String? id, Color color) {
-    return Column(
-      children: [
-        Text(title, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-        const SizedBox(height: 4),
-        Text(
-          id ?? '미지정',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: color,
-          ),
+  
+  // 🔥 일반 모드일 때 기존 방식
+  return Positioned(
+    bottom: 16,
+    left: 16,
+    right: 16,
+    child: Card(
+      elevation: 6,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            _buildPointInfo("출발", _startPoint?['roomId'], Colors.green),
+            const Icon(Icons.arrow_forward_rounded, color: Colors.grey),
+            _buildPointInfo("도착", _endPoint?['roomId'], Colors.blue),
+          ],
         ),
-      ],
-    );
-  }
+      ),
+    ),
+  );
+}
+
+
+Widget _buildPointInfo(String title, String? id, Color color) {
+  return Column(
+    children: [
+      Text(title, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+      const SizedBox(height: 4),
+      Text(
+        id ?? '미지정',
+        style: TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+          color: color,
+        ),
+      ),
+    ],
+  );
+}
 
   // 🔥 3. _resetScaleAfterDelay 메서드 수정 - 시간 조정 가능
   void _resetScaleAfterDelay({int duration = 3000}) {

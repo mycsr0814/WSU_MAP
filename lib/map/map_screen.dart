@@ -442,16 +442,16 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     String label,
   ) {
     final isActive = _currentNavIndex == index;
-
+    
     return GestureDetector(
       onTap: () {
         // 🔥 친구 화면에 접근할 때 로그인 상태 확인
         if (index == 2) {
           final userId = context.read<UserAuth>().userId ?? '';
           if (userId.isEmpty) {
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(const SnackBar(content: Text('로그인 후 이용 가능합니다.')));
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('로그인 후 이용 가능합니다.')),
+            );
             return;
           }
         }
