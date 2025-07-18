@@ -207,9 +207,16 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    // 1. userId를 Provider에서 받아오기
-    final userId = context.read<UserAuth>().userId ?? '';
-    print('userId: $userId');
+    // 🔥 UserAuth 상태 변화를 감지
+    final userAuth = context.watch<UserAuth>();
+    final userId = userAuth.userId ?? '';
+
+    // 🔥 게스트로 전환됐는데 현재 인덱스가 1·2(시간표/친구)라면 0(지도)로 되돌림
+    if (userAuth.isGuest && (_currentNavIndex == 1 || _currentNavIndex == 2)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(() => _currentNavIndex = 0);
+      });
+    }
 
     return ChangeNotifierProvider.value(
       value: _controller,
@@ -231,7 +238,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                 const ProfileScreen(),
               ],
             ),
-            bottomNavigationBar: _buildBottomNavigationBar(),
+            bottomNavigationBar: _buildBottomNavigationBar(userAuth),
             floatingActionButton: null,
           );
         },
@@ -388,9 +395,32 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     );
   }
 
-  /// 하단 네비게이션 바
-  Widget _buildBottomNavigationBar() {
+  /// 🔥 하단 네비게이션 바 - 게스트 여부에 따라 탭 표시
+  Widget _buildBottomNavigationBar(UserAuth userAuth) {
     final l10n = AppLocalizations.of(context)!;
+
+    // 🔥 표시할 탭 목록을 동적으로 구성
+    final List<Widget> items = [
+      _buildNavItem(0, Icons.map_outlined, Icons.map, l10n.home),
+    ];
+
+    // 🔥 게스트가 아니면 시간표와 친구 탭 추가
+    if (!userAuth.isGuest) {
+      items.addAll([
+        _buildNavItem(
+          1,
+          Icons.schedule_outlined,
+          Icons.schedule,
+          l10n.timetable,
+        ),
+        _buildNavItem(2, Icons.people_outline, Icons.people, l10n.friends),
+      ]);
+    }
+
+    items.add(
+      _buildNavItem(3, Icons.person_outline, Icons.person, l10n.my_page),
+    );
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -407,102 +437,30 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
           height: 65,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildNavItem(0, Icons.map_outlined, Icons.map, l10n.home),
-              _buildNavItem(
-                1,
-                Icons.schedule_outlined,
-                Icons.schedule,
-                l10n.timetable,
-              ),
-              _buildNavItem(
-                2,
-                Icons.people_outline,
-                Icons.people,
-                l10n.friends,
-              ),
-              _buildNavItem(
-                3,
-                Icons.person_outline,
-                Icons.person,
-                l10n.my_page,
-              ),
-            ],
+            children: items,
           ),
         ),
       ),
     );
   }
 
-  /// 일반 네비게이션 바 아이템
+  /// 🔥 일반 네비게이션 바 아이템 - 접근 제한 로직 제거
   Widget _buildNavItem(
-    int index,
+    int screenIndex, // 🔥 IndexedStack의 실제 화면 인덱스
     IconData icon,
     IconData activeIcon,
     String label,
   ) {
-    final isActive = _currentNavIndex == index;
-    final userAuth = context.read<UserAuth>();
+    final bool isActive = _currentNavIndex == screenIndex;
 
     return GestureDetector(
       onTap: () {
-        // 🔥 게스트 사용자 접근 제한 - 시간표와 친구 화면
-        if (userAuth.isGuest && (index == 1 || index == 2)) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Row(
-                children: [
-                  const Icon(Icons.info_outline, color: Colors.white, size: 20),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      index == 1
-                          ? '시간표 기능은 로그인 후 이용 가능합니다.'
-                          : '친구 기능은 로그인 후 이용 가능합니다.',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w500,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              backgroundColor: const Color(0xFFEF4444),
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-              duration: const Duration(seconds: 3),
-              action: SnackBarAction(
-                label: '로그인',
-                textColor: Colors.white,
-                onPressed: () {
-                  // 로그인 화면으로 이동하는 로직 추가 가능
-                  Navigator.of(context).pop(); // 현재 화면 닫기
-                },
-              ),
-            ),
-          );
-          return;
-        }
-
-        // 🔥 일반 로그인 사용자의 친구 화면 접근 확인 (기존 코드 유지)
-        if (index == 2 && !userAuth.isGuest) {
-          final userId = userAuth.userId ?? '';
-          if (userId.isEmpty) {
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(const SnackBar(content: Text('로그인 후 이용 가능합니다.')));
-            return;
-          }
-        }
-
         // 🔥 지도 화면으로 전환 시 친구 위치 마커 정리
-        if (index == 0) {
+        if (screenIndex == 0) {
           _controller.clearFriendLocationMarkers();
         }
 
-        setState(() => _currentNavIndex = index);
+        setState(() => _currentNavIndex = screenIndex);
       },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
@@ -520,11 +478,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
               child: Icon(
                 isActive ? activeIcon : icon,
                 size: 22,
-                color: isActive
-                    ? const Color(0xFF1E3A8A)
-                    : (userAuth.isGuest && (index == 1 || index == 2))
-                    ? Colors.grey[400] // 게스트일 때 비활성화된 색상
-                    : Colors.grey[600],
+                color: isActive ? const Color(0xFF1E3A8A) : Colors.grey[600],
               ),
             ),
             const SizedBox(height: 2),
@@ -533,11 +487,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
-                color: isActive
-                    ? const Color(0xFF1E3A8A)
-                    : (userAuth.isGuest && (index == 1 || index == 2))
-                    ? Colors.grey[400] // 게스트일 때 비활성화된 색상
-                    : Colors.grey[600],
+                color: isActive ? const Color(0xFF1E3A8A) : Colors.grey[600],
               ),
             ),
           ],
