@@ -1,4 +1,4 @@
-// lib/page/building_map_page.dart - 검색 결과 호실 자동 선택 기능 추가
+// lib/page/building_map_page.dart - Stack 최소화 + Column 기반 UI 구조
 
 import 'dart:async';
 import 'dart:math';
@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_naver_map/flutter_naver_map.dart';
+import 'package:flutter/foundation.dart';
 
 // 기존 imports
 import '../inside/api_service.dart';
@@ -15,19 +16,19 @@ import '../inside/room_info_sheet.dart';
 import '../inside/room_shape_painter.dart';
 import '../inside/path_painter.dart';
 
-// 🔥 새로 추가된 imports
+// 새로 추가된 imports
 import '../services/unified_path_service.dart';
 import '../controllers/unified_navigation_controller.dart';
 
 class BuildingMapPage extends StatefulWidget {
   final String buildingName;
   
-  // 🔥 통합 네비게이션을 위한 새로운 파라미터들
+  // 통합 네비게이션을 위한 새로운 파라미터들
   final List<String>? navigationNodeIds;
   final bool isArrivalNavigation;
   final UnifiedNavigationController? navigationController;
   
-  // 🔥 검색 결과에서 호실 자동 선택을 위한 새로운 파라미터들
+  // 검색 결과에서 호실 자동 선택을 위한 새로운 파라미터들
   final String? targetRoomId;  // 자동으로 선택할 호실 ID
   final int? targetFloorNumber;  // 해당 호실이 있는 층 번호
 
@@ -37,8 +38,8 @@ class BuildingMapPage extends StatefulWidget {
     this.navigationNodeIds,
     this.isArrivalNavigation = false,
     this.navigationController,
-    this.targetRoomId,  // 🔥 새로 추가
-    this.targetFloorNumber,  // 🔥 새로 추가
+    this.targetRoomId,
+    this.targetFloorNumber,
   });
 
   @override
@@ -46,7 +47,7 @@ class BuildingMapPage extends StatefulWidget {
 }
 
 class _BuildingMapPageState extends State<BuildingMapPage> {
-  // 기존 상태 변수들 (그대로 유지)
+  // 기존 상태 변수들
   List<dynamic> _floorList = [];
   Map<String, dynamic>? _selectedFloor;
   String? _svgUrl;
@@ -69,190 +70,217 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
   bool _showTransitionPrompt = false;
   Timer? _promptTimer;
 
-  // 🔥 통합 네비게이션 관련 새로운 상태
+  // 통합 네비게이션 관련 새로운 상태
   bool _isNavigationMode = false;
   List<Offset> _navigationPath = [];
   
-  // 🔥 검색 결과 자동 선택 관련 상태
+  // 검색 결과 자동 선택 관련 상태
   bool _shouldAutoSelectRoom = false;
   String? _autoSelectRoomId;
 
-// 🔥 5. initState 수정 - 로딩 시작 시 사용자에게 알림
-@override
-void initState() {
-  super.initState();
-  _isNavigationMode = widget.navigationNodeIds != null;
-  
-  // 🔥 검색 결과에서 온 경우 자동 선택 준비
-  _shouldAutoSelectRoom = widget.targetRoomId != null;
-  _autoSelectRoomId = widget.targetRoomId;
-  
-  // 🔥 로딩 시작 알림
-  if (_shouldAutoSelectRoom && widget.targetRoomId != null) {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+  // 디버깅 정보를 UI에 표시하기 위한 변수들
+  String _debugInfo = '';
+  bool _showDebugInfo = true;
+
+  // Release 모드 체크
+  bool get isReleaseMode {
+    bool inDebugMode = false;
+    assert(inDebugMode = true);
+    return !inDebugMode;
+  }
+
+  // 디버깅 정보 추가 메서드
+  void _addDebugInfo(String info) {
+    if (_showDebugInfo) {
+      setState(() {
+        _debugInfo += '${DateTime.now().toString().substring(11, 19)}: $info\n';
+      });
+      // 너무 길어지면 앞부분 삭제
+      if (_debugInfo.length > 2000) {
+        _debugInfo = _debugInfo.substring(1000);
+      }
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _isNavigationMode = widget.navigationNodeIds != null;
+    
+    // 검색 결과에서 온 경우 자동 선택 준비
+    _shouldAutoSelectRoom = widget.targetRoomId != null;
+    _autoSelectRoomId = widget.targetRoomId;
+    
+    // 로딩 시작 알림
+    if (_shouldAutoSelectRoom && widget.targetRoomId != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Text('${widget.targetRoomId} 호실 지도를 불러오는 중...'),
-              ],
-            ),
-            duration: const Duration(seconds: 5),
-            backgroundColor: Colors.indigo,
-          ),
-        );
-      }
-    });
-  }
-  
-  if (_isNavigationMode && widget.navigationNodeIds!.isNotEmpty) {
-    // 네비게이션 모드: 첫 번째 층만 지목해서 로드
-    final firstNode = widget.navigationNodeIds!.firstWhere((id) => id.contains('@'), orElse: () => '');
-    final floorNum = firstNode.split('@').length >= 2 ? firstNode.split('@')[1] : '1';
-    _loadFloorList(widget.buildingName, targetFloorNumber: floorNum);
-  } else {
-    // 🔥 일반 모드: 타겟 층이 있으면 해당 층, 없으면 첫 번째 층 자동 로드
-    final targetFloor = widget.targetFloorNumber?.toString();
-    _loadFloorList(widget.buildingName, targetFloorNumber: targetFloor);
-  }
-  
-  if (_isNavigationMode) {
-    _setupNavigationMode();
-  }
-}
-
-  // 🔥 검색 결과 호실 자동 선택 처리
-  // 🔥 1. _handleAutoRoomSelection 메서드 수정 - 타이밍 최적화
-void _handleAutoRoomSelection() {
-  if (!_shouldAutoSelectRoom || _autoSelectRoomId == null || _buttonData.isEmpty) {
-    return;
-  }
-
-  debugPrint('🎯 자동 호실 선택 시도: $_autoSelectRoomId');
-
-  // 'R' 접두사 확인 및 추가
-  final targetRoomId = _autoSelectRoomId!.startsWith('R') 
-      ? _autoSelectRoomId! 
-      : 'R$_autoSelectRoomId';
-
-  // 버튼 데이터에서 해당 호실 찾기
-  final targetButton = _buttonData.firstWhere(
-    (button) => button['id'] == targetRoomId,
-    orElse: () => <String, dynamic>{},
-  );
-
-  if (targetButton.isNotEmpty) {
-    debugPrint('✅ 자동 선택할 호실 찾음: $targetRoomId');
-    
-    // 🔥 즉시 호실 하이라이트 (포커스 전에)
-    setState(() {
-      _selectedRoomId = targetRoomId;
-    });
-    
-    // 🔥 로딩 표시 추가
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const SizedBox(
-              width: 16,
-              height: 16,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  const SizedBox(width: 12),
+                  Text('${widget.targetRoomId} 호실 지도를 불러오는 중...'),
+                ],
               ),
+              duration: const Duration(seconds: 5),
+              backgroundColor: Colors.indigo,
             ),
-            const SizedBox(width: 12),
-            Text('$_autoSelectRoomId 호실을 찾는 중...'),
-          ],
-        ),
-        duration: const Duration(milliseconds: 1500),
-        backgroundColor: Colors.blue,
-      ),
-    );
-    
-    // 🔥 포커스를 더 빨리, 더 부드럽게
-    Future.delayed(const Duration(milliseconds: 100), () {
-      if (mounted) {
-        _focusOnRoom(targetButton);
-      }
-    });
-    
-    // 🔥 호실 정보 시트는 포커스 완료 후
-    Future.delayed(const Duration(milliseconds: 800), () {
-      if (mounted) {
-        ScaffoldMessenger.of(context).hideCurrentSnackBar();
-        _showRoomInfoSheet(context, targetRoomId);
-      }
-    });
-    
-    // 자동 선택 완료 처리
-    _shouldAutoSelectRoom = false;
-    _autoSelectRoomId = null;
-  } else {
-    debugPrint('❌ 자동 선택할 호실을 찾지 못함: $targetRoomId');
-    
-    // 호실을 찾지 못한 경우 사용자에게 알림
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('호실 $_autoSelectRoomId을(를) 찾을 수 없습니다.'),
-            backgroundColor: Colors.orange,
-            duration: const Duration(seconds: 3),
-          ),
-        );
-      }
-    });
-    
-    _shouldAutoSelectRoom = false;
-    _autoSelectRoomId = null;
-  }
-}
-
-// 🔥 2. _focusOnRoom 메서드 수정 - 더 부드러운 포커스
-void _focusOnRoom(Map<String, dynamic> roomButton) {
-  try {
-    // 호실의 중심점 계산
-    Rect bounds;
-    if (roomButton['type'] == 'path') {
-      bounds = (roomButton['path'] as Path).getBounds();
-    } else {
-      bounds = roomButton['rect'] as Rect;
+          );
+        }
+      });
     }
     
-    final centerX = bounds.center.dx;
-    final centerY = bounds.center.dy;
+    if (_isNavigationMode && widget.navigationNodeIds!.isNotEmpty) {
+      // 네비게이션 모드: 첫 번째 층만 지목해서 로드
+      final firstNode = widget.navigationNodeIds!.firstWhere((id) => id.contains('@'), orElse: () => '');
+      final floorNum = firstNode.split('@').length >= 2 ? firstNode.split('@')[1] : '1';
+      _loadFloorList(widget.buildingName, targetFloorNumber: floorNum);
+    } else {
+      // 일반 모드: 타겟 층이 있으면 해당 층, 없으면 첫 번째 층 자동 로드
+      final targetFloor = widget.targetFloorNumber?.toString();
+      _loadFloorList(widget.buildingName, targetFloorNumber: targetFloor);
+    }
     
-    debugPrint('📍 호실 중심점: ($centerX, $centerY)');
-    
-    // 🔥 즉시 적용 (WidgetsBinding 제거)
-    final targetScale = 1.8; // 줌 레벨 살짝 줄임
-    final translation = Matrix4.identity()
-      ..scale(targetScale)
-      ..translate(-centerX + 150, -centerY + 150); // 오프셋 조정
-    
-    _transformationController.value = translation;
-    
-    // 🔥 리셋 시간 단축
-    _resetScaleAfterDelay(duration: 2000); // 2초로 단축
-    
-  } catch (e) {
-    debugPrint('❌ 호실 포커스 오류: $e');
+    if (_isNavigationMode) {
+      _setupNavigationMode();
+    }
   }
-}
 
-  // 🔥 기존 네비게이션 모드 설정
+  // 검색 결과 호실 자동 선택 처리
+  void _handleAutoRoomSelection() {
+    if (!_shouldAutoSelectRoom || _autoSelectRoomId == null || _buttonData.isEmpty) {
+      return;
+    }
+
+    debugPrint('🎯 자동 호실 선택 시도: $_autoSelectRoomId');
+    _addDebugInfo('🎯 자동 호실 선택 시도: $_autoSelectRoomId');
+
+    // 'R' 접두사 확인 및 추가
+    final targetRoomId = _autoSelectRoomId!.startsWith('R') 
+        ? _autoSelectRoomId! 
+        : 'R$_autoSelectRoomId';
+
+    // 버튼 데이터에서 해당 호실 찾기
+    final targetButton = _buttonData.firstWhere(
+      (button) => button['id'] == targetRoomId,
+      orElse: () => <String, dynamic>{},
+    );
+
+    if (targetButton.isNotEmpty) {
+      debugPrint('✅ 자동 선택할 호실 찾음: $targetRoomId');
+      _addDebugInfo('✅ 자동 선택할 호실 찾음: $targetRoomId');
+      
+      // 즉시 호실 하이라이트 (포커스 전에)
+      setState(() {
+        _selectedRoomId = targetRoomId;
+      });
+      
+      // 로딩 표시 추가
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text('$_autoSelectRoomId 호실을 찾는 중...'),
+            ],
+          ),
+          duration: const Duration(milliseconds: 1500),
+          backgroundColor: Colors.blue,
+        ),
+      );
+      
+      // 포커스를 더 빨리, 더 부드럽게
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (mounted) {
+          _focusOnRoom(targetButton);
+        }
+      });
+      
+      // 호실 정보 시트는 포커스 완료 후
+      Future.delayed(const Duration(milliseconds: 800), () {
+        if (mounted) {
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          _showRoomInfoSheet(context, targetRoomId);
+        }
+      });
+      
+      // 자동 선택 완료 처리
+      _shouldAutoSelectRoom = false;
+      _autoSelectRoomId = null;
+    } else {
+      debugPrint('❌ 자동 선택할 호실을 찾지 못함: $targetRoomId');
+      _addDebugInfo('❌ 자동 선택할 호실을 찾지 못함: $targetRoomId');
+      
+      // 호실을 찾지 못한 경우 사용자에게 알림
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('호실 $_autoSelectRoomId을(를) 찾을 수 없습니다.'),
+              backgroundColor: Colors.orange,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
+      });
+      
+      _shouldAutoSelectRoom = false;
+      _autoSelectRoomId = null;
+    }
+  }
+
+  // 더 부드러운 포커스
+  void _focusOnRoom(Map<String, dynamic> roomButton) {
+    try {
+      // 호실의 중심점 계산
+      Rect bounds;
+      if (roomButton['type'] == 'path') {
+        bounds = (roomButton['path'] as Path).getBounds();
+      } else {
+        bounds = roomButton['rect'] as Rect;
+      }
+      
+      final centerX = bounds.center.dx;
+      final centerY = bounds.center.dy;
+      
+      debugPrint('📍 호실 중심점: ($centerX, $centerY)');
+      _addDebugInfo('📍 호실 중심점: ($centerX, $centerY)');
+      
+      // 즉시 적용
+      final targetScale = 1.8; // 줌 레벨 살짝 줄임
+      final translation = Matrix4.identity()
+        ..scale(targetScale)
+        ..translate(-centerX + 150, -centerY + 150); // 오프셋 조정
+      
+      _transformationController.value = translation;
+      
+      // 리셋 시간 단축
+      _resetScaleAfterDelay(duration: 2000); // 2초로 단축
+      
+    } catch (e) {
+      debugPrint('❌ 호실 포커스 오류: $e');
+      _addDebugInfo('❌ 호실 포커스 오류: $e');
+    }
+  }
+
+  // 기존 네비게이션 모드 설정
   void _setupNavigationMode() {
     debugPrint('🧭 네비게이션 모드 설정');
     debugPrint('   노드 개수: ${widget.navigationNodeIds?.length}');
@@ -266,7 +294,7 @@ void _focusOnRoom(Map<String, dynamic> roomButton) {
     });
   }
 
-  // 🔥 네비게이션 경로 표시
+  // 네비게이션 경로 표시
   Future<void> _displayNavigationPath(List<String> nodeIds) async {
     try {
       debugPrint('🗺️ 네비게이션 경로 표시 시작: ${nodeIds.length}개 노드');
@@ -295,7 +323,7 @@ void _focusOnRoom(Map<String, dynamic> roomButton) {
     }
   }
 
-  // 🔥 네비게이션 경로에 포커스
+  // 네비게이션 경로에 포커스
   void _focusOnNavigationPath() {
     if (_navigationPath.isNotEmpty) {
       // 경로의 중심점 계산
@@ -307,7 +335,7 @@ void _focusOnRoom(Map<String, dynamic> roomButton) {
     }
   }
 
-  // 🔥 노드 ID를 Offset으로 변환 (개선된 버전)
+  // 노드 ID를 Offset으로 변환 (개선된 버전)
   List<Offset> _convertNodeIdsToOffsets(List<String> nodeIds, String floorNum, Map<String, Map<String, Offset>> floorNodesMap) {
     final floorNumStr = floorNum.toString();
     final nodeMap = floorNodesMap[floorNumStr] ?? {};
@@ -381,7 +409,7 @@ void _focusOnRoom(Map<String, dynamic> roomButton) {
     super.dispose();
   }
 
-  // 🔥 기존 _findAndDrawPath를 통합 API 사용으로 수정
+  // 기존 _findAndDrawPath를 통합 API 사용으로 수정
   Future<void> _findAndDrawPath() async {
     if (_startPoint == null || _endPoint == null) return;
 
@@ -394,7 +422,7 @@ void _focusOnRoom(Map<String, dynamic> roomButton) {
     });
 
     try {
-      // 🔥 통합 API 요청 준비
+      // 통합 API 요청 준비
       final fromBuilding = widget.buildingName;
       final fromFloor = int.parse(_startPoint!['floorNumber'].toString());
       final fromRoom = (_startPoint!['roomId'] as String).replaceFirst('R', '');
@@ -407,7 +435,7 @@ void _focusOnRoom(Map<String, dynamic> roomButton) {
       debugPrint('   출발: $fromBuilding $fromFloor층 $fromRoom호');
       debugPrint('   도착: $toBuilding $toFloor층 $toRoom호');
 
-      // 🔥 통합 경로 API 호출
+      // 통합 경로 API 호출
       final response = await UnifiedPathService.getPathBetweenRooms(
         fromBuilding: fromBuilding,
         fromFloor: fromFloor,
@@ -423,7 +451,7 @@ void _focusOnRoom(Map<String, dynamic> roomButton) {
 
       debugPrint('✅ 통합 API 응답: ${response.type}');
 
-      // 🔥 통합 응답 처리
+      // 통합 응답 처리
       await _processUnifiedPathResponse(response, fromFloor, toFloor);
 
     } catch (e) {
@@ -437,7 +465,7 @@ void _focusOnRoom(Map<String, dynamic> roomButton) {
     }
   }
 
-  // 🔥 통합 API 응답 처리 메서드
+  // 통합 API 응답 처리 메서드
   Future<void> _processUnifiedPathResponse(
     UnifiedPathResponse response, 
     int fromFloor, 
@@ -471,7 +499,7 @@ void _focusOnRoom(Map<String, dynamic> roomButton) {
     }
   }
 
-  // 🔥 호실 → 호실 응답 처리
+  // 호실 → 호실 응답 처리
   Future<void> _handleRoomToRoomResponse(
     PathResult result, 
     int fromFloor, 
@@ -499,7 +527,7 @@ void _focusOnRoom(Map<String, dynamic> roomButton) {
     }
   }
 
-  // 🔥 호실 → 건물 응답 처리
+  // 호실 → 건물 응답 처리
   Future<void> _handleRoomToBuildingResponse(PathResult result, int fromFloor) async {
     final departureIndoor = result.departureIndoor;
     final outdoor = result.outdoor;
@@ -516,7 +544,7 @@ void _focusOnRoom(Map<String, dynamic> roomButton) {
     }
   }
 
-  // 🔥 건물 → 호실 응답 처리
+  // 건물 → 호실 응답 처리
   Future<void> _handleBuildingToRoomResponse(PathResult result, int toFloor) async {
     final outdoor = result.outdoor;
     final arrivalIndoor = result.arrivalIndoor;
@@ -534,7 +562,7 @@ void _focusOnRoom(Map<String, dynamic> roomButton) {
     }
   }
 
-  // 🔥 건물 → 건물 응답 처리
+  // 건물 → 건물 응답 처리
   void _handleBuildingToBuildingResponse(PathResult result) {
     final outdoor = result.outdoor;
     
@@ -543,7 +571,7 @@ void _focusOnRoom(Map<String, dynamic> roomButton) {
     }
   }
 
-  // 🔥 실내 경로 처리
+  // 실내 경로 처리
   Future<void> _processIndoorPath(List<String> nodeIds, int floorNumber, bool isDeparture) async {
     debugPrint('🗺️ 실내 경로 처리: ${nodeIds.length}개 노드, 층: $floorNumber');
     
@@ -565,7 +593,7 @@ void _focusOnRoom(Map<String, dynamic> roomButton) {
     debugPrint('✅ 실내 경로 표시: ${pathOffsets.length}개 좌표');
   }
 
-  // 🔥 같은 건물 내 경로 처리
+  // 같은 건물 내 경로 처리
   Future<void> _processSameBuildingPath(List<String> nodeIds, int fromFloor, int toFloor) async {
     debugPrint('🏠 같은 건물 내 경로 처리');
     
@@ -604,7 +632,7 @@ void _focusOnRoom(Map<String, dynamic> roomButton) {
     }
   }
 
-  // 🔥 실외 전환 메시지 표시
+  // 실외 전환 메시지 표시
   void _showOutdoorTransitionMessage(OutdoorPathData outdoorData) {
     final coordinates = UnifiedPathService.extractOutdoorCoordinates(outdoorData);
     final distance = outdoorData.path.distance;
@@ -620,7 +648,7 @@ void _focusOnRoom(Map<String, dynamic> roomButton) {
     );
   }
 
-  // 🔥 네비게이션 완료 처리
+  // 네비게이션 완료 처리
   void _completeNavigation() {
     if (widget.navigationController != null) {
       // 통합 네비게이션 컨트롤러에 완료 신호
@@ -641,7 +669,7 @@ void _focusOnRoom(Map<String, dynamic> roomButton) {
       final floors = await _apiService.fetchFloorList(buildingName);
 
       if (mounted) {
-        // 🔥 navigationNodeIds에 포함된 층만 필터링
+        // navigationNodeIds에 포함된 층만 필터링
         final allowedFloors = widget.navigationNodeIds
             ?.map((id) => id.split('@')[1])
             .toSet();
@@ -679,53 +707,87 @@ void _focusOnRoom(Map<String, dynamic> roomButton) {
     }
   }
 
-  // 🔥 4. _loadMapData 메서드 수정 - 로딩 최적화
-Future<void> _loadMapData(Map<String, dynamic> floorInfo) async {
-  setState(() => _isMapLoading = true);
+  // Release 모드 최적화된 _loadMapData
+  Future<void> _loadMapData(Map<String, dynamic> floorInfo) async {
+    setState(() => _isMapLoading = true);
+    _addDebugInfo('🔥 지도 로딩 시작 (${isReleaseMode ? "Release" : "Debug"} 모드)');
 
-  try {
-    final svgUrl = floorInfo['File'] as String?;
-    if (svgUrl == null || svgUrl.isEmpty)
-      throw Exception('SVG URL이 유효하지 않습니다.');
+    try {
+      final svgUrl = floorInfo['File'] as String?;
+      if (svgUrl == null || svgUrl.isEmpty) {
+        throw Exception('SVG URL이 유효하지 않습니다.');
+      }
 
-    // 🔥 HTTP 요청 타임아웃 설정
-    final svgResponse = await http.get(
-      Uri.parse(svgUrl),
-    ).timeout(
-      const Duration(seconds: 10),
-      onTimeout: () {
-        throw Exception('SVG 로딩 시간 초과');
-      },
-    );
-    
-    if (svgResponse.statusCode != 200)
-      throw Exception('SVG 파일을 다운로드할 수 없습니다');
+      _addDebugInfo('📍 URL: ${svgUrl.substring(0, 50)}...');
 
-    final svgContent = svgResponse.body;
-    final buttons = SvgDataParser.parseButtonData(svgContent);
+      // Release 모드에서 캐시 무효화
+      final urlWithCache = isReleaseMode 
+          ? '$svgUrl?release=${DateTime.now().millisecondsSinceEpoch}'
+          : svgUrl;
 
-    if (mounted) {
-      setState(() {
-        _svgUrl = svgUrl;
-        _buttonData = buttons;
-        _isMapLoading = false;
-      });
+      final svgResponse = await http.get(
+        Uri.parse(urlWithCache),
+        headers: {
+          'Accept': 'image/svg+xml,*/*',
+          'User-Agent': 'FlutterApp/1.0 ${isReleaseMode ? "Release" : "Debug"}',
+          'Cache-Control': isReleaseMode 
+              ? 'no-cache, no-store, must-revalidate, max-age=0'
+              : 'no-cache',
+          'Pragma': 'no-cache',
+          'Expires': '0',
+        },
+      ).timeout(const Duration(seconds: 15));
       
-      // 🔥 지도 데이터 로드 완료 후 즉시 자동 호실 선택 처리
-      if (_shouldAutoSelectRoom) {
-        _handleAutoRoomSelection();
+      _addDebugInfo('📊 상태코드: ${svgResponse.statusCode}');
+      _addDebugInfo('📏 콘텐츠 길이: ${svgResponse.body.length}');
+      
+      if (svgResponse.statusCode == 200) {
+        final svgContent = svgResponse.body;
+        
+        if (svgContent.isEmpty) {
+          _addDebugInfo('❌ 빈 SVG 응답');
+          throw Exception('빈 SVG 응답');
+        }
+        
+        if (!svgContent.contains('<svg')) {
+          _addDebugInfo('❌ SVG 태그 없음');
+          throw Exception('올바르지 않은 SVG 형식');
+        }
+        
+        final buttons = SvgDataParser.parseButtonData(svgContent);
+        _addDebugInfo('🔥 버튼 파싱: ${buttons.length}개');
+
+        if (mounted) {
+          setState(() {
+            _svgUrl = urlWithCache; // 캐시 무효화된 URL 사용
+            _buttonData = buttons;
+            _isMapLoading = false;
+          });
+          
+          _addDebugInfo('✅ SVG 로딩 성공! (${isReleaseMode ? "Release" : "Debug"} 모드)');
+          
+          if (_shouldAutoSelectRoom) {
+            _handleAutoRoomSelection();
+          }
+        }
+      } else {
+        _addDebugInfo('❌ HTTP 에러: ${svgResponse.statusCode}');
+        throw Exception('HTTP ${svgResponse.statusCode}: ${svgResponse.reasonPhrase}');
+      }
+      
+    } catch (e) {
+      _addDebugInfo('❌ 에러: $e');
+      
+      if (mounted) {
+        setState(() {
+          _isMapLoading = false;
+          _error = '지도 로딩 실패: $e';
+        });
       }
     }
-  } catch (e) {
-    if (mounted) {
-      setState(() {
-        _isMapLoading = false;
-        _error = '지도 데이터를 불러오는 데 실패했습니다: $e';
-      });
-    }
   }
-}
 
+  // CORS 문제 해결을 위한 강화된 _loadNodesForFloor
   Future<void> _loadNodesForFloor(
     String floorNumber,
     Map<String, Map<String, Offset>> targetMap,
@@ -740,11 +802,34 @@ Future<void> _loadMapData(Map<String, dynamic> floorInfo) async {
     if (floorInfo != null) {
       final svgUrl = floorInfo['File'] as String?;
       if (svgUrl != null && svgUrl.isNotEmpty) {
-        final svgResponse = await http.get(Uri.parse(svgUrl));
-        if (svgResponse.statusCode == 200) {
-          targetMap[floorNumber] = SvgDataParser.parseAllNodes(
-            svgResponse.body,
+        try {
+          // CORS 문제 해결을 위한 헤더 추가
+          final svgResponse = await http.get(
+            Uri.parse(svgUrl),
+            headers: {
+              'Accept': '*/*',
+              'User-Agent': 'FlutterApp/1.0',
+              'Cache-Control': 'no-cache',
+              'Origin': 'https://flutter-app',
+              'Access-Control-Request-Method': 'GET',
+            },
+          ).timeout(
+            const Duration(seconds: 10),
+            onTimeout: () {
+              throw Exception('노드 로딩 시간 초과');
+            },
           );
+          
+          if (svgResponse.statusCode == 200) {
+            targetMap[floorNumber] = SvgDataParser.parseAllNodes(
+              svgResponse.body,
+            );
+            debugPrint('✅ 층 $floorNumber 노드 로딩 성공');
+          } else {
+            debugPrint('❌ 층 $floorNumber 노드 로딩 실패: ${svgResponse.statusCode}');
+          }
+        } catch (e) {
+          debugPrint('❌ 층 $floorNumber 노드 로딩 오류: $e');
         }
       }
     }
@@ -822,7 +907,7 @@ Future<void> _loadMapData(Map<String, dynamic> floorInfo) async {
     if (mounted) setState(() => _selectedRoomId = null);
   }
 
-  // 🔥 네비게이션 모드용 호실 정보 시트
+  // 네비게이션 모드용 호실 정보 시트
   void _showNavigationRoomSheet(BuildContext context, String roomId) {
     showModalBottomSheet(
       context: context,
@@ -893,178 +978,120 @@ Future<void> _loadMapData(Map<String, dynamic> floorInfo) async {
     });
   }
 
+  // 경로 정보 초기화 메서드
+  void _clearAllPathInfo() {
+    setState(() {
+      _startPoint = null;
+      _endPoint = null;
+      _departurePath = [];
+      _arrivalPath = [];
+      _currentShortestPath = [];
+      _navigationPath = [];
+      _transitionInfo = null;
+      _selectedRoomId = null;
+    });
+    
+    // 변환 컨트롤러 초기화
+    _transformationController.value = Matrix4.identity();
+    
+    debugPrint('🧹 모든 경로 정보가 초기화되었습니다');
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('경로가 초기화되었습니다'),
+        duration: Duration(seconds: 2),
+        backgroundColor: Colors.grey,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          _isNavigationMode 
-              ? '${widget.buildingName} 네비게이션'
-              : '${widget.buildingName} 실내 안내도'
-        ),
-        backgroundColor: _isNavigationMode ? Colors.blue : Colors.indigo,
+        title: Text('${widget.buildingName} 실내 안내도'),
+        backgroundColor: Colors.indigo,
         actions: [
-          if (_isNavigationMode) ...[
-            IconButton(
-              icon: const Icon(Icons.check_circle),
-              onPressed: _completeNavigation,
-              tooltip: '네비게이션 완료',
-            ),
-          ] else ...[
-            IconButton(
-              icon: const Icon(Icons.refresh),
-              onPressed: _clearAllPathInfo,
-              tooltip: '초기화',
-            ),
-          ],
+          IconButton(
+            icon: Icon(Icons.bug_report),
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: Text('디버깅 정보'),
+                  content: Container(
+                    width: double.maxFinite,
+                    height: 400,
+                    child: SingleChildScrollView(
+                      child: Text(_debugInfo.isEmpty ? '로그 없음' : _debugInfo),
+                    ),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: Text('닫기'),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
         ],
       ),
       body: Stack(
         children: [
-          Center(child: _buildBodyContent()),
-          if (!_isFloorListLoading && _error == null)
-            Positioned(left: 16, bottom: 120, child: _buildFloorSelector()),
-          _buildPathInfo(),
-          _buildTransitionPrompt(),
-          if (_isNavigationMode) _buildNavigationStatus(),
-          // 🔥 자동 선택 진행 중일 때 로딩 표시
-          if (_shouldAutoSelectRoom) _buildAutoSelectionIndicator(),
+          // 메인 콘텐츠 영역
+          Positioned.fill(
+            child: _buildBodyContentWithRealButtons(),
+          ),
+          
+          // 층 선택 버튼 (왼쪽 하단, 세로 배치)
+          if (_floorList.length > 1)
+            Positioned(
+              left: 16,
+              bottom: 120,
+              child: Card(
+                elevation: 4,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
+                  child: Column(
+                    children: _floorList.reversed.map((floor) {
+                      final bool isSelected =
+                          _selectedFloor?['Floor_Id'] == floor['Floor_Id'];
+                      return GestureDetector(
+                        onTap: () => _onFloorChanged(floor),
+                        child: Container(
+                          margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? (_isNavigationMode ? Colors.blue.withOpacity(0.8) : Colors.indigo.withOpacity(0.8))
+                                : Colors.transparent,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            '${floor['Floor_Number']}F',
+                            style: TextStyle(
+                              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                              color: isSelected ? Colors.white : Colors.black87,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );
   }
 
-
-  // building_map_page.dart에 추가해야 할 누락된 메서드들
-
-// 🔥 경로 정보 초기화 메서드
-void _clearAllPathInfo() {
-  setState(() {
-    _startPoint = null;
-    _endPoint = null;
-    _departurePath = [];
-    _arrivalPath = [];
-    _currentShortestPath = [];
-    _navigationPath = [];
-    _transitionInfo = null;
-    _selectedRoomId = null;
-  });
-  
-  // 변환 컨트롤러 초기화
-  _transformationController.value = Matrix4.identity();
-  
-  debugPrint('🧹 모든 경로 정보가 초기화되었습니다');
-  
-  ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(
-      content: Text('경로가 초기화되었습니다'),
-      duration: Duration(seconds: 2),
-      backgroundColor: Colors.grey,
-    ),
-  );
-}
-
-
-  // 🔥 자동 선택 진행 중 표시 위젯
-  Widget _buildAutoSelectionIndicator() {
-    return Positioned(
-      top: 100,
-      left: 16,
-      right: 16,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.blue.withOpacity(0.9),
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.2),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            const SizedBox(
-              width: 20,
-              height: 20,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                '호실 $_autoSelectRoomId을(를) 찾는 중...',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // 🔥 네비게이션 상태 표시 위젯
-  Widget _buildNavigationStatus() {
-    return Positioned(
-      top: 16,
-      left: 16,
-      right: 16,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.blue.withOpacity(0.9),
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.2),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Icon(
-              widget.isArrivalNavigation ? Icons.location_on : Icons.my_location,
-              color: Colors.white,
-              size: 24,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                widget.isArrivalNavigation 
-                    ? '목적지 건물 내부 안내'
-                    : '출발지에서 건물 출구까지',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-            TextButton(
-              onPressed: _completeNavigation,
-              style: TextButton.styleFrom(
-                backgroundColor: Colors.white.withOpacity(0.2),
-                foregroundColor: Colors.white,
-              ),
-              child: const Text('완료'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBodyContent() {
+  // Stack 최소화된 메인 콘텐츠
+  Widget _buildBodyContentWithRealButtons() {
     if (_isFloorListLoading)
       return const Center(child: Text('층 목록을 불러오는 중...'));
     if (_error != null) {
@@ -1081,350 +1108,174 @@ void _clearAllPathInfo() {
     }
     if (_isMapLoading) return const Center(child: CircularProgressIndicator());
     if (_svgUrl == null) return const Center(child: Text('층을 선택해주세요.'));
-    return _buildMapView();
-  }
+    
+    const double svgWidth = 210, svgHeight = 297;
+    
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final baseScale = min(
+          constraints.maxWidth / svgWidth,
+          constraints.maxHeight / svgHeight,
+        );
+        final totalScale = baseScale * 1.0;
+        final svgDisplayWidth = svgWidth * totalScale * svgScale;
+        final svgDisplayHeight = svgHeight * totalScale * svgScale;
+        final leftOffset = (constraints.maxWidth - svgDisplayWidth) / 2;
+        final topOffset = (constraints.maxHeight - svgDisplayHeight) / 2;
 
-  // 🔥 수정된 _buildMapView - 레이어 순서 완전 변경
-  // 🔥 6. SVG 로딩 상태 개선을 위한 _buildMapView 수정
-Widget _buildMapView() {
-  const double svgWidth = 210, svgHeight = 297;
+        return InteractiveViewer(
+          transformationController: _transformationController,
+          minScale: 0.5,
+          maxScale: 4.0,
+          onInteractionEnd: (details) => _resetScaleAfterDelay(),
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTapDown: (TapDownDetails details) {
+              final Offset scenePoint = _transformationController.toScene(
+                details.localPosition,
+              );
+              final Offset svgTapPosition = Offset(
+                (scenePoint.dx - leftOffset) / (totalScale * svgScale),
+                (scenePoint.dy - topOffset) / (totalScale * svgScale),
+              );
 
-  return LayoutBuilder(
-    builder: (context, constraints) {
-      final baseScale = min(
-        constraints.maxWidth / svgWidth,
-        constraints.maxHeight / svgHeight,
-      );
-      final totalScale = baseScale * 1.0;
-      final svgDisplayWidth = svgWidth * totalScale * svgScale;
-      final svgDisplayHeight = svgHeight * totalScale * svgScale;
-      final leftOffset = (constraints.maxWidth - svgDisplayWidth) / 2;
-      final topOffset = (constraints.maxHeight - svgDisplayHeight) / 2;
+              _addDebugInfo('👆 터치: ${svgTapPosition.dx.toInt()}, ${svgTapPosition.dy.toInt()}');
 
-      return InteractiveViewer(
-        transformationController: _transformationController,
-        minScale: 0.5,
-        maxScale: 4.0,
-        onInteractionEnd: (details) => _resetScaleAfterDelay(),
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTapDown: (TapDownDetails details) {
-            final Offset scenePoint = _transformationController.toScene(
-              details.localPosition,
-            );
-            final Offset svgTapPosition = Offset(
-              (scenePoint.dx - leftOffset) / (totalScale * svgScale),
-              (scenePoint.dy - topOffset) / (totalScale * svgScale),
-            );
-
-            for (var button in _buttonData.reversed) {
-              bool isHit = false;
-              if (button['type'] == 'path') {
-                isHit = (button['path'] as Path).contains(svgTapPosition);
-              } else {
-                isHit = (button['rect'] as Rect).contains(svgTapPosition);
-              }
-              if (isHit) {
-                _showRoomInfoSheet(context, button['id']);
-                break;
-              }
-            }
-          },
-          child: SizedBox(
-            width: constraints.maxWidth,
-            height: constraints.maxHeight,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                // 🔥 1. SVG 도면 - 로딩 최적화
-                Positioned(
-                 left: leftOffset,
-                 top: topOffset,
-                 child: SvgPicture.network(
-                   _svgUrl!,
-                   width: svgDisplayWidth,
-                   height: svgDisplayHeight,
-                   placeholderBuilder: (context) => Container(
-                     width: svgDisplayWidth,
-                     height: svgDisplayHeight,
-                     color: Colors.grey.shade100,
-                     child: Center(
-                       child: Column(
-                         mainAxisAlignment: MainAxisAlignment.center,
-                         children: [
-                           const CircularProgressIndicator(
-                             color: Colors.indigo,
-                           ),
-                           const SizedBox(height: 16),
-                           Text(
-                             '지도를 불러오는 중...',
-                             style: TextStyle(
-                               color: Colors.grey.shade600,
-                               fontSize: 14,
-                             ),
-                           ),
-                         ],
-                       ),
-                     ),
-                   ),
-                 ),
-                ),
+              for (var button in _buttonData.reversed) {
+                bool isHit = false;
+                if (button['type'] == 'path') {
+                  isHit = (button['path'] as Path).contains(svgTapPosition);
+                } else {
+                  isHit = (button['rect'] as Rect).contains(svgTapPosition);
+                }
                 
-                // 🔥 2. 경로 표시 - SVG 위에 오버레이
-                if (_currentShortestPath.isNotEmpty || _navigationPath.isNotEmpty)
-                  Positioned(
-                    left: leftOffset,
-                    top: topOffset,
-                    child: IgnorePointer(
-                      child: CustomPaint(
-                        size: Size(svgDisplayWidth, svgDisplayHeight),
-                        painter: PathPainter(
-                          pathPoints: _navigationPath.isNotEmpty 
-                              ? _navigationPath 
-                              : _currentShortestPath,
-                          scale: totalScale * svgScale,
-                          pathColor: _isNavigationMode ? Colors.blue : null,
-                        ),
-                      ),
-                    ),
-                  ),
-                
-                // 🔥 3. 선택된 호실 하이라이트만 - 경로 위에 오버레이
-                if (_selectedRoomId != null)
-                  ..._buttonData.where((button) => button['id'] == _selectedRoomId).map((button) {
-                    final Rect bounds = button['type'] == 'path'
-                        ? (button['path'] as Path).getBounds()
-                        : button['rect'];
-                    final scaledRect = Rect.fromLTWH(
-                      leftOffset + bounds.left * totalScale * svgScale,
-                      topOffset + bounds.top * totalScale * svgScale,
-                      bounds.width * totalScale * svgScale,
-                      bounds.height * totalScale * svgScale,
-                    );
-                    
-                    return Positioned.fromRect(
-                      rect: scaledRect,
-                      child: IgnorePointer(
-                        child: CustomPaint(
-                          painter: RoomShapePainter(
-                            isSelected: true,
-                            shape: button['path'] ?? button['rect'],
-                          ),
-                          size: scaledRect.size,
-                        ),
-                      ),
-                    );
-                  }).toList(),
-              ],
-            ),
-          ),
-        ),
-      );
-    },
-  );
-}
-
-  Widget _buildTransitionPrompt() {
-    String? promptText;
-    if (_transitionInfo != null &&
-        _selectedFloor?['Floor_Number'].toString() ==
-            _transitionInfo!['from']) {
-      promptText = '${_transitionInfo!['to']}층으로 이동하세요';
-    }
-
-    return AnimatedOpacity(
-      opacity: _showTransitionPrompt && promptText != null ? 1.0 : 0.0,
-      duration: const Duration(milliseconds: 500),
-      child: IgnorePointer(
-        child: Positioned(
-          bottom: 200,
-          left: 0,
-          right: 0,
-          child: Center(
-            child: Card(
-              color: Colors.redAccent,
-              elevation: 8,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 12,
-                ),
-                child: Text(
-                  promptText ?? '',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
+                if (isHit) {
+                  _addDebugInfo('✅ 터치된 호실: ${button['id']}');
+                  _showRoomInfoSheet(context, button['id']);
+                  break;
+                }
+              }
+            },
+            child: Container(
+              width: constraints.maxWidth,
+              height: constraints.maxHeight,
+              color: Colors.grey.shade100,
+              child: Center(
+                child: Container(
+                  width: svgDisplayWidth,
+                  height: svgDisplayHeight,
+                  decoration: BoxDecoration(
                     color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
+                    border: Border.all(color: Colors.grey.shade300),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Stack(
+                      children: [
+                        // SVG 렌더링 (Stack 안에서만)
+                        Positioned.fill(
+                          child: SvgPicture.network(
+                            _svgUrl!,
+                            fit: BoxFit.contain,
+                            headers: {
+                              'Accept': 'image/svg+xml,*/*',
+                              'User-Agent': 'FlutterApp/1.0',
+                            },
+                            placeholderBuilder: (context) => Container(
+                              color: Colors.yellow.shade100,
+                              child: Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    CircularProgressIndicator(color: Colors.blue),
+                                    SizedBox(height: 8),
+                                    Text('지도 로딩중...', style: TextStyle(color: Colors.blue)),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            errorBuilder: (context, error, stackTrace) {
+                              _addDebugInfo('❌ SVG 에러: $error');
+                              return Container(
+                                color: Colors.red.shade100,
+                                child: Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(Icons.error, color: Colors.red, size: 32),
+                                      SizedBox(height: 8),
+                                      Text('SVG 로딩 실패', style: TextStyle(color: Colors.red)),
+                                      SizedBox(height: 8),
+                                      ElevatedButton(
+                                        onPressed: () => _loadMapData(_selectedFloor!),
+                                        child: Text('재시도'),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                        
+                        // 경로 표시 (단순화)
+                        if (_currentShortestPath.isNotEmpty || _navigationPath.isNotEmpty)
+                          Positioned.fill(
+                            child: CustomPaint(
+                              painter: PathPainter(
+                                pathPoints: _navigationPath.isNotEmpty 
+                                    ? _navigationPath 
+                                    : _currentShortestPath,
+                                scale: totalScale * svgScale,
+                                pathColor: _isNavigationMode ? Colors.blue : Colors.red,
+                              ),
+                            ),
+                          ),
+                        
+                        // 선택된 호실 하이라이트
+                        if (_selectedRoomId != null)
+                          ..._buttonData.where((button) => button['id'] == _selectedRoomId).map((button) {
+                            final Rect bounds = button['type'] == 'path'
+                                ? (button['path'] as Path).getBounds()
+                                : button['rect'];
+                            final scaledRect = Rect.fromLTWH(
+                              bounds.left * totalScale * svgScale,
+                              bounds.top * totalScale * svgScale,
+                              bounds.width * totalScale * svgScale,
+                              bounds.height * totalScale * svgScale,
+                            );
+                            
+                            return Positioned.fromRect(
+                              rect: scaledRect,
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.blue.withOpacity(0.3),
+                                  border: Border.all(color: Colors.blue, width: 2),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                      ],
+                    ),
                   ),
                 ),
               ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
-  Widget _buildFloorSelector() {
-    // 🔥 층이 하나뿐이면 버튼 숨김
-    if (_floorList.length <= 1) return const SizedBox();
-
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
-        child: Column(
-          children: _floorList.reversed.map((floor) {
-            final bool isSelected =
-                _selectedFloor?['Floor_Id'] == floor['Floor_Id'];
-            return GestureDetector(
-              onTap: () => _onFloorChanged(floor),
-              child: Container(
-                margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? (_isNavigationMode ? Colors.blue.withOpacity(0.8) : Colors.indigo.withOpacity(0.8))
-                      : Colors.transparent,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  '${floor['Floor_Number']}F',
-                  style: TextStyle(
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                    color: isSelected ? Colors.white : Colors.black87,
-                    fontSize: 16,
-                  ),
-                ),
-              ),
-            );
-          }).toList(),
-        ),
-      ),
-    );
+  // 시간 조정 가능한 _resetScaleAfterDelay
+  void _resetScaleAfterDelay({int duration = 3000}) {
+    _resetTimer?.cancel();
+    _resetTimer = Timer(Duration(milliseconds: duration), () {
+      if (mounted) {
+        _transformationController.value = Matrix4.identity();
+      }
+    });
   }
-
-  @override
-  void didUpdateWidget(covariant BuildingMapPage oldWidget) {
-    super.didUpdateWidget(oldWidget);
-
-    if (widget.navigationNodeIds != null &&
-        widget.navigationNodeIds != oldWidget.navigationNodeIds &&
-        widget.navigationNodeIds!.isNotEmpty) {
-      final firstNode = widget.navigationNodeIds!.firstWhere(
-        (id) => id.contains('@'),
-        orElse: () => '',
-      );
-      final floorNum = firstNode.split('@').length >= 2 ? firstNode.split('@')[1] : '1';
-
-      _loadFloorList(widget.buildingName, targetFloorNumber: floorNum);
-    }
-  }
-
-  Widget _buildPathInfo() {
-    // 🔥 네비게이션 모드에서는 다른 정보 표시
-    if (_isNavigationMode) {
-      return Positioned(
-        bottom: 16,
-        left: 16,
-        right: 16,
-        child: Card(
-          elevation: 6,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.navigation,
-                      color: Colors.blue,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      '네비게이션 진행 중',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.blue[700],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  widget.isArrivalNavigation 
-                      ? '목적지 건물 내부를 안내합니다'
-                      : '건물 출구까지 안내합니다',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[600],
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-    }
-
-    // 기존 경로 정보 표시
-    return Positioned(
-      bottom: 16,
-      left: 16,
-      right: 16,
-      child: Card(
-        elevation: 6,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        child: Padding(
-          padding: const EdgeInsets.all(12.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildPointInfo("출발", _startPoint?['roomId'], Colors.green),
-              const Icon(Icons.arrow_forward_rounded, color: Colors.grey),
-              _buildPointInfo("도착", _endPoint?['roomId'], Colors.blue),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPointInfo(String title, String? id, Color color) {
-    return Column(
-      children: [
-        Text(title, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-        const SizedBox(height: 4),
-        Text(
-          id ?? '미지정',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: color,
-          ),
-        ),
-      ],
-    );
-  }
-
-  // 🔥 3. _resetScaleAfterDelay 메서드 수정 - 시간 조정 가능
-void _resetScaleAfterDelay({int duration = 3000}) {
-  _resetTimer?.cancel();
-  _resetTimer = Timer(Duration(milliseconds: duration), () {
-    if (mounted) {
-      _transformationController.value = Matrix4.identity();
-    }
-  });
-}
 }
