@@ -617,5 +617,176 @@
   "floor_number": "Floor",
   "room_name": "Room",
   "overlap_message": "A class is already registered at this time.",
-  "memo": "Memo"
+  "memo": "Memo",
+  "friendManagement": "Friend Management",
+  "friendManagementAndRequests": "Friend Management and Requests",
+  "showLocation": "Show Location",
+  "removeLocation": "Remove Location",
+  "accept": "Accept",
+  "reject": "Reject",
+  "id": "ID",
+  "contact": "Contact",
+  "lastLocation": "Last Location",
+  "noLocationInfo": "No location info",
+  "noContactInfo": "No info",
+  
+  "friendRequestSent": "Friend request sent to {name}!",
+  "@friendRequestSent": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "friendRequestAccepted": "Accepted friend request from {name}.",
+  "@friendRequestAccepted": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "friendRequestRejected": "Rejected friend request from {name}.",
+  "@friendRequestRejected": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "friendRequestCanceled": "Canceled friend request to {name}.",
+  "@friendRequestCanceled": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "friendDeleted": "Removed {name} from friends list.",
+  "@friendDeleted": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "friendLocationShown": "{name}'s location is now shown on the map.",
+  "@friendLocationShown": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "friendLocationRemoved": "{name}'s location has been removed from the map.",
+  "@friendLocationRemoved": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "friendCount": "My Friends ({count})",
+  "@friendCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  
+  "sentRequestsCount": "Sent ({count})",
+  "@sentRequestsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  
+  "receivedRequestsCount": "Received ({count})",
+  "@receivedRequestsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  
+  "newFriendRequests": "{count} new friend requests",
+  "@newFriendRequests": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  
+  "addFriend": "Add",
+  "sent": "Sent",
+  "received": "Received",
+  "sendFriendRequest": "Send Friend Request",
+  "friendId": "Friend ID",
+  "enterFriendId": "Enter friend's ID",
+  "enterFriendIdPrompt": "Please enter the ID of the friend you want to add",
+  
+  "errorEnterFriendId": "Please enter a friend ID.",
+  "errorCannotAddSelf": "You cannot add yourself as a friend.",
+  "errorAddFriend": "An error occurred while adding friend.",
+  "errorNetworkError": "A network error occurred. Please try again.",
+  "errorCannotShowLocation": "Cannot show friend's location.",
+  "errorCannotRemoveLocation": "Cannot remove friend's location.",
+  
+  "realTimeSyncActive": "Real-time sync active • Updates automatically",
+  "realTimeSyncStatus": "Real-time sync active • {time}",
+  "@realTimeSyncStatus": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "noSentRequests": "No sent friend requests.",
+  "noReceivedRequests": "No received friend requests.",
+  "noFriends": "You don't have any friends yet.\nTap the + button above to add friends!",
+  
+  "cancelFriendRequest": "Cancel Friend Request",
+  "cancelFriendRequestConfirm": "Are you sure you want to cancel the friend request to {name}?",
+  "@cancelFriendRequestConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "deleteFriend": "Delete Friend",
+  "deleteFriendConfirm": "Are you sure you want to remove {name} from your friends list?",
+  "@deleteFriendConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "cancelRequest": "Cancel",
+  "requestDate": "Request date: {date}",
+  "@requestDate": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "newBadge": "NEW"
 }

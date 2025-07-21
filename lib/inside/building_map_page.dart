@@ -1040,6 +1040,33 @@ Widget build(BuildContext context) {
     body: Stack(
       children: [
         Center(child: _buildBodyContent()),
+        
+        // 🔥 뒤로가기 버튼 추가
+        Positioned(
+          top: MediaQuery.of(context).padding.top + 16,
+          left: 16,
+          child: SafeArea(
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.9),
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: IconButton(
+                icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black87),
+                onPressed: () => Navigator.of(context).pop(),
+                padding: const EdgeInsets.all(12),
+              ),
+            ),
+          ),
+        ),
+        
         if (!_isFloorListLoading && _error == null)
           Positioned(left: 16, bottom: 120, child: _buildFloorSelector()),
         _buildPathInfo(),

@@ -516,5 +516,176 @@
   "floor_number": "층",
   "room_name": "강의실",
   "overlap_message": "이미 같은 시간에 등록된 수업이 있습니다.",
-  "memo": "메모"
+  "memo": "메모",
+  "friendManagement": "친구 관리 및 요청",
+  "friendManagementAndRequests": "친구 관리 및 요청",
+  "showLocation": "위치 보기",
+  "removeLocation": "위치 제거",
+  "accept": "수락",
+  "reject": "거절",
+  "id": "ID",
+  "contact": "연락처",
+  "lastLocation": "마지막 위치",
+  "noLocationInfo": "위치 정보 없음",
+  "noContactInfo": "정보 없음",
+  
+  "friendRequestSent": "{name}님에게 친구 요청을 전송했습니다!",
+  "@friendRequestSent": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "friendRequestAccepted": "{name}님의 친구 요청을 수락했습니다.",
+  "@friendRequestAccepted": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "friendRequestRejected": "{name}님의 친구 요청을 거절했습니다.",
+  "@friendRequestRejected": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "friendRequestCanceled": "{name}님에게 보낸 친구 요청을 취소했습니다.",
+  "@friendRequestCanceled": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "friendDeleted": "{name}님을 친구 목록에서 삭제했습니다.",
+  "@friendDeleted": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "friendLocationShown": "{name}님의 위치를 지도에 표시했습니다.",
+  "@friendLocationShown": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "friendLocationRemoved": "{name}님의 위치를 지도에서 제거했습니다.",
+  "@friendLocationRemoved": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "friendCount": "내 친구 ({count})",
+  "@friendCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  
+  "sentRequestsCount": "보낸 ({count})",
+  "@sentRequestsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  
+  "receivedRequestsCount": "받은 ({count})",
+  "@receivedRequestsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  
+  "newFriendRequests": "새로운 친구 요청 {count}개",
+  "@newFriendRequests": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  
+  "addFriend": "추가",
+  "sent": "보낸",
+  "received": "받은",
+  "sendFriendRequest": "친구 요청 보내기",
+  "friendId": "친구 ID",
+  "enterFriendId": "상대방 ID를 입력하세요",
+  "enterFriendIdPrompt": "추가할 친구의 ID를 입력해주세요",
+  
+  "errorEnterFriendId": "친구 ID를 입력해주세요.",
+  "errorCannotAddSelf": "자기 자신은 친구로 추가할 수 없습니다.",
+  "errorAddFriend": "친구 추가 중 오류가 발생했습니다.",
+  "errorNetworkError": "네트워크 오류가 발생했습니다. 다시 시도해주세요.",
+  "errorCannotShowLocation": "친구 위치를 표시할 수 없습니다.",
+  "errorCannotRemoveLocation": "친구 위치를 제거할 수 없습니다.",
+  
+  "realTimeSyncActive": "실시간 동기화 중 • 자동으로 업데이트됩니다",
+  "realTimeSyncStatus": "실시간 동기화 활성 • {time}",
+  "@realTimeSyncStatus": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "noSentRequests": "보낸 친구 요청이 없습니다.",
+  "noReceivedRequests": "받은 친구 요청이 없습니다.",
+  "noFriends": "아직 친구가 없습니다.\n상단의 + 버튼으로 친구를 추가해보세요!",
+  
+  "cancelFriendRequest": "친구 요청 취소",
+  "cancelFriendRequestConfirm": "{name}님에게 보낸 친구 요청을 취소하시겠습니까?",
+  "@cancelFriendRequestConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "deleteFriend": "친구 삭제",
+  "deleteFriendConfirm": "{name}님을 친구 목록에서 삭제하시겠습니까?",
+  "@deleteFriendConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "cancelRequest": "취소하기",
+  "requestDate": "요청일: {date}",
+  "@requestDate": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "newBadge": "NEW"
 }

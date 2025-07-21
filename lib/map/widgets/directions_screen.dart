@@ -10,7 +10,6 @@ import 'package:flutter_application_1/map/building_data.dart';
 import 'package:flutter_application_1/managers/location_manager.dart';
 import 'package:flutter_application_1/unified_navigation_stepper_page.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:flutter_application_1/services/unified_path_service.dart';
 
 class DirectionsScreen extends StatefulWidget {
@@ -633,13 +632,13 @@ int _safeExtractFloorNumber(Map<String, dynamic> roomInfo, String key) {
     double totalDistance = 0;
     
     // 🔥 null 체크 강화
-    if (response.result.departureIndoor?.path?.distance != null) {
+    if (response.result.departureIndoor?.path.distance != null) {
       totalDistance += response.result.departureIndoor!.path.distance;
     }
-    if (response.result.outdoor?.path?.distance != null) {
+    if (response.result.outdoor?.path.distance != null) {
       totalDistance += response.result.outdoor!.path.distance;
     }
-    if (response.result.arrivalIndoor?.path?.distance != null) {
+    if (response.result.arrivalIndoor?.path.distance != null) {
       totalDistance += response.result.arrivalIndoor!.path.distance;
     }
     

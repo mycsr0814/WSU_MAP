@@ -516,5 +516,176 @@
   "floor_number": "楼层",
   "room_name": "教室",
   "overlap_message": "在该时间已注册课程。",
-  "memo": "备注"
+  "memo": "备注",
+  "friendManagement": "朋友管理",
+  "friendManagementAndRequests": "朋友管理和请求",
+  "showLocation": "显示位置",
+  "removeLocation": "移除位置",
+  "accept": "接受",
+  "reject": "拒绝",
+  "id": "ID",
+  "contact": "联系方式",
+  "lastLocation": "最后位置",
+  "noLocationInfo": "无位置信息",
+  "noContactInfo": "无信息",
+  
+  "friendRequestSent": "已向{name}发送好友请求！",
+  "@friendRequestSent": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "friendRequestAccepted": "已接受{name}的好友请求。",
+  "@friendRequestAccepted": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "friendRequestRejected": "已拒绝{name}的好友请求。",
+  "@friendRequestRejected": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "friendRequestCanceled": "已取消向{name}发送的好友请求。",
+  "@friendRequestCanceled": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "friendDeleted": "已从好友列表中删除{name}。",
+  "@friendDeleted": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "friendLocationShown": "{name}的位置已在地图上显示。",
+  "@friendLocationShown": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "friendLocationRemoved": "{name}的位置已从地图上移除。",
+  "@friendLocationRemoved": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "friendCount": "我的朋友 ({count})",
+  "@friendCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  
+  "sentRequestsCount": "已发送 ({count})",
+  "@sentRequestsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  
+  "receivedRequestsCount": "已接收 ({count})",
+  "@receivedRequestsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  
+  "newFriendRequests": "{count}个新的好友请求",
+  "@newFriendRequests": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  
+  "addFriend": "添加",
+  "sent": "已发送",
+  "received": "已接收",
+  "sendFriendRequest": "发送好友请求",
+  "friendId": "朋友ID",
+  "enterFriendId": "请输入对方ID",
+  "enterFriendIdPrompt": "请输入要添加的朋友的ID",
+  
+  "errorEnterFriendId": "请输入朋友ID。",
+  "errorCannotAddSelf": "不能添加自己为好友。",
+  "errorAddFriend": "添加好友时发生错误。",
+  "errorNetworkError": "网络错误，请重试。",
+  "errorCannotShowLocation": "无法显示朋友位置。",
+  "errorCannotRemoveLocation": "无法移除朋友位置。",
+  
+  "realTimeSyncActive": "实时同步中 • 自动更新",
+  "realTimeSyncStatus": "实时同步激活 • {time}",
+  "@realTimeSyncStatus": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "noSentRequests": "没有已发送的好友请求。",
+  "noReceivedRequests": "没有收到的好友请求。",
+  "noFriends": "还没有朋友。\n点击上方的+按钮添加朋友吧！",
+  
+  "cancelFriendRequest": "取消好友请求",
+  "cancelFriendRequestConfirm": "确定要取消向{name}发送的好友请求吗？",
+  "@cancelFriendRequestConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "deleteFriend": "删除好友",
+  "deleteFriendConfirm": "确定要从好友列表中删除{name}吗？",
+  "@deleteFriendConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "cancelRequest": "取消",
+  "requestDate": "请求日期：{date}",
+  "@requestDate": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "newBadge": "新"
 }
