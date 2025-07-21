@@ -236,6 +236,38 @@ class WebSocketService {
     // );
   }
 
+  // 🚪 로그아웃 전용 메서드 - 서버에 로그아웃 알리고 연결 해제
+  // lib/services/websocket_service.dart의 logoutAndDisconnect 메서드
+  Future<void> logoutAndDisconnect() async {
+    debugPrint('🚪 로그아웃 및 웹소켓 연결 해제 시작...');
+
+    if (_isConnected && _channel != null && _userId != null) {
+      try {
+        // 서버에 로그아웃 메시지 전송
+        _sendMessage({
+          'type': 'logout',
+          'userId': _userId,
+          'timestamp': DateTime.now().toIso8601String(),
+        });
+
+        debugPrint('📤 서버에 로그아웃 메시지 전송 완료');
+
+        // 서버가 메시지를 처리할 시간 확보 (500ms로 증가)
+        await Future.delayed(const Duration(milliseconds: 500));
+      } catch (e) {
+        debugPrint('❌ 로그아웃 메시지 전송 실패: $e');
+      }
+    }
+
+    // 재연결 방지 설정
+    _shouldReconnect = false;
+
+    // 기존 disconnect 메서드 호출
+    await disconnect();
+
+    debugPrint('✅ 로그아웃 및 웹소켓 연결 해제 완료');
+  }
+
   // 📤 메시지 전송
   void _sendMessage(Map<String, dynamic> message) {
     if (_isConnected && _channel != null) {
