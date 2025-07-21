@@ -260,7 +260,7 @@
   "feature_in_progress": "功能正在开发中",
   "delete_feature_in_progress": "账户删除功能正在开发中",
   "title": "编辑个人资料",
-  "email_required": "请输入邮箱",
+    "email_required": "请输入邮箱",
   "name_required": "请输入姓名",
   "schedule": "课程表",
   "winter_semester": "冬季学期",
@@ -369,7 +369,7 @@
       }
     }
   },
-  "add": "添加",
+"add": "添加",
   "close": "关闭",
   "edit": "编辑",
   "delete": "删除",
@@ -433,25 +433,25 @@
   "instructionMoveToDestinationBuilding": "前往 {building} 建筑",
   "instructionMoveToRoom": "前往目标房间",
   "instructionArrived": "您已到达目的地！",
-  "search_hint": "请搜索校区建筑",
-  "searchHint": "请输入建筑名称或房间号进行搜索",
+    "search_hint": "请搜索校区建筑",
+      "searchHint": "请输入建筑名称或房间号进行搜索",
   "searchInitialGuide": "搜索大楼或教室",
   "searchHintExample": "例如：W19，工程馆，401室",
   "searchLoading": "搜索中...",
   "searchNoResult": "未找到搜索结果",
   "searchTryAgain": "请尝试使用其他关键词",
   "lectureRoom": "教室",
-  "status_open": "营业中",
+    "status_open": "营业中",
   "status_closed": "已关闭",
   "status_next_open": "上午 9 点开始营业",
   "status_next_close": "下午 6 点结束营业",
   "status_next_open_tomorrow": "明天上午 9 点开始营业",
   "office_hours": "09:00 - 18:00",
-  "status_24hours": "24小时",
+    "status_24hours": "24小时",
   "status_temp_closed": "临时休业",
   "status_closed_permanently": "休业",
-  "label_category_type": "分类",
-  "label_basic_info": "基本信息",
+    "label_category_type": "分类",
+    "label_basic_info": "基本信息",
   "label_status": "状态",
   "label_hours": "营业时间",
   "label_phone": "电话号码",
@@ -515,5 +515,177 @@
   "building_name": "建筑物",
   "floor_number": "楼层",
   "room_name": "教室",
-  "overlap_message": "在该时间已注册课程。"
+  "overlap_message": "在该时间已注册课程。",
+  "memo": "备注",
+  "friendManagement": "朋友管理",
+  "friendManagementAndRequests": "朋友管理和请求",
+  "showLocation": "显示位置",
+  "removeLocation": "移除位置",
+  "accept": "接受",
+  "reject": "拒绝",
+  "id": "ID",
+  "contact": "联系方式",
+  "lastLocation": "最后位置",
+  "noLocationInfo": "无位置信息",
+  "noContactInfo": "无信息",
+  
+  "friendRequestSent": "已向{name}发送好友请求！",
+  "@friendRequestSent": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "friendRequestAccepted": "已接受{name}的好友请求。",
+  "@friendRequestAccepted": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "friendRequestRejected": "已拒绝{name}的好友请求。",
+  "@friendRequestRejected": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "friendRequestCanceled": "已取消向{name}发送的好友请求。",
+  "@friendRequestCanceled": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "friendDeleted": "已从好友列表中删除{name}。",
+  "@friendDeleted": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "friendLocationShown": "{name}的位置已在地图上显示。",
+  "@friendLocationShown": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "friendLocationRemoved": "{name}的位置已从地图上移除。",
+  "@friendLocationRemoved": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "friendCount": "我的朋友 ({count})",
+  "@friendCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  
+  "sentRequestsCount": "已发送 ({count})",
+  "@sentRequestsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  
+  "receivedRequestsCount": "已接收 ({count})",
+  "@receivedRequestsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  
+  "newFriendRequests": "{count}个新的好友请求",
+  "@newFriendRequests": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  
+  "addFriend": "添加",
+  "sent": "已发送",
+  "received": "已接收",
+  "sendFriendRequest": "发送好友请求",
+  "friendId": "朋友ID",
+  "enterFriendId": "请输入对方ID",
+  "enterFriendIdPrompt": "请输入要添加的朋友的ID",
+  
+  "errorEnterFriendId": "请输入朋友ID。",
+  "errorCannotAddSelf": "不能添加自己为好友。",
+  "errorAddFriend": "添加好友时发生错误。",
+  "errorNetworkError": "网络错误，请重试。",
+  "errorCannotShowLocation": "无法显示朋友位置。",
+  "errorCannotRemoveLocation": "无法移除朋友位置。",
+  
+  "realTimeSyncActive": "实时同步中 • 自动更新",
+  "realTimeSyncStatus": "实时同步激活 • {time}",
+  "@realTimeSyncStatus": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "noSentRequests": "没有已发送的好友请求。",
+  "noReceivedRequests": "没有收到的好友请求。",
+  "noFriends": "还没有朋友。\n点击上方的+按钮添加朋友吧！",
+  
+  "cancelFriendRequest": "取消好友请求",
+  "cancelFriendRequestConfirm": "确定要取消向{name}发送的好友请求吗？",
+  "@cancelFriendRequestConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "deleteFriend": "删除好友",
+  "deleteFriendConfirm": "确定要从好友列表中删除{name}吗？",
+  "@deleteFriendConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "cancelRequest": "取消",
+  "requestDate": "请求日期：{date}",
+  "@requestDate": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "newBadge": "新"
 }

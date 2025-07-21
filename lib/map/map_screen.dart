@@ -1,8 +1,9 @@
-// lib/map/map_screen.dart - 친구 화면을 전체화면으로 변경
+// lib/map/map_screen.dart - 로그아웃/재로그인 마커 문제 해결 버전
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/controllers/location_controllers.dart';
 import 'package:flutter_application_1/friends/friends_screen.dart';
+import 'package:flutter_application_1/friends/friend.dart';
 import 'package:flutter_application_1/services/map/building_marker_service.dart';
 import 'package:flutter_application_1/timetable/timetable_screen.dart';
 import 'package:provider/provider.dart';
@@ -17,7 +18,6 @@ import 'package:flutter_application_1/profile/profile_screen.dart';
 import 'package:flutter_application_1/map/navigation_state_manager.dart';
 import '../generated/app_localizations.dart';
 import 'package:app_settings/app_settings.dart';
-import 'package:location/location.dart' as loc;
 import 'package:flutter_application_1/widgets/category_chips.dart';
 import '../auth/user_auth.dart';
 
@@ -32,21 +32,179 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
   late MapScreenController _controller;
   late NavigationStateManager _navigationManager;
   late BuildingMarkerService _buildingMarkerService;
+  late LocationController _locationController;
 
   final OverlayPortalController _infoWindowController =
       OverlayPortalController();
   int _currentNavIndex = 0;
-  bool _isInitializing = false;
+  final bool _isInitializing = false;
+
+  // 🔥 사용자 ID 추적용
+  String? _lastUserId;
 
   @override
   void initState() {
     super.initState();
-    _controller = MapScreenController();
-    _navigationManager = NavigationStateManager();
-    _buildingMarkerService = BuildingMarkerService();
-
     WidgetsBinding.instance.addObserver(this);
-    _initializeController();
+
+    debugPrint('🗺️ MapScreen 초기화 시작');
+    _initializeMapScreen();
+  }
+
+  /// 🔥 맵 스크린 초기화 로직
+  Future<void> _initializeMapScreen() async {
+    try {
+      // UserAuth 상태 확인
+      final userAuth = context.read<UserAuth>();
+      debugPrint(
+        '🔥 MapScreen 초기화 - 사용자 상태: ${userAuth.isLoggedIn ? '로그인' : '비로그인'}',
+      );
+
+      // MapController 초기화
+      _controller = MapScreenController()..addListener(() => setState(() {}));
+
+      // 🔥 새 세션 감지 시 리셋
+      _controller.resetForNewSession();
+
+      // LocationController 설정
+      _locationController = LocationController()
+        ..addListener(() => setState(() {}));
+
+      _controller.setLocationController(_locationController);
+
+      // 기타 초기화
+      _navigationManager = NavigationStateManager();
+      _buildingMarkerService = BuildingMarkerService();
+
+      // 초기화 및 컨텍스트 설정
+      await _controller.initialize();
+      _controller.setContext(context);
+
+      debugPrint('✅ MapScreen 초기화 완료');
+    } catch (e) {
+      debugPrint('❌ MapScreen 초기화 오류: $e');
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    // 🔥 UserAuth 상태 변경 감지
+    final userAuth = context.watch<UserAuth>();
+    final currentUserId = userAuth.userId;
+
+    // 🔥 사용자가 변경되었거나 로그아웃 후 재로그인한 경우 맵 재초기화
+    if (_lastUserId != currentUserId) {
+      debugPrint('🔄 사용자 변경 감지: $_lastUserId -> $currentUserId');
+      _lastUserId = currentUserId;
+
+      if (currentUserId != null && userAuth.isLoggedIn) {
+        // 재로그인 시 맵 재초기화
+        _reinitializeMapForNewUser();
+      }
+    }
+  }
+
+  /// 🔥 새 사용자를 위한 맵 재초기화
+  Future<void> _reinitializeMapForNewUser() async {
+    try {
+      debugPrint('🔄 새 사용자를 위한 맵 재초기화 시작');
+
+      // 1. 기존 마커 모두 정리
+      await _buildingMarkerService.clearAllMarkers();
+
+      // 2. 컨트롤러 상태 리셋
+      _controller.resetForNewSession();
+
+      // 3. 잠시 후 기본 마커들 다시 로드
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      // 4. 지도가 준비되어 있다면 마커 다시 로드
+      if (_controller.isMapReady) {
+        await _controller.loadDefaultMarkers();
+        debugPrint('✅ 기본 마커 다시 로드 완료');
+      }
+    } catch (e) {
+      debugPrint('❌ 맵 재초기화 오류: $e');
+    }
+  }
+
+  /// 🔥 친구 위치 표시 및 지도 화면 전환 메서드
+  Future<void> _showFriendLocationAndSwitchToMap(Friend friend) async {
+    try {
+      debugPrint('📍 친구 위치 표시 및 지도 전환: ${friend.userName}');
+
+      // 1. 지도 화면으로 전환
+      setState(() {
+        _currentNavIndex = 0;
+      });
+
+      // 2. 잠시 후 친구 위치 표시 (지도 로딩 대기)
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      // 3. 친구 위치 마커 표시
+      await _controller.showFriendLocation(friend);
+
+      // 4. 성공 메시지 표시
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.location_on, color: Colors.white, size: 20),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    '${friend.userName}님의 위치를 지도에 표시했습니다.',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w500,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: const Color(0xFF10B981),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+
+      debugPrint('✅ 친구 위치 표시 완료');
+    } catch (e) {
+      debugPrint('❌ 친구 위치 표시 실패: $e');
+
+      // 에러 메시지 표시
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.error_outline, color: Colors.white, size: 20),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Text(
+                    '친구 위치를 표시할 수 없습니다.',
+                    style: TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: const Color(0xFFEF4444),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -54,34 +212,23 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     _navigationManager.dispose();
     WidgetsBinding.instance.removeObserver(this);
     _controller.dispose();
+    _locationController.dispose();
     super.dispose();
   }
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // context가 준비된 뒤 반드시 한 번만 호출
-    _controller.setContext(context);
-  }
-
-  /// 간소화된 초기화 - 기존 자동 이동 로직 제거
-  Future<void> _initializeController() async {
-    if (_isInitializing) return;
-
-    try {
-      _isInitializing = true;
-      debugPrint('🚀 MapScreen 초기화 시작...');
-
-      // LocationController 생성 및 설정
-      final locationController = LocationController();
-      _controller.setLocationController(locationController);
-
-      await _controller.initialize();
-      debugPrint('✅ MapScreen 초기화 완료');
-    } catch (e) {
-      debugPrint('❌ MapScreen 초기화 오류: $e');
-    } finally {
-      _isInitializing = false;
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    switch (state) {
+      case AppLifecycleState.resumed:
+        debugPrint('🔄 앱 복귀 - 위치 서비스 재시작');
+        _locationController.resumeLocationUpdates();
+        break;
+      case AppLifecycleState.paused:
+        debugPrint('⏸️ 앱 일시정지 - 위치 서비스 중단');
+        _locationController.pauseLocationUpdates();
+        break;
+      default:
+        break;
     }
   }
 
@@ -102,9 +249,17 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    // 1. userId를 Provider에서 받아오기
-    final userId = context.read<UserAuth>().userId ?? '';
-    print('userId: $userId');
+    // 🔥 UserAuth 상태 변화를 감지
+    final userAuth = context.watch<UserAuth>();
+    final userId = userAuth.userId ?? '';
+
+    // 🔥 게스트로 전환됐는데 현재 인덱스가 1·2(시간표/친구)라면 0(지도)로 되돌림
+    if (userAuth.isGuest && (_currentNavIndex == 1 || _currentNavIndex == 2)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(() => _currentNavIndex = 0);
+      });
+    }
+
     return ChangeNotifierProvider.value(
       value: _controller,
       child: Consumer<MapScreenController>(
@@ -114,14 +269,18 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
               index: _currentNavIndex,
               children: [
                 _buildMapScreen(controller),
-                // 2. userId를 ScheduleScreen에 전달
+                // 2. 🔥 ScheduleScreen 사용 (TimetableScreen 대신)
                 ScheduleScreen(userId: userId),
-                // 3. 친구 화면을 전체화면으로 변경 - userId 전달
-                FriendsScreen(userId: userId),
+                // 3. 🔥 친구 화면 래퍼 사용 - 콜백 함수 전달
+                _FriendScreenWrapper(
+                  userId: userId,
+                  controller: _controller,
+                  onShowFriendLocation: _showFriendLocationAndSwitchToMap,
+                ),
                 const ProfileScreen(),
               ],
             ),
-            bottomNavigationBar: _buildBottomNavigationBar(),
+            bottomNavigationBar: _buildBottomNavigationBar(userAuth),
             floatingActionButton: null,
           );
         },
@@ -147,7 +306,6 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
           onMapReady: (mapController) async {
             await _controller.onMapReady(mapController);
             debugPrint('🗺️ 지도 준비 완료!');
-
             // ✅ 지도 준비 완료 후 내 위치로 자동 이동
             await _controller.moveToMyLocation();
           },
@@ -197,7 +355,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
             right: 0,
             bottom: 27,
             child: Center(
-              child: Container(
+              child: SizedBox(
                 width: MediaQuery.of(context).size.width * 0.7,
                 child: _buildNavigationStatusCard(),
               ),
@@ -278,9 +436,32 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     );
   }
 
-  /// 하단 네비게이션 바
-  Widget _buildBottomNavigationBar() {
+  /// 🔥 하단 네비게이션 바 - 게스트 여부에 따라 탭 표시
+  Widget _buildBottomNavigationBar(UserAuth userAuth) {
     final l10n = AppLocalizations.of(context)!;
+
+    // 🔥 표시할 탭 목록을 동적으로 구성
+    final List<Widget> items = [
+      _buildNavItem(0, Icons.map_outlined, Icons.map, l10n.home),
+    ];
+
+    // 🔥 게스트가 아니면 시간표와 친구 탭 추가
+    if (!userAuth.isGuest) {
+      items.addAll([
+        _buildNavItem(
+          1,
+          Icons.schedule_outlined,
+          Icons.schedule,
+          l10n.timetable,
+        ),
+        _buildNavItem(2, Icons.people_outline, Icons.people, l10n.friends),
+      ]);
+    }
+
+    items.add(
+      _buildNavItem(3, Icons.person_outline, Icons.person, l10n.my_page),
+    );
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -297,55 +478,30 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
           height: 65,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildNavItem(0, Icons.map_outlined, Icons.map, l10n.home),
-              _buildNavItem(
-                1,
-                Icons.schedule_outlined,
-                Icons.schedule,
-                l10n.timetable,
-              ),
-              _buildNavItem(
-                2,
-                Icons.people_outline,
-                Icons.people,
-                l10n.friends,
-              ),
-              _buildNavItem(
-                3,
-                Icons.person_outline,
-                Icons.person,
-                l10n.my_page,
-              ),
-            ],
+            children: items,
           ),
         ),
       ),
     );
   }
 
-  /// 일반 네비게이션 바 아이템
+  /// 🔥 일반 네비게이션 바 아이템 - 접근 제한 로직 제거
   Widget _buildNavItem(
-    int index,
+    int screenIndex, // 🔥 IndexedStack의 실제 화면 인덱스
     IconData icon,
     IconData activeIcon,
     String label,
   ) {
-    final isActive = _currentNavIndex == index;
+    final bool isActive = _currentNavIndex == screenIndex;
 
     return GestureDetector(
       onTap: () {
-        // 친구 화면에 접근할 때 로그인 상태 확인
-        if (index == 2) {
-          final userId = context.read<UserAuth>().userId ?? '';
-          if (userId.isEmpty) {
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(const SnackBar(content: Text('로그인 후 이용 가능합니다.')));
-            return;
-          }
+        // 🔥 지도 화면으로 전환 시 친구 위치 마커 정리
+        if (screenIndex == 0) {
+          _controller.clearFriendLocationMarkers();
         }
-        setState(() => _currentNavIndex = index);
+
+        setState(() => _currentNavIndex = screenIndex);
       },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
@@ -754,6 +910,30 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
           },
         );
       },
+    );
+  }
+}
+
+// 🔥 친구 화면 래퍼 클래스
+class _FriendScreenWrapper extends StatelessWidget {
+  final String userId;
+  final MapScreenController controller;
+  final Function(Friend) onShowFriendLocation;
+
+  const _FriendScreenWrapper({
+    required this.userId,
+    required this.controller,
+    required this.onShowFriendLocation,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ChangeNotifierProvider.value(
+      value: controller,
+      child: FriendsScreen(
+        userId: userId,
+        onShowFriendLocation: onShowFriendLocation,
+      ),
     );
   }
 }

@@ -1,7 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.flutter_application_1">
-
-    <!-- =========== 권한 설정 =========== -->
+    
+    <!-- =========== 기존 권한 설정 =========== -->
     <!-- [공통] 인터넷 사용 권한 -->
     <uses-permission android:name="android.permission.INTERNET" />
     
@@ -11,6 +11,31 @@
     <!-- [권장 추가] 네트워크 기반의 대략적인 위치 권한 -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
+    <!-- =========== 🔔 실시간 알림 시스템 권한 추가 =========== -->
+    
+    <!-- [핵심 추가] 알림 권한 (Android 13+에서 필수) -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    
+    <!-- [권장 추가] 진동 권한 (알림 시 진동) -->
+    <uses-permission android:name="android.permission.VIBRATE" />
+    
+    <!-- [권장 추가] 웨이크락 권한 (백그라운드에서 알림 처리) -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    
+    <!-- [권장 추가] 네트워크 상태 확인 권한 (웹소켓 연결 상태 모니터링) -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    
+    <!-- [권장 추가] WiFi 상태 확인 권한 (네트워크 연결 최적화) -->
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    
+    <!-- [선택 추가] 부팅 완료 시 서비스 시작 권한 (자동 연결용) -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    
+    <!-- [선택 추가] 포그라운드 서비스 권한 (장시간 백그라운드 연결용) -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    
+    <!-- [선택 추가] 배터리 최적화 제외 요청 권한 (안정적인 백그라운드 실행) -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
 
     <!-- =========== 애플리케이션 설정 =========== -->
     <application
@@ -24,6 +49,23 @@
         <meta-data
             android:name="com.naver.maps.map.NCP_KEY_ID"
             android:value="gxa5mf6swg" />
+
+        <!-- =========== 🔔 알림 관련 메타데이터 추가 =========== -->
+        
+        <!-- [핵심 추가] 기본 알림 아이콘 설정 -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@mipmap/ic_launcher" />
+            
+        <!-- [권장 추가] 기본 알림 색상 설정 -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_color"
+            android:resource="@color/notification_color" />
+            
+        <!-- [권장 추가] 기본 알림 채널 ID -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="friend_notifications" />
 
         <!-- [공통] 메인 액티비티 설정 -->
         <activity
@@ -44,13 +86,41 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            
+            <!-- =========== 🔔 알림 클릭 처리 추가 =========== -->
+            
+            <!-- [핵심 추가] 알림 클릭 시 앱 열기 -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="campusnavigator" />
+            </intent-filter>
         </activity>
+
+        <!-- =========== 🔔 백그라운드 서비스 추가 (선택사항) =========== -->
+        
+        <!-- [선택 추가] 웹소켓 백그라운드 서비스 (장시간 연결 유지용) -->
+        <service
+            android:name="io.flutter.plugins.firebase.messaging.FlutterFirebaseMessagingBackgroundService"
+            android:exported="false" />
+            
+        <!-- [선택 추가] 부팅 완료 시 자동 시작 리시버 -->
+        <receiver
+            android:name="io.flutter.plugins.firebase.messaging.FlutterFirebaseMessagingReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="android.intent.action.PACKAGE_REPLACED" />
+                <data android:scheme="package" />
+            </intent-filter>
+        </receiver>
 
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
     </application>
-
 
     <!-- =========== 외부 앱 연동 설정 =========== -->
     <queries>
@@ -59,10 +129,23 @@
             <action android:name="android.intent.action.PROCESS_TEXT" />
             <data android:mimeType="text/plain" />
         </intent>
+        
         <!-- [핵심 추가] 네이버 지도 앱 조회 허용 -->
         <intent>
             <action android:name="android.intent.action.VIEW" />
             <data android:scheme="nmap" />
+        </intent>
+        
+        <!-- =========== 🔔 알림 관련 앱 조회 추가 =========== -->
+        
+        <!-- [권장 추가] 알림 설정 앱 조회 허용 -->
+        <intent>
+            <action android:name="android.settings.APP_NOTIFICATION_SETTINGS" />
+        </intent>
+        
+        <!-- [권장 추가] 배터리 최적화 설정 앱 조회 허용 -->
+        <intent>
+            <action android:name="android.settings.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
         </intent>
     </queries>
 </manifest>

@@ -1369,4 +1369,181 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get overlap_message => 'A class is already registered at this time.';
+
+  @override
+  String get memo => 'Memo';
+
+  @override
+  String get friendManagement => 'Friend Management';
+
+  @override
+  String get friendManagementAndRequests => 'Friend Management and Requests';
+
+  @override
+  String get showLocation => 'Show Location';
+
+  @override
+  String get removeLocation => 'Remove Location';
+
+  @override
+  String get accept => 'Accept';
+
+  @override
+  String get reject => 'Reject';
+
+  @override
+  String get id => 'ID';
+
+  @override
+  String get contact => 'Contact';
+
+  @override
+  String get lastLocation => 'Last Location';
+
+  @override
+  String get noLocationInfo => 'No location info';
+
+  @override
+  String get noContactInfo => 'No info';
+
+  @override
+  String friendRequestSent(String name) {
+    return 'Friend request sent to $name!';
+  }
+
+  @override
+  String friendRequestAccepted(String name) {
+    return 'Accepted friend request from $name.';
+  }
+
+  @override
+  String friendRequestRejected(String name) {
+    return 'Rejected friend request from $name.';
+  }
+
+  @override
+  String friendRequestCanceled(String name) {
+    return 'Canceled friend request to $name.';
+  }
+
+  @override
+  String friendDeleted(String name) {
+    return 'Removed $name from friends list.';
+  }
+
+  @override
+  String friendLocationShown(String name) {
+    return '$name\'s location is now shown on the map.';
+  }
+
+  @override
+  String friendLocationRemoved(String name) {
+    return '$name\'s location has been removed from the map.';
+  }
+
+  @override
+  String friendCount(int count) {
+    return 'My Friends ($count)';
+  }
+
+  @override
+  String sentRequestsCount(int count) {
+    return 'Sent ($count)';
+  }
+
+  @override
+  String receivedRequestsCount(int count) {
+    return 'Received ($count)';
+  }
+
+  @override
+  String newFriendRequests(int count) {
+    return '$count new friend requests';
+  }
+
+  @override
+  String get addFriend => 'Add';
+
+  @override
+  String get sent => 'Sent';
+
+  @override
+  String get received => 'Received';
+
+  @override
+  String get sendFriendRequest => 'Send Friend Request';
+
+  @override
+  String get friendId => 'Friend ID';
+
+  @override
+  String get enterFriendId => 'Enter friend\'s ID';
+
+  @override
+  String get enterFriendIdPrompt =>
+      'Please enter the ID of the friend you want to add';
+
+  @override
+  String get errorEnterFriendId => 'Please enter a friend ID.';
+
+  @override
+  String get errorCannotAddSelf => 'You cannot add yourself as a friend.';
+
+  @override
+  String get errorAddFriend => 'An error occurred while adding friend.';
+
+  @override
+  String get errorNetworkError => 'A network error occurred. Please try again.';
+
+  @override
+  String get errorCannotShowLocation => 'Cannot show friend\'s location.';
+
+  @override
+  String get errorCannotRemoveLocation => 'Cannot remove friend\'s location.';
+
+  @override
+  String get realTimeSyncActive =>
+      'Real-time sync active • Updates automatically';
+
+  @override
+  String realTimeSyncStatus(String time) {
+    return 'Real-time sync active • $time';
+  }
+
+  @override
+  String get noSentRequests => 'No sent friend requests.';
+
+  @override
+  String get noReceivedRequests => 'No received friend requests.';
+
+  @override
+  String get noFriends =>
+      'You don\'t have any friends yet.\nTap the + button above to add friends!';
+
+  @override
+  String get cancelFriendRequest => 'Cancel Friend Request';
+
+  @override
+  String cancelFriendRequestConfirm(String name) {
+    return 'Are you sure you want to cancel the friend request to $name?';
+  }
+
+  @override
+  String get deleteFriend => 'Delete Friend';
+
+  @override
+  String deleteFriendConfirm(String name) {
+    return 'Are you sure you want to remove $name from your friends list?';
+  }
+
+  @override
+  String get cancelRequest => 'Cancel';
+
+  @override
+  String requestDate(String date) {
+    return 'Request date: $date';
+  }
+
+  @override
+  String get newBadge => 'NEW';
 }

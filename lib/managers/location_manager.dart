@@ -13,7 +13,8 @@ import '../services/location_service.dart';
 /// 🔥 UI 갱신 콜백 타입들
 typedef LocationUpdateCallback = void Function(loc.LocationData locationData);
 typedef LocationErrorCallback = void Function(String error);
-typedef LocationSentStatusCallback = void Function(bool success, DateTime timestamp);
+typedef LocationSentStatusCallback =
+    void Function(bool success, DateTime timestamp);
 
 class LocationManager extends ChangeNotifier {
   loc.LocationData? currentLocation;
@@ -84,10 +85,10 @@ class LocationManager extends ChangeNotifier {
       } else {
         _locationSendFailureCount++;
       }
-      
+
       // 외부 콜백 호출
       onLocationSentStatus?.call(success, timestamp);
-      
+
       notifyListeners();
     });
   }
@@ -95,21 +96,21 @@ class LocationManager extends ChangeNotifier {
   /// 🔥 즉시 UI 갱신 요청
   void _requestImmediateUIUpdate() {
     final now = DateTime.now();
-    
+
     // 스로틀링: 너무 자주 호출되지 않도록
-    if (_lastUIUpdateTime != null && 
+    if (_lastUIUpdateTime != null &&
         now.difference(_lastUIUpdateTime!) < _uiUpdateThrottle) {
       return;
     }
-    
+
     _needsImmediateUIUpdate = true;
     _lastUIUpdateTime = now;
-    
+
     // 다음 프레임에서 플래그 리셋
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _needsImmediateUIUpdate = false;
     });
-    
+
     notifyListeners();
   }
 
@@ -130,21 +131,28 @@ class LocationManager extends ChangeNotifier {
     return await requestLocation();
   }
 
-  /// 🔥 개선된 초기화
+  /// 🔥 개선된 초기화 (권한 요청 추가)
   Future<void> _initializeImproved() async {
     debugPrint('🚀 LocationManager 개선된 초기화...');
 
     try {
-      // LocationService 초기화
+      // 🔥 1. 먼저 권한 확인 및 요청
+      final hasPermission = await _requestLocationPermissionSafely();
+      if (!hasPermission) {
+        debugPrint('❌ 위치 권한 없음 - 초기화 제한적으로 완료');
+        _hasLocationPermissionError = true;
+        _isInitialized = true;
+        notifyListeners();
+        return;
+      }
+
+      // 🔥 2. 권한이 있을 때만 LocationService 초기화
       await _locationService.initialize();
 
-      // 🔥 플랫폼별 최적화된 설정
+      // 🔥 3. 플랫폼별 최적화된 설정
       if (Platform.isIOS) {
         debugPrint('📱 iOS 최적화 설정');
-        // iOS는 기본 설정 사용하되, 정확도는 설정
-        await _location.changeSettings(
-          accuracy: loc.LocationAccuracy.balanced,
-        );
+        await _location.changeSettings(accuracy: loc.LocationAccuracy.balanced);
       } else {
         debugPrint('🤖 Android 최적화 설정');
         await _location.changeSettings(
@@ -155,12 +163,62 @@ class LocationManager extends ChangeNotifier {
       }
 
       _isInitialized = true;
+      _isLocationServiceEnabled = true;
+      _hasLocationPermissionError = false;
       notifyListeners();
       debugPrint('✅ LocationManager 개선된 초기화 완료');
     } catch (e) {
       debugPrint('❌ 초기화 오류: $e');
+      _hasLocationPermissionError = true;
       _isInitialized = true; // 오류가 있어도 계속 진행
       notifyListeners();
+    }
+  }
+
+  /// 🔥 안전한 위치 권한 요청
+  Future<bool> _requestLocationPermissionSafely() async {
+    try {
+      debugPrint('🔐 위치 권한 요청 시작...');
+
+      // 1. 현재 권한 상태 확인
+      var permissionStatus = await _location.hasPermission();
+      debugPrint('📋 현재 권한 상태: $permissionStatus');
+
+      // 2. 권한이 없으면 요청
+      if (permissionStatus == loc.PermissionStatus.denied) {
+        debugPrint('🔐 권한 요청 중...');
+        permissionStatus = await _location.requestPermission();
+        debugPrint('📋 권한 요청 결과: $permissionStatus');
+      }
+
+      // 3. 권한이 있으면 서비스 상태 확인
+      if (permissionStatus == loc.PermissionStatus.granted) {
+        debugPrint('✅ 위치 권한 허용됨');
+
+        // 4. 위치 서비스 활성화 확인
+        bool serviceEnabled = await _location.serviceEnabled();
+        debugPrint('📋 위치 서비스 상태: $serviceEnabled');
+
+        if (!serviceEnabled) {
+          debugPrint('🔧 위치 서비스 활성화 요청...');
+          serviceEnabled = await _location.requestService();
+          debugPrint('📋 위치 서비스 요청 결과: $serviceEnabled');
+        }
+
+        return serviceEnabled;
+      }
+
+      if (permissionStatus == loc.PermissionStatus.deniedForever) {
+        debugPrint('🚫 위치 권한이 영구적으로 거부됨');
+        _hasLocationPermissionError = true;
+        return false;
+      }
+
+      debugPrint('❌ 위치 권한 거부됨');
+      return false;
+    } catch (e) {
+      debugPrint('❌ 권한 요청 중 오류: $e');
+      return false;
     }
   }
 
@@ -218,7 +276,7 @@ class LocationManager extends ChangeNotifier {
     }
 
     debugPrint('📍 개선된 위치 요청 시작...');
-    
+
     _currentLocationRequest = Completer<loc.LocationData?>();
     _isRequestingLocation = true;
     _hasLocationPermissionError = false;
@@ -245,14 +303,16 @@ class LocationManager extends ChangeNotifier {
 
       if (locationResult.isSuccess && locationResult.locationData != null) {
         final locationData = locationResult.locationData!;
-        
+
         if (LocationService.isValidLocation(locationData)) {
           currentLocation = locationData;
           _lastLocationTime = DateTime.now();
           _hasLocationPermissionError = false;
 
           debugPrint('✅ LocationService로 위치 획득 성공!');
-          debugPrint('📍 위치: ${locationData.latitude}, ${locationData.longitude}');
+          debugPrint(
+            '📍 위치: ${locationData.latitude}, ${locationData.longitude}',
+          );
           debugPrint('📊 정확도: ${locationData.accuracy?.toStringAsFixed(1)}m');
 
           // 🔥 실제 GPS 위치 확인 및 콜백 호출
@@ -276,7 +336,6 @@ class LocationManager extends ChangeNotifier {
       final fallbackResult = await _directLocationRequest();
       _currentLocationRequest!.complete(fallbackResult);
       return fallbackResult;
-
     } catch (e) {
       debugPrint('❌ 위치 요청 실패: $e');
       _hasLocationPermissionError = true;
@@ -341,17 +400,18 @@ class LocationManager extends ChangeNotifier {
   Future<void> _retryLocationRequestOnce() async {
     try {
       debugPrint('🔄 위치 재시도 한 번...');
-      
+
       await Future.delayed(const Duration(seconds: 1));
-      
+
       final locationResult = await _locationService.forceRefreshLocation(
         timeout: const Duration(seconds: 8),
       );
 
       if (locationResult.isSuccess && locationResult.locationData != null) {
         final locationData = locationResult.locationData!;
-        
-        if (_isLocationDataValid(locationData) && isActualGPSLocation(locationData)) {
+
+        if (_isLocationDataValid(locationData) &&
+            isActualGPSLocation(locationData)) {
           currentLocation = locationData;
           _lastLocationTime = DateTime.now();
           _hasLocationPermissionError = false;
@@ -478,6 +538,26 @@ class LocationManager extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// 🔥 강제 위치 전송 중지 (앱 종료 시)
+  void forceStopLocationSending() {
+    debugPrint('🚫 강제 위치 전송 중지');
+
+    // 모든 타이머 즉시 중지
+    _locationSendTimer?.cancel();
+    _locationSendTimer = null;
+
+    // 모든 상태 초기화
+    _isLocationSendingEnabled = false;
+    _currentUserId = null;
+    _locationSendFailureCount = 0;
+
+    // 실시간 위치 추적도 중지
+    stopLocationTracking();
+
+    debugPrint('✅ 강제 위치 전송 중지 완료');
+    notifyListeners();
+  }
+
   /// 🔥 개선된 현재 위치를 서버로 전송 (즉시 UI 갱신 포함)
   Future<void> _sendCurrentLocationToServerImproved() async {
     if (!_isLocationSendingEnabled || _currentUserId == null) {
@@ -487,13 +567,15 @@ class LocationManager extends ChangeNotifier {
 
     try {
       // 현재 위치 확인
-      if (currentLocation == null || !LocationService.isValidLocation(currentLocation)) {
+      if (currentLocation == null ||
+          !LocationService.isValidLocation(currentLocation)) {
         debugPrint('⚠️ 유효한 위치 데이터가 없음, 새로 요청');
         await requestLocation();
       }
 
       // 여전히 위치가 없으면 실패 처리
-      if (currentLocation == null || !LocationService.isValidLocation(currentLocation)) {
+      if (currentLocation == null ||
+          !LocationService.isValidLocation(currentLocation)) {
         debugPrint('❌ 위치 데이터를 가져올 수 없음');
         _handleLocationSendFailure();
         return;
@@ -524,7 +606,7 @@ class LocationManager extends ChangeNotifier {
         _lastLocationSentTime = DateTime.now();
         _locationSendFailureCount = 0;
         debugPrint('✅ 위치 전송 성공');
-        
+
         // 🔥 성공 시 추가 UI 갱신
         _requestImmediateUIUpdate();
         notifyListeners();
@@ -570,11 +652,11 @@ class LocationManager extends ChangeNotifier {
     }
 
     debugPrint('🔄 수동 위치 전송 시작...');
-    
+
     // 위치 새로고침 후 전송
     await refreshLocation();
     await _sendCurrentLocationToServerImproved();
-    
+
     return _locationSendFailureCount == 0;
   }
 
@@ -588,11 +670,11 @@ class LocationManager extends ChangeNotifier {
 
     // LocationService를 통한 강제 새로고침
     final locationResult = await _locationService.forceRefreshLocation();
-    
+
     if (locationResult.isSuccess && locationResult.locationData != null) {
       currentLocation = locationResult.locationData;
       _lastLocationTime = DateTime.now();
-      
+
       if (isActualGPSLocation(currentLocation!)) {
         debugPrint('✅ 새로고침으로 실제 GPS 위치 획득');
         _scheduleLocationCallback(currentLocation!);
@@ -605,23 +687,28 @@ class LocationManager extends ChangeNotifier {
   }
 
   /// 🔥 개선된 실시간 위치 추적 (UI 갱신 포함)
-  void startLocationTrackingImproved({LocationUpdateCallback? onLocationChanged}) {
+  void startLocationTrackingImproved({
+    LocationUpdateCallback? onLocationChanged,
+  }) {
     debugPrint('🔄 개선된 실시간 위치 추적 시작...');
 
     _trackingSubscription?.cancel();
 
     _trackingSubscription = _location.onLocationChanged.listen(
       (loc.LocationData locationData) {
-        if (_isLocationDataValid(locationData) && isActualGPSLocation(locationData)) {
+        if (_isLocationDataValid(locationData) &&
+            isActualGPSLocation(locationData)) {
           currentLocation = locationData;
           _lastLocationTime = DateTime.now();
           _hasLocationPermissionError = false;
 
-          debugPrint('📍 실시간 실제 위치 업데이트: ${locationData.latitude}, ${locationData.longitude}');
+          debugPrint(
+            '📍 실시간 실제 위치 업데이트: ${locationData.latitude}, ${locationData.longitude}',
+          );
 
           // 🔥 즉시 UI 갱신 요청
           _requestImmediateUIUpdate();
-          
+
           if (mounted) {
             notifyListeners();
           }
@@ -672,7 +759,7 @@ class LocationManager extends ChangeNotifier {
     try {
       onLocationFound?.call(locationData);
       debugPrint('✅ 위치 콜백 호출 완료');
-      
+
       // 🔥 콜백 호출 후 UI 갱신 요청
       _requestImmediateUIUpdate();
     } catch (e) {
@@ -695,7 +782,7 @@ class LocationManager extends ChangeNotifier {
     switch (state) {
       case AppLifecycleState.resumed:
         debugPrint('📱 앱 복귀 - 위치 전송 및 UI 갱신');
-        
+
         // 위치 요청
         Future.delayed(const Duration(seconds: 1), () {
           if (!_isCacheValid() && !_isRequestingLocation) {
@@ -710,17 +797,18 @@ class LocationManager extends ChangeNotifier {
           });
         }
         break;
-        
+
       case AppLifecycleState.paused:
         debugPrint('📱 앱 일시정지');
-        // 백그라운드에서도 위치 전송 계속
+        // 🔥 백그라운드에서도 위치 전송 중지
+        forceStopLocationSending();
         break;
-        
+
       case AppLifecycleState.detached:
         debugPrint('📱 앱 종료');
-        stopPeriodicLocationSending();
+        forceStopLocationSending();
         break;
-        
+
       default:
         break;
     }
@@ -744,7 +832,9 @@ class LocationManager extends ChangeNotifier {
       'lastSentTime': _lastLocationSentTime?.toIso8601String(),
       'failureCount': _locationSendFailureCount,
       'hasCurrentLocation': currentLocation != null,
-      'isActualGPS': currentLocation != null ? isActualGPSLocation(currentLocation!) : false,
+      'isActualGPS': currentLocation != null
+          ? isActualGPSLocation(currentLocation!)
+          : false,
       'needsImmediateUIUpdate': _needsImmediateUIUpdate,
       'lastUIUpdateTime': _lastUIUpdateTime?.toIso8601String(),
       'cacheValid': _isCacheValid(),

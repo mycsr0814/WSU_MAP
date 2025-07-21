@@ -33,7 +33,7 @@ class BuildingMapPage extends StatefulWidget {
   final int? targetFloorNumber;  // 해당 호실이 있는 층 번호
 
   const BuildingMapPage({
-    super.key, 
+    super.key,
     required this.buildingName,
     this.navigationNodeIds,
     this.isArrivalNavigation = false,
@@ -64,7 +64,8 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
   String? _selectedRoomId;
 
   final ApiService _apiService = ApiService();
-  final TransformationController _transformationController = TransformationController();
+  final TransformationController _transformationController =
+      TransformationController();
   Timer? _resetTimer;
   static const double svgScale = 0.9;
   bool _showTransitionPrompt = false;
@@ -164,6 +165,10 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
     debugPrint('🎯 자동 호실 선택 시도: $_autoSelectRoomId');
     _addDebugInfo('🎯 자동 호실 선택 시도: $_autoSelectRoomId');
 
+    // 'R' 접두사 확인 및 추가
+    final targetRoomId = _autoSelectRoomId!.startsWith('R') 
+        ? _autoSelectRoomId! 
+        : 'R$_autoSelectRoomId';
     // 'R' 접두사 확인 및 추가
     final targetRoomId = _autoSelectRoomId!.startsWith('R') 
         ? _autoSelectRoomId! 
@@ -285,7 +290,7 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
     debugPrint('🧭 네비게이션 모드 설정');
     debugPrint('   노드 개수: ${widget.navigationNodeIds?.length}');
     debugPrint('   도착 네비게이션: ${widget.isArrivalNavigation}');
-    
+
     // 네비게이션 경로 표시를 위한 설정
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (widget.navigationNodeIds != null) {
@@ -298,23 +303,27 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
   Future<void> _displayNavigationPath(List<String> nodeIds) async {
     try {
       debugPrint('🗺️ 네비게이션 경로 표시 시작: ${nodeIds.length}개 노드');
-      
+
       // 현재 층의 노드 맵 로드
       final currentFloorNum = _selectedFloor?['Floor_Number'].toString() ?? '1';
       Map<String, Map<String, Offset>> floorNodesMap = {};
       await _loadNodesForFloor(currentFloorNum, floorNodesMap);
-      
+
       // 노드 ID를 좌표로 변환
-      final pathOffsets = _convertNodeIdsToOffsets(nodeIds, currentFloorNum, floorNodesMap);
-      
+      final pathOffsets = _convertNodeIdsToOffsets(
+        nodeIds,
+        currentFloorNum,
+        floorNodesMap,
+      );
+
       if (pathOffsets.isNotEmpty) {
         setState(() {
           _navigationPath = pathOffsets;
           _currentShortestPath = pathOffsets;
         });
-        
+
         debugPrint('✅ 네비게이션 경로 표시 완료: ${pathOffsets.length}개 좌표');
-        
+
         // 경로의 시작점으로 카메라 이동
         _focusOnNavigationPath();
       }
@@ -327,9 +336,13 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
   void _focusOnNavigationPath() {
     if (_navigationPath.isNotEmpty) {
       // 경로의 중심점 계산
-      double centerX = _navigationPath.map((p) => p.dx).reduce((a, b) => a + b) / _navigationPath.length;
-      double centerY = _navigationPath.map((p) => p.dy).reduce((a, b) => a + b) / _navigationPath.length;
-      
+      double centerX =
+          _navigationPath.map((p) => p.dx).reduce((a, b) => a + b) /
+          _navigationPath.length;
+      double centerY =
+          _navigationPath.map((p) => p.dy).reduce((a, b) => a + b) /
+          _navigationPath.length;
+
       // 적절한 줌 레벨로 이동 (구현 필요)
       debugPrint('📍 네비게이션 경로 중심: ($centerX, $centerY)');
     }
@@ -337,37 +350,70 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
 
   // 노드 ID를 Offset으로 변환 (개선된 버전)
   List<Offset> _convertNodeIdsToOffsets(List<String> nodeIds, String floorNum, Map<String, Map<String, Offset>> floorNodesMap) {
+  try {
+    // 🔥 입력 값 검증
+    if (nodeIds.isEmpty) {
+      debugPrint('⚠️ nodeIds가 비어있음');
+      return [];
+    }
+    
+    if (floorNum.isEmpty) {
+      debugPrint('⚠️ floorNum이 비어있음');
+      return [];
+    }
+
     final floorNumStr = floorNum.toString();
-    final nodeMap = floorNodesMap[floorNumStr] ?? {};
-    if (nodeMap.isEmpty) {
-      debugPrint('⚠️ 층 $floorNumStr의 노드 맵이 비어있음');
+    final nodeMap = floorNodesMap[floorNumStr];
+    
+    if (nodeMap == null || nodeMap.isEmpty) {
+      debugPrint('⚠️ 층 $floorNumStr의 노드 맵이 비어있음 또는 null');
       return [];
     }
 
     final offsets = <Offset>[];
     for (String nodeId in nodeIds) {
-      String simpleId = nodeId.contains('@') ? nodeId.split('@').last : nodeId;
-      if (simpleId.startsWith('R')) {
-        simpleId = simpleId.substring(1);
-      }
+      try {
+        if (nodeId.isEmpty) {
+          debugPrint('⚠️ 빈 nodeId 건너뛰기');
+          continue;
+        }
 
-      final offset = nodeMap[simpleId];
-      if (offset != null) {
-        offsets.add(offset);
-        debugPrint('✅ 노드 변환: $nodeId -> $simpleId -> $offset');
-      } else {
-        debugPrint('❌ 노드 찾기 실패: $nodeId (simpleId: $simpleId)');
+        String simpleId = nodeId.contains('@') ? nodeId.split('@').last : nodeId;
+        if (simpleId.startsWith('R')) {
+          simpleId = simpleId.substring(1);
+        }
+
+        if (simpleId.isEmpty) {
+          debugPrint('⚠️ simpleId가 비어있음: $nodeId');
+          continue;
+        }
+
+        final offset = nodeMap[simpleId];
+        if (offset != null) {
+          offsets.add(offset);
+          debugPrint('✅ 노드 변환: $nodeId -> $simpleId -> $offset');
+        } else {
+          debugPrint('❌ 노드 찾기 실패: $nodeId (simpleId: $simpleId)');
+        }
+      } catch (e) {
+        debugPrint('❌ 개별 노드 처리 오류: $nodeId - $e');
+        continue;
       }
     }
 
     debugPrint('📊 노드 변환 결과: ${nodeIds.length}개 중 ${offsets.length}개 성공');
     return offsets;
+  } catch (e) {
+    debugPrint('❌ _convertNodeIdsToOffsets 전체 오류: $e');
+    return [];
   }
+}
 
   void _onFloorChanged(Map<String, dynamic> newFloor) {
     final newFloorNumber = newFloor['Floor_Number'].toString();
 
-    if (_selectedFloor?['Floor_Id'] == newFloor['Floor_Id'] && _error == null) return;
+    if (_selectedFloor?['Floor_Id'] == newFloor['Floor_Id'] && _error == null)
+      return;
 
     setState(() {
       _selectedFloor = newFloor;
@@ -426,7 +472,7 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
       final fromBuilding = widget.buildingName;
       final fromFloor = int.parse(_startPoint!['floorNumber'].toString());
       final fromRoom = (_startPoint!['roomId'] as String).replaceFirst('R', '');
-      
+
       final toBuilding = _endPoint!['buildingName'] ?? widget.buildingName;
       final toFloor = int.parse(_endPoint!['floorNumber'].toString());
       final toRoom = (_endPoint!['roomId'] as String).replaceFirst('R', '');
@@ -453,12 +499,11 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
 
       // 통합 응답 처리
       await _processUnifiedPathResponse(response, fromFloor, toFloor);
-
     } catch (e) {
       _clearAllPathInfo();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('통합 길찾기 중 오류가 발생했습니다: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('통합 길찾기 중 오류가 발생했습니다: $e')));
       debugPrint('❌ 통합 길찾기 오류: $e');
     } finally {
       if (mounted) setState(() => _isMapLoading = false);
@@ -467,9 +512,9 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
 
   // 통합 API 응답 처리 메서드
   Future<void> _processUnifiedPathResponse(
-    UnifiedPathResponse response, 
-    int fromFloor, 
-    int toFloor
+    UnifiedPathResponse response,
+    int fromFloor,
+    int toFloor,
   ) async {
     final type = response.type;
     final result = response.result;
@@ -480,19 +525,19 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
       case 'room-room':
         await _handleRoomToRoomResponse(result, fromFloor, toFloor);
         break;
-        
+
       case 'room-building':
         await _handleRoomToBuildingResponse(result, fromFloor);
         break;
-        
+
       case 'building-room':
         await _handleBuildingToRoomResponse(result, toFloor);
         break;
-        
+
       case 'building-building':
         _handleBuildingToBuildingResponse(result);
         break;
-        
+
       default:
         debugPrint('❌ 지원하지 않는 응답 타입: $type');
         throw Exception('지원하지 않는 경로 타입: $type');
@@ -501,9 +546,9 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
 
   // 호실 → 호실 응답 처리
   Future<void> _handleRoomToRoomResponse(
-    PathResult result, 
-    int fromFloor, 
-    int toFloor
+    PathResult result,
+    int fromFloor,
+    int toFloor,
   ) async {
     final departureIndoor = result.departureIndoor;
     final arrivalIndoor = result.arrivalIndoor;
@@ -512,16 +557,17 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
     if (departureIndoor != null && outdoor != null && arrivalIndoor != null) {
       // 다른 건물 간 호실 이동
       debugPrint('🏢 다른 건물 간 호실 이동');
-      
-      final depNodeIds = UnifiedPathService.extractIndoorNodeIds(departureIndoor);
+
+      final depNodeIds = UnifiedPathService.extractIndoorNodeIds(
+        departureIndoor,
+      );
       await _processIndoorPath(depNodeIds, fromFloor, true); // 출발지 경로
-      
+
       _showOutdoorTransitionMessage(outdoor);
-      
     } else if (arrivalIndoor != null) {
       // 같은 건물 내 호실 이동
       debugPrint('🏠 같은 건물 내 호실 이동');
-      
+
       final nodeIds = UnifiedPathService.extractIndoorNodeIds(arrivalIndoor);
       await _processSameBuildingPath(nodeIds, fromFloor, toFloor);
     }
@@ -534,10 +580,10 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
 
     if (departureIndoor != null) {
       debugPrint('🚪 호실에서 건물 출구까지');
-      
+
       final nodeIds = UnifiedPathService.extractIndoorNodeIds(departureIndoor);
       await _processIndoorPath(nodeIds, fromFloor, true);
-      
+
       if (outdoor != null) {
         _showOutdoorTransitionMessage(outdoor);
       }
@@ -550,11 +596,11 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
     final arrivalIndoor = result.arrivalIndoor;
 
     debugPrint('🏢 건물 입구에서 호실까지');
-    
+
     if (outdoor != null) {
       _showOutdoorTransitionMessage(outdoor);
     }
-    
+
     if (arrivalIndoor != null) {
       final nodeIds = UnifiedPathService.extractIndoorNodeIds(arrivalIndoor);
       // 도착 후 실내 경로는 별도 처리 필요
@@ -565,7 +611,7 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
   // 건물 → 건물 응답 처리
   void _handleBuildingToBuildingResponse(PathResult result) {
     final outdoor = result.outdoor;
-    
+
     if (outdoor != null) {
       _showOutdoorTransitionMessage(outdoor);
     }
@@ -574,13 +620,17 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
   // 실내 경로 처리
   Future<void> _processIndoorPath(List<String> nodeIds, int floorNumber, bool isDeparture) async {
     debugPrint('🗺️ 실내 경로 처리: ${nodeIds.length}개 노드, 층: $floorNumber');
-    
+
     final floorNumStr = floorNumber.toString();
     Map<String, Map<String, Offset>> floorNodesMap = {};
     await _loadNodesForFloor(floorNumStr, floorNodesMap);
-    
-    final pathOffsets = _convertNodeIdsToOffsets(nodeIds, floorNumStr, floorNodesMap);
-    
+
+    final pathOffsets = _convertNodeIdsToOffsets(
+      nodeIds,
+      floorNumStr,
+      floorNodesMap,
+    );
+
     setState(() {
       if (isDeparture) {
         _departurePath = pathOffsets;
@@ -589,56 +639,72 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
       }
       _currentShortestPath = pathOffsets;
     });
-    
+
     debugPrint('✅ 실내 경로 표시: ${pathOffsets.length}개 좌표');
   }
 
   // 같은 건물 내 경로 처리
   Future<void> _processSameBuildingPath(List<String> nodeIds, int fromFloor, int toFloor) async {
     debugPrint('🏠 같은 건물 내 경로 처리');
-    
+
     final fromFloorStr = fromFloor.toString();
     final toFloorStr = toFloor.toString();
     final isCrossFloor = fromFloorStr != toFloorStr;
 
     Map<String, Map<String, Offset>> floorNodesMap = {};
     await _loadNodesForFloor(fromFloorStr, floorNodesMap);
-    
+
     if (isCrossFloor) {
       await _loadNodesForFloor(toFloorStr, floorNodesMap);
-      
+
       // 층간 이동 경로 분리
-      int splitIndex = nodeIds.indexWhere((id) => id.split('@')[1] != fromFloorStr);
+      int splitIndex = nodeIds.indexWhere(
+        (id) => id.split('@')[1] != fromFloorStr,
+      );
       if (splitIndex == -1) splitIndex = nodeIds.length;
-      
+
       final depOffsets = _convertNodeIdsToOffsets(
-        nodeIds.sublist(0, splitIndex), fromFloorStr, floorNodesMap);
+        nodeIds.sublist(0, splitIndex),
+        fromFloorStr,
+        floorNodesMap,
+      );
       final arrOffsets = _convertNodeIdsToOffsets(
-        nodeIds.sublist(splitIndex), toFloorStr, floorNodesMap);
-      
+        nodeIds.sublist(splitIndex),
+        toFloorStr,
+        floorNodesMap,
+      );
+
       setState(() {
         _departurePath = depOffsets;
         _arrivalPath = arrOffsets;
-        _currentShortestPath = _selectedFloor?['Floor_Number'].toString() == fromFloorStr 
-            ? depOffsets : arrOffsets;
+        _currentShortestPath =
+            _selectedFloor?['Floor_Number'].toString() == fromFloorStr
+            ? depOffsets
+            : arrOffsets;
         _transitionInfo = {"from": fromFloorStr, "to": toFloorStr};
       });
-      
+
       _showAndFadePrompt();
     } else {
       // 같은 층 내 이동
-      final sameFloorOffsets = _convertNodeIdsToOffsets(nodeIds, fromFloorStr, floorNodesMap);
+      final sameFloorOffsets = _convertNodeIdsToOffsets(
+        nodeIds,
+        fromFloorStr,
+        floorNodesMap,
+      );
       setState(() => _currentShortestPath = sameFloorOffsets);
     }
   }
 
   // 실외 전환 메시지 표시
   void _showOutdoorTransitionMessage(OutdoorPathData outdoorData) {
-    final coordinates = UnifiedPathService.extractOutdoorCoordinates(outdoorData);
+    final coordinates = UnifiedPathService.extractOutdoorCoordinates(
+      outdoorData,
+    );
     final distance = outdoorData.path.distance;
-    
+
     debugPrint('🌍 실외 경로 정보: ${coordinates.length}개 좌표, 거리: ${distance}m');
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('실외 경로로 이동하세요 (거리: ${distance.toStringAsFixed(0)}m)'),
@@ -654,12 +720,15 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
       // 통합 네비게이션 컨트롤러에 완료 신호
       widget.navigationController!.proceedToNextStep();
     }
-    
+
     // 결과와 함께 페이지 종료
     Navigator.of(context).pop('completed');
   }
 
-  Future<void> _loadFloorList(String buildingName, {String? targetFloorNumber}) async {
+  Future<void> _loadFloorList(
+    String buildingName, {
+    String? targetFloorNumber,
+  }) async {
     setState(() {
       _isFloorListLoading = true;
       _error = null;
@@ -675,7 +744,11 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
             .toSet();
 
         final filteredFloors = allowedFloors != null
-            ? floors.where((f) => allowedFloors.contains(f['Floor_Number'].toString())).toList()
+            ? floors
+                  .where(
+                    (f) => allowedFloors.contains(f['Floor_Number'].toString()),
+                  )
+                  .toList()
             : floors;
 
         setState(() {
@@ -691,7 +764,8 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
                 )
               : _floorList.first;
 
-          selectedFloor['Floor_Number'] = selectedFloor['Floor_Number'].toString();
+          selectedFloor['Floor_Number'] = selectedFloor['Floor_Number']
+              .toString();
           _onFloorChanged(selectedFloor);
         } else {
           setState(() => _error = "이 건물의 층 정보를 찾을 수 없습니다.");
@@ -934,10 +1008,7 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
             Text(
               '현재 ${widget.isArrivalNavigation ? "목적지" : "출발지"} 건물의 실내 안내를 진행중입니다.',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey[700],
-              ),
+              style: TextStyle(fontSize: 16, color: Colors.grey[700]),
             ),
             const SizedBox(height: 20),
             Row(

@@ -58,7 +58,7 @@ class TimetableApiService {
         "room_name": newItem.roomName,
         "professor": newItem.professor,
         "color": newItem.color.value.toRadixString(16),
-        "memo": "",
+        "memo": newItem.memo,
       }),
     );
     if (res.statusCode != 200 && res.statusCode != 204) {

@@ -1,4 +1,5 @@
 // timetable_screen.dart
+//
 
 import 'package:flutter/material.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
@@ -10,7 +11,6 @@ import '../map/widgets/directions_screen.dart'; // 폴더 구조에 맞게 경�
 class ScheduleScreen extends StatefulWidget {
   final String userId;
   const ScheduleScreen({required this.userId, super.key});
-
   @override
   State<ScheduleScreen> createState() => _ScheduleScreenState();
 }
@@ -62,9 +62,28 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       if (mounted) setState(() => _scheduleItems = items);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('시간표를 불러오지 못했습니다.')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Row(
+              children: [
+                Icon(Icons.error_outline, color: Colors.white, size: 20),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    '시간표를 불러오지 못했습니다.',
+                    style: TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: const Color(0xFFEF4444),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            duration: const Duration(seconds: 4),
+          ),
+        );
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -103,7 +122,6 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     final newEnd = _parseTime(newItem.endTime);
 
     for (final item in _scheduleItems) {
-      print('item.id="${item.id}" ignoreId="$ignoreId"');
       if (ignoreId != null &&
           item.id != null &&
           item.id!.trim() == ignoreId.trim())
@@ -113,13 +131,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       final existStart = _parseTime(item.startTime);
       final existEnd = _parseTime(item.endTime);
 
-      // 걸치면 무조건 중복(에브리타임, 네이버캘린더식)
       if (newStart < existEnd && newEnd > existStart) {
-        // 디버그 로깅(실전 문제 추적용)
-        print(
-          '중복! 비교중 item.id=${item.id} vs ignoreId=$ignoreId / '
-          'start=$existStart, end=$existEnd <-> newStart=$newStart, newEnd=$newEnd',
-        );
         return true;
       }
     }
@@ -462,6 +474,204 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     );
   }
 
+  Future<void> _showDeleteConfirmDialog(ScheduleItem item) async {
+  final l10n = AppLocalizations.of(context);
+
+  final result = await showDialog<bool>(
+    context: context,
+    barrierColor: Colors.black.withOpacity(0.5),
+    builder: (context) => Dialog(
+      backgroundColor: Colors.transparent,
+      child: Container(
+        width: MediaQuery.of(context).size.width * 0.9,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // 🔥 헤더 - 경고 스타일
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.red.withOpacity(0.1),
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(20),
+                  topRight: Radius.circular(20),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 60,
+                    height: 60,
+                    decoration: BoxDecoration(
+                      color: Colors.red.withOpacity(0.2),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.warning_outlined,
+                      color: Colors.red,
+                      size: 30,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '시간표 삭제',
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.red,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '신중하게 결정해주세요',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.red.withOpacity(0.8),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // 🔥 내용
+            Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFEF2F2),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.red.withOpacity(0.2)),
+                    ),
+                    child: Column(
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.info_outline,
+                              color: Colors.red,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 8),
+                            const Text(
+                              '삭제할 시간표',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.red,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '"${item.title}" 수업을 시간표에서 삭제하시겠습니까?\n삭제된 시간표는 복구할 수 없습니다.',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: Color(0xFF64748B),
+                            height: 1.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // 🔥 버튼 영역
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(20),
+                  bottomRight: Radius.circular(20),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      height: 48,
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Color(0xFFE2E8F0)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text(
+                          '취소',
+                          style: TextStyle(
+                            color: Color(0xFF64748B),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Container(
+                      height: 48,
+                      child: ElevatedButton(
+                        onPressed: () => Navigator.pop(context, true),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 2,
+                        ),
+                        child: const Text(
+                          '삭제',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+
+  if (result == true) {
+    await _deleteScheduleItem(item);
+  }
+}
+  /// ===== 핵심! 입력 다이얼로그(수정/추가) 부분만 아래처럼 수정! =====
+
   Future<void> _showScheduleFormDialog({
     ScheduleItem? initialItem,
     required Future<void> Function(ScheduleItem) onSubmit,
@@ -474,13 +684,17 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     final professorController = TextEditingController(
       text: initialItem?.professor ?? '',
     );
+    final memoController = TextEditingController(text: initialItem?.memo ?? '');
 
+    // 컨트롤러 변수
+    TextEditingController? buildingFieldController;
+    TextEditingController? floorFieldController;
+    TextEditingController? roomFieldController;
+
+    // 선택/목록 관련 변수
     String? selectedBuilding = initialItem?.buildingName;
     String? selectedFloor = initialItem?.floorNumber;
     String? selectedRoom = initialItem?.roomName;
-
-    List<String> floorList = [];
-    List<String> roomList = [];
 
     int selectedDay = initialItem?.dayOfWeek ?? 1;
     String startTime = initialItem?.startTime.length == 5
@@ -526,386 +740,758 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       'W19',
     ];
 
-    // 컨트롤러 변수 선언 (builder 컨트롤러 저장용)
-    TextEditingController? buildingFieldController;
-    TextEditingController? floorFieldController;
-    TextEditingController? roomFieldController;
+    List<String> floorList = [];
+    List<String> roomList = [];
 
-    if (initialItem != null && initialItem.buildingName != null) {
+    if (initialItem != null) {
       floorList = await _apiService.fetchFloors(initialItem.buildingName);
-      if (initialItem.floorNumber != null) {
-        roomList = await _apiService.fetchRooms(
-          initialItem.buildingName,
-          initialItem.floorNumber,
-        );
-      }
+      roomList = await _apiService.fetchRooms(
+        initialItem.buildingName,
+        initialItem.floorNumber,
+      );
     }
 
     await showDialog(
       context: context,
-      builder: (context) {
-        return StatefulBuilder(
+      barrierColor: Colors.black.withOpacity(0.5),
+      builder: (context) => SafeArea(
+        child: StatefulBuilder(
           builder: (context, setState) {
-            return AlertDialog(
-              title: Text(
-                initialItem == null
-                    ? l10n?.add_class ?? 'Add Class'
-                    : l10n?.edit_class ?? 'Edit Class',
+            return Dialog(
+              backgroundColor: Colors.transparent,
+              insetPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 24,
               ),
-              content: SingleChildScrollView(
+              child: Container(
+                width: MediaQuery.of(context).size.width * 0.95,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 20,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
+                ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    TextField(
-                      controller: titleController,
-                      decoration: InputDecoration(
-                        labelText: l10n?.class_name ?? 'Class Name',
-                        border: const OutlineInputBorder(),
+                    // 🔥 헤더 영역
+                    Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1E3A8A).withOpacity(0.1),
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(20),
+                          topRight: Radius.circular(20),
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    TextField(
-                      controller: professorController,
-                      decoration: InputDecoration(
-                        labelText: l10n?.professor_name ?? 'Professor',
-                        border: const OutlineInputBorder(),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // ----------- [ 건물명 자동완성 입력창 ] -----------
-                    TypeAheadField<String>(
-                      suggestionsCallback: (pattern) async => buildingCodes
-                          .where(
-                            (code) => code.toLowerCase().contains(
-                              pattern.toLowerCase(),
-                            ),
-                          )
-                          .toList(),
-                      itemBuilder: (context, suggestion) =>
-                          ListTile(title: Text(suggestion)),
-                      // ✅ builder에서 넘겨준 controller를 builder 밖 변수에 저장!
-                      builder: (context, controller, focusNode) {
-                        buildingFieldController = controller;
-                        return TextFormField(
-                          controller: controller,
-                          focusNode: focusNode,
-                          decoration: InputDecoration(
-                            labelText: l10n?.building_name ?? 'Building',
-                            border: const OutlineInputBorder(),
-                          ),
-                          onChanged: (value) async {
-                            selectedBuilding = value;
-                            selectedFloor = null;
-                            selectedRoom = null;
-                            setState(() {
-                              floorList = [];
-                              roomList = [];
-                            });
-                            if (buildingCodes.contains(value)) {
-                              final fetchedFloors = await _apiService
-                                  .fetchFloors(value);
-                              setState(() {
-                                floorList = fetchedFloors;
-                                roomList = [];
-                              });
-                            }
-                          },
-                        );
-                      },
-                      // ✅ onSelected에서 그 controller를 활용
-                      onSelected: (suggestion) async {
-                        selectedBuilding = suggestion;
-                        buildingFieldController?.text = suggestion;
-                        selectedFloor = null;
-                        selectedRoom = null;
-                        floorFieldController?.text = '';
-                        roomFieldController?.text = '';
-                        final fetchedFloors = await _apiService.fetchFloors(
-                          suggestion,
-                        );
-                        setState(() {
-                          floorList = fetchedFloors;
-                          roomList = [];
-                        });
-                      },
-                    ),
-
-                    // ----------- [ 층 자동완성 입력창 ] -----------
-                    const SizedBox(height: 8),
-                    TypeAheadField<String>(
-                      suggestionsCallback: (pattern) async {
-                        if (pattern.trim().isEmpty) return floorList;
-                        return floorList
-                            .where(
-                              (floor) => floor.toLowerCase().contains(
-                                pattern.toLowerCase(),
-                              ),
-                            )
-                            .toList();
-                      },
-                      itemBuilder: (context, suggestion) =>
-                          ListTile(title: Text(suggestion)),
-                      builder: (context, controller, focusNode) {
-                        floorFieldController = controller;
-                        return TextFormField(
-                          controller: controller,
-                          focusNode: focusNode,
-                          enabled: selectedBuilding != null,
-                          decoration: InputDecoration(
-                            labelText: l10n?.floor_number ?? 'Floor',
-                            border: const OutlineInputBorder(),
-                          ),
-                          onChanged: (value) async {
-                            selectedFloor = value;
-                            selectedRoom = null;
-                            roomFieldController?.text = '';
-                            setState(() => roomList = []);
-                            // **리스트에 존재하는 값만 fetchRooms**
-                            if (floorList.contains(value)) {
-                              final fetchedRooms = await _apiService.fetchRooms(
-                                selectedBuilding!,
-                                value,
-                              );
-                              setState(() {
-                                roomList = fetchedRooms;
-                              });
-                            }
-                          },
-                        );
-                      },
-                      onSelected: (suggestion) async {
-                        selectedFloor = suggestion;
-                        floorFieldController?.text = suggestion;
-                        selectedRoom = null;
-                        roomFieldController?.text = '';
-                        final fetchedRooms = await _apiService.fetchRooms(
-                          selectedBuilding!,
-                          suggestion,
-                        );
-                        setState(() {
-                          roomList = fetchedRooms;
-                        });
-                      },
-                    ),
-
-                    // ----------- [ 강의실 자동완성 입력창 ] -----------
-                    const SizedBox(height: 8),
-                    TypeAheadField<String>(
-                      suggestionsCallback: (pattern) async {
-                        if (pattern.trim().isEmpty) return roomList;
-                        return roomList
-                            .where(
-                              (room) => room.toLowerCase().contains(
-                                pattern.toLowerCase(),
-                              ),
-                            )
-                            .toList();
-                      },
-                      itemBuilder: (context, suggestion) =>
-                          ListTile(title: Text(suggestion)),
-                      builder: (context, controller, focusNode) {
-                        roomFieldController = controller;
-                        return TextFormField(
-                          controller: controller,
-                          focusNode: focusNode,
-                          enabled: selectedFloor != null,
-                          decoration: InputDecoration(
-                            labelText: l10n?.room_name ?? 'Room',
-                            border: const OutlineInputBorder(),
-                          ),
-                          onChanged: (value) => selectedRoom = value,
-                        );
-                      },
-                      onSelected: (suggestion) {
-                        selectedRoom = suggestion;
-                        roomFieldController?.text = suggestion;
-                        setState(() {});
-                      },
-                    ),
-
-                    // -------------------- 이하 생략(동일) --------------------
-                    const SizedBox(height: 16),
-                    DropdownButtonFormField<int>(
-                      decoration: InputDecoration(
-                        labelText: l10n?.day_of_week ?? 'Day',
-                        border: const OutlineInputBorder(),
-                      ),
-                      value: selectedDay,
-                      items: [
-                        DropdownMenuItem(
-                          value: 1,
-                          child: Text(l10n?.monday_full ?? 'Monday'),
-                        ),
-                        DropdownMenuItem(
-                          value: 2,
-                          child: Text(l10n?.tuesday_full ?? 'Tuesday'),
-                        ),
-                        DropdownMenuItem(
-                          value: 3,
-                          child: Text(l10n?.wednesday_full ?? 'Wednesday'),
-                        ),
-                        DropdownMenuItem(
-                          value: 4,
-                          child: Text(l10n?.thursday_full ?? 'Thursday'),
-                        ),
-                        DropdownMenuItem(
-                          value: 5,
-                          child: Text(l10n?.friday_full ?? 'Friday'),
-                        ),
-                      ],
-                      onChanged: (value) =>
-                          setState(() => selectedDay = value!),
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: DropdownButtonFormField<String>(
-                            decoration: InputDecoration(
-                              labelText: l10n?.start_time ?? 'Start Time',
-                              border: const OutlineInputBorder(),
-                            ),
-                            value: startTime,
-                            items: _generateTimeSlots()
-                                .map(
-                                  (time) => DropdownMenuItem(
-                                    value: time,
-                                    child: Text(time),
-                                  ),
-                                )
-                                .toList(),
-                            onChanged: (value) {
-                              setState(() {
-                                startTime = value!;
-                                var slotList = _generateTimeSlots();
-                                int idx = slotList.indexOf(startTime);
-                                if (_parseTime(endTime) <=
-                                    _parseTime(startTime)) {
-                                  endTime = (idx + 1 < slotList.length)
-                                      ? slotList[idx + 1]
-                                      : slotList[idx];
-                                }
-                              });
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: DropdownButtonFormField<String>(
-                            decoration: InputDecoration(
-                              labelText: l10n?.end_time ?? 'End Time',
-                              border: const OutlineInputBorder(),
-                            ),
-                            value: endTime,
-                            items: _generateTimeSlots()
-                                .where(
-                                  (time) =>
-                                      _parseTime(time) > _parseTime(startTime),
-                                )
-                                .map(
-                                  (time) => DropdownMenuItem(
-                                    value: time,
-                                    child: Text(time),
-                                  ),
-                                )
-                                .toList(),
-                            onChanged: (value) =>
-                                setState(() => endTime = value!),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      l10n?.color_selection ?? 'Select Color',
-                      style: const TextStyle(fontWeight: FontWeight.w600),
-                    ),
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 8,
-                      children: colors.map((color) {
-                        return GestureDetector(
-                          onTap: () => setState(() => selectedColor = color),
-                          child: Container(
-                            width: 40,
-                            height: 40,
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 50,
+                            height: 50,
                             decoration: BoxDecoration(
-                              color: color,
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                color: selectedColor == color
-                                    ? Colors.black54
-                                    : Colors.transparent,
-                                width: 2,
+                              color: const Color(0xFF1E3A8A).withOpacity(0.2),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.schedule,
+                              color: Color(0xFF1E3A8A),
+                              size: 24,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Text(
+                              initialItem == null
+                                  ? l10n?.add_class ?? 'Add Class'
+                                  : l10n?.edit_class ?? 'Edit Class',
+                              style: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF1E3A8A),
                               ),
                             ),
-                            child: selectedColor == color
-                                ? const Icon(
-                                    Icons.check,
-                                    color: Colors.white,
-                                    size: 20,
-                                  )
-                                : null,
                           ),
-                        );
-                      }).toList(),
+                        ],
+                      ),
+                    ),
+
+                    // 🔥 컨텐츠 영역
+                    Flexible(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.all(24),
+                        child: Column(
+                          children: [
+                            // 수업명 입력
+                            _buildStyledInputField(
+                              controller: titleController,
+                              labelText: l10n?.class_name ?? 'Class Name',
+                              icon: Icons.book,
+                              autofocus: true,
+                            ),
+                            const SizedBox(height: 16),
+
+                            // 교수명 입력
+                            _buildStyledInputField(
+                              controller: professorController,
+                              labelText: l10n?.professor_name ?? 'Professor',
+                              icon: Icons.person_outline,
+                            ),
+                            const SizedBox(height: 16),
+
+                            // 건물명 자동완성
+                            _buildStyledTypeAheadField(
+                              controller: buildingFieldController,
+                              labelText: l10n?.building_name ?? 'Building',
+                              icon: Icons.business,
+                              suggestionsCallback: (pattern) async =>
+                                  buildingCodes
+                                      .where(
+                                        (code) => code.toLowerCase().contains(
+                                          pattern.toLowerCase(),
+                                        ),
+                                      )
+                                      .toList(),
+                              onChanged: (value) async {
+                                selectedBuilding = value;
+                                setState(() {
+                                  selectedFloor = null;
+                                  selectedRoom = null;
+                                  floorFieldController?.text = '';
+                                  roomFieldController?.text = '';
+                                  floorList = [];
+                                  roomList = [];
+                                });
+                                if (buildingCodes.contains(value)) {
+                                  final fetchedFloors = await _apiService
+                                      .fetchFloors(value);
+                                  setState(() {
+                                    floorList = fetchedFloors;
+                                  });
+                                }
+                              },
+                              onSelected: (suggestion) async {
+                                selectedBuilding = suggestion;
+                                setState(() {
+                                  buildingFieldController?.text = suggestion;
+                                  selectedFloor = null;
+                                  selectedRoom = null;
+                                  floorFieldController?.text = '';
+                                  roomFieldController?.text = '';
+                                  floorList = [];
+                                  roomList = [];
+                                });
+                                final fetchedFloors = await _apiService
+                                    .fetchFloors(suggestion);
+                                setState(() {
+                                  floorList = fetchedFloors;
+                                });
+                              },
+                            ),
+                            const SizedBox(height: 16),
+
+                            // 층 자동완성
+                            _buildStyledTypeAheadField(
+                              key: ValueKey(selectedBuilding),
+                              controller: floorFieldController,
+                              labelText: l10n?.floor_number ?? 'Floor',
+                              icon: Icons.layers,
+                              enabled: selectedBuilding != null,
+                              suggestionsCallback: (pattern) async {
+                                if (pattern.trim().isEmpty) return floorList;
+                                return floorList
+                                    .where(
+                                      (floor) => floor.toLowerCase().contains(
+                                        pattern.toLowerCase(),
+                                      ),
+                                    )
+                                    .toList();
+                              },
+                              onChanged: (value) async {
+                                selectedFloor = value;
+                                selectedRoom = null;
+                                roomFieldController?.text = '';
+                                setState(() => roomList = []);
+                                if (floorList.contains(value)) {
+                                  final fetchedRooms = await _apiService
+                                      .fetchRooms(selectedBuilding!, value);
+                                  setState(() {
+                                    roomList = fetchedRooms;
+                                  });
+                                }
+                              },
+                              onSelected: (suggestion) async {
+                                selectedFloor = suggestion;
+                                floorFieldController?.text = suggestion;
+                                selectedRoom = null;
+                                roomFieldController?.text = '';
+                                final fetchedRooms = await _apiService
+                                    .fetchRooms(selectedBuilding!, suggestion);
+                                setState(() {
+                                  roomList = fetchedRooms;
+                                });
+                              },
+                            ),
+                            const SizedBox(height: 16),
+
+                            // 강의실 자동완성
+                            _buildStyledTypeAheadField(
+                              key: ValueKey(
+                                '${selectedBuilding}_$selectedFloor',
+                              ),
+                              controller: roomFieldController,
+                              labelText: l10n?.room_name ?? 'Room',
+                              icon: Icons.meeting_room,
+                              enabled: selectedFloor != null,
+                              suggestionsCallback: (pattern) async {
+                                if (pattern.trim().isEmpty) return roomList;
+                                return roomList
+                                    .where(
+                                      (room) => room.toLowerCase().contains(
+                                        pattern.toLowerCase(),
+                                      ),
+                                    )
+                                    .toList();
+                              },
+                              onChanged: (value) => selectedRoom = value,
+                              onSelected: (suggestion) {
+                                selectedRoom = suggestion;
+                                roomFieldController?.text = suggestion;
+                                setState(() {});
+                              },
+                            ),
+                            const SizedBox(height: 16),
+
+                            // 요일 선택
+                            _buildStyledDropdownField<int>(
+                              value: selectedDay,
+                              labelText: l10n?.day_of_week ?? 'Day',
+                              icon: Icons.calendar_today,
+                              items: [
+                                DropdownMenuItem(
+                                  value: 1,
+                                  child: Text(l10n?.monday_full ?? 'Monday'),
+                                ),
+                                DropdownMenuItem(
+                                  value: 2,
+                                  child: Text(l10n?.tuesday_full ?? 'Tuesday'),
+                                ),
+                                DropdownMenuItem(
+                                  value: 3,
+                                  child: Text(
+                                    l10n?.wednesday_full ?? 'Wednesday',
+                                  ),
+                                ),
+                                DropdownMenuItem(
+                                  value: 4,
+                                  child: Text(
+                                    l10n?.thursday_full ?? 'Thursday',
+                                  ),
+                                ),
+                                DropdownMenuItem(
+                                  value: 5,
+                                  child: Text(l10n?.friday_full ?? 'Friday'),
+                                ),
+                              ],
+                              onChanged: (value) =>
+                                  setState(() => selectedDay = value!),
+                            ),
+                            const SizedBox(height: 16),
+
+                            // 시간 선택 (가로 배치)
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _buildStyledDropdownField<String>(
+                                    value: startTime,
+                                    labelText: l10n?.start_time ?? 'Start Time',
+                                    icon: Icons.access_time,
+                                    items: _generateTimeSlots()
+                                        .map(
+                                          (time) => DropdownMenuItem(
+                                            value: time,
+                                            child: Text(time),
+                                          ),
+                                        )
+                                        .toList(),
+                                    onChanged: (value) {
+                                      setState(() {
+                                        startTime = value!;
+                                        var slotList = _generateTimeSlots();
+                                        int idx = slotList.indexOf(startTime);
+                                        if (_parseTime(endTime) <=
+                                            _parseTime(startTime)) {
+                                          endTime = (idx + 1 < slotList.length)
+                                              ? slotList[idx + 1]
+                                              : slotList[idx];
+                                        }
+                                      });
+                                    },
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: _buildStyledDropdownField<String>(
+                                    value: endTime,
+                                    labelText: l10n?.end_time ?? 'End Time',
+                                    icon: Icons.access_time_filled,
+                                    items: _generateTimeSlots()
+                                        .where(
+                                          (time) =>
+                                              _parseTime(time) >
+                                              _parseTime(startTime),
+                                        )
+                                        .map(
+                                          (time) => DropdownMenuItem(
+                                            value: time,
+                                            child: Text(time),
+                                          ),
+                                        )
+                                        .toList(),
+                                    onChanged: (value) =>
+                                        setState(() => endTime = value!),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 24),
+
+                            // 색상 선택
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF8FAFC),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: const Color(0xFFE2E8F0),
+                                ),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      const Icon(
+                                        Icons.palette,
+                                        color: Color(0xFF1E3A8A),
+                                        size: 20,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        l10n?.color_selection ?? 'Select Color',
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600,
+                                          color: Color(0xFF1E3A8A),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Wrap(
+                                    spacing: 12,
+                                    runSpacing: 8,
+                                    children: colors.map((color) {
+                                      return GestureDetector(
+                                        onTap: () => setState(
+                                          () => selectedColor = color,
+                                        ),
+                                        child: AnimatedContainer(
+                                          duration: const Duration(
+                                            milliseconds: 200,
+                                          ),
+                                          width: 44,
+                                          height: 44,
+                                          decoration: BoxDecoration(
+                                            color: color,
+                                            borderRadius: BorderRadius.circular(
+                                              22,
+                                            ),
+                                            border: Border.all(
+                                              color: selectedColor == color
+                                                  ? const Color(0xFF1E3A8A)
+                                                  : Colors.transparent,
+                                              width: 3,
+                                            ),
+                                            boxShadow: selectedColor == color
+                                                ? [
+                                                    BoxShadow(
+                                                      color: color.withOpacity(
+                                                        0.3,
+                                                      ),
+                                                      blurRadius: 8,
+                                                      offset: const Offset(
+                                                        0,
+                                                        2,
+                                                      ),
+                                                    ),
+                                                  ]
+                                                : [],
+                                          ),
+                                          child: selectedColor == color
+                                              ? const Icon(
+                                                  Icons.check,
+                                                  color: Colors.white,
+                                                  size: 20,
+                                                )
+                                              : null,
+                                        ),
+                                      );
+                                    }).toList(),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+
+                            // 메모 입력
+                            _buildStyledInputField(
+                              controller: memoController,
+                              labelText: l10n?.memo ?? 'Memo',
+                              icon: Icons.note_alt_outlined,
+                              maxLines: 3,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    // 🔥 버튼 영역
+                    Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF8FAFC),
+                        borderRadius: const BorderRadius.only(
+                          bottomLeft: Radius.circular(20),
+                          bottomRight: Radius.circular(20),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Container(
+                              height: 48,
+                              child: OutlinedButton(
+                                onPressed: () => Navigator.pop(context),
+                                style: OutlinedButton.styleFrom(
+                                  side: const BorderSide(
+                                    color: Color(0xFFE2E8F0),
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                child: Text(
+                                  l10n?.cancel ?? 'Cancel',
+                                  style: const TextStyle(
+                                    color: Color(0xFF64748B),
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            flex: 2,
+                            child: Container(
+                              height: 48,
+                              child: ElevatedButton(
+                                onPressed: () async {
+                                  if (titleController.text.isNotEmpty &&
+                                      selectedBuilding?.isNotEmpty == true &&
+                                      selectedFloor?.isNotEmpty == true &&
+                                      selectedRoom?.isNotEmpty == true) {
+                                    final newItem = ScheduleItem(
+                                      id: initialItem?.id,
+                                      title: titleController.text,
+                                      professor: professorController.text,
+                                      buildingName: selectedBuilding!,
+                                      floorNumber: selectedFloor!,
+                                      roomName: selectedRoom!,
+                                      dayOfWeek: selectedDay,
+                                      startTime: startTime,
+                                      endTime: endTime,
+                                      color: selectedColor,
+                                      memo: memoController.text,
+                                    );
+                                    if (_isOverlapped(
+                                      newItem,
+                                      ignoreId: initialItem?.id,
+                                    )) {
+                                      Navigator.pop(context);
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            l10n?.overlap_message ??
+                                                '이미 같은 시간에 등록된 수업이 있습니다.',
+                                          ),
+                                          backgroundColor: const Color(
+                                            0xFFEF4444,
+                                          ),
+                                          behavior: SnackBarBehavior.floating,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              10,
+                                            ),
+                                          ),
+                                        ),
+                                      );
+                                      return;
+                                    }
+                                    await onSubmit(newItem);
+                                    Navigator.pop(context);
+                                  }
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF1E3A8A),
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  elevation: 2,
+                                ),
+                                child: Text(
+                                  initialItem == null
+                                      ? l10n?.add ?? 'Add'
+                                      : l10n?.save ?? 'Save',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
               ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text(l10n?.cancel ?? 'Cancel'),
-                ),
-                ElevatedButton(
-                  onPressed: () async {
-                    if (titleController.text.isNotEmpty &&
-                        selectedBuilding?.isNotEmpty == true &&
-                        selectedFloor?.isNotEmpty == true &&
-                        selectedRoom?.isNotEmpty == true) {
-                      final newItem = ScheduleItem(
-                        id: initialItem?.id,
-                        title: titleController.text,
-                        professor: professorController.text,
-                        buildingName: selectedBuilding!,
-                        floorNumber: selectedFloor!,
-                        roomName: selectedRoom!,
-                        dayOfWeek: selectedDay,
-                        startTime: startTime,
-                        endTime: endTime,
-                        color: selectedColor,
-                      );
-                      if (_isOverlapped(newItem, ignoreId: initialItem?.id)) {
-                        Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              l10n?.overlap_message ??
-                                  '이미 같은 시간에 등록된 수업이 있습니다.',
-                            ),
-                          ),
-                        );
-                        return;
-                      }
-                      await onSubmit(newItem);
-                      Navigator.pop(context);
-                    }
-                  },
-                  child: Text(
-                    initialItem == null
-                        ? l10n?.add ?? 'Add'
-                        : l10n?.save ?? 'Save',
-                  ),
-                ),
-              ],
             );
           },
-        );
-      },
+        ),
+      ),
     );
   }
+
+  Widget _buildStyledInputField({
+    required TextEditingController controller,
+    required String labelText,
+    required IconData icon,
+    bool autofocus = false,
+    int maxLines = 1,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: TextFormField(
+        controller: controller,
+        autofocus: autofocus,
+        maxLines: maxLines,
+        style: const TextStyle(fontSize: 16, color: Color(0xFF1E3A8A)),
+        decoration: InputDecoration(
+          labelText: labelText,
+          labelStyle: const TextStyle(color: Color(0xFF64748B), fontSize: 14),
+          prefixIcon: Icon(icon, color: const Color(0xFF1E3A8A), size: 20),
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 16,
+          ),
+          floatingLabelBehavior: FloatingLabelBehavior.never,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStyledTypeAheadField({
+    Key? key,
+    TextEditingController? controller,
+    required String labelText,
+    required IconData icon,
+    bool enabled = true,
+    required Future<List<String>> Function(String) suggestionsCallback,
+    Function(String)? onChanged,
+    Function(String)? onSelected,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: enabled ? Colors.white : const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: enabled
+              ? const Color(0xFFE2E8F0)
+              : const Color(0xFFE2E8F0).withOpacity(0.5),
+        ),
+        boxShadow: enabled
+            ? [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ]
+            : [],
+      ),
+      child: TypeAheadField<String>(
+        key: key,
+        suggestionsCallback: suggestionsCallback,
+        itemBuilder: (context, suggestion) => Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Text(
+            suggestion,
+            style: const TextStyle(fontSize: 16, color: Color(0xFF1E3A8A)),
+          ),
+        ),
+        builder: (context, fieldController, focusNode) {
+          if (controller != null) {
+            fieldController = controller;
+          }
+          return TextFormField(
+            controller: fieldController,
+            focusNode: focusNode,
+            enabled: enabled,
+            style: TextStyle(
+              fontSize: 16,
+              color: enabled
+                  ? const Color(0xFF1E3A8A)
+                  : const Color(0xFF64748B),
+            ),
+            decoration: InputDecoration(
+              labelText: labelText,
+              labelStyle: TextStyle(
+                color: enabled
+                    ? const Color(0xFF64748B)
+                    : const Color(0xFF64748B).withOpacity(0.5),
+                fontSize: 14,
+              ),
+              prefixIcon: Icon(
+                icon,
+                color: enabled
+                    ? const Color(0xFF1E3A8A)
+                    : const Color(0xFF64748B).withOpacity(0.5),
+                size: 20,
+              ),
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 16,
+              ),
+              floatingLabelBehavior: FloatingLabelBehavior.never,
+            ),
+            onChanged: onChanged,
+          );
+        },
+        onSelected: onSelected,
+      ),
+    );
+  }
+
+  Widget _buildStyledDropdownField<T>({
+    required T? value,
+    required String labelText,
+    required IconData icon,
+    required List<DropdownMenuItem<T>> items,
+    required Function(T?) onChanged,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: DropdownButtonFormField<T>(
+        value: value,
+        items: items,
+        onChanged: onChanged,
+        style: const TextStyle(fontSize: 16, color: Color(0xFF1E3A8A)),
+        decoration: InputDecoration(
+          labelText: labelText,
+          labelStyle: const TextStyle(color: Color(0xFF64748B), fontSize: 14),
+          prefixIcon: Icon(icon, color: const Color(0xFF1E3A8A), size: 20),
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 16,
+          ),
+          floatingLabelBehavior: FloatingLabelBehavior.never,
+        ),
+        dropdownColor: Colors.white,
+        icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF1E3A8A)),
+      ),
+    );
+  }
+
+  Widget _buildStyledDetailRow(IconData icon, String label, String value) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: const Color(0xFF1E3A8A).withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, color: const Color(0xFF1E3A8A), size: 20),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF1E3A8A),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ----------- 이하 기존과 동일 ---------------------
 
   void _showAddScheduleDialog() {
     _showScheduleFormDialog(
@@ -921,15 +1507,12 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   }
 
   void _showRecommendRoute(ScheduleItem item) {
-    // DirectionsScreen에 도착지 정보를 전달하면서 이동 (예시는 roomData 파라미터 사용)
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => DirectionsScreen(
-          // 아래처럼 강의실 정보를 도착지로 전달합니다.
-          // DirectionsScreen 쪽에서 roomData, presetEnd 등 파라미터명 확인 필요!
           roomData: {
-            "type": "end", // 도착지 역할로
+            "type": "end",
             "buildingName": item.buildingName,
             "floorNumber": item.floorNumber,
             "roomName": item.roomName,
@@ -944,80 +1527,231 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(item.title),
-        content: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildDetailRow(
-              Icons.person,
-              l10n?.professor_name ?? 'Professor',
-              item.professor,
-            ),
-            const SizedBox(height: 10),
-            _buildDetailRow(
-              Icons.location_city,
-              l10n?.building_name ?? 'Building',
-              item.buildingName,
-            ),
-            const SizedBox(height: 10),
-            _buildDetailRow(
-              Icons.layers,
-              l10n?.floor_number ?? 'Floor',
-              item.floorNumber,
-            ),
-            const SizedBox(height: 10),
-            _buildDetailRow(
-              Icons.meeting_room,
-              l10n?.room_name ?? 'Room',
-              item.roomName,
-            ),
-            const SizedBox(height: 10),
-            _buildDetailRow(
-              Icons.calendar_today,
-              l10n?.day_of_week ?? 'Day',
-              _getDayName(item.dayOfWeek),
-            ),
-            const SizedBox(height: 10),
-            _buildDetailRow(
-              Icons.access_time,
-              l10n?.time ?? 'Time',
-              '${item.startTime} - ${item.endTime}',
-            ),
-          ],
+      barrierColor: Colors.black.withOpacity(0.5),
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: Container(
+          width: MediaQuery.of(context).size.width * 0.9,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 🔥 헤더
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: item.color.withOpacity(0.1),
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(20),
+                    topRight: Radius.circular(20),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 60,
+                      height: 60,
+                      decoration: BoxDecoration(
+                        color: item.color.withOpacity(0.2),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(Icons.schedule, color: item.color, size: 30),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            item.title,
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w700,
+                              color: item.color,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '${_getDayName(item.dayOfWeek)} ${item.startTime} - ${item.endTime}',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: item.color.withOpacity(0.8),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // 🔥 내용
+              Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  children: [
+                    _buildStyledDetailRow(
+                      Icons.person,
+                      l10n?.professor_name ?? 'Professor',
+                      item.professor,
+                    ),
+                    const SizedBox(height: 16),
+                    _buildStyledDetailRow(
+                      Icons.business,
+                      l10n?.building_name ?? 'Building',
+                      item.buildingName,
+                    ),
+                    const SizedBox(height: 16),
+                    _buildStyledDetailRow(
+                      Icons.layers,
+                      l10n?.floor_number ?? 'Floor',
+                      item.floorNumber,
+                    ),
+                    const SizedBox(height: 16),
+                    _buildStyledDetailRow(
+                      Icons.meeting_room,
+                      l10n?.room_name ?? 'Room',
+                      item.roomName,
+                    ),
+                    const SizedBox(height: 16),
+                    _buildStyledDetailRow(
+                      Icons.calendar_today,
+                      l10n?.day_of_week ?? 'Day',
+                      _getDayName(item.dayOfWeek),
+                    ),
+                    const SizedBox(height: 16),
+                    _buildStyledDetailRow(
+                      Icons.access_time,
+                      l10n?.time ?? 'Time',
+                      '${item.startTime} - ${item.endTime}',
+                    ),
+                    if (item.memo.isNotEmpty) ...[
+                      const SizedBox(height: 16),
+                      _buildStyledDetailRow(
+                        Icons.note_alt_outlined,
+                        l10n?.memo ?? 'Memo',
+                        item.memo,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+
+              // 🔥 버튼 영역
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: const BorderRadius.only(
+                    bottomLeft: Radius.circular(20),
+                    bottomRight: Radius.circular(20),
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Container(
+                            height: 44,
+                            child: ElevatedButton.icon(
+                              onPressed: () {
+                                Navigator.pop(context);
+                                _showRecommendRoute(item);
+                              },
+                              icon: const Icon(Icons.directions, size: 18),
+                              label: const Text('추천경로'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF10B981),
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Container(
+                            height: 44,
+                            child: ElevatedButton.icon(
+                              onPressed: () {
+                                Navigator.pop(context);
+                                _showEditScheduleDialog(item);
+                              },
+                              icon: const Icon(Icons.edit, size: 18),
+                              label: Text(l10n?.edit ?? 'Edit'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF1E3A8A),
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          width: 44,
+                          height: 44,
+                          child: ElevatedButton(
+                            onPressed: () async {
+                              Navigator.pop(context);
+                              await _showDeleteConfirmDialog(item);
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFFEF4444),
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              padding: EdgeInsets.zero,
+                            ),
+                            child: const Icon(Icons.delete, size: 18),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 44,
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.pop(context),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Color(0xFFE2E8F0)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        child: const Text(
+                          '닫기',
+                          style: TextStyle(
+                            color: Color(0xFF64748B),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(l10n?.close ?? 'Close'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _showEditScheduleDialog(item);
-            },
-            child: Text(l10n?.edit ?? 'Edit'),
-          ),
-          TextButton(
-            onPressed: () async {
-              Navigator.pop(context);
-              await _deleteScheduleItem(item);
-            },
-            child: Text(
-              l10n?.delete ?? 'Delete',
-              style: const TextStyle(color: Colors.red),
-            ),
-          ),
-          // ✅ 추천경로 보기 버튼 추가!
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context); // 다이얼로그 닫기 (선택)
-              _showRecommendRoute(item); // 함수는 아래 직접 구현
-            },
-            child: Text('추천경로 보기'),
-          ),
-        ],
       ),
     );
   }

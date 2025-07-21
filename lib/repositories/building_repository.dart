@@ -1,4 +1,5 @@
-// lib/repositories/building_repository.dart - Result 패턴 완전 적용 + 생명주기 관리 개선
+// lib/repositories/building_repository.dart - 완전 수정된 버전
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/generated/app_localizations.dart';
 import '../models/building.dart';
@@ -66,7 +67,29 @@ class BuildingRepository extends ChangeNotifier {
     }
   }
 
-   String _getAutoOperatingStatusKey(String baseStatus) {
+  /// 🔥 새 세션을 위한 완전한 리셋
+  void resetForNewSession() {
+    debugPrint('🔄 BuildingRepository 새 세션 리셋');
+
+    if (_isDisposed) {
+      _reinitialize();
+    }
+
+    // 데이터 상태 완전 리셋
+    _allBuildings.clear();
+    _isLoaded = false;
+    _isLoading = false;
+    _lastError = null;
+    _lastLoadTime = null;
+
+    // 리스너들은 유지하되 알림
+    _safeNotifyListeners();
+
+    debugPrint('✅ BuildingRepository 리셋 완료');
+  }
+
+  /// 🔥 자동 운영상태 키 결정 (번역 없음)
+  String _getAutoOperatingStatusKey(String baseStatus) {
     // 특별 상태는 자동 변경하지 않음
     if (baseStatus == '24시간' || baseStatus == '임시휴무' || baseStatus == '휴무') {
       return baseStatus;
@@ -84,9 +107,10 @@ class BuildingRepository extends ChangeNotifier {
     }
   }
 
-    String _getLocalizedOperatingStatus(BuildContext context, String baseStatus) {
+  /// 🔥 지역화된 운영상태 결정 (번역 적용)
+  String _getLocalizedOperatingStatus(BuildContext context, String baseStatus) {
     final l10n = AppLocalizations.of(context)!;
-    
+
     // 특별 상태는 자동 변경하지 않음
     if (baseStatus == '24시간' || baseStatus == '임시휴무' || baseStatus == '휴무') {
       return baseStatus;
@@ -98,7 +122,7 @@ class BuildingRepository extends ChangeNotifier {
 
     // 09:00 ~ 18:00 운영중, 나머지는 운영종료
     if (currentHour >= 9 && currentHour < 18) {
-      return l10n.status_open;  // 번역된 "운영중"
+      return l10n.status_open; // 번역된 "운영중"
     } else {
       return l10n.status_closed; // 번역된 "운영종료"
     }
@@ -145,7 +169,9 @@ class BuildingRepository extends ChangeNotifier {
 
     // 데이터가 없으면 fallback 반환
     return _getFallbackBuildings().map((building) {
-      final autoStatus = _getAutoOperatingStatus(building.baseStatus);
+      final autoStatus = _getAutoOperatingStatusWithoutContext(
+        building.baseStatus,
+      );
       return building.copyWith(baseStatus: autoStatus);
     }).toList();
   }
@@ -208,15 +234,17 @@ class BuildingRepository extends ChangeNotifier {
         );
       }
 
-      // 데이터 변경 리스너들에게 알림
-      _notifyDataChangeListeners();
+      // 🔥 수정: 올바른 메서드 호출 (언더스코어 제거)
+      notifyDataChangeListeners();
     } catch (e) {
       _lastError = e.toString();
       _allBuildings = _getFallbackBuildings();
       _isLoaded = true;
       debugPrint('❌ 로딩 실패, 확장된 Fallback 사용: ${_allBuildings.length}개');
       debugPrint('🔍 오류 내용: $e');
-      _notifyDataChangeListeners();
+
+      // 🔥 수정: 올바른 메서드 호출 (언더스코어 제거)
+      notifyDataChangeListeners();
     } finally {
       _isLoading = false;
       _safeNotifyListeners();
@@ -226,12 +254,14 @@ class BuildingRepository extends ChangeNotifier {
   }
 
   /// 🔥 현재 시간 기준 운영상태가 적용된 건물 목록 반환
- List<Building> _getCurrentBuildingsWithOperatingStatus() {
-  return _allBuildings.map((building) {
-    final autoStatus = _getAutoOperatingStatusWithoutContext(building.baseStatus);
-    return building.copyWith(baseStatus: autoStatus);
-  }).toList();
-}
+  List<Building> _getCurrentBuildingsWithOperatingStatus() {
+    return _allBuildings.map((building) {
+      final autoStatus = _getAutoOperatingStatusWithoutContext(
+        building.baseStatus,
+      );
+      return building.copyWith(baseStatus: autoStatus);
+    }).toList();
+  }
 
   /// 🔥 자동 운영상태 결정
   String _getAutoOperatingStatus(String baseStatus) {
@@ -252,7 +282,7 @@ class BuildingRepository extends ChangeNotifier {
     }
   }
 
-  /// 🔥 확장된 Fallback 건물 데이터 (22개 건물)
+  /// 🔥 확장된 Fallback 건물 데이터 (23개 건물)
   List<Building> _getFallbackBuildings() {
     return [
       Building(
@@ -534,6 +564,24 @@ class BuildingRepository extends ChangeNotifier {
     ];
   }
 
+  /// 🔥 강제 데이터 새로고침 개선
+  Future<void> forceRefresh() async {
+    debugPrint('🔄 BuildingRepository 강제 새로고침');
+
+    // 완전한 상태 리셋
+    resetForNewSession();
+
+    // 새로운 데이터 로딩
+    await getAllBuildings(forceRefresh: true);
+
+    if (_isLoaded && _allBuildings.isNotEmpty) {
+      debugPrint('✅ 강제 새로고침 성공: ${_allBuildings.length}개 건물');
+      notifyDataChangeListeners();
+    } else {
+      debugPrint('❌ 강제 새로고침 실패');
+    }
+  }
+
   /// 🔥 로딩 완료까지 대기
   Future<List<Building>> _waitForLoadingComplete() async {
     int attempts = 0;
@@ -547,40 +595,34 @@ class BuildingRepository extends ChangeNotifier {
     return _getCurrentBuildingsWithOperatingStatus();
   }
 
-  /// 🔥 데이터 새로고침 - Result 패턴 적용
+  /// 🔥 데이터 새로고침 - Result 패턴 적용 (MapService에서 호출)
   Future<Result<void>> refresh() async {
     return await ResultHelper.runSafelyAsync(() async {
       AppLogger.info('BuildingRepository: 강제 새로고침', tag: 'REPO');
-      _allBuildings.clear();
-      _isLoaded = false;
-
-      final result = await getAllBuildings(forceRefresh: true);
-      if (result.isFailure) {
-        throw Exception('Refresh failed: ${result.error}');
-      }
+      await forceRefresh();
     }, 'BuildingRepository.refresh');
   }
 
   /// 🔥 검색 기능 - Result 패턴 적용
-Result<List<Building>> searchBuildings(String query) {
-  return ResultHelper.runSafely(() {
-    if (query.isEmpty) {
-      return _getCurrentBuildingsWithOperatingStatus();
-    }
+  Result<List<Building>> searchBuildings(String query) {
+    return ResultHelper.runSafely(() {
+      if (query.isEmpty) {
+        return _getCurrentBuildingsWithOperatingStatus();
+      }
 
-    final filtered = _allBuildings.where((building) {
-      final q = query.toLowerCase();
-      return building.name.toLowerCase().contains(q) ||
-             building.info.toLowerCase().contains(q) ||
-             building.category.toLowerCase().contains(q);
-    }).toList();
+      final filtered = _allBuildings.where((building) {
+        final q = query.toLowerCase();
+        return building.name.toLowerCase().contains(q) ||
+            building.info.toLowerCase().contains(q) ||
+            building.category.toLowerCase().contains(q);
+      }).toList();
 
-    return filtered.map((b) {
-      final autoStatus = _getAutoOperatingStatusWithoutContext(b.baseStatus);
-      return b.copyWith(baseStatus: autoStatus);
-    }).toList();
-  }, 'BuildingRepository.searchBuildings');
-}
+      return filtered.map((b) {
+        final autoStatus = _getAutoOperatingStatusWithoutContext(b.baseStatus);
+        return b.copyWith(baseStatus: autoStatus);
+      }).toList();
+    }, 'BuildingRepository.searchBuildings');
+  }
 
   /// 🔥 카테고리별 건물 필터링 - Result 패턴 적용
   Result<List<Building>> getBuildingsByCategory(String category) {
@@ -590,7 +632,9 @@ Result<List<Building>> searchBuildings(String query) {
       }).toList();
 
       return filtered.map((building) {
-        final autoStatus = _getAutoOperatingStatus(building.baseStatus);
+        final autoStatus = _getAutoOperatingStatusWithoutContext(
+          building.baseStatus,
+        );
         return building.copyWith(baseStatus: autoStatus);
       }).toList();
     }, 'BuildingRepository.getBuildingsByCategory');
@@ -636,6 +680,65 @@ Result<List<Building>> searchBuildings(String query) {
     }, 'BuildingRepository.findBuildingByName');
   }
 
+  /// 🔥 거리 계산 (하버사인 공식)
+  double _calculateDistance(
+    double lat1,
+    double lng1,
+    double lat2,
+    double lng2,
+  ) {
+    const double earthRadius = 6371; // 지구 반지름 (km)
+
+    final dLat = _degreesToRadians(lat2 - lat1);
+    final dLng = _degreesToRadians(lng2 - lng1);
+
+    final a =
+        math.sin(dLat / 2) * math.sin(dLat / 2) +
+        math.cos(_degreesToRadians(lat1)) *
+            math.cos(_degreesToRadians(lat2)) *
+            math.sin(dLng / 2) *
+            math.sin(dLng / 2);
+
+    final c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a));
+
+    return earthRadius * c;
+  }
+
+  /// 🔥 도를 라디안으로 변환
+  double _degreesToRadians(double degrees) {
+    return degrees * (math.pi / 180);
+  }
+
+  /// 🔥 근처 건물 찾기
+  Result<List<Building>> getNearbyBuildings(
+    double lat,
+    double lng,
+    double radiusKm,
+  ) {
+    return ResultHelper.runSafely(() {
+      final current = _getCurrentBuildingsWithOperatingStatus();
+
+      final nearby = current.where((building) {
+        final distance = _calculateDistance(
+          lat,
+          lng,
+          building.lat,
+          building.lng,
+        );
+        return distance <= radiusKm;
+      }).toList();
+
+      // 거리순으로 정렬
+      nearby.sort((a, b) {
+        final distanceA = _calculateDistance(lat, lng, a.lat, a.lng);
+        final distanceB = _calculateDistance(lat, lng, b.lat, b.lng);
+        return distanceA.compareTo(distanceB);
+      });
+
+      return nearby;
+    }, 'BuildingRepository.getNearbyBuildings');
+  }
+
   /// 🔥 데이터 변경 리스너 관리
   void addDataChangeListener(Function(List<Building>) listener) {
     if (_isDisposed) return;
@@ -657,7 +760,8 @@ Result<List<Building>> searchBuildings(String query) {
     );
   }
 
-  void _notifyDataChangeListeners() {
+  /// 🔥 데이터 변경 리스너 알림 (public 메서드)
+  void notifyDataChangeListeners() {
     if (_isDisposed) return;
 
     final currentBuildings = _getCurrentBuildingsWithOperatingStatus();
@@ -670,7 +774,7 @@ Result<List<Building>> searchBuildings(String query) {
       try {
         listener(currentBuildings);
       } catch (e) {
-        AppLogger.error('데이터 변경 리스너 오류', tag: 'REPO', error: e);
+        AppLogger.info('데이터 변경 리스너 오류: $e', tag: 'REPO');
       }
     }
   }
@@ -716,6 +820,48 @@ Result<List<Building>> searchBuildings(String query) {
     }, 'BuildingRepository.getOperatingStats');
   }
 
+  /// 🔥 Repository 상태 정보
+  Map<String, dynamic> getRepositoryStatus() {
+    return {
+      'isLoaded': _isLoaded,
+      'isLoading': _isLoading,
+      'buildingCount': _allBuildings.length,
+      'lastError': _lastError,
+      'lastLoadTime': _lastLoadTime?.toIso8601String(),
+      'hasData': _allBuildings.isNotEmpty,
+      'isDisposed': _isDisposed,
+      'listenersCount': _dataChangeListeners.length,
+    };
+  }
+
+  /// 🔥 Context 없이 운영상태 평가 (fallback 용)
+  String _getAutoOperatingStatusWithoutContext(String baseStatus) {
+    if (baseStatus == '24시간' || baseStatus == '임시휴무' || baseStatus == '휴무') {
+      return baseStatus;
+    }
+
+    final now = DateTime.now().hour;
+    return (now >= 9 && now < 18) ? '운영중' : '운영종료';
+  }
+
+  /// 🔥 Context 기반 운영상태 평가 (다국어 지원)
+  String _getAutoOperatingStatusWithContext(
+    BuildContext context,
+    String baseStatus,
+  ) {
+    final l10n = AppLocalizations.of(context)!;
+    final ignoreList = [
+      l10n.status_24hours,
+      l10n.status_temp_closed,
+      l10n.status_closed_permanently,
+    ];
+
+    if (ignoreList.contains(baseStatus)) return baseStatus;
+
+    final now = DateTime.now().hour;
+    return (now >= 9 && now < 18) ? l10n.status_open : l10n.status_closed;
+  }
+
   /// 🔥 Repository 정리 - 안전한 dispose
   @override
   void dispose() {
@@ -725,32 +871,7 @@ Result<List<Building>> searchBuildings(String query) {
     _isDisposed = true;
     _dataChangeListeners.clear();
     _allBuildings.clear();
+    _buildingDataService.dispose();
     super.dispose();
   }
-
-  /// 🔥 locale 없이 평가: fallback 용 (context 없음)
-String _getAutoOperatingStatusWithoutContext(String baseStatus) {
-  if (baseStatus == '24시간' || baseStatus == '임시휴무' || baseStatus == '휴무') {
-    return baseStatus;
-  }
-
-  final now = DateTime.now().hour;
-  return (now >= 9 && now < 18) ? '운영중' : '운영종료';
-}
-
-/// 🔥 locale 기반 상태명 평가 (context 필요)
-String _getAutoOperatingStatusWithContext(BuildContext context, String baseStatus) {
-  final l10n = AppLocalizations.of(context)!;
-  final ignoreList = [
-    l10n.status_24hours,
-    l10n.status_temp_closed,
-    l10n.status_closed_permanently
-  ];
-
-  if (ignoreList.contains(baseStatus)) return baseStatus;
-
-  final now = DateTime.now().hour;
-  return (now >= 9 && now < 18) ? l10n.status_open : l10n.status_closed;
-}
-
 }

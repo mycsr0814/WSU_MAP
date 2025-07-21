@@ -1337,4 +1337,178 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get overlap_message => '在该时间已注册课程。';
+
+  @override
+  String get memo => '备注';
+
+  @override
+  String get friendManagement => '朋友管理';
+
+  @override
+  String get friendManagementAndRequests => '朋友管理和请求';
+
+  @override
+  String get showLocation => '显示位置';
+
+  @override
+  String get removeLocation => '移除位置';
+
+  @override
+  String get accept => '接受';
+
+  @override
+  String get reject => '拒绝';
+
+  @override
+  String get id => 'ID';
+
+  @override
+  String get contact => '联系方式';
+
+  @override
+  String get lastLocation => '最后位置';
+
+  @override
+  String get noLocationInfo => '无位置信息';
+
+  @override
+  String get noContactInfo => '无信息';
+
+  @override
+  String friendRequestSent(String name) {
+    return '已向$name发送好友请求！';
+  }
+
+  @override
+  String friendRequestAccepted(String name) {
+    return '已接受$name的好友请求。';
+  }
+
+  @override
+  String friendRequestRejected(String name) {
+    return '已拒绝$name的好友请求。';
+  }
+
+  @override
+  String friendRequestCanceled(String name) {
+    return '已取消向$name发送的好友请求。';
+  }
+
+  @override
+  String friendDeleted(String name) {
+    return '已从好友列表中删除$name。';
+  }
+
+  @override
+  String friendLocationShown(String name) {
+    return '$name的位置已在地图上显示。';
+  }
+
+  @override
+  String friendLocationRemoved(String name) {
+    return '$name的位置已从地图上移除。';
+  }
+
+  @override
+  String friendCount(int count) {
+    return '我的朋友 ($count)';
+  }
+
+  @override
+  String sentRequestsCount(int count) {
+    return '已发送 ($count)';
+  }
+
+  @override
+  String receivedRequestsCount(int count) {
+    return '已接收 ($count)';
+  }
+
+  @override
+  String newFriendRequests(int count) {
+    return '$count个新的好友请求';
+  }
+
+  @override
+  String get addFriend => '添加';
+
+  @override
+  String get sent => '已发送';
+
+  @override
+  String get received => '已接收';
+
+  @override
+  String get sendFriendRequest => '发送好友请求';
+
+  @override
+  String get friendId => '朋友ID';
+
+  @override
+  String get enterFriendId => '请输入对方ID';
+
+  @override
+  String get enterFriendIdPrompt => '请输入要添加的朋友的ID';
+
+  @override
+  String get errorEnterFriendId => '请输入朋友ID。';
+
+  @override
+  String get errorCannotAddSelf => '不能添加自己为好友。';
+
+  @override
+  String get errorAddFriend => '添加好友时发生错误。';
+
+  @override
+  String get errorNetworkError => '网络错误，请重试。';
+
+  @override
+  String get errorCannotShowLocation => '无法显示朋友位置。';
+
+  @override
+  String get errorCannotRemoveLocation => '无法移除朋友位置。';
+
+  @override
+  String get realTimeSyncActive => '实时同步中 • 自动更新';
+
+  @override
+  String realTimeSyncStatus(String time) {
+    return '实时同步激活 • $time';
+  }
+
+  @override
+  String get noSentRequests => '没有已发送的好友请求。';
+
+  @override
+  String get noReceivedRequests => '没有收到的好友请求。';
+
+  @override
+  String get noFriends => '还没有朋友。\n点击上方的+按钮添加朋友吧！';
+
+  @override
+  String get cancelFriendRequest => '取消好友请求';
+
+  @override
+  String cancelFriendRequestConfirm(String name) {
+    return '确定要取消向$name发送的好友请求吗？';
+  }
+
+  @override
+  String get deleteFriend => '删除好友';
+
+  @override
+  String deleteFriendConfirm(String name) {
+    return '确定要从好友列表中删除$name吗？';
+  }
+
+  @override
+  String get cancelRequest => '取消';
+
+  @override
+  String requestDate(String date) {
+    return '请求日期：$date';
+  }
+
+  @override
+  String get newBadge => '新';
 }

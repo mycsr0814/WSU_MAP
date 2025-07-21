@@ -112,38 +112,38 @@
   "destination": "Destination",
   "clear_route": "Clear Route",
   "location_permission_denied": "Location permission denied.\nPlease allow location permission in settings.",
-  "finding_route_to_building": "Finding route to {building}...",
-  "@finding_route_to_building": {
-    "placeholders": {
-      "building": {
-        "type": "String"
-      }
+"finding_route_to_building": "Finding route to {building}...",
+"@finding_route_to_building": {
+  "placeholders": {
+    "building": {
+      "type": "String"
     }
-  },
-  "route_displayed_to_building": "Route to {building} displayed",
-  "@route_displayed_to_building": {
-    "placeholders": {
-      "building": {
-        "type": "String"
-      }
+  }
+},
+"route_displayed_to_building": "Route to {building} displayed",
+"@route_displayed_to_building": {
+  "placeholders": {
+    "building": {
+      "type": "String"
     }
-  },
-  "set_as_departure": "Set {building} as departure.",
-  "@set_as_departure": {
-    "placeholders": {
-      "building": {
-        "type": "String"
-      }
+  }
+},
+"set_as_departure": "Set {building} as departure.",
+"@set_as_departure": {
+  "placeholders": {
+    "building": {
+      "type": "String"
     }
-  },
-  "set_as_destination": "Set {building} as destination.",
-  "@set_as_destination": {
-    "placeholders": {
-      "building": {
-        "type": "String"
-      }
+  }
+},
+"set_as_destination": "Set {building} as destination.",
+"@set_as_destination": {
+  "placeholders": {
+    "building": {
+      "type": "String"
     }
-  },
+  }
+},
   "woosong_library_w1": "Woosong Library (W1)",
   "woosong_library_info": "B2F\tParking\nB1F\tSmall auditorium, Equipment room, Electrical room, Parking\n1F\tCareer Support Center (630-9976), Loan desk, Information lounge\n2F\tGeneral reading room, Group study room\n3F\tGeneral reading room\n4F\tLiterature books/Western books",
   "woosong_library_desc": "Woosong University Central Library",
@@ -221,7 +221,7 @@
   "building_details": "Details",
   "parking": "Parking",
   "accessibility": "Accessibility",
-  "facilities": "Facilities",
+  "facilities": "Facilities", 
   "elevator": "Elevator",
   "restroom": "Restroom",
   "navigate_from_current_location": "Navigate from current location",
@@ -249,8 +249,8 @@
   "no": "No",
   "feature_in_progress": "feature is under development.",
   "delete_feature_in_progress": "Account deletion feature is under development.",
-  "app_info": "App Info",
-  "app_version": "App Version",
+   "app_info": "App Info",
+  "app_version": "App Version", 
   "developer": "Developer",
   "developer_name": "Name: Hong Gil-dong",
   "developer_email": "Email: example@email.com",
@@ -299,7 +299,7 @@
       }
     }
   },
-  "view_on_map": "View on Map",
+   "view_on_map": "View on Map",
   "location": "Location",
   "schedule_time": "Time",
   "schedule_day": "Day",
@@ -369,7 +369,7 @@
       }
     }
   },
-  "add": "Add",
+"add": "Add",
   "@add": {
     "description": "Add button text"
   },
@@ -498,6 +498,7 @@
       }
     }
   },
+
   "open_settings": "Open Settings",
   "location_error": "Unable to find your location.",
   "view_floor_plan": "View Floor Plan",
@@ -533,15 +534,15 @@
   "instructionMoveToDestinationBuilding": "Go to {building} building",
   "instructionMoveToRoom": "Proceed to the destination room",
   "instructionArrived": "You have arrived at your destination!",
-  "search_hint": "Search campus buildings",
-  "searchHint": "Search by building or room",
+    "search_hint": "Search campus buildings",
+      "searchHint": "Search by building or room",
   "searchInitialGuide": "Search for a building or room",
   "searchHintExample": "e.g. W19, Engineering Hall, Room 401",
   "searchLoading": "Searching...",
   "searchNoResult": "No results found",
   "searchTryAgain": "Try a different search term",
   "lectureRoom": "Lecture Room",
-  "status_open": "Open",
+    "status_open": "Open",
   "status_closed": "Closed",
   "status_next_open": "Opens at 9:00 AM",
   "status_next_close": "Closes at 6:00 PM",
@@ -551,7 +552,7 @@
   "status_temp_closed": "Temporarily Closed",
   "status_closed_permanently": "Permanently Closed",
   "label_basic_info": "Basic Info",
-  "label_category_type": "Category",
+    "label_category_type": "Category",
   "label_status": "Status",
   "label_hours": "Operating Hours",
   "label_phone": "Phone Number",
@@ -612,8 +613,180 @@
   "floor_plan_loading_failed": "Floor Plan Loading Failed",
   "loading_floor_plan": "Loading {floor} floor plan…",
   "server_info": "Server: {building}/{floor}",
-  "building_name": "Building",
+    "building_name": "Building",
   "floor_number": "Floor",
   "room_name": "Room",
-  "overlap_message": "A class is already registered at this time."
+  "overlap_message": "A class is already registered at this time.",
+  "memo": "Memo",
+  "friendManagement": "Friend Management",
+  "friendManagementAndRequests": "Friend Management and Requests",
+  "showLocation": "Show Location",
+  "removeLocation": "Remove Location",
+  "accept": "Accept",
+  "reject": "Reject",
+  "id": "ID",
+  "contact": "Contact",
+  "lastLocation": "Last Location",
+  "noLocationInfo": "No location info",
+  "noContactInfo": "No info",
+  
+  "friendRequestSent": "Friend request sent to {name}!",
+  "@friendRequestSent": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "friendRequestAccepted": "Accepted friend request from {name}.",
+  "@friendRequestAccepted": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "friendRequestRejected": "Rejected friend request from {name}.",
+  "@friendRequestRejected": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "friendRequestCanceled": "Canceled friend request to {name}.",
+  "@friendRequestCanceled": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "friendDeleted": "Removed {name} from friends list.",
+  "@friendDeleted": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "friendLocationShown": "{name}'s location is now shown on the map.",
+  "@friendLocationShown": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "friendLocationRemoved": "{name}'s location has been removed from the map.",
+  "@friendLocationRemoved": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "friendCount": "My Friends ({count})",
+  "@friendCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  
+  "sentRequestsCount": "Sent ({count})",
+  "@sentRequestsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  
+  "receivedRequestsCount": "Received ({count})",
+  "@receivedRequestsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  
+  "newFriendRequests": "{count} new friend requests",
+  "@newFriendRequests": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  
+  "addFriend": "Add",
+  "sent": "Sent",
+  "received": "Received",
+  "sendFriendRequest": "Send Friend Request",
+  "friendId": "Friend ID",
+  "enterFriendId": "Enter friend's ID",
+  "enterFriendIdPrompt": "Please enter the ID of the friend you want to add",
+  
+  "errorEnterFriendId": "Please enter a friend ID.",
+  "errorCannotAddSelf": "You cannot add yourself as a friend.",
+  "errorAddFriend": "An error occurred while adding friend.",
+  "errorNetworkError": "A network error occurred. Please try again.",
+  "errorCannotShowLocation": "Cannot show friend's location.",
+  "errorCannotRemoveLocation": "Cannot remove friend's location.",
+  
+  "realTimeSyncActive": "Real-time sync active • Updates automatically",
+  "realTimeSyncStatus": "Real-time sync active • {time}",
+  "@realTimeSyncStatus": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "noSentRequests": "No sent friend requests.",
+  "noReceivedRequests": "No received friend requests.",
+  "noFriends": "You don't have any friends yet.\nTap the + button above to add friends!",
+  
+  "cancelFriendRequest": "Cancel Friend Request",
+  "cancelFriendRequestConfirm": "Are you sure you want to cancel the friend request to {name}?",
+  "@cancelFriendRequestConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "deleteFriend": "Delete Friend",
+  "deleteFriendConfirm": "Are you sure you want to remove {name} from your friends list?",
+  "@deleteFriendConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "cancelRequest": "Cancel",
+  "requestDate": "Request date: {date}",
+  "@requestDate": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "newBadge": "NEW"
 }

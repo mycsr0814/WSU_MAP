@@ -1,4 +1,6 @@
-// lib/services/integrated_search_service.dart - 성능 최적화된 버전
+// lib/services/integrated_search_service.dart - 내 위치 오류 수정 버전
+import 'dart:math' as math;
+
 import 'package:flutter_application_1/inside/api_service.dart';
 import 'package:flutter_application_1/models/building.dart';
 import 'package:flutter_application_1/models/search_result.dart';
@@ -19,53 +21,69 @@ class IntegratedSearchService {
   static DateTime? _lastRoomCacheUpdate;
   static const Duration _cacheValidDuration = Duration(minutes: 10);
 
-  /// 🔥 메인 검색 메서드 - 성능 최적화됨
-  static Future<List<SearchResult>> search(String query, BuildContext context) async {
-    final lowercaseQuery = query.toLowerCase().trim();
+  /// 🔥 메인 검색 메서드 - 내 위치 예외 처리 추가
+ static Future<List<SearchResult>> search(String query, BuildContext context) async {
+  final lowercaseQuery = query.toLowerCase().trim();
+  
+  debugPrint('🔍🔍🔍 === 최적화된 통합 검색 시작: "$query" ===');
+  
+  if (lowercaseQuery.isEmpty) {
+    return [];
+  }
+
+  // 🔥 "내 위치" 관련 검색은 건너뛰기
+  if (lowercaseQuery.contains('내 위치') || 
+      lowercaseQuery.contains('내위치') || 
+      lowercaseQuery.contains('현재위치') || 
+      lowercaseQuery.contains('현재 위치')) {
+    debugPrint('⚠️ "내 위치" 관련 검색은 건너뛰기');
+    return [];
+  }
+
+  // 🔥 인덱스 구축 확인
+  await _ensureIndexIsBuilt();
+
+  List<SearchResult> results = [];
+
+  try {
+    // 🔥 1단계: 인덱스를 사용한 빠른 건물 검색
+    final buildingResults = _searchBuildingsOptimized(lowercaseQuery);
     
-    debugPrint('🔍🔍🔍 === 최적화된 통합 검색 시작: "$query" ===');
+    // 🔥 2단계: 우선순위별 건물 분류
+    final prioritizedBuildings = _prioritizeBuildings(buildingResults, lowercaseQuery);
     
-    if (lowercaseQuery.isEmpty) {
-      return [];
+    // 🔥 3단계: 각 우선순위별로 결과 추가 및 호실 검색
+    await _addBuildingResultsWithRooms(prioritizedBuildings, lowercaseQuery, results);
+    
+    // 🔥 4단계: 호실 번호 직접 검색 (숫자로 시작하는 경우)
+    if (_isRoomNumberQuery(lowercaseQuery)) {
+      await _searchRoomsByNumberOptimized(lowercaseQuery, results);
     }
 
-    // 🔥 인덱스 구축 확인
-    await _ensureIndexIsBuilt();
+  } catch (e) {
+    debugPrint('❌ 최적화된 통합 검색 오류: $e');
+    // 🔥 오류 발생 시에도 빈 리스트 반환 (앱 크래시 방지)
+    return [];
+  }
 
-    List<SearchResult> results = [];
-
-    try {
-      // 🔥 1단계: 인덱스를 사용한 빠른 건물 검색
-      final buildingResults = _searchBuildingsOptimized(lowercaseQuery);
-      
-      // 🔥 2단계: 우선순위별 건물 분류
-      final prioritizedBuildings = _prioritizeBuildings(buildingResults, lowercaseQuery);
-      
-      // 🔥 3단계: 각 우선순위별로 결과 추가 및 호실 검색
-      await _addBuildingResultsWithRooms(prioritizedBuildings, lowercaseQuery, results);
-      
-      // 🔥 4단계: 호실 번호 직접 검색 (숫자로 시작하는 경우)
-      if (_isRoomNumberQuery(lowercaseQuery)) {
-        await _searchRoomsByNumberOptimized(lowercaseQuery, results);
-      }
-
-    } catch (e) {
-      debugPrint('❌ 최적화된 통합 검색 오류: $e');
-    }
-
-    // 🔥 5단계: 중복 제거 및 최종 정렬
+  // 🔥 5단계: 중복 제거 및 최종 정렬
+  try {
     results = _removeDuplicatesOptimized(results);
     results = _sortResultsOptimized(results, lowercaseQuery);
-
-    debugPrint('📊 최적화된 검색 결과 요약:');
-    debugPrint('   총 결과: ${results.length}개');
-    debugPrint('   건물 결과: ${results.where((r) => r.isBuilding).length}개');
-    debugPrint('   호실 결과: ${results.where((r) => r.isRoom).length}개');
-    
-    debugPrint('🔍 최적화된 검색 완료: ${results.length}개 결과');
-    
-    return results;
+  } catch (e) {
+    debugPrint('❌ 중복 제거/정렬 오류: $e');
+    // 정렬 실패해도 결과는 반환
   }
+
+  debugPrint('📊 최적화된 검색 결과 요약:');
+  debugPrint('   총 결과: ${results.length}개');
+  debugPrint('   건물 결과: ${results.where((r) => r.isBuilding).length}개');
+  debugPrint('   호실 결과: ${results.where((r) => r.isRoom).length}개');
+  
+  debugPrint('🔍 최적화된 검색 완료: ${results.length}개 결과');
+  
+  return results;
+}
 
   /// 🔥 인덱스 구축 확인 및 업데이트
   static Future<void> _ensureIndexIsBuilt() async {
@@ -82,126 +100,159 @@ class IntegratedSearchService {
     }
   }
 
-  /// 🔥 검색 인덱스 구축 - O(n) 시간으로 모든 인덱스 생성
-static Future<void> _buildSearchIndex() async {
-  try {
-    final buildingRepo = BuildingRepository();
-    final result = await buildingRepo.getAllBuildings();
+  /// 🔥 검색 인덱스 구축 - 안전성 강화
+  static Future<void> _buildSearchIndex() async {
+    try {
+      final buildingRepo = BuildingRepository();
+      final result = await buildingRepo.getAllBuildings();
 
-    if (result.isSuccess && result.data != null) {
-      final buildings = result.data!;
-      debugPrint('🔧 ${buildings.length}개 건물로 인덱스 구축 중...');
+      if (result.isSuccess && result.data != null && result.data!.isNotEmpty) {
+        final buildings = result.data!;
+        debugPrint('🔧 ${buildings.length}개 건물로 인덱스 구축 중...');
 
-      // 인덱스 초기화
-      _buildingNameIndex.clear();
-      _buildingCodeIndex.clear();
-      _categoryIndex.clear();
-      _keywordIndex.clear();
+        // 인덱스 초기화
+        _buildingNameIndex.clear();
+        _buildingCodeIndex.clear();
+        _categoryIndex.clear();
+        _keywordIndex.clear();
 
-      // 각 건물에 대해 인덱스 구축
-      for (final building in buildings) {
-        // 1. 이름 인덱스 (완전한 이름)
-        _buildingNameIndex[building.name.toLowerCase()] = building;
+        // 각 건물에 대해 인덱스 구축
+        for (final building in buildings) {
+          try {
+            // 1. 이름 인덱스 (완전한 이름)
+            final buildingName = building.name.toLowerCase();
+            if (buildingName.isNotEmpty) {
+              _buildingNameIndex[buildingName] = building;
+            }
 
-        // 2. 코드 인덱스 (괄호 안의 코드 추출)
-        final code = _extractBuildingCode(building.name);
-        if (code.isNotEmpty) {
-          _buildingCodeIndex[code.toLowerCase()] = building;
+            // 2. 코드 인덱스 (괄호 안의 코드 추출)
+            final code = _extractBuildingCode(building.name);
+            if (code.isNotEmpty && code != building.name) {
+              _buildingCodeIndex[code.toLowerCase()] = building;
+            }
+
+            // 3. 카테고리 인덱스
+            final category = building.category.toLowerCase();
+            if (category.isNotEmpty) {
+              _categoryIndex[category] = (_categoryIndex[category] ?? [])..add(building);
+            }
+
+            // 4. 키워드 인덱스 (이름과 정보를 단어별로 분할)
+            final keywords = _extractKeywords(building);
+            for (final keyword in keywords) {
+              if (keyword.isNotEmpty && keyword.length > 1) {
+                _keywordIndex[keyword] = (_keywordIndex[keyword] ?? [])..add(building);
+              }
+            }
+          } catch (e) {
+            debugPrint('❌ 개별 건물 인덱싱 실패: ${building.name} - $e');
+          }
         }
 
-        // 3. 카테고리 인덱스
-        final category = building.category.toLowerCase();
-        _categoryIndex[category] = (_categoryIndex[category] ?? [])..add(building);
+        _isIndexBuilt = true;
+        _lastIndexUpdate = DateTime.now();
 
-        // 4. 키워드 인덱스 (이름과 정보를 단어별로 분할)
-        final keywords = _extractKeywords(building);
-        for (final keyword in keywords) {
-          _keywordIndex[keyword] = (_keywordIndex[keyword] ?? [])..add(building);
-        }
+        debugPrint('✅ 인덱스 구축 완료:');
+        debugPrint('   이름 인덱스: ${_buildingNameIndex.length}개');
+        debugPrint('   코드 인덱스: ${_buildingCodeIndex.length}개');
+        debugPrint('   카테고리 인덱스: ${_categoryIndex.length}개');
+        debugPrint('   키워드 인덱스: ${_keywordIndex.length}개');
+      } else {
+        debugPrint('❌ 인덱스 구축 실패: 건물 데이터가 없음');
+        _isIndexBuilt = false;
       }
-
-      _isIndexBuilt = true;
-      _lastIndexUpdate = DateTime.now();
-
-      debugPrint('✅ 인덱스 구축 완료:');
-      debugPrint('   이름 인덱스: ${_buildingNameIndex.length}개');
-      debugPrint('   코드 인덱스: ${_buildingCodeIndex.length}개');
-      debugPrint('   카테고리 인덱스: ${_categoryIndex.length}개');
-      debugPrint('   키워드 인덱스: ${_keywordIndex.length}개');
-    } else {
-      debugPrint('❌ 인덱스 구축 실패: ${result.error}');
+    } catch (e) {
+      debugPrint('❌ 인덱스 구축 실패: $e');
       _isIndexBuilt = false;
     }
-  } catch (e) {
-    debugPrint('❌ 인덱스 구축 실패: $e');
-    _isIndexBuilt = false;
   }
-}
 
-
-  /// 🔥 최적화된 건물 검색 - O(1) 인덱스 검색
+  /// 🔥 최적화된 건물 검색 - 안전성 강화
   static List<Building> _searchBuildingsOptimized(String query) {
     final results = <Building>{};  // Set으로 중복 자동 제거
     
-    // 1. 정확한 이름 매칭 (O(1))
-    final exactMatch = _buildingNameIndex[query];
-    if (exactMatch != null) {
-      results.add(exactMatch);
-      debugPrint('✅ 정확 이름 매칭: ${exactMatch.name}');
-    }
-    
-    // 2. 정확한 코드 매칭 (O(1))
-    final codeMatch = _buildingCodeIndex[query];
-    if (codeMatch != null) {
-      results.add(codeMatch);
-      debugPrint('✅ 정확 코드 매칭: ${codeMatch.name}');
-    }
-    
-    // 3. 카테고리 매칭 (O(1))
-    final categoryMatches = _categoryIndex[query];
-    if (categoryMatches != null) {
-      results.addAll(categoryMatches);
-      debugPrint('✅ 카테고리 매칭: ${categoryMatches.length}개');
-    }
-    
-    // 4. 키워드 매칭 (O(1))
-    final keywordMatches = _keywordIndex[query];
-    if (keywordMatches != null) {
-      results.addAll(keywordMatches);
-      debugPrint('✅ 키워드 매칭: ${keywordMatches.length}개');
-    }
-    
-    // 5. 부분 매칭 (이름에 쿼리가 포함된 경우)
-    for (final entry in _buildingNameIndex.entries) {
-      if (entry.key.contains(query)) {
-        results.add(entry.value);
+    try {
+      // 빈 쿼리 체크
+      if (query.isEmpty) {
+        return [];
       }
+
+      // 1. 정확한 이름 매칭 (O(1))
+      final exactMatch = _buildingNameIndex[query];
+      if (exactMatch != null) {
+        results.add(exactMatch);
+        debugPrint('✅ 정확 이름 매칭: ${exactMatch.name}');
+      }
+      
+      // 2. 정확한 코드 매칭 (O(1))
+      final codeMatch = _buildingCodeIndex[query];
+      if (codeMatch != null) {
+        results.add(codeMatch);
+        debugPrint('✅ 정확 코드 매칭: ${codeMatch.name}');
+      }
+      
+      // 3. 카테고리 매칭 (O(1))
+      final categoryMatches = _categoryIndex[query];
+      if (categoryMatches != null && categoryMatches.isNotEmpty) {
+        results.addAll(categoryMatches);
+        debugPrint('✅ 카테고리 매칭: ${categoryMatches.length}개');
+      }
+      
+      // 4. 키워드 매칭 (O(1))
+      final keywordMatches = _keywordIndex[query];
+      if (keywordMatches != null && keywordMatches.isNotEmpty) {
+        results.addAll(keywordMatches);
+        debugPrint('✅ 키워드 매칭: ${keywordMatches.length}개');
+      }
+      
+      // 5. 부분 매칭 (이름에 쿼리가 포함된 경우) - 안전성 강화
+      if (_buildingNameIndex.isNotEmpty) {
+        for (final entry in _buildingNameIndex.entries) {
+          try {
+            if (entry.key.isNotEmpty && entry.key.contains(query)) {
+              results.add(entry.value);
+            }
+          } catch (e) {
+            debugPrint('❌ 부분 매칭 오류: ${entry.key} - $e');
+          }
+        }
+      }
+      
+    } catch (e) {
+      debugPrint('❌ 건물 검색 오류: $e');
+      return [];
     }
     
     debugPrint('🔍 인덱스 검색 결과: ${results.length}개 건물');
     return results.toList();
   }
 
-  /// 🔥 건물 우선순위 분류 - 검색 관련도에 따라 정렬
+  /// 🔥 건물 우선순위 분류 - 안전성 강화
   static Map<String, List<Building>> _prioritizeBuildings(List<Building> buildings, String query) {
     final exactMatches = <Building>[];
     final codeMatches = <Building>[];
     final startMatches = <Building>[];
     final containsMatches = <Building>[];
     
-    for (final building in buildings) {
-      final buildingName = building.name.toLowerCase();
-      final buildingCode = _extractBuildingCode(building.name).toLowerCase();
-      
-      if (buildingName == query) {
-        exactMatches.add(building);
-      } else if (buildingCode == query) {
-        codeMatches.add(building);
-      } else if (buildingName.startsWith(query)) {
-        startMatches.add(building);
-      } else {
-        containsMatches.add(building);
+    try {
+      for (final building in buildings) {
+        if (building.name.isEmpty) continue;
+        
+        final buildingName = building.name.toLowerCase();
+        final buildingCode = _extractBuildingCode(building.name).toLowerCase();
+        
+        if (buildingName == query) {
+          exactMatches.add(building);
+        } else if (buildingCode.isNotEmpty && buildingCode == query) {
+          codeMatches.add(building);
+        } else if (buildingName.startsWith(query)) {
+          startMatches.add(building);
+        } else {
+          containsMatches.add(building);
+        }
       }
+    } catch (e) {
+      debugPrint('❌ 건물 우선순위 분류 오류: $e');
     }
     
     debugPrint('📊 우선순위 분류:');
@@ -218,253 +269,412 @@ static Future<void> _buildSearchIndex() async {
     };
   }
 
-  /// 🔥 건물 결과 추가 및 호실 검색 최적화
+  /// 🔥 건물 결과 추가 및 호실 검색 최적화 - 안전성 강화
   static Future<void> _addBuildingResultsWithRooms(
     Map<String, List<Building>> prioritizedBuildings, 
     String query, 
     List<SearchResult> results
   ) async {
     
-    // 우선순위 순서대로 처리
-    final priorities = ['exact', 'code', 'start', 'contains'];
-    
-    for (final priority in priorities) {
-      final buildings = prioritizedBuildings[priority] ?? [];
+    try {
+      // 우선순위 순서대로 처리
+      final priorities = ['exact', 'code', 'start', 'contains'];
       
-      for (final building in buildings) {
-        // 건물 자체를 결과에 추가
-        results.add(SearchResult.fromBuilding(building));
+      for (final priority in priorities) {
+        final buildings = prioritizedBuildings[priority] ?? [];
         
-        // 🔥 높은 우선순위는 호실도 검색
-        if (priority == 'exact' || priority == 'code' || priority == 'start') {
-          await _addRoomsForBuildingOptimized(building, results);
+        for (final building in buildings) {
+          try {
+            // 건물 자체를 결과에 추가
+            results.add(SearchResult.fromBuilding(building));
+            
+            // 🔥 높은 우선순위는 호실도 검색
+            if (priority == 'exact' || priority == 'code' || priority == 'start') {
+              await _addRoomsForBuildingOptimized(building, results);
+            }
+          } catch (e) {
+            debugPrint('❌ 개별 건물 처리 오류: ${building.name} - $e');
+          }
         }
       }
+    } catch (e) {
+      debugPrint('❌ 건물 결과 추가 오류: $e');
     }
   }
 
-  /// 🔥 최적화된 호실 추가 - 캐시 사용
+  /// 🔥 최적화된 호실 추가 - 캐시 사용 및 안전성 강화
   static Future<void> _addRoomsForBuildingOptimized(Building building, List<SearchResult> results) async {
-    try {
-      final apiBuildingName = _extractBuildingCode(building.name);
+  try {
+    final apiBuildingName = _extractBuildingCode(building.name);
+    if (apiBuildingName.isEmpty) {
+      debugPrint('⚠️ 건물 코드 추출 실패: ${building.name}');
+      return;
+    }
+    
+    // 🔥 캐시 확인
+    List<Map<String, dynamic>>? roomList = _getCachedRooms(apiBuildingName);
+    
+    if (roomList == null) {
+      // 캐시에 없으면 API 호출
+      debugPrint('📞 API 호출: fetchRoomsByBuilding("$apiBuildingName")');
+      final apiService = ApiService();
       
-      // 🔥 캐시 확인
-      List<Map<String, dynamic>>? roomList = _getCachedRooms(apiBuildingName);
-      
-      if (roomList == null) {
-        // 캐시에 없으면 API 호출
-        debugPrint('📞 API 호출: fetchRoomsByBuilding("$apiBuildingName")');
-        final apiService = ApiService();
+      try {
         roomList = await apiService.fetchRoomsByBuilding(apiBuildingName);
         
-        // 🔥 결과를 캐시에 저장
-        _cacheRooms(apiBuildingName, roomList);
-      } else {
-        debugPrint('⚡ 캐시된 호실 데이터 사용: ${roomList.length}개');
-      }
-      
-      // 호실 결과 추가 (최대 10개로 제한)
-      int addedRooms = 0;
-      for (final roomData in roomList.take(10)) {
-        try {
-          final roomName = roomData['Room_Name'] as String?;
-          final floorNumber = roomData['Floor_Number'] as String?;
-          final roomDescription = roomData['Room_Description'] as String?;
-          
-          if (roomName != null && roomName.isNotEmpty) {
-            int? floorInt;
-            if (floorNumber != null) {
-              floorInt = int.tryParse(floorNumber);
-            }
-            
-            final searchResult = SearchResult.fromRoom(
-              building: building,
-              roomNumber: roomName,
-              floorNumber: floorInt ?? 1,
-              roomDescription: roomDescription?.isNotEmpty == true ? roomDescription : null,
-            );
-            
-            results.add(searchResult);
-            addedRooms++;
-          }
-        } catch (e) {
-          debugPrint('❌ 개별 호실 처리 오류: $e');
+        // 🔥 null 체크 및 빈 리스트 체크
+        if (roomList == null) {
+          debugPrint('⚠️ API 응답이 null: $apiBuildingName');
+          roomList = [];
         }
+        
+        // 🔥 결과를 캐시에 저장
+        if (roomList.isNotEmpty) {
+          _cacheRooms(apiBuildingName, roomList);
+        }
+      } catch (apiError) {
+        debugPrint('❌ API 호출 실패: $apiError');
+        roomList = [];
       }
-      
-      debugPrint('✅ ${building.name}: ${addedRooms}개 호실 추가');
-      
-    } catch (e) {
-      debugPrint('❌ ${building.name} 호실 로드 실패: $e');
+    } else {
+      debugPrint('⚡ 캐시된 호실 데이터 사용: ${roomList.length}개');
     }
+    
+    // 🔥 빈 리스트 체크
+    if (roomList.isEmpty) {
+      debugPrint('⚠️ ${building.name}: 호실 데이터 없음');
+      return;
+    }
+    
+    // 🔥 안전한 호실 결과 추가 (최대 10개로 제한)
+    int addedRooms = 0;
+    final maxRooms = math.min(10, roomList.length); // 안전한 최대값 설정
+    
+    for (int i = 0; i < maxRooms; i++) {
+      try {
+        final roomData = roomList[i];
+        
+        // 🔥 각 필드 안전하게 추출
+        final roomName = _safeStringExtract(roomData, 'Room_Name');
+        final floorNumber = _safeStringExtract(roomData, 'Floor_Number');
+        final roomDescription = _safeStringExtract(roomData, 'Room_Description');
+        
+        if (roomName.isNotEmpty) {
+          int? floorInt;
+          if (floorNumber.isNotEmpty) {
+            floorInt = int.tryParse(floorNumber);
+          }
+          
+          final searchResult = SearchResult.fromRoom(
+            building: building,
+            roomNumber: roomName,
+            floorNumber: floorInt ?? 1,
+            roomDescription: roomDescription.isNotEmpty ? roomDescription : null,
+          );
+          
+          results.add(searchResult);
+          addedRooms++;
+        }
+      } catch (e) {
+        debugPrint('❌ 개별 호실 처리 오류 (index: $i): $e');
+        continue; // 개별 호실 오류는 무시하고 계속
+      }
+    }
+    
+    debugPrint('✅ ${building.name}: ${addedRooms}개 호실 추가');
+    
+  } catch (e) {
+    debugPrint('❌ ${building.name} 호실 로드 실패: $e');
   }
-
-  /// 🔥 최적화된 호실 번호 검색 - 캐시 사용
-  static Future<void> _searchRoomsByNumberOptimized(String roomQuery, List<SearchResult> results) async {
-    try {
-      debugPrint('🔍 최적화된 호실 번호 검색: $roomQuery');
-      
-      // 🔥 전체 호실 캐시 확인
-      List<Map<String, dynamic>>? allRooms = _getCachedRooms('ALL_ROOMS');
-      
-      if (allRooms == null) {
+}
+  /// 🔥 최적화된 호실 번호 검색 - 캐시 사용 및 안전성 강화
+ static Future<void> _searchRoomsByNumberOptimized(String roomQuery, List<SearchResult> results) async {
+  try {
+    debugPrint('🔍 최적화된 호실 번호 검색: $roomQuery');
+    
+    // 🔥 전체 호실 캐시 확인
+    List<Map<String, dynamic>>? allRooms = _getCachedRooms('ALL_ROOMS');
+    
+    if (allRooms == null) {
+      try {
         final apiService = ApiService();
         allRooms = await apiService.fetchAllRooms();
-        _cacheRooms('ALL_ROOMS', allRooms);
-        debugPrint('📋 전체 호실 데이터 로딩: ${allRooms.length}개');
-      } else {
-        debugPrint('⚡ 캐시된 전체 호실 데이터 사용: ${allRooms.length}개');
-      }
-      
-      // 🔥 빠른 필터링
-      final matchingRooms = allRooms.where((roomData) {
-        final roomName = roomData['Room_Name'] as String?;
-        return roomName != null && roomName.toLowerCase().contains(roomQuery);
-      }).take(20).toList(); // 최대 20개로 제한
-      
-      debugPrint('🎯 일치하는 호실: ${matchingRooms.length}개');
-      
-      // BuildingRepository에서 건물 인덱스 가져오기
-      for (final roomData in matchingRooms) {
-        try {
-          final buildingName = roomData['Building_Name'] as String?;
-          final building = _buildingNameIndex[buildingName?.toLowerCase()];
-          
-          if (building != null) {
-            final roomName = roomData['Room_Name'] as String?;
-            final floorNumber = roomData['Floor_Number'] as String?;
-            final roomDescription = roomData['Room_Description'] as String?;
-            
-            if (roomName != null) {
-              int? floorInt;
-              if (floorNumber != null) {
-                floorInt = int.tryParse(floorNumber);
-              }
-              
-              final searchResult = SearchResult.fromRoom(
-                building: building,
-                roomNumber: roomName,
-                floorNumber: floorInt ?? 1,
-                roomDescription: roomDescription?.isNotEmpty == true ? roomDescription : null,
-              );
-              
-              results.add(searchResult);
-            }
-          }
-        } catch (e) {
-          debugPrint('❌ 호실 번호 검색 - 개별 처리 오류: $e');
+        
+        // 🔥 null 체크
+        if (allRooms == null) {
+          debugPrint('⚠️ 전체 호실 API 응답이 null');
+          allRooms = [];
         }
+        
+        if (allRooms.isNotEmpty) {
+          _cacheRooms('ALL_ROOMS', allRooms);
+          debugPrint('📋 전체 호실 데이터 로딩: ${allRooms.length}개');
+        }
+      } catch (apiError) {
+        debugPrint('❌ 전체 호실 API 호출 실패: $apiError');
+        allRooms = [];
       }
-      
-    } catch (e) {
-      debugPrint('❌ 호실 번호 검색 오류: $e');
+    } else {
+      debugPrint('⚡ 캐시된 전체 호실 데이터 사용: ${allRooms.length}개');
     }
+    
+    // 🔥 빈 리스트 체크
+    if (allRooms.isEmpty) {
+      debugPrint('⚠️ 전체 호실 데이터 없음');
+      return;
+    }
+    
+    // 🔥 안전한 필터링
+    final List<Map<String, dynamic>> matchingRooms = [];
+    
+    for (final roomData in allRooms) {
+      try {
+        final roomName = _safeStringExtract(roomData, 'Room_Name');
+        if (roomName.isNotEmpty && roomName.toLowerCase().contains(roomQuery)) {
+          matchingRooms.add(roomData);
+          if (matchingRooms.length >= 20) break; // 최대 20개로 제한
+        }
+      } catch (e) {
+        debugPrint('❌ 호실 필터링 개별 오류: $e');
+        continue;
+      }
+    }
+    
+    debugPrint('🎯 일치하는 호실: ${matchingRooms.length}개');
+    
+    if (matchingRooms.isEmpty) {
+      debugPrint('⚠️ 일치하는 호실이 없음');
+      return;
+    }
+    
+    // 🔥 안전한 결과 추가
+    for (final roomData in matchingRooms) {
+      try {
+        final buildingName = _safeStringExtract(roomData, 'Building_Name');
+        if (buildingName.isEmpty) {
+          debugPrint('⚠️ 건물명이 비어있음');
+          continue;
+        }
+        
+        // 🔥 안전한 건물 찾기
+        final building = _findBuildingByName(buildingName.toLowerCase());
+        if (building == null) {
+          debugPrint('⚠️ 건물을 찾을 수 없음: $buildingName');
+          continue;
+        }
+        
+        final roomName = _safeStringExtract(roomData, 'Room_Name');
+        final floorNumber = _safeStringExtract(roomData, 'Floor_Number');
+        final roomDescription = _safeStringExtract(roomData, 'Room_Description');
+        
+        if (roomName.isNotEmpty) {
+          int? floorInt;
+          if (floorNumber.isNotEmpty) {
+            floorInt = int.tryParse(floorNumber);
+          }
+          
+          final searchResult = SearchResult.fromRoom(
+            building: building,
+            roomNumber: roomName,
+            floorNumber: floorInt ?? 1,
+            roomDescription: roomDescription.isNotEmpty ? roomDescription : null,
+          );
+          
+          results.add(searchResult);
+        }
+      } catch (e) {
+        debugPrint('❌ 호실 번호 검색 - 개별 처리 오류: $e');
+        continue;
+      }
+    }
+    
+  } catch (e) {
+    debugPrint('❌ 호실 번호 검색 오류: $e');
   }
+}
+
+static String _safeStringExtract(Map<String, dynamic> data, String key) {
+  try {
+    final value = data[key];
+    if (value == null) return '';
+    return value.toString().trim();
+  } catch (e) {
+    debugPrint('❌ 안전한 문자열 추출 오류 ($key): $e');
+    return '';
+  }
+}
+
+static Building? _findBuildingByName(String buildingName) {
+  try {
+    if (buildingName.isEmpty) return null;
+    
+    // 1. 정확한 이름으로 찾기
+    Building? building = _buildingNameIndex[buildingName];
+    if (building != null) return building;
+    
+    // 2. 코드로 찾기
+    building = _buildingCodeIndex[buildingName];
+    if (building != null) return building;
+    
+    // 3. 부분 매칭으로 찾기
+    for (final entry in _buildingNameIndex.entries) {
+      if (entry.key.contains(buildingName) || buildingName.contains(entry.key)) {
+        return entry.value;
+      }
+    }
+    
+    return null;
+  } catch (e) {
+    debugPrint('❌ 건물 찾기 오류: $e');
+    return null;
+  }
+}
 
   /// 🔥 캐시 관련 메서드들
   static List<Map<String, dynamic>>? _getCachedRooms(String key) {
-    if (_roomCache.containsKey(key) && _lastRoomCacheUpdate != null) {
-      final timeDiff = DateTime.now().difference(_lastRoomCacheUpdate!);
-      if (timeDiff < _cacheValidDuration) {
-        return _roomCache[key];
+    try {
+      if (_roomCache.containsKey(key) && _lastRoomCacheUpdate != null) {
+        final timeDiff = DateTime.now().difference(_lastRoomCacheUpdate!);
+        if (timeDiff < _cacheValidDuration) {
+          return _roomCache[key];
+        }
       }
+    } catch (e) {
+      debugPrint('❌ 캐시 조회 오류: $e');
     }
     return null;
   }
 
   static void _cacheRooms(String key, List<Map<String, dynamic>> rooms) {
-    _roomCache[key] = rooms;
-    _lastRoomCacheUpdate = DateTime.now();
+    try {
+      _roomCache[key] = rooms;
+      _lastRoomCacheUpdate = DateTime.now();
+    } catch (e) {
+      debugPrint('❌ 캐시 저장 오류: $e');
+    }
   }
 
   /// 🔥 최적화된 중복 제거 - Set 사용
   static List<SearchResult> _removeDuplicatesOptimized(List<SearchResult> results) {
-    final seen = <String>{};
-    final filtered = <SearchResult>[];
-    
-    for (final result in results) {
-      final key = '${result.type.name}_${result.displayName}_${result.building.name}';
-      if (!seen.contains(key)) {
-        seen.add(key);
-        filtered.add(result);
+    try {
+      final seen = <String>{};
+      final filtered = <SearchResult>[];
+      
+      for (final result in results) {
+        final key = '${result.type.name}_${result.displayName}_${result.building.name}';
+        if (!seen.contains(key)) {
+          seen.add(key);
+          filtered.add(result);
+        }
       }
+      
+      debugPrint('🔄 최적화된 중복 제거: ${results.length} → ${filtered.length}');
+      return filtered;
+    } catch (e) {
+      debugPrint('❌ 중복 제거 오류: $e');
+      return results;
     }
-    
-    debugPrint('🔄 최적화된 중복 제거: ${results.length} → ${filtered.length}');
-    return filtered;
   }
 
   /// 🔥 최적화된 정렬
   static List<SearchResult> _sortResultsOptimized(List<SearchResult> results, String query) {
-    // 사전 계산된 관련도로 정렬
-    final scoredResults = results.map((result) {
-      final score = _calculateRelevanceOptimized(result, query);
-      return {'result': result, 'score': score};
-    }).toList();
-    
-    scoredResults.sort((a, b) {
-      final scoreComparison = (b['score'] as int).compareTo(a['score'] as int);
-      if (scoreComparison != 0) return scoreComparison;
+    try {
+      // 사전 계산된 관련도로 정렬
+      final scoredResults = results.map((result) {
+        final score = _calculateRelevanceOptimized(result, query);
+        return {'result': result, 'score': score};
+      }).toList();
       
-      // 점수가 같으면 타입별 정렬 (건물 먼저)
-      final aResult = a['result'] as SearchResult;
-      final bResult = b['result'] as SearchResult;
+      scoredResults.sort((a, b) {
+        final scoreComparison = (b['score'] as int).compareTo(a['score'] as int);
+        if (scoreComparison != 0) return scoreComparison;
+        
+        // 점수가 같으면 타입별 정렬 (건물 먼저)
+        final aResult = a['result'] as SearchResult;
+        final bResult = b['result'] as SearchResult;
+        
+        if (aResult.type != bResult.type) {
+          return aResult.type == SearchResultType.building ? -1 : 1;
+        }
+        
+        return aResult.displayName.compareTo(bResult.displayName);
+      });
       
-      if (aResult.type != bResult.type) {
-        return aResult.type == SearchResultType.building ? -1 : 1;
-      }
-      
-      return aResult.displayName.compareTo(bResult.displayName);
-    });
-    
-    return scoredResults.map((item) => item['result'] as SearchResult).toList();
+      return scoredResults.map((item) => item['result'] as SearchResult).toList();
+    } catch (e) {
+      debugPrint('❌ 정렬 오류: $e');
+      return results;
+    }
   }
 
   /// 🔥 최적화된 관련도 계산
   static int _calculateRelevanceOptimized(SearchResult result, String query) {
-    final displayName = result.displayName.toLowerCase();
-    final query_lower = query.toLowerCase();
-    
-    // 기본 점수들 (한 번만 계산)
-    if (displayName == query_lower) return 100;
-    if (displayName.startsWith(query_lower)) return 90;
-    if (displayName.contains(query_lower)) return 80;
-    
-    // 호실의 경우 추가 점수
-    if (result.isRoom && result.roomNumber != null) {
-      final roomNumber = result.roomNumber!.toLowerCase();
-      if (roomNumber == query_lower) return 95;
-      if (roomNumber.startsWith(query_lower)) return 85;
-      if (roomNumber.contains(query_lower)) return 75;
+    try {
+      final displayName = result.displayName.toLowerCase();
+      final query_lower = query.toLowerCase();
+      
+      // 기본 점수들 (한 번만 계산)
+      if (displayName == query_lower) return 100;
+      if (displayName.startsWith(query_lower)) return 90;
+      if (displayName.contains(query_lower)) return 80;
+      
+      // 호실의 경우 추가 점수
+      if (result.isRoom && result.roomNumber != null) {
+        final roomNumber = result.roomNumber!.toLowerCase();
+        if (roomNumber == query_lower) return 95;
+        if (roomNumber.startsWith(query_lower)) return 85;
+        if (roomNumber.contains(query_lower)) return 75;
+      }
+      
+      return 0;
+    } catch (e) {
+      debugPrint('❌ 관련도 계산 오류: $e');
+      return 0;
     }
-    
-    return 0;
   }
 
   /// 🔥 유틸리티 메서드들
   static bool _isRoomNumberQuery(String query) {
-    return RegExp(r'^\d+').hasMatch(query);
+    try {
+      return RegExp(r'^\d+').hasMatch(query);
+    } catch (e) {
+      debugPrint('❌ 호실 번호 체크 오류: $e');
+      return false;
+    }
   }
 
   static String _extractBuildingCode(String buildingName) {
-    final regex = RegExp(r'\(([^)]+)\)');
-    final match = regex.firstMatch(buildingName);
-    return match?.group(1) ?? buildingName;
+    try {
+      final regex = RegExp(r'\(([^)]+)\)');
+      final match = regex.firstMatch(buildingName);
+      return match?.group(1) ?? buildingName;
+    } catch (e) {
+      debugPrint('❌ 건물 코드 추출 오류: $e');
+      return buildingName;
+    }
   }
 
   static Set<String> _extractKeywords(Building building) {
     final keywords = <String>{};
     
-    // 이름을 단어별로 분할
-    final nameWords = building.name.toLowerCase().split(RegExp(r'[^\w가-힣]'));
-    keywords.addAll(nameWords.where((word) => word.length > 1));
-    
-    // 정보를 단어별로 분할
-    final infoWords = building.info.toLowerCase().split(RegExp(r'[^\w가-힣]'));
-    keywords.addAll(infoWords.where((word) => word.length > 1));
-    
-    // 카테고리 추가
-    keywords.add(building.category.toLowerCase());
+    try {
+      // 이름을 단어별로 분할
+      final nameWords = building.name.toLowerCase().split(RegExp(r'[^\w가-힣]'));
+      keywords.addAll(nameWords.where((word) => word.isNotEmpty && word.length > 1));
+      
+      // 정보를 단어별로 분할
+      if (building.info.isNotEmpty) {
+        final infoWords = building.info.toLowerCase().split(RegExp(r'[^\w가-힣]'));
+        keywords.addAll(infoWords.where((word) => word.isNotEmpty && word.length > 1));
+      }
+      
+      // 카테고리 추가
+      if (building.category.isNotEmpty) {
+        keywords.add(building.category.toLowerCase());
+      }
+    } catch (e) {
+      debugPrint('❌ 키워드 추출 오류: $e');
+    }
     
     return keywords;
   }

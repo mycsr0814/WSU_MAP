@@ -1,3 +1,4 @@
+// lib/main.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_application_1/managers/location_manager.dart';
@@ -6,17 +7,19 @@ import 'package:flutter_application_1/welcome_view.dart';
 import 'package:flutter_application_1/selection/auth_selection_view.dart';
 import 'package:flutter_application_1/map/widgets/directions_screen.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
+import 'services/websocket_service.dart';
 import 'auth/user_auth.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'generated/app_localizations.dart';
 import 'providers/app_language_provider.dart';
+import 'dart:io';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   try {
     await FlutterNaverMap().init(
-      clientId: 'a7hukqhx2a',
+      clientId: 'gxa5mf6swg',
       onAuthFailed: (ex) => debugPrint('NaverMap 인증 실패: $ex'),
     );
     debugPrint('✅ 네이버 지도 초기화 성공');
@@ -29,7 +32,7 @@ void main() async {
       providers: [
         ChangeNotifierProvider(create: (_) => UserAuth()),
         ChangeNotifierProvider(create: (_) => AppLanguageProvider()),
-        ChangeNotifierProvider(create: (_) => LocationManager()), // 반드시 추가
+        ChangeNotifierProvider(create: (_) => LocationManager()),
       ],
       child: const CampusNavigatorApp(),
     ),
@@ -43,130 +46,182 @@ class CampusNavigatorApp extends StatefulWidget {
   State<CampusNavigatorApp> createState() => _CampusNavigatorAppState();
 }
 
+/// 앱 생명주기 모니터링
 class _CampusNavigatorAppState extends State<CampusNavigatorApp>
     with WidgetsBindingObserver {
-  // 🔥 WidgetsBindingObserver 추가
   bool _isInitialized = false;
+
+  late final UserAuth _userAuth;
+  late final LocationManager _locationManager;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this); // 🔥 옵저버 등록
+    WidgetsBinding.instance.addObserver(this);
+
+    // provider 인스턴스 캐싱
+    _userAuth = Provider.of<UserAuth>(context, listen: false);
+    _locationManager = Provider.of<LocationManager>(context, listen: false);
+
     _initializeApp();
   }
 
   @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this); // 🔥 옵저버 해제
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
-  // 🔥 앱 라이프사이클 상태 변경 감지
+  // ---------- 앱 생명주기 콜백 ----------
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
 
-    debugPrint('🔄 앱 라이프사이클 상태 변경: $state');
-
     switch (state) {
-      case AppLifecycleState.paused:
-        // 앱이 백그라운드로 이동
-        debugPrint('📱 앱이 백그라운드로 이동');
-        _handleAppPaused();
-        break;
-      case AppLifecycleState.detached:
-        // 앱이 완전히 종료
-        debugPrint('🔴 앱이 완전히 종료됨');
-        _handleAppTerminated();
-        break;
       case AppLifecycleState.resumed:
-        // 앱이 포그라운드로 복귀
-        debugPrint('📱 앱이 포그라운드로 복귀');
+        debugPrint('📱 앱 포그라운드 복귀');
         _handleAppResumed();
         break;
+
+      case AppLifecycleState.paused:
+        debugPrint('📱 앱 백그라운드 이동 (iOS: 스와이프 / Android: 홈 버튼)');
+        _handleAppPaused();
+        break;
+
+      case AppLifecycleState.detached:
+        debugPrint('📱 앱 완전 종료');
+        _handleAppDetached();
+        break;
+
       default:
         break;
     }
   }
 
-  /// 🔥 앱이 백그라운드로 이동할 때 처리
-  Future<void> _handleAppPaused() async {
-    if (!_isInitialized) return;
-
-    try {
-      final userAuth = Provider.of<UserAuth>(context, listen: false);
-      // 백그라운드로 이동 시에는 로그아웃하지 않음 (사용자 경험 고려)
-      debugPrint('📝 백그라운드 이동 - 로그아웃 안함');
-    } catch (e) {
-      debugPrint('❌ 백그라운드 처리 오류: $e');
-    }
-  }
-
-  /// 🔥 앱이 완전히 종료될 때 처리
-  Future<void> _handleAppTerminated() async {
-    if (!_isInitialized) return;
-
-    try {
-      final userAuth = Provider.of<UserAuth>(context, listen: false);
-      await userAuth.autoLogoutOnAppExit();
-    } catch (e) {
-      debugPrint('❌ 앱 종료 처리 오류: $e');
-    }
-  }
-
-  /// 🔥 앱이 포그라운드로 복귀할 때 처리
+  // ---------- 상태별 처리 ----------
+  /// 포그라운드 복귀
   Future<void> _handleAppResumed() async {
-    if (!_isInitialized) return;
+    debugPrint('📱 앱 포그라운드 복귀');
+
+    // 🔥 게스트 사용자는 위치 전송 및 웹소켓 연결 제외
+    if (!_userAuth.isLoggedIn ||
+        _userAuth.userRole == UserRole.external ||
+        _userAuth.userId == null ||
+        _userAuth.userId!.startsWith('guest_')) {
+      debugPrint('⚠️ 게스트 사용자 - 위치 전송 및 웹소켓 연결 제외');
+      return;
+    }
 
     try {
-      final userAuth = Provider.of<UserAuth>(context, listen: false);
-
-      // 자동 로그아웃이 필요한 상태였다면 로그아웃 처리
-      final shouldLogout = await userAuth.shouldAutoLogout();
-      if (shouldLogout) {
-        debugPrint('🔄 포그라운드 복귀 시 자동 로그아웃 처리');
-        await userAuth.autoLogoutOnAppExit();
+      // 저장된 로그인 정보가 있으면 서버 재로그인
+      if (await _userAuth.hasSavedLoginInfo()) {
+        await _userAuth.autoLoginToServer();
       }
+
+      // 위치 전송 및 웹소켓 연결 재시작
+      _locationManager.startPeriodicLocationSending(userId: _userAuth.userId!);
+      WebSocketService().connect(_userAuth.userId!);
+
+      debugPrint('✅ 일반 사용자 위치 전송 및 웹소켓 연결 재시작');
     } catch (e) {
       debugPrint('❌ 포그라운드 복귀 처리 오류: $e');
     }
   }
 
-  // 🔥 기존 _initializeApp 메서드 수정
-  Future<void> _initializeApp() async {
+  /// 🔥 백그라운드 이동 시 - 플랫폼 무관하게 위치 전송 및 웹소켓 연결 중지
+  Future<void> _handleAppPaused() async {
+    debugPrint('📱 앱 백그라운드 이동 - 위치 전송 및 웹소켓 연결 중지');
+    debugPrint('🔍 플랫폼: ${Platform.isIOS ? 'iOS' : 'Android'}');
+
+    // 🔥 모든 사용자의 위치 전송 및 웹소켓 연결 무조건 중지 (플랫폼 무관)
     try {
-      debugPrint('=== 앱 초기화 시작 ===');
-      final userAuth = Provider.of<UserAuth>(context, listen: false);
-
-      // 🔥 앱 재시작 시 자동 로그아웃 확인
-      final shouldLogout = await userAuth.shouldAutoLogout();
-      if (shouldLogout) {
-        debugPrint('🔄 앱 재시작 시 자동 로그아웃 처리');
-        await userAuth.autoLogoutOnAppExit();
-      } else {
-        await userAuth.initialize();
-      }
-
-      debugPrint('=== 앱 초기화 완료 ===');
-      if (mounted) {
-        setState(() {
-          _isInitialized = true;
-        });
-      }
+      _locationManager.stopPeriodicLocationSending();
+      WebSocketService().disconnect();
+      debugPrint('✅ 위치 전송 및 웹소켓 연결 중지 완료');
     } catch (e) {
-      debugPrint('❌ 앱 초기화 오류: $e');
-      if (mounted) {
-        setState(() {
-          _isInitialized = true;
-        });
+      debugPrint('❌ 위치 전송 및 웹소켓 연결 중지 오류: $e');
+    }
+
+    // 🔥 일반 사용자만 서버 로그아웃 처리
+    if (_userAuth.isLoggedIn &&
+        _userAuth.userRole != UserRole.external &&
+        _userAuth.userId != null &&
+        !_userAuth.userId!.startsWith('guest_')) {
+      try {
+        await _userAuth.logoutServerOnly();
+        debugPrint('✅ 서버 로그아웃 완료');
+      } catch (e) {
+        debugPrint('❌ 서버 로그아웃 오류: $e');
       }
     }
   }
 
+  /// 🔥 앱 완전 종료 시 - 강제 중지
+  Future<void> _handleAppDetached() async {
+    debugPrint('📱 앱 완전 종료 - 모든 연결 강제 중지');
+
+    // 🔥 강제 위치 전송 및 웹소켓 연결 중지
+    try {
+      _locationManager.forceStopLocationSending();
+      WebSocketService().disconnect();
+      debugPrint('✅ 모든 연결 강제 중지 완료');
+    } catch (e) {
+      debugPrint('❌ 연결 강제 중지 오류: $e');
+    }
+
+    // 🔥 일반 사용자만 서버 로그아웃 처리
+    if (_userAuth.isLoggedIn &&
+        _userAuth.userRole != UserRole.external &&
+        _userAuth.userId != null &&
+        !_userAuth.userId!.startsWith('guest_')) {
+      try {
+        await _userAuth.logoutServerOnly();
+        debugPrint('✅ 서버 로그아웃 완료');
+      } catch (e) {
+        debugPrint('❌ 서버 로그아웃 오류: $e');
+      }
+    }
+  }
+
+  // ---------- 앱 초기화 ----------
+  Future<void> _initializeApp() async {
+    try {
+      debugPrint('=== 앱 초기화 시작 ===');
+      await _userAuth.initialize();
+
+      // 🔥 게스트가 아닌 로그인 사용자에게만 위치 전송 및 웹소켓 연결
+      if (_userAuth.isLoggedIn &&
+          _userAuth.userId != null &&
+          _userAuth.userRole != UserRole.external && // 게스트 제외
+          !_userAuth.userId!.startsWith('guest_')) {
+        // 게스트 ID 체크
+        await _userAuth.autoLoginToServer();
+
+        _locationManager.startPeriodicLocationSending(
+          userId: _userAuth.userId!,
+        );
+        WebSocketService().connect(_userAuth.userId!);
+        debugPrint('✅ 일반 사용자 위치 전송 및 웹소켓 연결 시작');
+      } else if (_userAuth.isLoggedIn &&
+          _userAuth.userRole == UserRole.external) {
+        debugPrint('⚠️ 게스트 사용자 - 위치 전송 및 웹소켓 연결 제외');
+      }
+
+      debugPrint('=== 앱 초기화 완료 ===');
+    } catch (e) {
+      debugPrint('❌ 앱 초기화 오류: $e');
+    } finally {
+      if (mounted) {
+        setState(() => _isInitialized = true);
+      }
+    }
+  }
+
+  // ---------- UI ----------
   @override
   Widget build(BuildContext context) {
     return Consumer<AppLanguageProvider>(
-      builder: (context, langProvider, _) {
+      builder: (_, langProvider, __) {
         return MaterialApp(
           title: 'Campus Navigator',
           theme: ThemeData(
@@ -194,31 +249,19 @@ class _CampusNavigatorAppState extends State<CampusNavigatorApp>
           ],
           routes: {
             '/directions': (context) {
-              // arguments로 방 정보를 받아서 DirectionsScreen에 전달
               final args =
                   ModalRoute.of(context)?.settings.arguments
                       as Map<String, dynamic>?;
-
-              if (args != null) {
-                return DirectionsScreen(roomData: args);
-              } else {
-                return const DirectionsScreen();
-              }
+              return DirectionsScreen(roomData: args);
             },
           },
           home: _isInitialized
               ? Consumer<UserAuth>(
-                  builder: (context, auth, _) {
-                    debugPrint('🔥 Main Consumer: 상태 변화 감지');
-                    debugPrint('   - isFirstLaunch: ${auth.isFirstLaunch}');
-                    debugPrint('   - isLoggedIn: ${auth.isLoggedIn}');
-                    debugPrint('   - userRole: ${auth.userRole}');
-
+                  builder: (_, auth, __) {
                     if (auth.isFirstLaunch) {
                       return const WelcomeView();
                     } else if (auth.isLoggedIn) {
-                      // 🔥 로그인된 상태에서는 고유 키를 사용하여 상태 변화 감지
-                      return MapScreen(key: ValueKey(auth.userId));
+                      return const MapScreen();
                     } else {
                       return const AuthSelectionView();
                     }
@@ -304,17 +347,16 @@ class _CampusNavigatorAppState extends State<CampusNavigatorApp>
   }
 }
 
+// ---------- 색상 유틸 ----------
 MaterialColor createMaterialColor(Color color) {
-  List strengths = <double>[.05];
-  Map<int, Color> swatch = {};
-  final int r = color.red, g = color.green, b = color.blue;
+  final strengths = <double>[.05];
+  final swatch = <int, Color>{};
+  final r = color.red, g = color.green, b = color.blue;
 
-  for (int i = 1; i < 10; i++) {
-    strengths.add(0.1 * i);
-  }
+  for (int i = 1; i < 10; i++) strengths.add(0.1 * i);
 
   for (var strength in strengths) {
-    final double ds = 0.5 - strength;
+    final ds = 0.5 - strength;
     swatch[(strength * 1000).round()] = Color.fromRGBO(
       r + ((ds < 0 ? r : (255 - r)) * ds).round(),
       g + ((ds < 0 ? g : (255 - g)) * ds).round(),

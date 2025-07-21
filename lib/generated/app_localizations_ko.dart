@@ -282,7 +282,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get timetable => '시간표';
 
   @override
-  String get friends => '친구창';
+  String get friends => '친구';
 
   @override
   String get my_page => 'MY';
@@ -1340,4 +1340,178 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get overlap_message => '이미 같은 시간에 등록된 수업이 있습니다.';
+
+  @override
+  String get memo => '메모';
+
+  @override
+  String get friendManagement => '친구 관리 및 요청';
+
+  @override
+  String get friendManagementAndRequests => '친구 관리 및 요청';
+
+  @override
+  String get showLocation => '위치 보기';
+
+  @override
+  String get removeLocation => '위치 제거';
+
+  @override
+  String get accept => '수락';
+
+  @override
+  String get reject => '거절';
+
+  @override
+  String get id => 'ID';
+
+  @override
+  String get contact => '연락처';
+
+  @override
+  String get lastLocation => '마지막 위치';
+
+  @override
+  String get noLocationInfo => '위치 정보 없음';
+
+  @override
+  String get noContactInfo => '정보 없음';
+
+  @override
+  String friendRequestSent(String name) {
+    return '$name님에게 친구 요청을 전송했습니다!';
+  }
+
+  @override
+  String friendRequestAccepted(String name) {
+    return '$name님의 친구 요청을 수락했습니다.';
+  }
+
+  @override
+  String friendRequestRejected(String name) {
+    return '$name님의 친구 요청을 거절했습니다.';
+  }
+
+  @override
+  String friendRequestCanceled(String name) {
+    return '$name님에게 보낸 친구 요청을 취소했습니다.';
+  }
+
+  @override
+  String friendDeleted(String name) {
+    return '$name님을 친구 목록에서 삭제했습니다.';
+  }
+
+  @override
+  String friendLocationShown(String name) {
+    return '$name님의 위치를 지도에 표시했습니다.';
+  }
+
+  @override
+  String friendLocationRemoved(String name) {
+    return '$name님의 위치를 지도에서 제거했습니다.';
+  }
+
+  @override
+  String friendCount(int count) {
+    return '내 친구 ($count)';
+  }
+
+  @override
+  String sentRequestsCount(int count) {
+    return '보낸 ($count)';
+  }
+
+  @override
+  String receivedRequestsCount(int count) {
+    return '받은 ($count)';
+  }
+
+  @override
+  String newFriendRequests(int count) {
+    return '새로운 친구 요청 $count개';
+  }
+
+  @override
+  String get addFriend => '추가';
+
+  @override
+  String get sent => '보낸';
+
+  @override
+  String get received => '받은';
+
+  @override
+  String get sendFriendRequest => '친구 요청 보내기';
+
+  @override
+  String get friendId => '친구 ID';
+
+  @override
+  String get enterFriendId => '상대방 ID를 입력하세요';
+
+  @override
+  String get enterFriendIdPrompt => '추가할 친구의 ID를 입력해주세요';
+
+  @override
+  String get errorEnterFriendId => '친구 ID를 입력해주세요.';
+
+  @override
+  String get errorCannotAddSelf => '자기 자신은 친구로 추가할 수 없습니다.';
+
+  @override
+  String get errorAddFriend => '친구 추가 중 오류가 발생했습니다.';
+
+  @override
+  String get errorNetworkError => '네트워크 오류가 발생했습니다. 다시 시도해주세요.';
+
+  @override
+  String get errorCannotShowLocation => '친구 위치를 표시할 수 없습니다.';
+
+  @override
+  String get errorCannotRemoveLocation => '친구 위치를 제거할 수 없습니다.';
+
+  @override
+  String get realTimeSyncActive => '실시간 동기화 중 • 자동으로 업데이트됩니다';
+
+  @override
+  String realTimeSyncStatus(String time) {
+    return '실시간 동기화 활성 • $time';
+  }
+
+  @override
+  String get noSentRequests => '보낸 친구 요청이 없습니다.';
+
+  @override
+  String get noReceivedRequests => '받은 친구 요청이 없습니다.';
+
+  @override
+  String get noFriends => '아직 친구가 없습니다.\n상단의 + 버튼으로 친구를 추가해보세요!';
+
+  @override
+  String get cancelFriendRequest => '친구 요청 취소';
+
+  @override
+  String cancelFriendRequestConfirm(String name) {
+    return '$name님에게 보낸 친구 요청을 취소하시겠습니까?';
+  }
+
+  @override
+  String get deleteFriend => '친구 삭제';
+
+  @override
+  String deleteFriendConfirm(String name) {
+    return '$name님을 친구 목록에서 삭제하시겠습니까?';
+  }
+
+  @override
+  String get cancelRequest => '취소하기';
+
+  @override
+  String requestDate(String date) {
+    return '요청일: $date';
+  }
+
+  @override
+  String get newBadge => 'NEW';
 }

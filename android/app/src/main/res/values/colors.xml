@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!-- android/app/src/main/res/values/colors.xml -->
+<!-- 파일이 없다면 새로 생성하세요 -->
+
+<resources>
+    <!-- =========== 🔔 알림 시스템 색상 정의 =========== -->
+    
+    <!-- 기본 알림 색상 (앱 테마에 맞춘 파란색) -->
+    <color name="notification_color">#1E3A8A</color>
+    
+    <!-- 친구 요청 알림 색상 (주황색) -->
+    <color name="friend_request_color">#F59E0B</color>
+    
+    <!-- 친구 수락 알림 색상 (초록색) -->
+    <color name="friend_accepted_color">#10B981</color>
+    
+    <!-- 친구 거절/삭제 알림 색상 (빨간색) -->
+    <color name="friend_rejected_color">#EF4444</color>
+    
+    <!-- 온라인 상태 색상 (밝은 초록색) -->
+    <color name="online_status_color">#22C55E</color>
+    
+    <!-- 오프라인 상태 색상 (회색) -->
+    <color name="offline_status_color">#6B7280</color>
+    
+    <!-- =========== 기존 앱 색상 (필요시 추가) =========== -->
+    
+    <!-- 앱 메인 색상 -->
+    <color name="primary_color">#1E3A8A</color>
+    <color name="primary_dark_color">#1E40AF</color>
+    <color name="accent_color">#3B82F6</color>
+    
+    <!-- 배경색 -->
+    <color name="background_color">#F8FAFC</color>
+    <color name="surface_color">#FFFFFF</color>
+    
+    <!-- 텍스트 색상 -->
+    <color name="text_primary">#1F2937</color>
+    <color name="text_secondary">#6B7280</color>
+    
+    <!-- 상태 색상 -->
+    <color name="success_color">#10B981</color>
+    <color name="warning_color">#F59E0B</color>
+    <color name="error_color">#EF4444</color>
+    <color name="info_color">#3B82F6</color>
+</resources>

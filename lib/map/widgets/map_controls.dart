@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_application_1/controllers/map_controller.dart';
 import 'package:flutter_application_1/managers/location_manager.dart';
@@ -20,8 +21,16 @@ class MapControls extends StatelessWidget {
         return Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            // 🔥 친구 위치 제거 버튼 (친구 위치가 표시되어 있을 때만 보임)
+            if (controller.displayedFriendCount > 0) ...[
+              _buildFriendLocationRemoveButton(context),
+              const SizedBox(height: 12),
+            ],
+
+            // 기존 카테고리/건물 마커 토글 버튼
             _buildCompactControlButton(
               onPressed: () async {
+                HapticFeedback.lightImpact();
                 // 카테고리가 선택되어 있으면 전체 건물만 보이도록 상태 전환
                 if (controller.selectedCategory != null) {
                   // 카테고리 선택 해제(전체 건물만 표시)
@@ -35,10 +44,120 @@ class MapControls extends StatelessWidget {
               color: _getMainMarkerButtonColor(),
             ),
             const SizedBox(height: 12),
+
+            // 기존 내 위치 버튼
             _buildMyLocationButton(locationManager),
           ],
         );
       },
+    );
+  }
+
+  /// 🔥 친구 위치 제거 버튼
+  Widget _buildFriendLocationRemoveButton(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () async {
+          HapticFeedback.lightImpact();
+
+          // 친구 위치 마커 모두 제거
+          await controller.clearFriendLocationMarkers();
+
+          // 성공 메시지 표시
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Row(
+                  children: [
+                    Icon(Icons.location_off, color: Colors.white, size: 20),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        '친구 위치를 지도에서 제거했습니다.',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w500,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                backgroundColor: const Color(0xFFEF4444),
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                duration: const Duration(seconds: 2),
+              ),
+            );
+          }
+        },
+        borderRadius: BorderRadius.circular(28),
+        child: Container(
+          width: 56,
+          height: 56,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(28),
+            border: Border.all(
+              color: const Color(0xFFEF4444).withOpacity(0.3),
+              width: 2,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.08),
+                blurRadius: 16,
+                offset: const Offset(0, 4),
+              ),
+              BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Stack(
+            children: [
+              const Center(
+                child: Icon(
+                  Icons.person_off,
+                  color: Color(0xFFEF4444),
+                  size: 24,
+                ),
+              ),
+
+              // 🔥 친구 개수 표시 배지 (2명 이상일 때)
+              if (controller.displayedFriendCount > 1)
+                Positioned(
+                  top: 6,
+                  right: 6,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEF4444),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 1),
+                    ),
+                    constraints: const BoxConstraints(
+                      minWidth: 16,
+                      minHeight: 16,
+                    ),
+                    child: Text(
+                      '${controller.displayedFriendCount}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 9,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -49,7 +168,9 @@ class MapControls extends StatelessWidget {
       return Icons.layers; // 또는 Icons.list, 아이콘은 취향에 따라
     } else {
       // 전체 건물 표시/숨김 토글
-      return controller.buildingMarkersVisible ? Icons.location_on : Icons.location_off;
+      return controller.buildingMarkersVisible
+          ? Icons.location_on
+          : Icons.location_off;
     }
   }
 
@@ -73,7 +194,14 @@ class MapControls extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: isLoading ? null : onMyLocationPressed,
+        onTap: isLoading
+            ? null
+            : () {
+                if (onMyLocationPressed != null) {
+                  HapticFeedback.lightImpact();
+                  onMyLocationPressed!();
+                }
+              },
         borderRadius: BorderRadius.circular(28),
         child: Container(
           width: 56,
@@ -135,10 +263,7 @@ class MapControls extends StatelessWidget {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(28),
-            border: Border.all(
-              color: Colors.grey.shade200,
-              width: 1,
-            ),
+            border: Border.all(color: Colors.grey.shade200, width: 1),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.08),
@@ -152,11 +277,7 @@ class MapControls extends StatelessWidget {
               ),
             ],
           ),
-          child: Icon(
-            icon,
-            color: color,
-            size: 24,
-          ),
+          child: Icon(icon, color: color, size: 24),
         ),
       ),
     );

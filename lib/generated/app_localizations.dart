@@ -2631,6 +2631,294 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'A class is already registered at this time.'**
   String get overlap_message;
+
+  /// No description provided for @memo.
+  ///
+  /// In en, this message translates to:
+  /// **'Memo'**
+  String get memo;
+
+  /// No description provided for @friendManagement.
+  ///
+  /// In en, this message translates to:
+  /// **'Friend Management'**
+  String get friendManagement;
+
+  /// No description provided for @friendManagementAndRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'Friend Management and Requests'**
+  String get friendManagementAndRequests;
+
+  /// No description provided for @showLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Show Location'**
+  String get showLocation;
+
+  /// No description provided for @removeLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove Location'**
+  String get removeLocation;
+
+  /// No description provided for @accept.
+  ///
+  /// In en, this message translates to:
+  /// **'Accept'**
+  String get accept;
+
+  /// No description provided for @reject.
+  ///
+  /// In en, this message translates to:
+  /// **'Reject'**
+  String get reject;
+
+  /// No description provided for @id.
+  ///
+  /// In en, this message translates to:
+  /// **'ID'**
+  String get id;
+
+  /// No description provided for @contact.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact'**
+  String get contact;
+
+  /// No description provided for @lastLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Last Location'**
+  String get lastLocation;
+
+  /// No description provided for @noLocationInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'No location info'**
+  String get noLocationInfo;
+
+  /// No description provided for @noContactInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'No info'**
+  String get noContactInfo;
+
+  /// No description provided for @friendRequestSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Friend request sent to {name}!'**
+  String friendRequestSent(String name);
+
+  /// No description provided for @friendRequestAccepted.
+  ///
+  /// In en, this message translates to:
+  /// **'Accepted friend request from {name}.'**
+  String friendRequestAccepted(String name);
+
+  /// No description provided for @friendRequestRejected.
+  ///
+  /// In en, this message translates to:
+  /// **'Rejected friend request from {name}.'**
+  String friendRequestRejected(String name);
+
+  /// No description provided for @friendRequestCanceled.
+  ///
+  /// In en, this message translates to:
+  /// **'Canceled friend request to {name}.'**
+  String friendRequestCanceled(String name);
+
+  /// No description provided for @friendDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Removed {name} from friends list.'**
+  String friendDeleted(String name);
+
+  /// No description provided for @friendLocationShown.
+  ///
+  /// In en, this message translates to:
+  /// **'{name}\'s location is now shown on the map.'**
+  String friendLocationShown(String name);
+
+  /// No description provided for @friendLocationRemoved.
+  ///
+  /// In en, this message translates to:
+  /// **'{name}\'s location has been removed from the map.'**
+  String friendLocationRemoved(String name);
+
+  /// No description provided for @friendCount.
+  ///
+  /// In en, this message translates to:
+  /// **'My Friends ({count})'**
+  String friendCount(int count);
+
+  /// No description provided for @sentRequestsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Sent ({count})'**
+  String sentRequestsCount(int count);
+
+  /// No description provided for @receivedRequestsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Received ({count})'**
+  String receivedRequestsCount(int count);
+
+  /// No description provided for @newFriendRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} new friend requests'**
+  String newFriendRequests(int count);
+
+  /// No description provided for @addFriend.
+  ///
+  /// In en, this message translates to:
+  /// **'Add'**
+  String get addFriend;
+
+  /// No description provided for @sent.
+  ///
+  /// In en, this message translates to:
+  /// **'Sent'**
+  String get sent;
+
+  /// No description provided for @received.
+  ///
+  /// In en, this message translates to:
+  /// **'Received'**
+  String get received;
+
+  /// No description provided for @sendFriendRequest.
+  ///
+  /// In en, this message translates to:
+  /// **'Send Friend Request'**
+  String get sendFriendRequest;
+
+  /// No description provided for @friendId.
+  ///
+  /// In en, this message translates to:
+  /// **'Friend ID'**
+  String get friendId;
+
+  /// No description provided for @enterFriendId.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter friend\'s ID'**
+  String get enterFriendId;
+
+  /// No description provided for @enterFriendIdPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter the ID of the friend you want to add'**
+  String get enterFriendIdPrompt;
+
+  /// No description provided for @errorEnterFriendId.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a friend ID.'**
+  String get errorEnterFriendId;
+
+  /// No description provided for @errorCannotAddSelf.
+  ///
+  /// In en, this message translates to:
+  /// **'You cannot add yourself as a friend.'**
+  String get errorCannotAddSelf;
+
+  /// No description provided for @errorAddFriend.
+  ///
+  /// In en, this message translates to:
+  /// **'An error occurred while adding friend.'**
+  String get errorAddFriend;
+
+  /// No description provided for @errorNetworkError.
+  ///
+  /// In en, this message translates to:
+  /// **'A network error occurred. Please try again.'**
+  String get errorNetworkError;
+
+  /// No description provided for @errorCannotShowLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Cannot show friend\'s location.'**
+  String get errorCannotShowLocation;
+
+  /// No description provided for @errorCannotRemoveLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Cannot remove friend\'s location.'**
+  String get errorCannotRemoveLocation;
+
+  /// No description provided for @realTimeSyncActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Real-time sync active • Updates automatically'**
+  String get realTimeSyncActive;
+
+  /// No description provided for @realTimeSyncStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Real-time sync active • {time}'**
+  String realTimeSyncStatus(String time);
+
+  /// No description provided for @noSentRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'No sent friend requests.'**
+  String get noSentRequests;
+
+  /// No description provided for @noReceivedRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'No received friend requests.'**
+  String get noReceivedRequests;
+
+  /// No description provided for @noFriends.
+  ///
+  /// In en, this message translates to:
+  /// **'You don\'t have any friends yet.\nTap the + button above to add friends!'**
+  String get noFriends;
+
+  /// No description provided for @cancelFriendRequest.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel Friend Request'**
+  String get cancelFriendRequest;
+
+  /// No description provided for @cancelFriendRequestConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to cancel the friend request to {name}?'**
+  String cancelFriendRequestConfirm(String name);
+
+  /// No description provided for @deleteFriend.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Friend'**
+  String get deleteFriend;
+
+  /// No description provided for @deleteFriendConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to remove {name} from your friends list?'**
+  String deleteFriendConfirm(String name);
+
+  /// No description provided for @cancelRequest.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get cancelRequest;
+
+  /// No description provided for @requestDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Request date: {date}'**
+  String requestDate(String date);
+
+  /// No description provided for @newBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'NEW'**
+  String get newBadge;
 }
 
 class _AppLocalizationsDelegate
