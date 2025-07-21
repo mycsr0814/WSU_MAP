@@ -751,7 +751,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get time => '시간';
 
   @override
-  String get add_class => '수업 추가하기';
+  String get add_class => '수업 추가';
 
   @override
   String get edit_class => '수업 수정';
