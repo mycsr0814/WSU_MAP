@@ -1,4 +1,4 @@
-// lib/controllers/map_controller.dart - 친구 위치 마커 기능 완전 추가
+// lib/controllers/map_controller.dart - 로그아웃 후 재로그인 마커 문제 해결 완전 버전
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/controllers/location_controllers.dart';
@@ -31,6 +31,9 @@ class MapScreenController extends ChangeNotifier {
   // 🔥 마커 초기화 상태 추가
   bool _markersInitialized = false;
 
+  // 🔥 지도 준비 상태 추가
+  bool _isMapReady = false;
+
   // 🔥 친구 위치 마커 서비스 추가
   final FriendLocationMarkerService _friendLocationMarkerService =
       FriendLocationMarkerService();
@@ -59,6 +62,9 @@ class MapScreenController extends ChangeNotifier {
   // 🔥 추가된 getter들
   LocationController? get locationController => _locationController;
   NaverMapController? get mapController => _mapService?.getController();
+
+  // 🔥 지도 준비 상태 getter 추가
+  bool get isMapReady => _isMapReady;
 
   // 🔥 사용자 위치 마커 업데이트 메서드 추가
   void updateUserLocationMarker(NLatLng position) {
@@ -110,12 +116,13 @@ class MapScreenController extends ChangeNotifier {
   bool get isCategoryLoading => _isCategoryLoading;
   String? get categoryError => _categoryError;
 
-  /// 🔥 로그아웃/재로그인 시 완전한 재초기화
+  /// 🔥 로그아웃/재로그인 시 완전한 재초기화 - 개선된 버전
   void resetForNewSession() {
-    debugPrint('🔄 MapController 새 세션을 위한 리셋');
+    debugPrint('🔄 MapController 새 세션을 위한 완전 리셋');
 
-    // 마커 상태 리셋
+    // 지도 및 마커 상태 리셋
     _markersInitialized = false;
+    _isMapReady = false;
 
     // 선택된 상태들 클리어
     _selectedBuilding = null;
@@ -133,7 +140,10 @@ class MapScreenController extends ChangeNotifier {
     _categoryError = null;
     _hasLocationPermissionError = false;
 
-    debugPrint('✅ MapController 리셋 완료');
+    // 친구 위치 마커 정리
+    clearFriendLocationMarkers();
+
+    debugPrint('✅ MapController 새 세션 리셋 완료');
     notifyListeners();
   }
 
@@ -224,7 +234,7 @@ class MapScreenController extends ChangeNotifier {
     }
   }
 
-  /// 🔥 개선된 지도 준비 완료 처리
+  /// 🔥 개선된 지도 준비 완료 처리 - 기본 마커 로드 추가
   Future<void> onMapReady(NaverMapController mapController) async {
     try {
       debugPrint('🗺️ 지도 준비 완료 - 새 세션 확인');
@@ -237,6 +247,9 @@ class MapScreenController extends ChangeNotifier {
 
       _mapService?.setController(mapController);
       _locationController?.setMapController(mapController);
+
+      // 🔥 지도 준비 상태 설정
+      _isMapReady = true;
 
       // 🔥 친구 위치 마커 서비스 설정 및 초기화
       _friendLocationMarkerService.setMapController(mapController);
@@ -257,9 +270,46 @@ class MapScreenController extends ChangeNotifier {
       await _moveToSchoolCenterImmediately();
       await _ensureBuildingMarkersAdded();
 
+      // 🔥 지도 준비 완료 후 기본 마커들 로드
+      await loadDefaultMarkers();
+
       debugPrint('✅ 지도 서비스 설정 완료');
     } catch (e) {
       debugPrint('❌ 지도 준비 오류: $e');
+    }
+  }
+
+  /// 🔥 기본 마커들 로드 - 새 메서드 추가
+  Future<void> loadDefaultMarkers() async {
+    try {
+      debugPrint('🔄 기본 마커 로드 시작');
+
+      // 지도가 준비되지 않았으면 대기
+      if (!_isMapReady || _mapService?.getController() == null) {
+        debugPrint('⚠️ 지도가 준비되지 않아 기본 마커 로드 연기');
+        return;
+      }
+
+      // BuildingRepository에서 기본 건물들 가져오기
+      final allBuildings = _buildingRepository.allBuildings;
+
+      if (allBuildings.isNotEmpty) {
+        // MapService를 통해 건물 마커들 추가
+        await _mapService?.addBuildingMarkers(_onBuildingMarkerTap);
+        debugPrint('✅ 기본 마커 로드 완료: ${allBuildings.length}개');
+      } else {
+        debugPrint('⚠️ 로드할 기본 건물 데이터가 없음');
+        // BuildingRepository 강제 새로고침 시도
+        await _buildingRepository.getAllBuildings();
+        if (_buildingRepository.allBuildings.isNotEmpty) {
+          await _mapService?.addBuildingMarkers(_onBuildingMarkerTap);
+          debugPrint(
+            '✅ 새로고침 후 기본 마커 로드 완료: ${_buildingRepository.allBuildings.length}개',
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('❌ 기본 마커 로드 오류: $e');
     }
   }
 
@@ -444,6 +494,7 @@ class MapScreenController extends ChangeNotifier {
 
     // 상태 리셋
     _markersInitialized = false;
+    _isMapReady = false;
 
     // BuildingRepository 강제 새로고침
     await _buildingRepository.forceRefresh();
