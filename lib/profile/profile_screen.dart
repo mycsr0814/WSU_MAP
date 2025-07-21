@@ -42,44 +42,105 @@ class _ProfileScreenState extends State<ProfileScreen>
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+@override
+Widget build(BuildContext context) {
+  final l10n = AppLocalizations.of(context)!;
 
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Color(0xFFF8FAFC), Color(0xFFE2E8F0)],
+  return Scaffold(
+    backgroundColor: const Color(0xFFF8FAFC),
+    body: SafeArea(
+      child: FadeTransition(
+        opacity: _fadeAnimation,
+        child: Column(
+          children: [
+            // 🔥 시간표 스타일 헤더 추가
+            _buildHeader(l10n),
+            
+            // 기존 컨텐츠
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
+                child: Consumer<UserAuth>(
+                  builder: (context, userAuth, child) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildUserInfoCard(context, userAuth, l10n),
+                        const SizedBox(height: 24),
+                        if (userAuth.isLoggedIn) ...[
+                          _buildMenuList(userAuth, l10n),
+                        ] else ...[
+                          _buildGuestSection(l10n),
+                        ],
+                      ],
+                    );
+                  },
+                ),
+              ),
+            ),
+          ],
         ),
       ),
-      child: SafeArea(
-        child: FadeTransition(
-          opacity: _fadeAnimation,
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
-            child: Consumer<UserAuth>(
-              builder: (context, userAuth, child) {
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildUserInfoCard(context, userAuth, l10n),
-                    const SizedBox(height: 24),
-                    if (userAuth.isLoggedIn) ...[
-                      _buildMenuList(userAuth, l10n),
-                    ] else ...[
-                      _buildGuestSection(l10n),
-                    ],
-                  ],
-                );
-              },
-            ),
+    ),
+  );
+}
+
+Widget _buildHeader(AppLocalizations l10n) {
+  return Container(
+    padding: const EdgeInsets.all(20),
+    decoration: const BoxDecoration(
+      color: Colors.white,
+      boxShadow: [
+        BoxShadow(
+          color: Color(0x0F000000),
+          blurRadius: 10,
+          offset: Offset(0, 2),
+        ),
+      ],
+    ),
+    child: Row(
+      children: [
+        Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: const Color(0xFF1E3A8A).withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: const Icon(
+            Icons.person,
+            color: Color(0xFF1E3A8A),
+            size: 24,
           ),
         ),
-      ),
-    );
-  }
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                l10n.my_page,
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF1E3A8A),
+                ),
+              ),
+              Text(
+                l10n.my_info,
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
+}
 
   Widget _buildUserInfoCard(
   BuildContext context,
