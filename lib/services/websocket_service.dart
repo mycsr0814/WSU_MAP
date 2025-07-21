@@ -157,6 +157,11 @@ class WebSocketService {
           _handleFriendStatusChange(data);
           break;
 
+        // 🔥 새로 추가: 친구 로그아웃 처리
+        case 'friend_logged_out':
+          _handleFriendLoggedOut(data);
+          break;
+
         default:
           debugPrint('⚠️ 알 수 없는 메시지 타입: ${data['type']}');
       }
@@ -217,6 +222,18 @@ class WebSocketService {
 
     // FriendsController에 상태 변경 알림
     // 이벤트 버스나 상태 관리를 통해 UI 업데이트
+  }
+
+  // 🔥 새로 추가: 친구 로그아웃 처리 메서드
+  void _handleFriendLoggedOut(Map<String, dynamic> data) {
+    final loggedOutUserId = data['userId'];
+    debugPrint('👋 친구 로그아웃: $loggedOutUserId');
+
+    // 알림은 표시하지 않고 상태만 업데이트
+    // NotificationService.showFriendLoggedOutNotification(
+    //   loggedOutUserId,
+    //   data['message'] ?? '친구가 로그아웃했습니다.',
+    // );
   }
 
   // 📤 메시지 전송

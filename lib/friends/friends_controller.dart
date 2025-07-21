@@ -76,6 +76,11 @@ class FriendsController extends ChangeNotifier {
       case 'friend_status_change':
         _handleFriendStatusChange(message);
         break;
+
+      // 🔥 새로 추가: 친구 로그아웃 처리
+      case 'friend_logged_out':
+        _handleFriendLoggedOut(message);
+        break;
     }
   }
 
@@ -107,12 +112,21 @@ class FriendsController extends ChangeNotifier {
     notifyListeners();
   }
 
-  // 📶 친구 상태 변경 처리
+  // 📶 친구 상태 변경 처리 (기존 메서드 개선)
   void _handleFriendStatusChange(Map<String, dynamic> message) {
     final userId = message['userId'];
     final isOnline = message['isOnline'] ?? false;
 
     debugPrint('📶 친구 상태 변경: $userId - ${isOnline ? '온라인' : '오프라인'}');
+
+    // 온라인 사용자 목록 업데이트
+    if (isOnline) {
+      if (!onlineUsers.contains(userId)) {
+        onlineUsers.add(userId);
+      }
+    } else {
+      onlineUsers.remove(userId);
+    }
 
     // 친구 목록에서 해당 사용자의 상태 업데이트
     for (int i = 0; i < friends.length; i++) {
@@ -125,10 +139,47 @@ class FriendsController extends ChangeNotifier {
           isLogin: isOnline,
           lastLocation: friends[i].lastLocation,
         );
+
+        debugPrint(
+          '✅ ${friends[i].userName}님 상태를 ${isOnline ? '온라인' : '오프라인'}으로 업데이트',
+        );
         break;
       }
     }
 
+    notifyListeners();
+  }
+
+  // 🔥 새로 추가: 친구 로그아웃 처리 메서드
+  void _handleFriendLoggedOut(Map<String, dynamic> message) {
+    final loggedOutUserId = message['userId'];
+
+    debugPrint('👋 친구 로그아웃 처리: $loggedOutUserId');
+
+    // 온라인 사용자 목록에서 제거
+    if (onlineUsers.contains(loggedOutUserId)) {
+      onlineUsers.remove(loggedOutUserId);
+      debugPrint('📝 온라인 사용자 목록에서 제거: $loggedOutUserId');
+    }
+
+    // 친구 목록에서 해당 사용자의 상태를 오프라인으로 업데이트
+    for (int i = 0; i < friends.length; i++) {
+      if (friends[i].userId == loggedOutUserId) {
+        friends[i] = Friend(
+          userId: friends[i].userId,
+          userName: friends[i].userName,
+          profileImage: friends[i].profileImage,
+          phone: friends[i].phone,
+          isLogin: false, // 🔥 오프라인으로 변경
+          lastLocation: friends[i].lastLocation,
+        );
+
+        debugPrint('✅ ${friends[i].userName}님 상태를 오프라인으로 업데이트');
+        break;
+      }
+    }
+
+    // UI 업데이트
     notifyListeners();
   }
 
