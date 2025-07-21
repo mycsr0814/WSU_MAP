@@ -1,4 +1,4 @@
-// lib/map/map_screen.dart - 친구 위치 표시 기능이 추가된 완전한 코드
+// lib/map/map_screen.dart - 로그아웃/재로그인 마커 문제 해결 버전
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/controllers/location_controllers.dart';
@@ -37,7 +37,10 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
   final OverlayPortalController _infoWindowController =
       OverlayPortalController();
   int _currentNavIndex = 0;
-  bool _isInitializing = false;
+  final bool _isInitializing = false;
+
+  // 🔥 사용자 ID 추적용
+  String? _lastUserId;
 
   @override
   void initState() {
@@ -80,6 +83,50 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
       debugPrint('✅ MapScreen 초기화 완료');
     } catch (e) {
       debugPrint('❌ MapScreen 초기화 오류: $e');
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    // 🔥 UserAuth 상태 변경 감지
+    final userAuth = context.watch<UserAuth>();
+    final currentUserId = userAuth.userId;
+
+    // 🔥 사용자가 변경되었거나 로그아웃 후 재로그인한 경우 맵 재초기화
+    if (_lastUserId != currentUserId) {
+      debugPrint('🔄 사용자 변경 감지: $_lastUserId -> $currentUserId');
+      _lastUserId = currentUserId;
+
+      if (currentUserId != null && userAuth.isLoggedIn) {
+        // 재로그인 시 맵 재초기화
+        _reinitializeMapForNewUser();
+      }
+    }
+  }
+
+  /// 🔥 새 사용자를 위한 맵 재초기화
+  Future<void> _reinitializeMapForNewUser() async {
+    try {
+      debugPrint('🔄 새 사용자를 위한 맵 재초기화 시작');
+
+      // 1. 기존 마커 모두 정리
+      await _buildingMarkerService.clearAllMarkers();
+
+      // 2. 컨트롤러 상태 리셋
+      _controller.resetForNewSession();
+
+      // 3. 잠시 후 기본 마커들 다시 로드
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      // 4. 지도가 준비되어 있다면 마커 다시 로드
+      if (_controller.isMapReady) {
+        await _controller.loadDefaultMarkers();
+        debugPrint('✅ 기본 마커 다시 로드 완료');
+      }
+    } catch (e) {
+      debugPrint('❌ 맵 재초기화 오류: $e');
     }
   }
 
@@ -185,11 +232,6 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     }
   }
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-  }
-
   /// 길찾기 화면 열기
   void _openDirectionsScreen() async {
     if (_infoWindowController.isShowing) {
@@ -264,7 +306,6 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
           onMapReady: (mapController) async {
             await _controller.onMapReady(mapController);
             debugPrint('🗺️ 지도 준비 완료!');
-
             // ✅ 지도 준비 완료 후 내 위치로 자동 이동
             await _controller.moveToMyLocation();
           },
@@ -314,7 +355,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
             right: 0,
             bottom: 27,
             child: Center(
-              child: Container(
+              child: SizedBox(
                 width: MediaQuery.of(context).size.width * 0.7,
                 child: _buildNavigationStatusCard(),
               ),

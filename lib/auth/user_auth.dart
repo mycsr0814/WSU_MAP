@@ -1,4 +1,4 @@
-// lib/auth/user_auth.dart - 웹소켓 연결 추가 버전
+// lib/auth/user_auth.dart - 로그아웃 후 재로그인 마커 문제 해결 버전
 
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -412,11 +412,13 @@ class UserAuth extends ChangeNotifier {
     }
   }
 
-  /// 🔥 사용자 로그아웃 - 위치 전송 중지 및 웹소켓 연결 해제 추가
+  /// 🔥 사용자 로그아웃 - 개선된 버전 (상태 변경 알림 강화)
   Future<bool> logout({BuildContext? context}) async {
     _setLoading(true);
 
     try {
+      debugPrint('🔄 로그아웃 시작 - 현재 사용자: $_userId');
+
       // 🔥 로그아웃 시 위치 전송 중지 및 웹소켓 연결 해제
       if (context != null) {
         _stopLocationSending(context);
@@ -432,6 +434,8 @@ class UserAuth extends ChangeNotifier {
 
       await _clearLoginInfo();
 
+      // 🔥 상태 완전 초기화
+      final previousUserId = _userId;
       _userRole = null;
       _userId = null;
       _userName = null;
@@ -439,7 +443,9 @@ class UserAuth extends ChangeNotifier {
       _isFirstLaunch = true;
       _clearError();
 
-      debugPrint('🔥 UserAuth: 로그아웃 완료 - 상태 리셋');
+      debugPrint('🔥 UserAuth: 로그아웃 완료 - 이전 사용자: $previousUserId');
+
+      // 🔥 상태 변경 알림 - 지연 없이 즉시 호출
       notifyListeners();
 
       return true;
