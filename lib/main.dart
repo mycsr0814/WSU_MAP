@@ -1,5 +1,6 @@
 // lib/main.dart
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // 👈 추가
 import 'package:provider/provider.dart';
 import 'package:flutter_application_1/managers/location_manager.dart';
 import 'package:flutter_application_1/map/map_screen.dart';
@@ -16,6 +17,12 @@ import 'dart:io';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // 👈 세로 모드 고정 추가
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
 
   try {
     await FlutterNaverMap().init(
@@ -353,7 +360,9 @@ MaterialColor createMaterialColor(Color color) {
   final swatch = <int, Color>{};
   final r = color.red, g = color.green, b = color.blue;
 
-  for (int i = 1; i < 10; i++) strengths.add(0.1 * i);
+  for (int i = 1; i < 10; i++) {
+    strengths.add(0.1 * i);
+  }
 
   for (var strength in strengths) {
     final ds = 0.5 - strength;
