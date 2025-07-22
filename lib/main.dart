@@ -1,6 +1,6 @@
 // lib/main.dart
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // 👈 추가
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_application_1/managers/location_manager.dart';
 import 'package:flutter_application_1/map/map_screen.dart';
@@ -14,6 +14,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'generated/app_localizations.dart';
 import 'providers/app_language_provider.dart';
 import 'dart:io';
+import 'dart:async';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,6 +24,9 @@ void main() async {
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
+
+  // 👈 시스템 UI 초기 설정
+  await _setSystemUIMode();
 
   try {
     await FlutterNaverMap().init(
@@ -46,6 +50,25 @@ void main() async {
   );
 }
 
+// 👈 시스템 UI 모드 설정 함수
+Future<void> _setSystemUIMode() async {
+  if (Platform.isAndroid) {
+    // Android에서 immersiveSticky 모드 사용 - 자동으로 2-3초 후 숨김
+    await SystemChrome.setEnabledSystemUIMode(
+      SystemUiMode.immersiveSticky,
+      overlays: [SystemUiOverlay.top],
+    );
+    debugPrint('🔽 Android - immersiveSticky 모드 설정');
+  } else {
+    // iOS에서는 기존 설정 유지
+    await SystemChrome.setEnabledSystemUIMode(
+      SystemUiMode.manual,
+      overlays: [SystemUiOverlay.top],
+    );
+    debugPrint('📱 iOS - manual 모드 설정');
+  }
+}
+
 class CampusNavigatorApp extends StatefulWidget {
   const CampusNavigatorApp({super.key});
 
@@ -57,6 +80,7 @@ class CampusNavigatorApp extends StatefulWidget {
 class _CampusNavigatorAppState extends State<CampusNavigatorApp>
     with WidgetsBindingObserver {
   bool _isInitialized = false;
+  Timer? _systemUIResetTimer; // 👈 시스템 UI 재설정 타이머
 
   late final UserAuth _userAuth;
   late final LocationManager _locationManager;
@@ -75,8 +99,19 @@ class _CampusNavigatorAppState extends State<CampusNavigatorApp>
 
   @override
   void dispose() {
+    _systemUIResetTimer?.cancel(); // 👈 타이머 정리
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
+  }
+
+  // 👈 시스템 UI 재설정 (필요시에만)
+  void _resetSystemUIModeIfNeeded() {
+    if (Platform.isAndroid) {
+      _systemUIResetTimer?.cancel();
+      _systemUIResetTimer = Timer(const Duration(milliseconds: 100), () {
+        _setSystemUIMode();
+      });
+    }
   }
 
   // ---------- 앱 생명주기 콜백 ----------
@@ -91,7 +126,7 @@ class _CampusNavigatorAppState extends State<CampusNavigatorApp>
         break;
 
       case AppLifecycleState.paused:
-        debugPrint('📱 앱 백그라운드 이동 (iOS: 스와이프 / Android: 홈 버튼)');
+        debugPrint('📱 앱 백그라운드 이동');
         _handleAppPaused();
         break;
 
@@ -109,6 +144,11 @@ class _CampusNavigatorAppState extends State<CampusNavigatorApp>
   /// 포그라운드 복귀
   Future<void> _handleAppResumed() async {
     debugPrint('📱 앱 포그라운드 복귀');
+
+    // 👈 Android에서 시스템 UI 재설정
+    if (Platform.isAndroid) {
+      await _setSystemUIMode();
+    }
 
     // 🔥 게스트 사용자는 위치 전송 및 웹소켓 연결 제외
     if (!_userAuth.isLoggedIn ||
@@ -140,6 +180,8 @@ class _CampusNavigatorAppState extends State<CampusNavigatorApp>
     debugPrint('📱 앱 백그라운드 이동 - 위치 전송 및 웹소켓 연결 중지');
     debugPrint('🔍 플랫폼: ${Platform.isIOS ? 'iOS' : 'Android'}');
 
+    _systemUIResetTimer?.cancel(); // 👈 백그라운드 이동 시 타이머 중지
+
     // 🔥 모든 사용자의 위치 전송 및 웹소켓 연결 무조건 중지 (플랫폼 무관)
     try {
       _locationManager.stopPeriodicLocationSending();
@@ -166,6 +208,8 @@ class _CampusNavigatorAppState extends State<CampusNavigatorApp>
   /// 🔥 앱 완전 종료 시 - 강제 중지
   Future<void> _handleAppDetached() async {
     debugPrint('📱 앱 완전 종료 - 모든 연결 강제 중지');
+
+    _systemUIResetTimer?.cancel(); // 👈 앱 종료 시 타이머 중지
 
     // 🔥 강제 위치 전송 및 웹소켓 연결 중지
     try {
@@ -261,6 +305,13 @@ class _CampusNavigatorAppState extends State<CampusNavigatorApp>
                       as Map<String, dynamic>?;
               return DirectionsScreen(roomData: args);
             },
+          },
+          builder: (context, child) {
+            // 👈 화면이 그려진 후 시스템 UI 재설정
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              _resetSystemUIModeIfNeeded();
+            });
+            return child!;
           },
           home: _isInitialized
               ? Consumer<UserAuth>(
