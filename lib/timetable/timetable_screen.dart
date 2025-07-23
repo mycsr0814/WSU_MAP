@@ -174,20 +174,6 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       ),
       child: Row(
         children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: const Color(0xFF1E3A8A).withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(
-              Icons.schedule,
-              color: Color(0xFF1E3A8A),
-              size: 24,
-            ),
-          ),
-          const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -238,33 +224,31 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     );
   }
 
-  Widget _buildScheduleView() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          _buildDayHeaders(),
-          Expanded(child: _buildTimeTable()),
-        ],
-      ),
-    );
-  }
+Widget _buildScheduleView() {
+  return Container(
+    width: double.infinity,
+    height: double.infinity,
+    margin: EdgeInsets.zero,
+    padding: EdgeInsets.zero,
+    decoration: BoxDecoration(
+      color: const Color(0xFFFAFAFA),
+      borderRadius: BorderRadius.zero,
+      border: Border.all(color: Colors.grey.shade200, width: 1),
+    ),
+    child: Column(
+      children: [
+        _buildDayHeaders(), // 45px 고정 높이
+        Expanded(
+          child: _buildTimeTable(), // 나머지 공간
+        ),
+      ],
+    ),
+  );
+}
 
   Widget _buildDayHeaders() {
     final l10n = AppLocalizations.of(context);
     final days = [
-      l10n?.time ?? 'Time',
       l10n?.monday ?? 'Mon',
       l10n?.tuesday ?? 'Tue',
       l10n?.wednesday ?? 'Wed',
@@ -273,163 +257,351 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     ];
 
     return Container(
-      height: 50,
+      height: 45,
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(16),
-          topRight: Radius.circular(16),
+        gradient: LinearGradient(
+          colors: [
+            const Color(0xFF1E3A8A).withOpacity(0.1),
+            const Color(0xFF3B82F6).withOpacity(0.08),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
-        border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
+        border: Border(
+          bottom: BorderSide(color: Colors.grey.shade200, width: 1),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
-        children: days
-            .map(
-              (day) => Expanded(
-                child: Container(
-                  alignment: Alignment.center,
+        children: [
+          Container(
+            width: 55,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  const Color(0xFF1E3A8A).withOpacity(0.15),
+                  const Color(0xFF3B82F6).withOpacity(0.12),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              border: Border(
+                right: BorderSide(color: Colors.grey.shade200, width: 1),
+              ),
+            ),
+            child: Center(
+              child: Text(
+                l10n?.time ?? 'Time',
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF1E3A8A),
+                ),
+              ),
+            ),
+          ),
+          ...days.asMap().entries.map((entry) {
+            int index = entry.key;
+            String day = entry.value;
+            return Expanded(
+              child: Container(
+                decoration: BoxDecoration(
+                  border: Border(
+                    right: index < days.length - 1
+                        ? BorderSide(color: Colors.grey.shade200, width: 0.5)
+                        : BorderSide.none,
+                  ),
+                ),
+                child: Center(
                   child: Text(
                     day,
                     style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
                       color: Color(0xFF1E3A8A),
                     ),
                   ),
                 ),
               ),
-            )
-            .toList(),
-      ),
-    );
-  }
-
-  Widget _buildTimeTable() {
-    final timeSlots = _generateTimeSlots();
-
-    return ListView.builder(
-      padding: EdgeInsets.zero,
-      itemCount: timeSlots.length,
-      itemBuilder: (context, index) {
-        final timeSlot = timeSlots[index];
-        return _buildTimeRow(timeSlot, index);
-      },
-    );
-  }
-
-  Widget _buildTimeRow(String timeSlot, int index) {
-    return Container(
-      height: 60,
-      decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(color: Colors.grey.shade100, width: 1),
-        ),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Container(
-              alignment: Alignment.center,
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: Text(
-                timeSlot,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.grey.shade600,
-                ),
-              ),
-            ),
-          ),
-          ...List.generate(5, (dayIndex) {
-            final scheduleItem = _getScheduleForTimeAndDay(
-              timeSlot,
-              dayIndex + 1,
             );
-            return Expanded(
-              child: Container(
-                margin: const EdgeInsets.all(2),
-                child: scheduleItem != null
-                    ? _buildScheduleCard(scheduleItem)
-                    : const SizedBox(),
-              ),
-            );
-          }),
+          }).toList(),
         ],
       ),
     );
   }
 
-  Widget _buildScheduleCard(ScheduleItem item) {
-    return GestureDetector(
-      onTap: () => _showScheduleDetail(item),
-      child: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: item.color.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: item.color.withOpacity(0.3), width: 1),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.center,
+Widget _buildTimeTable() {
+  final int slotCount = 10;
+  final timeSlots = List.generate(slotCount, (i) => '${(9 + i).toString().padLeft(2, '0')}:00');
+
+  return LayoutBuilder(
+    builder: (context, constraints) {
+      final tableHeight = constraints.maxHeight;
+      final rowHeight = tableHeight / slotCount;
+
+      // 딱 맞는 정수 픽셀을 위해
+      final fixedTableHeight = rowHeight * slotCount;
+
+      return SizedBox(
+        height: fixedTableHeight,
+        child: Stack(
           children: [
-            Text(
-              item.title,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: item.color,
+            Column(
+              children: List.generate(
+                slotCount,
+                (idx) => _buildTimeRow(timeSlots[idx], idx, rowHeight),
               ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(height: 2),
-            Text(
-              '${item.buildingName} ${item.floorNumber} ${item.roomName}',
-              style: TextStyle(fontSize: 9, color: item.color.withOpacity(0.8)),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
+            ..._buildUltraSafeBlocks(fixedTableHeight, constraints.maxWidth),
           ],
         ),
+      );
+    },
+  );
+}
+
+List<Widget> _buildUltraSafeBlocks(double tableHeight, double screenWidth) {
+  const int startMinute = 9 * 60;
+  const int endMinute = 18 * 60;
+  const int totalMinutes = endMinute - startMinute;
+
+  List<Widget> blocks = [];
+  for (final item in _scheduleItems) {
+    final int start = _parseTime(item.startTime);
+    final int end = _parseTime(item.endTime);
+    if (start < startMinute || end > endMinute || end <= start) continue;
+
+    double minuteToY(int minute) =>
+      ((minute - startMinute) / totalMinutes) * tableHeight;
+    final double top = minuteToY(start);
+    final double height = minuteToY(end) - minuteToY(start);
+
+    final double availableWidth = screenWidth - 55;
+    final double columnWidth = availableWidth / 5;
+    final double left = 55 + (item.dayOfWeek - 1) * columnWidth + 8;
+    final double width = columnWidth - 16;
+
+    blocks.add(
+      Positioned(
+        left: left,
+        top: top,
+        width: width,
+        height: height,
+        child: _buildScheduleBlock(item),
       ),
     );
   }
+  return blocks;
+}
 
-  List<String> _generateTimeSlots() {
-    final slots = <String>[];
-    for (int hour = 9; hour <= 18; hour++) {
-      slots.add('${hour.toString().padLeft(2, '0')}:00');
-      if (hour < 18) {
-        slots.add('${hour.toString().padLeft(2, '0')}:30');
-      }
+Widget _buildTimeRow(String timeSlot, int index, double rowHeight) {
+  bool isEvenRow = index % 2 == 0;
+  return Container(
+    height: rowHeight,
+    // ⛔ constraints: BoxConstraints(...) 삭제!
+    child: Row(
+      children: [
+        Container(
+          width: 55,
+          height: rowHeight,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                const Color(0xFF1E3A8A).withOpacity(0.08),
+                const Color(0xFF3B82F6).withOpacity(0.06),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            border: Border(
+              right: BorderSide(color: Colors.grey.shade200, width: 1),
+              bottom: index < 9
+                  ? BorderSide(color: Colors.grey.shade200, width: 1)
+                  : BorderSide.none,
+            ),
+          ),
+          child: Center(
+            child: Text(
+              timeSlot,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF475569),
+              ),
+            ),
+          ),
+        ),
+        ...List.generate(5, (dayIndex) {
+          return Expanded(
+            child: Container(
+              height: rowHeight,
+              decoration: BoxDecoration(
+                color: isEvenRow
+                    ? const Color(0xFFFDFDFD)
+                    : const Color(0xFFF8F9FA),
+                border: Border(
+                  right: dayIndex < 4
+                      ? BorderSide(color: Colors.grey.shade200, width: 0.5)
+                      : BorderSide.none,
+                  bottom: index < 9
+                      ? BorderSide(color: Colors.grey.shade200, width: 1)
+                      : BorderSide.none,
+                ),
+              ),
+            ),
+          );
+        }),
+      ],
+    ),
+  );
+}
+
+Widget _buildScheduleBlock(ScheduleItem item) {
+  return GestureDetector(
+    onTap: () => _showScheduleDetail(item),
+    child: Container(
+      margin: const EdgeInsets.all(1),
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            item.color.withOpacity(0.15),
+            item.color.withOpacity(0.08),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: item.color.withOpacity(0.6),
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: item.color.withOpacity(0.2),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final bool isSmall = constraints.maxHeight < 50;
+          final bool isVerySmall = constraints.maxHeight < 35;
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              Text(
+                item.title,
+                style: TextStyle(
+                  fontSize: isVerySmall ? 10 : 12,
+                  fontWeight: FontWeight.w700,
+                  color: item.color,
+                  height: 1.2,
+                ),
+                maxLines: isVerySmall ? 1 : 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              if (!isVerySmall && item.professor.isNotEmpty) ...[
+                const SizedBox(height: 3),
+                Text(
+                  item.professor,
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w500,
+                    color: item.color.withOpacity(0.85),
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+              if (!isSmall) ...[
+                const SizedBox(height: 3),
+                Text(
+                  '${item.buildingName} ${item.floorNumber}-${item.roomName}',
+                  style: TextStyle(
+                    fontSize: 9,
+                    color: item.color.withOpacity(0.75),
+                    fontWeight: FontWeight.w500,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+              const Spacer(),
+              if (!isVerySmall)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: item.color.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    '${_formatTimeDisplay(item.startTime)} - ${_formatTimeDisplay(item.endTime)}',
+                    style: TextStyle(
+                      fontSize: 8,
+                      fontWeight: FontWeight.w600,
+                      color: item.color,
+                    ),
+                  ),
+                ),
+            ],
+          );
+        },
+      ),
+    ),
+  );
+}
+
+List<String> _generateTimeSlots() {
+  final slots = <String>[];
+  for (int hour = 9; hour <= 18; hour++) {
+    slots.add('${hour.toString().padLeft(2, '0')}:00');
+  }
+  return slots;
+}
+
+// 🔥 2. 드롭다운용 시간 슬롯 생성 (30분 단위)
+List<String> _generateTimeOptions() {
+  final options = <String>[];
+  for (int hour = 9; hour <= 18; hour++) {
+    options.add('${hour.toString().padLeft(2, '0')}:00');
+    if (hour < 18) options.add('${hour.toString().padLeft(2, '0')}:30');
+  }
+  return options;
+}
+
+int _parseTime(String time) {
+  try {
+    final cleanTime = time.trim();
+    // 예: "12:30:00" → [12, 30, 00], "12:30" → [12, 30]
+    List<String> parts = cleanTime.split(':');
+    if (parts.length >= 2) {
+      int hours = int.parse(parts[0]);
+      int minutes = int.parse(parts[1]);
+      return hours * 60 + minutes;
     }
-    return slots;
-  }
-
-  ScheduleItem? _getScheduleForTimeAndDay(String timeSlot, int dayOfWeek) {
-    for (final item in _scheduleItems) {
-      if (item.dayOfWeek == dayOfWeek &&
-          _isTimeInRange(timeSlot, item.startTime, item.endTime)) {
-        return item;
-      }
+    // "0900", "1230" 등
+    if (RegExp(r'^\d{4}$').hasMatch(cleanTime)) {
+      return int.parse(cleanTime.substring(0, 2)) * 60
+           + int.parse(cleanTime.substring(2, 4));
     }
-    return null;
+    // "9", "12" 등
+    if (RegExp(r'^\d{1,2}$').hasMatch(cleanTime)) {
+      return int.parse(cleanTime) * 60;
+    }
+  } catch (e) {
+    print('⚠️ Time parsing error: "$time"');
   }
-
-  bool _isTimeInRange(String timeSlot, String startTime, String endTime) {
-    final slotTime = _parseTime(timeSlot);
-    final start = _parseTime(startTime);
-    final end = _parseTime(endTime);
-
-    return slotTime >= start && slotTime < end;
-  }
-
-  int _parseTime(String time) {
-    final parts = time.split(':');
-    return int.parse(parts[0]) * 60 + int.parse(parts[1]);
-  }
+  return 540; // fallback: 9:00
+}
 
   String _getDayName(int dayOfWeek) {
     final l10n = AppLocalizations.of(context);
@@ -450,29 +622,36 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     }
   }
 
-  Widget _buildDetailRow(IconData icon, String label, String value) {
-    return Row(
-      children: [
-        Icon(icon, size: 20, color: const Color(0xFF1E3A8A)),
-        const SizedBox(width: 12),
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: Color(0xFF1E3A8A),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            value,
-            style: const TextStyle(fontSize: 14, color: Colors.black87),
-          ),
-        ),
-      ],
-    );
+  String _formatTimeDisplay(String time) {
+  try {
+    String cleanTime = time.trim();
+    
+    if (cleanTime.contains(':')) {
+      List<String> parts = cleanTime.split(':');
+      if (parts.length >= 2) {
+        int hour = int.parse(parts[0].trim());
+        int minute = int.parse(parts[1].trim());
+        return '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}';
+      }
+    }
+    
+    if (RegExp(r'^\d{4}$').hasMatch(cleanTime)) {
+      String hour = cleanTime.substring(0, 2);
+      String minute = cleanTime.substring(2, 4);
+      return '$hour:$minute';
+    }
+    
+    if (RegExp(r'^\d{1,2}$').hasMatch(cleanTime)) {
+      int hour = int.parse(cleanTime);
+      return '${hour.toString().padLeft(2, '0')}:00';
+    }
+    
+  } catch (e) {
+    print('⚠️ Format error: "$time"');
   }
+  
+  return time;
+}
 
   Future<void> _showDeleteConfirmDialog(ScheduleItem item) async {
   final l10n = AppLocalizations.of(context);
@@ -686,12 +865,18 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     );
     final memoController = TextEditingController(text: initialItem?.memo ?? '');
 
-    // 컨트롤러 변수
-    TextEditingController? buildingFieldController;
-    TextEditingController? floorFieldController;
-    TextEditingController? roomFieldController;
+    // 🔥 컨트롤러를 미리 생성하고 초기값 설정
+    final buildingFieldController = TextEditingController(
+      text: initialItem?.buildingName ?? '',
+    );
+    final floorFieldController = TextEditingController(
+      text: initialItem?.floorNumber ?? '',
+    );
+    final roomFieldController = TextEditingController(
+      text: initialItem?.roomName ?? '',
+    );
 
-    // 선택/목록 관련 변수
+    // 선택된 값들 초기화
     String? selectedBuilding = initialItem?.buildingName;
     String? selectedFloor = initialItem?.floorNumber;
     String? selectedRoom = initialItem?.roomName;
@@ -743,12 +928,18 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     List<String> floorList = [];
     List<String> roomList = [];
 
+    // 🔥 초기 데이터 로드 (수정 모드일 때)
     if (initialItem != null) {
-      floorList = await _apiService.fetchFloors(initialItem.buildingName);
-      roomList = await _apiService.fetchRooms(
-        initialItem.buildingName,
-        initialItem.floorNumber,
-      );
+      try {
+        floorList = await _apiService.fetchFloors(initialItem.buildingName);
+        roomList = await _apiService.fetchRooms(
+          initialItem.buildingName,
+          initialItem.floorNumber,
+        );
+      } catch (e) {
+        // 에러 처리
+        print('Error loading initial data: $e');
+      }
     }
 
     await showDialog(
@@ -779,7 +970,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // 🔥 헤더 영역
+                    // 헤더 영역
                     Container(
                       padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
@@ -821,7 +1012,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                       ),
                     ),
 
-                    // 🔥 컨텐츠 영역
+                    // 컨텐츠 영역
                     Flexible(
                       child: SingleChildScrollView(
                         padding: const EdgeInsets.all(24),
@@ -844,60 +1035,69 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                             ),
                             const SizedBox(height: 16),
 
-                            // 건물명 자동완성
+                            // 🔥 건물명 자동완성 (수정됨)
                             _buildStyledTypeAheadField(
                               controller: buildingFieldController,
                               labelText: l10n?.building_name ?? 'Building',
                               icon: Icons.business,
-                              suggestionsCallback: (pattern) async =>
-                                  buildingCodes
-                                      .where(
-                                        (code) => code.toLowerCase().contains(
-                                          pattern.toLowerCase(),
-                                        ),
-                                      )
-                                      .toList(),
+                              suggestionsCallback: (pattern) async {
+                                // 🔥 빈 문자열이거나 공백만 있을 때 전체 리스트 반환
+                                if (pattern.trim().isEmpty) {
+                                  return buildingCodes;
+                                }
+                                // 🔥 패턴과 일치하는 항목들 필터링
+                                return buildingCodes
+                                    .where((code) => 
+                                        code.toLowerCase().contains(pattern.toLowerCase()))
+                                    .toList();
+                              },
                               onChanged: (value) async {
                                 selectedBuilding = value;
                                 setState(() {
                                   selectedFloor = null;
                                   selectedRoom = null;
-                                  floorFieldController?.text = '';
-                                  roomFieldController?.text = '';
+                                  floorFieldController.text = '';
+                                  roomFieldController.text = '';
                                   floorList = [];
                                   roomList = [];
                                 });
+                                // 🔥 정확한 빌딩 코드일 때만 층 정보 로드
                                 if (buildingCodes.contains(value)) {
-                                  final fetchedFloors = await _apiService
-                                      .fetchFloors(value);
-                                  setState(() {
-                                    floorList = fetchedFloors;
-                                  });
+                                  try {
+                                    final fetchedFloors = await _apiService.fetchFloors(value);
+                                    setState(() {
+                                      floorList = fetchedFloors;
+                                    });
+                                  } catch (e) {
+                                    print('Error fetching floors: $e');
+                                  }
                                 }
                               },
                               onSelected: (suggestion) async {
                                 selectedBuilding = suggestion;
                                 setState(() {
-                                  buildingFieldController?.text = suggestion;
                                   selectedFloor = null;
                                   selectedRoom = null;
-                                  floorFieldController?.text = '';
-                                  roomFieldController?.text = '';
+                                  floorFieldController.text = '';
+                                  roomFieldController.text = '';
                                   floorList = [];
                                   roomList = [];
                                 });
-                                final fetchedFloors = await _apiService
-                                    .fetchFloors(suggestion);
-                                setState(() {
-                                  floorList = fetchedFloors;
-                                });
+                                try {
+                                  final fetchedFloors = await _apiService.fetchFloors(suggestion);
+                                  setState(() {
+                                    floorList = fetchedFloors;
+                                  });
+                                } catch (e) {
+                                  print('Error fetching floors: $e');
+                                }
                               },
                             ),
                             const SizedBox(height: 16),
 
-                            // 층 자동완성
+                            // 🔥 층 자동완성 (수정됨)
                             _buildStyledTypeAheadField(
-                              key: ValueKey(selectedBuilding),
+                              key: ValueKey('floor_${selectedBuilding ?? ""}'),
                               controller: floorFieldController,
                               labelText: l10n?.floor_number ?? 'Floor',
                               icon: Icons.layers,
@@ -915,7 +1115,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                               onChanged: (value) async {
                                 selectedFloor = value;
                                 selectedRoom = null;
-                                roomFieldController?.text = '';
+                                roomFieldController.text = '';
                                 setState(() => roomList = []);
                                 if (floorList.contains(value)) {
                                   final fetchedRooms = await _apiService
@@ -927,9 +1127,9 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                               },
                               onSelected: (suggestion) async {
                                 selectedFloor = suggestion;
-                                floorFieldController?.text = suggestion;
+                                floorFieldController.text = suggestion;
                                 selectedRoom = null;
-                                roomFieldController?.text = '';
+                                roomFieldController.text = '';
                                 final fetchedRooms = await _apiService
                                     .fetchRooms(selectedBuilding!, suggestion);
                                 setState(() {
@@ -939,10 +1139,10 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                             ),
                             const SizedBox(height: 16),
 
-                            // 강의실 자동완성
+                            // 🔥 강의실 자동완성 (수정됨)
                             _buildStyledTypeAheadField(
                               key: ValueKey(
-                                '${selectedBuilding}_$selectedFloor',
+                                'room_${selectedBuilding ?? ""}_${selectedFloor ?? ""}',
                               ),
                               controller: roomFieldController,
                               labelText: l10n?.room_name ?? 'Room',
@@ -961,7 +1161,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                               onChanged: (value) => selectedRoom = value,
                               onSelected: (suggestion) {
                                 selectedRoom = suggestion;
-                                roomFieldController?.text = suggestion;
+                                roomFieldController.text = suggestion;
                                 setState(() {});
                               },
                             ),
@@ -1004,61 +1204,46 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                             const SizedBox(height: 16),
 
                             // 시간 선택 (가로 배치)
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: _buildStyledDropdownField<String>(
-                                    value: startTime,
-                                    labelText: l10n?.start_time ?? 'Start Time',
-                                    icon: Icons.access_time,
-                                    items: _generateTimeSlots()
-                                        .map(
-                                          (time) => DropdownMenuItem(
-                                            value: time,
-                                            child: Text(time),
-                                          ),
-                                        )
-                                        .toList(),
-                                    onChanged: (value) {
-                                      setState(() {
-                                        startTime = value!;
-                                        var slotList = _generateTimeSlots();
-                                        int idx = slotList.indexOf(startTime);
-                                        if (_parseTime(endTime) <=
-                                            _parseTime(startTime)) {
-                                          endTime = (idx + 1 < slotList.length)
-                                              ? slotList[idx + 1]
-                                              : slotList[idx];
-                                        }
-                                      });
-                                    },
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: _buildStyledDropdownField<String>(
-                                    value: endTime,
-                                    labelText: l10n?.end_time ?? 'End Time',
-                                    icon: Icons.access_time_filled,
-                                    items: _generateTimeSlots()
-                                        .where(
-                                          (time) =>
-                                              _parseTime(time) >
-                                              _parseTime(startTime),
-                                        )
-                                        .map(
-                                          (time) => DropdownMenuItem(
-                                            value: time,
-                                            child: Text(time),
-                                          ),
-                                        )
-                                        .toList(),
-                                    onChanged: (value) =>
-                                        setState(() => endTime = value!),
-                                  ),
-                                ),
-                              ],
-                            ),
+                              // 🔥 기존 시간 선택 Row를 이것으로 교체하세요!
+
+// 시간 선택 (가로 배치) - 30분 단위
+Row(
+  children: [
+    Expanded(
+      child: _buildStyledDropdownField<String>(
+        value: startTime,
+        labelText: 'Start Time',
+        icon: Icons.access_time,
+        items: _generateTimeOptions()
+          .where((time) => _parseTime(time) < 18 * 60)
+          .map((time) => DropdownMenuItem(value: time, child: Text(time))).toList(),
+        onChanged: (value) {
+          setState(() {
+            startTime = value!;
+            final slotList = _generateTimeOptions();
+            int idx = slotList.indexOf(startTime);
+            if (_parseTime(endTime) <= _parseTime(startTime)) {
+              endTime = slotList[(idx+1).clamp(0, slotList.length-1)];
+            }
+          });
+        },
+      ),
+    ),
+    SizedBox(width: 12),
+    Expanded(
+      child: _buildStyledDropdownField<String>(
+        value: endTime,
+        labelText: 'End Time',
+        icon: Icons.access_time_filled,
+        items: _generateTimeOptions()
+          .where((time) => _parseTime(time) > _parseTime(startTime) && _parseTime(time) <= 18*60)
+          .map((time) => DropdownMenuItem(value: time, child: Text(time))).toList(),
+        onChanged: (value) => setState(() => endTime = value!),
+      ),
+    ),
+  ],
+),
+
                             const SizedBox(height: 24),
 
                             // 색상 선택
@@ -1162,7 +1347,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                       ),
                     ),
 
-                    // 🔥 버튼 영역
+                    // 버튼 영역
                     Container(
                       padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
@@ -1324,7 +1509,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     );
   }
 
-  Widget _buildStyledTypeAheadField({
+Widget _buildStyledTypeAheadField({
     Key? key,
     TextEditingController? controller,
     required String labelText,
@@ -1355,20 +1540,27 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       ),
       child: TypeAheadField<String>(
         key: key,
-        suggestionsCallback: suggestionsCallback,
-        itemBuilder: (context, suggestion) => Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Text(
+        controller: controller,
+        suggestionsCallback: (pattern) async {
+          print('Searching for pattern: "$pattern"');
+          final results = await suggestionsCallback(pattern);
+          print('Found ${results.length} results: $results');
+          return results;
+        },
+        itemBuilder: (context, suggestion) => ListTile(
+          dense: true,
+          title: Text(
             suggestion,
-            style: const TextStyle(fontSize: 16, color: Color(0xFF1E3A8A)),
+            style: const TextStyle(
+              fontSize: 16, 
+              color: Color(0xFF1E3A8A),
+            ),
           ),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
         ),
-        builder: (context, fieldController, focusNode) {
-          if (controller != null) {
-            fieldController = controller;
-          }
+        builder: (context, textController, focusNode) {
           return TextFormField(
-            controller: fieldController,
+            controller: textController,
             focusNode: focusNode,
             enabled: enabled,
             style: TextStyle(
@@ -1402,52 +1594,122 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
             onChanged: onChanged,
           );
         },
-        onSelected: onSelected,
+        onSelected: (suggestion) {
+          // 🔥 선택 시 처리 - 컨트롤러에 전체 텍스트 명시적으로 설정
+          print('TypeAhead onSelected called with: "$suggestion"');
+          if (controller != null) {
+            controller.text = suggestion; // 전체 텍스트 강제 설정
+            // 🔥 추가: 다음 프레임에서 다시 한번 설정 (혹시 덮어써지는 경우 대비)
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (controller.text != suggestion) {
+                controller.text = suggestion;
+              }
+            });
+          }
+          if (onSelected != null) {
+            onSelected(suggestion);
+          }
+        },
+        // suggestions 박스 스타일링
+        decorationBuilder: (context, child) => Material(
+          type: MaterialType.card,
+          elevation: 4,
+          borderRadius: BorderRadius.circular(8),
+          child: Container(
+            constraints: const BoxConstraints(maxHeight: 200),
+            child: child,
+          ),
+        ),
+        // suggestions가 없을 때 표시할 위젯
+        emptyBuilder: (context) => Container(
+          padding: const EdgeInsets.all(16),
+          child: Text(
+            '검색 결과가 없습니다',
+            style: TextStyle(
+              color: Colors.grey.shade600,
+              fontSize: 14,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ),
+        // 로딩 중일 때 표시할 위젯
+        loadingBuilder: (context) => Container(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    Color(0xFF1E3A8A),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '검색 중...',
+                style: TextStyle(
+                  color: Colors.grey.shade600,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+        ),
+        // 🔥 드롭다운 자동 닫기 설정
+        hideOnEmpty: true,
+        hideOnError: true,
+        debounceDuration: const Duration(milliseconds: 300),
       ),
     );
   }
 
   Widget _buildStyledDropdownField<T>({
-    required T? value,
-    required String labelText,
-    required IconData icon,
-    required List<DropdownMenuItem<T>> items,
-    required Function(T?) onChanged,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: DropdownButtonFormField<T>(
-        value: value,
-        items: items,
-        onChanged: onChanged,
-        style: const TextStyle(fontSize: 16, color: Color(0xFF1E3A8A)),
-        decoration: InputDecoration(
-          labelText: labelText,
-          labelStyle: const TextStyle(color: Color(0xFF64748B), fontSize: 14),
-          prefixIcon: Icon(icon, color: const Color(0xFF1E3A8A), size: 20),
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 16,
-          ),
-          floatingLabelBehavior: FloatingLabelBehavior.never,
+  required T? value,
+  required String labelText,
+  required IconData icon,
+  required List<DropdownMenuItem<T>> items,
+  required Function(T?) onChanged,
+}) {
+  return Container(
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: const Color(0xFFE2E8F0)),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.05),
+          blurRadius: 8,
+          offset: const Offset(0, 2),
         ),
-        dropdownColor: Colors.white,
-        icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF1E3A8A)),
+      ],
+    ),
+    child: DropdownButtonFormField<T>(
+      value: value,
+      items: items,
+      onChanged: onChanged,
+      style: const TextStyle(fontSize: 16, color: Color(0xFF1E3A8A)),
+      decoration: InputDecoration(
+        labelText: labelText,
+        labelStyle: const TextStyle(color: Color(0xFF64748B), fontSize: 14),
+        prefixIcon: Icon(icon, color: const Color(0xFF1E3A8A), size: 20),
+        border: InputBorder.none,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 16,
+        ),
+        floatingLabelBehavior: FloatingLabelBehavior.never,
       ),
-    );
-  }
+      dropdownColor: Colors.white, 
+      icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF1E3A8A)),
+      // 🔥 드롭다운 메뉴 높이 제한
+      menuMaxHeight: 200,
+    ),
+  );
+}
 
   Widget _buildStyledDetailRow(IconData icon, String label, String value) {
     return Row(
@@ -1755,4 +2017,16 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       ),
     );
   }
+
+  void _debugScheduleItem(ScheduleItem item) {
+  print('🔍 === Schedule Item Debug ===');
+  print('🔍 Title: ${item.title}');
+  print('🔍 StartTime: "${item.startTime}" (type: ${item.startTime.runtimeType})');
+  print('🔍 EndTime: "${item.endTime}" (type: ${item.endTime.runtimeType})');
+  print('🔍 DayOfWeek: ${item.dayOfWeek}');
+  print('🔍 Building: ${item.buildingName}');
+  print('🔍 Floor: ${item.floorNumber}');
+  print('🔍 Room: ${item.roomName}');
+  print('🔍 === End Debug ===');
+}
 }

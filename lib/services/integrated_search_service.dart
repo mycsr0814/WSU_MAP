@@ -281,15 +281,26 @@ class IntegratedSearchService {
       }
       
       // 검색어와 일치하는 호실들 찾기 (호실명, 설명 포함)
-      final matchingRooms = allRooms.where((roomData) {
-        final roomName = _safeGetString(roomData, 'Room_Name');
-        final roomDescription = _safeGetString(roomData, 'Room_Description');
-        
-        final roomNameMatch = roomName != null && roomName.toLowerCase().contains(query);
-        final descriptionMatch = roomDescription != null && roomDescription.toLowerCase().contains(query);
-        
-        return roomNameMatch || descriptionMatch;
-      }).toList();
+final matchingRooms = allRooms.where((roomData) {
+  final roomName = _safeGetString(roomData, 'Room_Name');
+  final roomDescription = _safeGetString(roomData, 'Room_Description');
+  final roomUsers = roomData['Room_User']; // room_user는 일반적으로 List나 String
+
+  final roomNameMatch = roomName != null && roomName.toLowerCase().contains(query);
+  final descriptionMatch = roomDescription != null && roomDescription.toLowerCase().contains(query);
+
+  bool userMatch = false;
+  if (roomUsers is List) {
+    userMatch = roomUsers.any((user) =>
+      user != null && user.toString().toLowerCase().contains(query)
+    );
+  } else if (roomUsers != null) {
+    userMatch = roomUsers.toString().toLowerCase().contains(query);
+  }
+
+  return roomNameMatch || descriptionMatch || userMatch;
+}).toList();
+
       
       debugPrint('🎯 일치하는 호실: ${matchingRooms.length}개');
       
@@ -316,46 +327,65 @@ class IntegratedSearchService {
   }
 
   /// 🔥 안전한 호실 SearchResult 생성
-  static SearchResult? _createRoomSearchResult(Map<String, dynamic> roomData, List<Building> buildings) {
-    try {
-      final buildingName = _safeGetString(roomData, 'Building_Name');
-      final floorNumber = _safeGetString(roomData, 'Floor_Number');
-      final roomName = _safeGetString(roomData, 'Room_Name');
-      final roomDescription = _safeGetString(roomData, 'Room_Description');
-      
-      if (buildingName == null || roomName == null) {
-        debugPrint('❌ 필수 데이터 누락: buildingName=$buildingName, roomName=$roomName');
-        return null;
+// lib/services/integrated_search_service.dart
+
+static SearchResult? _createRoomSearchResult(Map<String, dynamic> roomData, List<Building> buildings) {
+  try {
+    final buildingName = _safeGetString(roomData, 'Building_Name');
+    final floorNumber = _safeGetString(roomData, 'Floor_Number');
+    final roomName = _safeGetString(roomData, 'Room_Name');
+    final roomDescription = _safeGetString(roomData, 'Room_Description');
+    final usersRaw  = roomData['Room_User'];
+    final phonesRaw = roomData['User_Phone'];
+    final emailsRaw = roomData['User_Email'];
+
+    List<String> parseList(dynamic raw) {
+      if (raw is List) {
+        return raw.where((e) => e != null && e.toString().trim().isNotEmpty).map((e) => e.toString()).toList();
+      } else if (raw != null && raw.toString().trim().isNotEmpty) {
+        return [raw.toString()];
       }
-      
-      // 해당 건물 찾기 (더 관대한 매칭)
-      final building = buildings.firstWhere(
-        (b) => _extractBuildingNameForAPI(b.name).toLowerCase() == buildingName.toLowerCase(),
-        orElse: () => buildings.firstWhere(
-          (b) => b.name.toLowerCase().contains(buildingName.toLowerCase()) ||
-                buildingName.toLowerCase().contains(_extractBuildingNameForAPI(b.name).toLowerCase()),
-          orElse: () => buildings.first, // 기본값으로 첫 번째 건물 사용
-        ),
-      );
-      
-      // 층 번호 파싱
-      int? floorInt;
-      if (floorNumber != null) {
-        floorInt = int.tryParse(floorNumber) ?? 1;
-      }
-      
-      return SearchResult.fromRoom(
-        building: building,
-        roomNumber: roomName,
-        floorNumber: floorInt ?? 1,
-        roomDescription: roomDescription?.isNotEmpty == true ? roomDescription : null,
-      );
-      
-    } catch (e) {
-      debugPrint('❌ 호실 SearchResult 생성 오류: $e');
+      return [];
+    }
+
+    final roomUserList = parseList(usersRaw);
+    final roomPhoneList = parseList(phonesRaw);
+    final roomEmailList = parseList(emailsRaw);
+
+    if (buildingName == null || roomName == null) {
+      debugPrint('❌ 필수 데이터 누락: buildingName=$buildingName, roomName=$roomName');
       return null;
     }
+
+    // building, floorInt 파싱
+    final building = buildings.firstWhere(
+      (b) => _extractBuildingNameForAPI(b.name).toLowerCase() == buildingName.toLowerCase(),
+      orElse: () => buildings.firstWhere(
+        (b) => b.name.toLowerCase().contains(buildingName.toLowerCase()) ||
+              buildingName.toLowerCase().contains(_extractBuildingNameForAPI(b.name).toLowerCase()),
+        orElse: () => buildings.first,
+      ),
+    );
+    int? floorInt;
+    if (floorNumber != null) {
+      floorInt = int.tryParse(floorNumber) ?? 1;
+    }
+
+    return SearchResult.fromRoom(
+      building: building,
+      roomNumber: roomName,
+      floorNumber: floorInt ?? 1,
+      roomDescription: roomDescription?.isNotEmpty == true ? roomDescription : null,
+      roomUser: roomUserList,
+      roomPhone: roomPhoneList,
+      roomEmail: roomEmailList,
+    );
+
+  } catch (e) {
+    debugPrint('❌ 호실 SearchResult 생성 오류: $e');
+    return null;
   }
+}
 
   /// 🔥 안전한 문자열 추출 헬퍼
   static String? _safeGetString(Map<String, dynamic> data, String key) {

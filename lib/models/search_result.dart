@@ -1,4 +1,4 @@
-// lib/models/search_result.dart - 안전성 강화된 버전
+// lib/models/search_result.dart - roomUser 포함 안전성 강화버전
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_application_1/models/building.dart';
@@ -16,6 +16,9 @@ class SearchResult {
   final String? roomNumber;    // 호실 번호 (호실인 경우)
   final int? floorNumber;      // 층 번호 (호실인 경우)
   final String? roomDescription; // 호실 설명 (호실인 경우)
+  final List<String>? roomUser;  // ▶︎ 호실 사용자/담당자
+  final List<String>? roomPhone;  // 추가
+  final List<String>? roomEmail;  
 
   SearchResult({
     required this.type,
@@ -25,12 +28,14 @@ class SearchResult {
     this.roomNumber,
     this.floorNumber,
     this.roomDescription,
+    this.roomUser,
+    this.roomPhone,    // 추가
+    this.roomEmail,
   });
 
-  // 🔥 안전성 강화된 건물 검색 결과 생성
+  // 건물 검색 결과 생성
   factory SearchResult.fromBuilding(Building building) {
     try {
-      // 🔥 building null 체크
       if (building == null) {
         throw ArgumentError('Building cannot be null');
       }
@@ -51,7 +56,6 @@ class SearchResult {
       );
     } catch (e) {
       debugPrint('❌ SearchResult.fromBuilding 생성 오류: $e');
-      // 🔥 안전한 fallback
       return SearchResult(
         type: SearchResultType.building,
         displayName: building?.name ?? '알 수 없는 건물',
@@ -61,15 +65,17 @@ class SearchResult {
     }
   }
 
-  // 🔥 안전성 강화된 호실 검색 결과 생성
+  // 호실(방) 검색 결과 생성, roomUser 포함
   factory SearchResult.fromRoom({
     required Building building,
     required String roomNumber,
     required int floorNumber,
     String? roomDescription,
+    List<String>? roomUser,
+    List<String>? roomPhone,    // 추가
+    List<String>? roomEmail,    
   }) {
     try {
-      // 🔥 파라미터 유효성 검증
       if (building == null) {
         throw ArgumentError('Building cannot be null');
       }
@@ -83,13 +89,14 @@ class SearchResult {
 
       final buildingName = building.name.isNotEmpty ? building.name : '알 수 없는 건물';
       final safeRoomNumber = roomNumber.isNotEmpty ? roomNumber : '알 수 없는 호실';
-      
       final displayName = '$buildingName ${safeRoomNumber}호';
-      
+
       final searchTextParts = <String>[
         buildingName,
         '${safeRoomNumber}호',
         roomDescription?.isNotEmpty == true ? roomDescription! : '',
+        if (roomUser != null && roomUser.isNotEmpty)
+          roomUser.where((u) => u.isNotEmpty).join(' '), // 여러 명일 때 합침
       ].where((part) => part.isNotEmpty).toList();
 
       return SearchResult(
@@ -100,15 +107,16 @@ class SearchResult {
         roomNumber: safeRoomNumber,
         floorNumber: floorNumber,
         roomDescription: roomDescription,
+        roomUser: roomUser,
+        roomPhone: roomPhone,   // 추가
+        roomEmail: roomEmail,  
       );
     } catch (e) {
       debugPrint('❌ SearchResult.fromRoom 생성 오류: $e');
-      // 🔥 안전한 fallback - 건물로 변경
       return SearchResult.fromBuilding(building);
     }
   }
 
-  // 🔥 fallback 건물 생성
   static Building _createFallbackBuilding() {
     return Building(
       name: '알 수 없는 건물',
@@ -124,7 +132,6 @@ class SearchResult {
     );
   }
 
-  // 🔥 안전한 getter들
   bool get isBuilding {
     try {
       return type == SearchResultType.building;
@@ -133,18 +140,17 @@ class SearchResult {
       return false;
     }
   }
-  
+
   bool get isRoom {
     try {
-      return type == SearchResultType.room && 
-             roomNumber?.isNotEmpty == true;
+      return type == SearchResultType.room &&
+          roomNumber?.isNotEmpty == true;
     } catch (e) {
       debugPrint('❌ isRoom getter 오류: $e');
       return false;
     }
   }
 
-  // 🔥 안전한 전체 표시명
   String get fullDisplayName {
     try {
       if (isRoom) {
@@ -160,27 +166,22 @@ class SearchResult {
     }
   }
 
-  // 🔥 안전한 검색용 텍스트
+  // user(담당자 등)도 검색 텍스트에 포함
   String get searchableText {
     try {
       final parts = <String>[];
-      
-      if (building.name.isNotEmpty) {
-        parts.add(building.name.toLowerCase());
+
+      if (building.name.isNotEmpty) parts.add(building.name.toLowerCase());
+      if (displayName.isNotEmpty) parts.add(displayName.toLowerCase());
+      if (roomNumber?.isNotEmpty == true) parts.add(roomNumber!.toLowerCase());
+      if (roomDescription?.isNotEmpty == true) parts.add(roomDescription!.toLowerCase());
+      // roomUser도 추가
+      if (roomUser != null && roomUser!.isNotEmpty) {
+        parts.add(roomUser!
+            .where((user) => user.isNotEmpty)
+            .map((user) => user.toLowerCase())
+            .join(' '));
       }
-      
-      if (displayName.isNotEmpty) {
-        parts.add(displayName.toLowerCase());
-      }
-      
-      if (roomNumber?.isNotEmpty == true) {
-        parts.add(roomNumber!.toLowerCase());
-      }
-      
-      if (roomDescription?.isNotEmpty == true) {
-        parts.add(roomDescription!.toLowerCase());
-      }
-      
       return parts.join(' ');
     } catch (e) {
       debugPrint('❌ searchableText getter 오류: $e');
@@ -188,18 +189,17 @@ class SearchResult {
     }
   }
 
-  // 🔥 안전한 Building 변환
   Building toBuildingWithRoomLocation() {
     try {
       if (isRoom) {
         final buildingName = building.name.isNotEmpty ? building.name : '알 수 없는 건물';
         final roomInfo = roomNumber?.isNotEmpty == true ? roomNumber! : '알 수 없는 호실';
         final description = 'floor:${floorNumber ?? 1},room:$roomInfo';
-        
+
         return Building(
           name: buildingName,
-          info: roomDescription?.isNotEmpty == true 
-              ? roomDescription! 
+          info: roomDescription?.isNotEmpty == true
+              ? roomDescription!
               : '$buildingName ${roomInfo}호',
           lat: building.lat,
           lng: building.lng,
@@ -214,40 +214,37 @@ class SearchResult {
       return building;
     } catch (e) {
       debugPrint('❌ toBuildingWithRoomLocation 오류: $e');
-      // 원본 building 반환
       return building;
     }
   }
 
-  // 🔥 안전한 toString
   @override
   String toString() {
     try {
-      return 'SearchResult{type: $type, building: ${building.name}, displayName: $displayName, roomNumber: $roomNumber, floorNumber: $floorNumber}';
+      return 'SearchResult{type: $type, building: ${building.name}, displayName: $displayName, roomNumber: $roomNumber, floorNumber: $floorNumber, roomUser: $roomUser}';
     } catch (e) {
       return 'SearchResult{오류: $e}';
     }
   }
 
-  // 🔥 안전한 equality 비교
   @override
   bool operator ==(Object other) {
     try {
       if (identical(this, other)) return true;
-      
+
       return other is SearchResult &&
           other.type == type &&
           other.building == building &&
           other.displayName == displayName &&
           other.roomNumber == roomNumber &&
-          other.floorNumber == floorNumber;
+          other.floorNumber == floorNumber &&
+          listEquals(other.roomUser, roomUser);
     } catch (e) {
       debugPrint('❌ equality 비교 오류: $e');
       return false;
     }
   }
 
-  // 🔥 안전한 hashCode
   @override
   int get hashCode {
     try {
@@ -255,7 +252,8 @@ class SearchResult {
           building.hashCode ^
           displayName.hashCode ^
           (roomNumber?.hashCode ?? 0) ^
-          (floorNumber?.hashCode ?? 0);
+          (floorNumber?.hashCode ?? 0) ^
+          (roomUser?.join('').hashCode ?? 0);
     } catch (e) {
       debugPrint('❌ hashCode 계산 오류: $e');
       return 0;
@@ -263,13 +261,12 @@ class SearchResult {
   }
 }
 
-// 🔥 안전성 강화된 검색 결과 그룹화 확장
+// 검색 결과 그룹화 확장
 extension SearchResultGrouping on List<SearchResult> {
-  
-  // 안전한 건물별 그룹화
+
   Map<Building, List<SearchResult>> groupByBuilding() {
     final Map<Building, List<SearchResult>> grouped = {};
-    
+
     try {
       for (final result in this) {
         if (result.building != null) {
@@ -279,14 +276,12 @@ extension SearchResultGrouping on List<SearchResult> {
     } catch (e) {
       debugPrint('❌ groupByBuilding 오류: $e');
     }
-    
     return grouped;
   }
-  
-  // 안전한 타입별 그룹화
+
   Map<SearchResultType, List<SearchResult>> groupByType() {
     final Map<SearchResultType, List<SearchResult>> grouped = {};
-    
+
     try {
       for (final result in this) {
         grouped.putIfAbsent(result.type, () => []).add(result);
@@ -294,11 +289,9 @@ extension SearchResultGrouping on List<SearchResult> {
     } catch (e) {
       debugPrint('❌ groupByType 오류: $e');
     }
-    
     return grouped;
   }
-  
-  // 안전한 건물만 필터링
+
   List<SearchResult> get buildingsOnly {
     try {
       return where((result) => result.isBuilding).toList();
@@ -307,8 +300,7 @@ extension SearchResultGrouping on List<SearchResult> {
       return [];
     }
   }
-  
-  // 안전한 호실만 필터링
+
   List<SearchResult> get roomsOnly {
     try {
       return where((result) => result.isRoom).toList();
@@ -317,8 +309,7 @@ extension SearchResultGrouping on List<SearchResult> {
       return [];
     }
   }
-  
-  // 안전한 특정 건물 필터링
+
   List<SearchResult> fromBuilding(Building building) {
     try {
       if (building == null) return [];

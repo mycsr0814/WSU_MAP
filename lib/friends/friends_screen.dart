@@ -524,6 +524,7 @@ class _FriendsScreenState extends State<FriendsScreen>
   }
 
   // 🔥 실시간 상태 표시기가 포함된 헤더
+  // 🔥 실시간 상태 표시기가 포함된 헤더
   Widget _buildHeader() {
     return Container(
       padding: const EdgeInsets.all(20),
@@ -541,20 +542,6 @@ class _FriendsScreenState extends State<FriendsScreen>
         children: [
           Row(
             children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1E3A8A).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(
-                  Icons.people_alt,
-                  color: Color(0xFF1E3A8A),
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,

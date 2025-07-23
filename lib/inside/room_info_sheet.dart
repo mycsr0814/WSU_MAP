@@ -1,170 +1,432 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'room_info.dart';
 
-/// 강의실(방) 정보와 출발/도착 버튼을 표시하는 하단 시트 위젯
 class RoomInfoSheet extends StatelessWidget {
-  final RoomInfo roomInfo;        // 방 정보(이름, 설명 등)
-  final VoidCallback? onDeparture; // 출발지로 버튼 콜백 (null이면 버튼 안 보임)
-  final VoidCallback? onArrival;   // 도착지로 버튼 콜백 (null이면 버튼 안 보임)
-  final String? buildingName;      // 🔥 추가: 건물명
-  final dynamic floorNumber;       // 🔥 수정: dynamic 타입으로 변경
+  final RoomInfo roomInfo;
+  final VoidCallback? onDeparture;
+  final VoidCallback? onArrival;
+  final String? buildingName;
+  final dynamic floorNumber;
 
   const RoomInfoSheet({
     Key? key,
     required this.roomInfo,
     this.onDeparture,
     this.onArrival,
-    this.buildingName,  // 🔥 추가
-    this.floorNumber,   // 🔥 추가
+    this.buildingName,
+    this.floorNumber,
   }) : super(key: key);
+
+  void _handlePhone(BuildContext context, String phone) async {
+    HapticFeedback.lightImpact();
+    final uri = Uri.parse('tel:$phone');
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.error_outline, color: Colors.white, size: 20),
+              const SizedBox(width: 12),
+              const Expanded(child: Text('전화앱을 열 수 없습니다.')),
+            ],
+          ),
+          backgroundColor: const Color(0xFFEF4444),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        ),
+      );
+    }
+  }
+
+  void _handleEmail(BuildContext context, String email) async {
+    HapticFeedback.lightImpact();
+    final uri = Uri.parse('mailto:$email');
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    } else {
+      await Clipboard.setData(ClipboardData(text: email));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.check_circle, color: Colors.white, size: 20),
+              const SizedBox(width: 12),
+              const Expanded(child: Text('이메일이 복사되었습니다.')),
+            ],
+          ),
+          backgroundColor: const Color(0xFF10B981),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        ),
+      );
+    }
+  }
+
+  // 🔥 친구창과 동일한 상세 정보 행 위젯
+  Widget _buildDetailRow(IconData icon, String label, String value, {bool isClickable = false, VoidCallback? onTap}) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: const Color(0xFF1E3A8A).withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, color: const Color(0xFF1E3A8A), size: 20),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 2),
+              GestureDetector(
+                onTap: onTap,
+                child: Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: isClickable ? Colors.blueAccent : const Color(0xFF1E3A8A),
+                    decoration: isClickable ? TextDecoration.underline : null,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      // 하단 시트 스타일: 흰 배경, 위쪽만 둥근 모서리
       decoration: const BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      padding: const EdgeInsets.all(24),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // 방 이름
-          Text(
-            roomInfo.name,
-            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+          // 🔥 상단 드래그 핸들
+          Container(
+            padding: const EdgeInsets.only(top: 12, bottom: 8),
+            child: Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
           ),
-          const SizedBox(height: 12),
-          // 방 설명
-          Text(
-            roomInfo.desc,
-            style: const TextStyle(fontSize: 16),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 20),
-          Row(
-            children: [
-              // 출발지 버튼
-              if (onDeparture != null)
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () async {
-                      try {
-                        // 🔥 디버깅 정보 추가
-                        print('=== 출발지 버튼 클릭 ===');
-                        print('roomInfo.id: ${roomInfo.id}');
-                        print('roomInfo.name: ${roomInfo.name}');
-                        print('buildingName: $buildingName');
-                        print('floorNumber: $floorNumber (타입: ${floorNumber.runtimeType})');
-                        
-                        // 🔥 수정: DirectionsScreen으로 방 정보 전달
-                        final roomData = {
-                          'roomId': roomInfo.id,
-                          'roomName': roomInfo.name,
-                          'buildingName': buildingName ?? '',
-                          'floorNumber': floorNumber?.toString() ?? '', // 🔥 수정: 안전하게 String으로 변환
-                          'type': 'start', // 출발지임을 표시
-                        };
-                        
-                        print('전달할 roomData: $roomData');
-                        
-                        // 현재 모달 닫기
-                        Navigator.pop(context);
-                        
-                        // DirectionsScreen으로 이동하면서 방 정보 전달
-                        Navigator.pushNamed(
-                          context, 
-                          '/directions',
-                          arguments: roomData,
-                        );
-                      } catch (e, stackTrace) {
-                        print('❌ 출발지 버튼 오류: $e');
-                        print('스택 트레이스: $stackTrace');
-                        
-                        // 에러 발생 시 사용자에게 알림
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('오류가 발생했습니다: $e'),
-                            backgroundColor: Colors.red,
-                          ),
-                        );
-                      }
-                    },
-                    icon: const Icon(Icons.play_arrow, size: 18),
-                    label: const Text('출발지'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF10B981), // 초록색 배경
-                      foregroundColor: Colors.white,            // 흰색 글자/아이콘
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
+
+          // 🔥 헤더 - 친구창과 동일한 스타일 + 오른쪽 상단 닫기 버튼
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1E3A8A).withOpacity(0.1),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 60,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1E3A8A).withOpacity(0.2),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.meeting_room,
+                    color: Color(0xFF1E3A8A),
+                    size: 30,
                   ),
                 ),
-              if (onDeparture != null && onArrival != null)
-                const SizedBox(width: 8),
-              // 도착지 버튼
-              if (onArrival != null)
+                const SizedBox(width: 16),
                 Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () async {
-                      try {
-                        // 🔥 디버깅 정보 추가
-                        print('=== 도착지 버튼 클릭 ===');
-                        print('roomInfo.id: ${roomInfo.id}');
-                        print('roomInfo.name: ${roomInfo.name}');
-                        print('buildingName: $buildingName');
-                        print('floorNumber: $floorNumber (타입: ${floorNumber.runtimeType})');
-                        
-                        // 🔥 수정: DirectionsScreen으로 방 정보 전달
-                        final roomData = {
-                          'roomId': roomInfo.id,
-                          'roomName': roomInfo.name,
-                          'buildingName': buildingName ?? '',
-                          'floorNumber': floorNumber?.toString() ?? '', // 🔥 수정: 안전하게 String으로 변환
-                          'type': 'end', // 도착지임을 표시
-                        };
-                        
-                        print('전달할 roomData: $roomData');
-                        
-                        // 현재 모달 닫기
-                        Navigator.pop(context);
-                        
-                        // DirectionsScreen으로 이동하면서 방 정보 전달
-                        Navigator.pushNamed(
-                          context, 
-                          '/directions',
-                          arguments: roomData,
-                        );
-                      } catch (e, stackTrace) {
-                        print('❌ 도착지 버튼 오류: $e');
-                        print('스택 트레이스: $stackTrace');
-                        
-                        // 에러 발생 시 사용자에게 알림
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('오류가 발생했습니다: $e'),
-                            backgroundColor: Colors.red,
-                          ),
-                        );
-                      }
-                    },
-                    icon: const Icon(Icons.flag, size: 18),
-                    label: const Text('도착지'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFEF4444), // 빨간색 배경
-                      foregroundColor: Colors.white,            // 흰색 글자/아이콘
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${roomInfo.name}호',
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF1E3A8A),
+                        ),
                       ),
-                    ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${buildingName ?? ''} ${floorNumber != null ? '${floorNumber}층' : ''}',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: const Color(0xFF1E3A8A).withOpacity(0.8),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-            ],
+                // 🔥 오른쪽 상단 닫기 버튼
+                IconButton(
+                  onPressed: () {
+                    HapticFeedback.lightImpact();
+                    Navigator.of(context).pop();
+                  },
+                  icon: const Icon(
+                    Icons.close,
+                    color: Color(0xFF1E3A8A),
+                    size: 24,
+                  ),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(
+                    minWidth: 32,
+                    minHeight: 32,
+                  ),
+                ),
+              ],
+            ),
           ),
+
+          // 🔥 내용 - 친구창과 동일한 간격과 스타일
+          Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 설명
+                if (roomInfo.desc.trim().isNotEmpty) ...[
+                  _buildDetailRow(
+                    Icons.description,
+                    '설명',
+                    roomInfo.desc.trim(),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+
+                // 담당자
+                if (roomInfo.users.where((u) => u.trim().isNotEmpty).isNotEmpty) ...[
+                  _buildDetailRow(
+                    Icons.person,
+                    '담당자',
+                    roomInfo.users
+                        .where((u) => u.trim().isNotEmpty)
+                        .map((u) => u.trim())
+                        .join(", "),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+
+                // 전화번호들
+                if (roomInfo.phones != null) 
+                  ...roomInfo.phones!
+                      .where((p) => p.trim().isNotEmpty)
+                      .map((p) => p.trim())
+                      .map((phone) => Column(
+                        children: [
+                          _buildDetailRow(
+                            Icons.phone,
+                            '연락처',
+                            phone,
+                            isClickable: true,
+                            onTap: () => _handlePhone(context, phone),
+                          ),
+                          const SizedBox(height: 16),
+                        ],
+                      )),
+
+                // 이메일들
+                if (roomInfo.emails != null) 
+                  ...roomInfo.emails!
+                      .where((e) => e.trim().isNotEmpty)
+                      .map((e) => e.trim())
+                      .map((email) => Column(
+                        children: [
+                          _buildDetailRow(
+                            Icons.email,
+                            '이메일',
+                            email,
+                            isClickable: true,
+                            onTap: () => _handleEmail(context, email),
+                          ),
+                          const SizedBox(height: 16),
+                        ],
+                      )),
+
+                // 정보가 없는 경우
+                if (roomInfo.desc.trim().isEmpty && 
+                    roomInfo.users.where((u) => u.trim().isNotEmpty).isEmpty &&
+                    (roomInfo.phones == null || roomInfo.phones!.where((p) => p.trim().isNotEmpty).isEmpty) &&
+                    (roomInfo.emails == null || roomInfo.emails!.where((e) => e.trim().isNotEmpty).isEmpty)) ...[
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.info_outline,
+                          color: Colors.grey.shade600,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            '등록된 상세 정보가 없습니다.',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey.shade600,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+              ],
+            ),
+          ),
+
+          // 🔥 버튼 영역 - 길찾기 버튼들만
+          if (onDeparture != null || onArrival != null) 
+            Padding(
+              padding: const EdgeInsets.only(left: 24, right: 24, bottom: 24),
+              child: Row(
+                children: [
+                  if (onDeparture != null) ...[
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () async {
+                          HapticFeedback.lightImpact();
+                          try {
+                            final roomData = {
+                              'roomId': roomInfo.id,
+                              'roomName': roomInfo.name,
+                              'buildingName': buildingName ?? '',
+                              'floorNumber': floorNumber?.toString() ?? '',
+                              'type': 'start',
+                            };
+                            Navigator.pop(context);
+                            Navigator.pushNamed(
+                              context,
+                              '/directions',
+                              arguments: roomData,
+                            );
+                          } catch (e, stackTrace) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Row(
+                                  children: [
+                                    const Icon(Icons.error_outline, color: Colors.white, size: 20),
+                                    const SizedBox(width: 12),
+                                    Expanded(child: Text('오류가 발생했습니다: $e')),
+                                  ],
+                                ),
+                                backgroundColor: const Color(0xFFEF4444),
+                                behavior: SnackBarBehavior.floating,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              ),
+                            );
+                          }
+                        },
+                        icon: const Icon(Icons.play_arrow, size: 18),
+                        label: const Text('출발지'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF10B981),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          elevation: 2,
+                        ),
+                      ),
+                    ),
+                  ],
+                  
+                  if (onDeparture != null && onArrival != null)
+                    const SizedBox(width: 12),
+                  
+                  if (onArrival != null) ...[
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () async {
+                          HapticFeedback.lightImpact();
+                          try {
+                            final roomData = {
+                              'roomId': roomInfo.id,
+                              'roomName': roomInfo.name,
+                              'buildingName': buildingName ?? '',
+                              'floorNumber': floorNumber?.toString() ?? '',
+                              'type': 'end',
+                            };
+                            Navigator.pop(context);
+                            Navigator.pushNamed(
+                              context,
+                              '/directions',
+                              arguments: roomData,
+                            );
+                          } catch (e, stackTrace) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Row(
+                                  children: [
+                                    const Icon(Icons.error_outline, color: Colors.white, size: 20),
+                                    const SizedBox(width: 12),
+                                    Expanded(child: Text('오류가 발생했습니다: $e')),
+                                  ],
+                                ),
+                                backgroundColor: const Color(0xFFEF4444),
+                                behavior: SnackBarBehavior.floating,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              ),
+                            );
+                          }
+                        },
+                        icon: const Icon(Icons.flag, size: 18),
+                        label: const Text('도착지'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFEF4444),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          elevation: 2,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+
+          // 🔥 하단 안전 영역 (버튼이 없을 때만)
+          if (onDeparture == null && onArrival == null)
+            SizedBox(height: MediaQuery.of(context).padding.bottom + 24)
+          else
+            SizedBox(height: MediaQuery.of(context).padding.bottom),
         ],
       ),
     );

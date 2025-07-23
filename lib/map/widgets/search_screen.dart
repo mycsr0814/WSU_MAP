@@ -280,75 +280,83 @@ Widget _buildLoadingState() {
   }
 
   // 🔥 검색 결과 아이템 - 강의실 표시 개선
-  Widget _buildSearchResultItem(SearchResult result) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 1),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.zero,
+// lib/map/widgets/search_screen.dart
+
+Widget _buildSearchResultItem(SearchResult result) {
+  return Container(
+    margin: const EdgeInsets.only(bottom: 1),
+    decoration: const BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.zero,
+    ),
+    child: ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      leading: Container(
+        width: 32,
+        height: 32,
+        decoration: BoxDecoration(
+          color: result.isBuilding
+              ? const Color(0xFF3B82F6).withOpacity(0.1)
+              : const Color(0xFF10B981).withOpacity(0.1),
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Icon(
+          result.isBuilding ? Icons.business : Icons.room,
+          color: result.isBuilding
+              ? const Color(0xFF3B82F6)
+              : const Color(0xFF10B981),
+          size: 18,
+        ),
       ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        leading: Container(
-          width: 32,
-          height: 32,
-          decoration: BoxDecoration(
-            color: result.isBuilding
-                ? const Color(0xFF3B82F6).withOpacity(0.1)
-                : const Color(0xFF10B981).withOpacity(0.1),
-            borderRadius: BorderRadius.circular(6),
-          ),
-          child: Icon(
-            result.isBuilding ? Icons.business : Icons.room,
-            color: result.isBuilding
-                ? const Color(0xFF3B82F6)
-                : const Color(0xFF10B981),
-            size: 18,
-          ),
+      title: Text(
+        result.displayName,
+        style: const TextStyle(
+          fontSize: 15,
+          fontWeight: FontWeight.w500,
+          color: Colors.black87,
         ),
-        title: Text(
-          result.displayName,
-          style: const TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w500,
-            color: Colors.black87,
-          ),
+      ),
+      subtitle: Text(
+        [
+          if (result.floorNumber != null) '${result.floorNumber}층',
+          if (result.roomDescription?.isNotEmpty == true) result.roomDescription,
+          // 괄호와 함께 방번호를 보여주는 줄을 삭제!
+          // if (result.roomNumber != null && result.roomNumber!.isNotEmpty) '(${result.roomNumber})',
+          if (result.roomUser != null && result.roomUser!.any((u) => u.isNotEmpty))
+            result.roomUser!.where((u) => u.isNotEmpty).join(", "),
+          if (result.roomPhone != null && result.roomPhone!.any((p) => p.isNotEmpty))
+            '전화: ${result.roomPhone!.where((p) => p.isNotEmpty).join(", ")}',
+          if (result.roomEmail != null && result.roomEmail!.any((e) => e.isNotEmpty))
+            '메일: ${result.roomEmail!.where((e) => e.isNotEmpty).join(", ")}',
+        ].where((e) => e != null && e.isNotEmpty).join(' • '),
+        style: TextStyle(
+          fontSize: 13,
+          color: Colors.grey.shade600,
         ),
-        subtitle: Text(
-          result.isRoom
-              ? '${result.floorNumber}층 • ${result.roomDescription ?? '강의실'}'  // 🔥 층 정보 추가
-              : result.building.info.isNotEmpty 
-                  ? result.building.info 
-                  : result.building.category,
-          style: TextStyle(
-            fontSize: 13,
-            color: Colors.grey.shade600,
-          ),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // 🔥 강의실인 경우 직접 이동 표시
-            if (result.isRoom) 
-              Icon(
-                Icons.map,
-                color: Colors.green.shade600,
-                size: 16,
-              ),
-            const SizedBox(width: 4),
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+      ),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (result.isRoom)
             Icon(
-              Icons.chevron_right,
-              color: Colors.grey.shade400,
-              size: 20,
+              Icons.map,
+              color: Colors.green.shade600,
+              size: 16,
             ),
-          ],
-        ),
-        onTap: () => _onResultSelected(result),
+          const SizedBox(width: 4),
+          Icon(
+            Icons.chevron_right,
+            color: Colors.grey.shade400,
+            size: 20,
+          ),
+        ],
       ),
-    );
-  }
+      onTap: () => _onResultSelected(result),
+    ),
+  );
+}
 
  Widget _buildNoResults() {
   final l10n = AppLocalizations.of(context)!;
@@ -376,5 +384,4 @@ Widget _buildLoadingState() {
     ),
   );
 }
-
 }

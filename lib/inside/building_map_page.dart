@@ -927,17 +927,50 @@ void _focusOnRoom(Map<String, dynamic> roomButton) {
     }
   }
 
-  void _showRoomInfoSheet(BuildContext context, String roomId) async {
-    // 네비게이션 모드에서는 호실 정보 시트를 다르게 표시
-    if (_isNavigationMode) {
-      _showNavigationRoomSheet(context, roomId);
-      return;
-    }
+ void _showRoomInfoSheet(BuildContext context, String roomId) async {
+  // 네비게이션 모드에서는 호실 정보 시트를 다르게 표시
+  if (_isNavigationMode) {
+    _showNavigationRoomSheet(context, roomId);
+    return;
+  }
 
-    setState(() => _selectedRoomId = roomId);
-    String roomIdNoR = roomId.startsWith('R') ? roomId.substring(1) : roomId;
-    String roomDesc = '';
+  setState(() => _selectedRoomId = roomId);
+  String roomIdNoR = roomId.startsWith('R') ? roomId.substring(1) : roomId;
+  
+  // 🔥 JSON 데이터에서 호실 정보 찾기
+  Map<String, dynamic>? roomData;
+  try {
+    // 실제 JSON 데이터에서 해당 호실 정보 검색
+    roomData = await _findRoomDataFromServer(
+      buildingName: widget.buildingName,
+      floorNumber: _selectedFloor?['Floor_Number']?.toString() ?? '',
+      roomName: roomIdNoR,
+    );
+  } catch (e) {
+    debugPrint('호실 데이터 검색 실패: $e');
+    roomData = null;
+  }
 
+  // 🔥 실제 데이터가 있으면 사용하고, 없으면 기본값 사용
+  String roomDesc = '';
+  List<String> roomUsers = [];
+  List<String>? userPhones;
+  List<String>? userEmails;
+
+  if (roomData != null) {
+    // JSON 데이터에서 정보 추출
+    roomDesc = roomData['Room_Description'] ?? '';
+    roomUsers = _parseStringList(roomData['Room_User']);
+    userPhones = _parseStringListNullable(roomData['User_Phone']);
+    userEmails = _parseStringListNullable(roomData['User_Email']);
+    
+    debugPrint('🔍 호실 정보 찾음: $roomIdNoR');
+    debugPrint('   설명: $roomDesc');
+    debugPrint('   담당자: $roomUsers');
+    debugPrint('   전화: $userPhones');
+    debugPrint('   이메일: $userEmails');
+  } else {
+    // 기존 방식으로 설명만 가져오기
     try {
       roomDesc = await _apiService.fetchRoomDescription(
         buildingName: widget.buildingName,
@@ -948,21 +981,89 @@ void _focusOnRoom(Map<String, dynamic> roomButton) {
       debugPrint(e.toString());
       roomDesc = '설명을 불러오지 못했습니다.';
     }
-
-    await showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) => RoomInfoSheet(
-        roomInfo: RoomInfo(id: roomId, name: roomIdNoR, desc: roomDesc),
-        onDeparture: () => _setPoint('start', roomId),
-        onArrival: () => _setPoint('end', roomId),
-        buildingName: widget.buildingName,
-        floorNumber: _selectedFloor?['Floor_Number'],
-      ),
-    );
-
-    if (mounted) setState(() => _selectedRoomId = null);
+    
+    debugPrint('⚠️ 호실 정보 없음, 기본 설명만 사용: $roomDesc');
+    roomUsers = [];
+    userPhones = null;
+    userEmails = null;
   }
+
+  await showModalBottomSheet(
+    context: context,
+    backgroundColor: Colors.transparent,
+    builder: (context) => RoomInfoSheet(
+      roomInfo: RoomInfo(
+        id: roomId,
+        name: roomIdNoR,
+        desc: roomDesc,
+        users: roomUsers,
+        phones: userPhones,
+        emails: userEmails,
+      ),
+      onDeparture: () => _setPoint('start', roomId),
+      onArrival: () => _setPoint('end', roomId),
+      buildingName: widget.buildingName,
+      floorNumber: _selectedFloor?['Floor_Number'],
+    ),
+  );
+
+  if (mounted) setState(() => _selectedRoomId = null);
+}
+
+// 🔥 서버에서 호실 데이터를 찾는 메서드 추가
+Future<Map<String, dynamic>?> _findRoomDataFromServer({
+  required String buildingName,
+  required String floorNumber,
+  required String roomName,
+}) async {
+  try {
+    debugPrint('🔍 호실 검색: $buildingName $floorNumber층 $roomName호');
+    
+    // 🔥 실제 작동하는 API 메서드 사용
+    final List<Map<String, dynamic>> allRooms = await _apiService.fetchAllRooms();
+    
+    debugPrint('📊 전체 호실 수: ${allRooms.length}개');
+    
+    // 🔥 해당 호실 찾기
+    for (final room in allRooms) {
+      final roomBuildingName = room['Building_Name']?.toString() ?? '';
+      final roomFloorNumber = room['Floor_Number']?.toString() ?? '';
+      final roomRoomName = room['Room_Name']?.toString() ?? '';
+      
+      debugPrint('🏠 비교: $roomBuildingName vs $buildingName, $roomFloorNumber vs $floorNumber, $roomRoomName vs $roomName');
+      
+      if (roomBuildingName == buildingName &&
+          roomFloorNumber == floorNumber &&
+          roomRoomName == roomName) {
+        debugPrint('✅ 호실 찾음!');
+        debugPrint('   설명: ${room['Room_Description']}');
+        debugPrint('   담당자: ${room['Room_User']}');
+        debugPrint('   전화: ${room['User_Phone']}');
+        debugPrint('   이메일: ${room['User_Email']}');
+        return room;
+      }
+    }
+    
+    debugPrint('❌ 호실을 찾지 못함: $buildingName $floorNumber층 $roomName호');
+    return null;
+    
+  } catch (e) {
+    debugPrint('❌ _findRoomDataFromServer 오류: $e');
+    return null;
+  }
+}
+
+List<String>? _parseStringListNullable(dynamic value) {
+  if (value == null) return null;
+  if (value is List) {
+    final filtered = value
+        .where((item) => item != null && item.toString().trim().isNotEmpty)
+        .map((item) => item.toString().trim())
+        .toList();
+    return filtered.isEmpty ? null : filtered;
+  }
+  return null;
+}
 
   // 🔥 네비게이션 모드용 호실 정보 시트
   void _showNavigationRoomSheet(BuildContext context, String roomId) {
@@ -1024,6 +1125,17 @@ void _focusOnRoom(Map<String, dynamic> roomButton) {
     );
   }
 
+List<String> _parseStringList(dynamic value) {
+  if (value == null) return [];
+  if (value is List) {
+    return value
+        .where((item) => item != null && item.toString().trim().isNotEmpty)
+        .map((item) => item.toString().trim())
+        .toList();
+  }
+  return [];
+}
+
   void _showAndFadePrompt() {
     setState(() => _showTransitionPrompt = true);
     _promptTimer?.cancel();
@@ -1032,45 +1144,36 @@ void _focusOnRoom(Map<String, dynamic> roomButton) {
     });
   }
 
-
 @override
 Widget build(BuildContext context) {
   return Scaffold(
-    // 🔥 AppBar 완전 제거
+    appBar: AppBar(
+      title: Text(
+        _isNavigationMode
+            ? '${widget.buildingName} 네비게이션'
+            : '${widget.buildingName} 실내 안내도',
+      ),
+      backgroundColor: _isNavigationMode ? Colors.blue : Colors.indigo,
+      actions: [
+        // 🔥 네비게이션 모드에서는 체크 버튼 제거
+        if (!_isNavigationMode) ...[
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _clearAllPathInfo,
+            tooltip: '초기화',
+          ),
+        ],
+      ],
+    ),
     body: Stack(
       children: [
         Center(child: _buildBodyContent()),
-        
-        // 🔥 뒤로가기 버튼 추가
-        Positioned(
-          top: MediaQuery.of(context).padding.top + 16,
-          left: 16,
-          child: SafeArea(
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.9),
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: IconButton(
-                icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black87),
-                onPressed: () => Navigator.of(context).pop(),
-                padding: const EdgeInsets.all(12),
-              ),
-            ),
-          ),
-        ),
-        
         if (!_isFloorListLoading && _error == null)
           Positioned(left: 16, bottom: 120, child: _buildFloorSelector()),
         _buildPathInfo(),
         _buildTransitionPrompt(),
+        // 🔥 모든 상단 네비게이션 관련 위젯 제거
+        // 🔥 자동 선택 진행 중일 때만 로딩 표시
         if (_shouldAutoSelectRoom) _buildAutoSelectionIndicator(),
       ],
     ),
@@ -1105,48 +1208,6 @@ Widget build(BuildContext context) {
       ),
     );
   }
-
-  // 🔥 네비게이션 모드용 출발지 라벨
-String _getNavigationStartLabel() {
-  if (widget.isArrivalNavigation) {
-    return '건물 입구';
-  } else {
-    return '현재 위치';
-  }
-}
-
-// 🔥 네비게이션 모드용 도착지 라벨
-String _getNavigationEndLabel() {
-  if (widget.isArrivalNavigation) {
-    if (widget.targetRoomId != null) {
-      final floorText = widget.targetFloorNumber != null 
-          ? '${widget.targetFloorNumber}층 ' 
-          : '';
-      return '${floorText}${widget.targetRoomId}호';
-    }
-    return '목적지';
-  } else {
-    return '건물 출구';
-  }
-}
-
-// 🔥 네비게이션 모드용 포인트 정보 표시
-Widget _buildNavigationPointInfo(String title, String label, Color color) {
-  return Column(
-    children: [
-      Text(title, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-      const SizedBox(height: 4),
-      Text(
-        label,
-        style: TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.bold,
-          color: color,
-        ),
-      ),
-    ],
-  );
-}
 
   // 🔥 자동 선택 진행 중 표시 위젯
   Widget _buildAutoSelectionIndicator() {
@@ -1466,40 +1527,7 @@ Widget _buildNavigationPointInfo(String title, String label, Color color) {
     }
   }
 
-Widget _buildPathInfo() {
-  // 🔥 네비게이션 모드일 때 적절한 정보 표시
-  if (_isNavigationMode) {
-    return Positioned(
-      bottom: 16,
-      left: 16,
-      right: 16,
-      child: Card(
-        elevation: 6,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        child: Padding(
-          padding: const EdgeInsets.all(12.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildNavigationPointInfo(
-                "출발", 
-                _getNavigationStartLabel(), 
-                Colors.green
-              ),
-              const Icon(Icons.arrow_forward_rounded, color: Colors.grey),
-              _buildNavigationPointInfo(
-                "도착", 
-                _getNavigationEndLabel(), 
-                Colors.blue
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-  
-  // 🔥 일반 모드일 때 기존 방식
+ Widget _buildPathInfo() {
   return Positioned(
     bottom: 16,
     left: 16,
@@ -1522,14 +1550,24 @@ Widget _buildPathInfo() {
   );
 }
 
-
 Widget _buildPointInfo(String title, String? id, Color color) {
+  String displayText = id ?? '미지정';
+  
+  // 🔥 네비게이션 모드일 때 적절한 정보 표시
+  if (_isNavigationMode && id == null) {
+    if (title == "출발") {
+      displayText = widget.isArrivalNavigation ? '건물 입구' : '현재 위치';
+    } else if (title == "도착") {
+      displayText = widget.isArrivalNavigation ? '목적지' : '건물 출구';
+    }
+  }
+  
   return Column(
     children: [
       Text(title, style: const TextStyle(fontSize: 12, color: Colors.grey)),
       const SizedBox(height: 4),
       Text(
-        id ?? '미지정',
+        displayText,
         style: TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.bold,
