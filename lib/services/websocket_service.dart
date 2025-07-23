@@ -157,6 +157,11 @@ class WebSocketService {
           _handleFriendStatusChange(data);
           break;
 
+        // 🔥 새로 추가: 친구 로그아웃 처리
+        case 'friend_logged_out':
+          _handleFriendLoggedOut(data);
+          break;
+
         default:
           debugPrint('⚠️ 알 수 없는 메시지 타입: ${data['type']}');
       }
@@ -217,6 +222,50 @@ class WebSocketService {
 
     // FriendsController에 상태 변경 알림
     // 이벤트 버스나 상태 관리를 통해 UI 업데이트
+  }
+
+  // 🔥 새로 추가: 친구 로그아웃 처리 메서드
+  void _handleFriendLoggedOut(Map<String, dynamic> data) {
+    final loggedOutUserId = data['userId'];
+    debugPrint('👋 친구 로그아웃: $loggedOutUserId');
+
+    // 알림은 표시하지 않고 상태만 업데이트
+    // NotificationService.showFriendLoggedOutNotification(
+    //   loggedOutUserId,
+    //   data['message'] ?? '친구가 로그아웃했습니다.',
+    // );
+  }
+
+  // 🚪 로그아웃 전용 메서드 - 서버에 로그아웃 알리고 연결 해제
+  // lib/services/websocket_service.dart의 logoutAndDisconnect 메서드
+  Future<void> logoutAndDisconnect() async {
+    debugPrint('🚪 로그아웃 및 웹소켓 연결 해제 시작...');
+
+    if (_isConnected && _channel != null && _userId != null) {
+      try {
+        // 서버에 로그아웃 메시지 전송
+        _sendMessage({
+          'type': 'logout',
+          'userId': _userId,
+          'timestamp': DateTime.now().toIso8601String(),
+        });
+
+        debugPrint('📤 서버에 로그아웃 메시지 전송 완료');
+
+        // 서버가 메시지를 처리할 시간 확보 (500ms로 증가)
+        await Future.delayed(const Duration(milliseconds: 500));
+      } catch (e) {
+        debugPrint('❌ 로그아웃 메시지 전송 실패: $e');
+      }
+    }
+
+    // 재연결 방지 설정
+    _shouldReconnect = false;
+
+    // 기존 disconnect 메서드 호출
+    await disconnect();
+
+    debugPrint('✅ 로그아웃 및 웹소켓 연결 해제 완료');
   }
 
   // 📤 메시지 전송

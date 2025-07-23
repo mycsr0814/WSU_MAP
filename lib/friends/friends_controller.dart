@@ -13,7 +13,6 @@ class FriendsController extends ChangeNotifier {
 
   FriendsController(this.repository, this.myId) {
     _initializeWebSocket();
-    _startRealTimeUpdates();
   }
 
   List<Friend> friends = [];
@@ -56,6 +55,15 @@ class FriendsController extends ChangeNotifier {
       _handleOnlineUsersUpdate,
     );
 
+    // 🔥 초기 연결 상태 확인 후 폴링 제어
+    if (_wsService.isConnected) {
+      isWebSocketConnected = true;
+      debugPrint('✅ 초기 웹소켓 연결됨 - 폴링 시작하지 않음');
+    } else {
+      debugPrint('❌ 초기 웹소켓 연결 실패 - 폴링 모드로 시작');
+      _startRealTimeUpdates();
+    }
+
     debugPrint('✅ 웹소켓 서비스 초기화 완료');
   }
 
@@ -76,6 +84,11 @@ class FriendsController extends ChangeNotifier {
       case 'friend_status_change':
         _handleFriendStatusChange(message);
         break;
+
+      // 🔥 새로 추가: 친구 로그아웃 처리
+      case 'friend_logged_out':
+        _handleFriendLoggedOut(message);
+        break;
     }
   }
 
@@ -85,13 +98,17 @@ class FriendsController extends ChangeNotifier {
     debugPrint('🔌 웹소켓 연결 상태 변경: $isConnected');
 
     if (isConnected) {
-      debugPrint('✅ 웹소켓 연결됨 - 폴링 중지됨');
-      // 폴링 타이머는 유지하되, 실제 API 호출은 스킵
+      debugPrint('✅ 웹소켓 연결됨 - 폴링 완전 중지');
+      // 🔥 타이머 완전 중지 및 정리
+      _updateTimer?.cancel();
+      _updateTimer = null;
+
       // 한 번만 동기화
       quickUpdate();
     } else {
-      debugPrint('❌ 웹소켓 연결 끊어짐 - 폴링 모드로 전환');
-      // 폴링이 이미 돌고 있으니 추가 작업 불필요
+      debugPrint('❌ 웹소켓 연결 끊어짐 - 폴링 재시작');
+      // 🔥 웹소켓이 끊어지면 폴링 재시작
+      _startRealTimeUpdates();
     }
 
     notifyListeners();
@@ -107,12 +124,21 @@ class FriendsController extends ChangeNotifier {
     notifyListeners();
   }
 
-  // 📶 친구 상태 변경 처리
+  // 📶 친구 상태 변경 처리 (기존 메서드 개선)
   void _handleFriendStatusChange(Map<String, dynamic> message) {
     final userId = message['userId'];
     final isOnline = message['isOnline'] ?? false;
 
     debugPrint('📶 친구 상태 변경: $userId - ${isOnline ? '온라인' : '오프라인'}');
+
+    // 온라인 사용자 목록 업데이트
+    if (isOnline) {
+      if (!onlineUsers.contains(userId)) {
+        onlineUsers.add(userId);
+      }
+    } else {
+      onlineUsers.remove(userId);
+    }
 
     // 친구 목록에서 해당 사용자의 상태 업데이트
     for (int i = 0; i < friends.length; i++) {
@@ -125,10 +151,47 @@ class FriendsController extends ChangeNotifier {
           isLogin: isOnline,
           lastLocation: friends[i].lastLocation,
         );
+
+        debugPrint(
+          '✅ ${friends[i].userName}님 상태를 ${isOnline ? '온라인' : '오프라인'}으로 업데이트',
+        );
         break;
       }
     }
 
+    notifyListeners();
+  }
+
+  // 🔥 새로 추가: 친구 로그아웃 처리 메서드
+  void _handleFriendLoggedOut(Map<String, dynamic> message) {
+    final loggedOutUserId = message['userId'];
+
+    debugPrint('👋 친구 로그아웃 처리: $loggedOutUserId');
+
+    // 온라인 사용자 목록에서 제거
+    if (onlineUsers.contains(loggedOutUserId)) {
+      onlineUsers.remove(loggedOutUserId);
+      debugPrint('📝 온라인 사용자 목록에서 제거: $loggedOutUserId');
+    }
+
+    // 친구 목록에서 해당 사용자의 상태를 오프라인으로 업데이트
+    for (int i = 0; i < friends.length; i++) {
+      if (friends[i].userId == loggedOutUserId) {
+        friends[i] = Friend(
+          userId: friends[i].userId,
+          userName: friends[i].userName,
+          profileImage: friends[i].profileImage,
+          phone: friends[i].phone,
+          isLogin: false, // 🔥 오프라인으로 변경
+          lastLocation: friends[i].lastLocation,
+        );
+
+        debugPrint('✅ ${friends[i].userName}님 상태를 오프라인으로 업데이트');
+        break;
+      }
+    }
+
+    // UI 업데이트
     notifyListeners();
   }
 
@@ -153,11 +216,20 @@ class FriendsController extends ChangeNotifier {
   void _startRealTimeUpdates() {
     debugPrint('🔄 실시간 업데이트 시작');
     _updateTimer?.cancel();
+
+    // 🔥 웹소켓이 연결되어 있으면 폴링을 완전히 시작하지 않음
+    if (isWebSocketConnected) {
+      debugPrint('📡 웹소켓 연결됨 - 폴링 완전 중지');
+      return; // 타이머를 생성하지 않고 완전히 중지
+    }
+
     _updateTimer = Timer.periodic(_updateInterval, (timer) {
-      // 웹소켓이 연결되어 있으면 폴링 중지
+      // 웹소켓이 연결되면 타이머 완전 중지
       if (isWebSocketConnected) {
-        debugPrint('📡 웹소켓 연결됨 - 폴링 스킵');
-        return; // 폴링하지 않음
+        debugPrint('📡 웹소켓 연결됨 - 폴링 타이머 완전 중지');
+        timer.cancel(); // 타이머 자체를 중지
+        _updateTimer = null; // 타이머 참조 해제
+        return;
       }
 
       // 웹소켓이 연결되어 있지 않을 때만 폴링
