@@ -412,26 +412,46 @@ class UserAuth extends ChangeNotifier {
     }
   }
 
-  /// 🔥 사용자 로그아웃 - 개선된 버전 (상태 변경 알림 강화)
+  /// 🔥 사용자 로그아웃 - 웹소켓 해제 강화된 버전
   Future<bool> logout({BuildContext? context}) async {
     _setLoading(true);
 
     try {
-      debugPrint('🔄 로그아웃 시작 - 현재 사용자: $_userId');
+      debugPrint('🔄 UserAuth: 로그아웃 시작 - 현재 사용자: $_userId');
 
-      // 🔥 로그아웃 시 위치 전송 중지 및 웹소켓 연결 해제
-      if (context != null) {
-        _stopLocationSending(context);
-        _stopWebSocketConnection();
+      // 🔥 1. 먼저 웹소켓 연결을 명시적으로 해제하여 친구들에게 로그아웃 알림 전송
+      try {
+        final wsService = WebSocketService();
+        if (wsService.isConnected) {
+          debugPrint('🔥 UserAuth: 웹소켓 연결 해제 중...');
+          await wsService.disconnect();
+          debugPrint('✅ UserAuth: 웹소켓 연결 해제 완료');
+        }
+      } catch (wsError) {
+        debugPrint('❌ UserAuth: 웹소켓 해제 중 오류: $wsError');
       }
 
+      // 🔥 2. 잠시 대기하여 서버가 친구들에게 로그아웃 메시지를 전송할 시간 확보
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      // 3. 위치 전송 중지
+      if (context != null) {
+        _stopLocationSending(context);
+      }
+
+      // 4. 서버에 로그아웃 요청
       if (_userId != null && _userId != 'guest' && _userId != 'admin') {
-        final result = await AuthService.logout(id: _userId!);
-        if (!result.isSuccess) {
-          debugPrint('서버 로그아웃 실패: ${result.message}');
+        try {
+          final result = await AuthService.logout(id: _userId!);
+          if (!result.isSuccess) {
+            debugPrint('서버 로그아웃 실패: ${result.message}');
+          }
+        } catch (e) {
+          debugPrint('서버 로그아웃 요청 중 오류: $e');
         }
       }
 
+      // 5. 로컬 상태 초기화
       await _clearLoginInfo();
 
       // 🔥 상태 완전 초기화
@@ -450,7 +470,18 @@ class UserAuth extends ChangeNotifier {
 
       return true;
     } catch (e) {
-      debugPrint('로그아웃 오류: $e');
+      debugPrint('❌ UserAuth: 로그아웃 중 오류: $e');
+
+      // 오류가 발생해도 로컬 데이터는 초기화
+      await _clearLoginInfo();
+      _userRole = null;
+      _userId = null;
+      _userName = null;
+      _isLoggedIn = false;
+      _isFirstLaunch = true;
+      _clearError();
+      notifyListeners();
+
       return false;
     } finally {
       _setLoading(false);
