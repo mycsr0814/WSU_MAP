@@ -276,48 +276,48 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     final currentHour = currentTime.hour;
     final currentMinute = currentTime.minute;
 
-    return Expanded(
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final maxAvailableHeight = constraints.maxHeight;
-          final calculatedHeight = timeSlots.length * 45.0;
-          final safeHeight = calculatedHeight > maxAvailableHeight
-              ? maxAvailableHeight - 20
-              : calculatedHeight;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // 패딩을 고려해 사용 가능한 높이 계산
+        const containerPadding = 8.0;
+        final maxAvailableHeight =
+            constraints.maxHeight - (containerPadding * 2);
+        final rowHeight = maxAvailableHeight / timeSlots.length; // 동적 높이 계산
+        final calculatedHeight = maxAvailableHeight; // 스크롤 없이 전체 높이 사용
 
-          return Container(
-            height: safeHeight,
-            padding: const EdgeInsets.all(8),
-            child: SingleChildScrollView(
-              child: SizedBox(
-                height: calculatedHeight,
-                child: Stack(
-                  clipBehavior: Clip.hardEdge,
-                  children: [
-                    Column(
-                      children: timeSlots.map((timeSlot) {
-                        final isCurrentTime = _isCurrentTimeSlot(
-                          timeSlot,
-                          currentHour,
-                          currentMinute,
-                        );
-                        return _buildTimeGridRow(timeSlot, isCurrentTime);
-                      }).toList(),
-                    ),
-                    ..._buildFloatingScheduleCards(constraints),
-                  ],
-                ),
+        return Container(
+          height: calculatedHeight, // 전체 높이를 명시적으로 제한
+          padding: const EdgeInsets.all(containerPadding),
+          child: Stack(
+            clipBehavior: Clip.hardEdge,
+            children: [
+              Column(
+                children: timeSlots.asMap().entries.map((entry) {
+                  final index = entry.key;
+                  final timeSlot = entry.value;
+                  final isCurrentTime = _isCurrentTimeSlot(
+                    timeSlot,
+                    currentHour,
+                    currentMinute,
+                  );
+                  return _buildTimeGridRow(timeSlot, isCurrentTime, rowHeight);
+                }).toList(),
               ),
-            ),
-          );
-        },
-      ),
+              ..._buildFloatingScheduleCards(constraints, rowHeight),
+            ],
+          ),
+        );
+      },
     );
   }
 
-  Widget _buildTimeGridRow(String timeSlot, bool isCurrentTime) {
+  Widget _buildTimeGridRow(
+    String timeSlot,
+    bool isCurrentTime,
+    double rowHeight,
+  ) {
     return Container(
-      height: 45,
+      height: rowHeight, // 동적 높이 적용
       decoration: BoxDecoration(
         color: isCurrentTime ? const Color(0xFF1E3A8A).withOpacity(0.05) : null,
         border: Border(
@@ -340,7 +340,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
             child: Text(
               timeSlot,
               style: TextStyle(
-                fontSize: 10,
+                fontSize: 10 * (rowHeight / 45.0).clamp(0.7, 1.0), // 동적 폰트 크기
                 fontWeight: isCurrentTime ? FontWeight.w700 : FontWeight.w500,
                 color: isCurrentTime
                     ? const Color(0xFF1E3A8A)
@@ -363,7 +363,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                             : BorderSide.none,
                       ),
                     ),
-                    height: 45,
+                    height: rowHeight,
                   ),
                 );
               }),
@@ -374,7 +374,10 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     );
   }
 
-  List<Widget> _buildFloatingScheduleCards(BoxConstraints constraints) {
+  List<Widget> _buildFloatingScheduleCards(
+    BoxConstraints constraints,
+    double rowHeight,
+  ) {
     final List<Widget> cards = [];
 
     for (int dayIndex = 0; dayIndex < 5; dayIndex++) {
@@ -387,6 +390,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
           schedule,
           dayIndex,
           constraints,
+          rowHeight,
         );
         if (card != null) {
           cards.add(card);
@@ -401,6 +405,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     ScheduleItem item,
     int dayIndex,
     BoxConstraints constraints,
+    double rowHeight,
   ) {
     final startHour = int.parse(item.startTime.split(':')[0]);
     final startMinute = int.parse(item.startTime.split(':')[1]);
@@ -409,14 +414,14 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
 
     if (startHour < 9 || startHour > 18) return null;
 
-    final rowHeight = 45.0;
-    final timeColumnWidth = 60.0;
-    final containerPadding = 8.0;
+    const timeColumnWidth = 60.0;
+    const containerPadding = 8.0;
 
     final availableWidth =
         constraints.maxWidth - timeColumnWidth - (containerPadding * 2);
     final dayColumnWidth = availableWidth / 5;
 
+    // 동적 높이에 맞춰 위치 계산
     final startRowIndex = startHour - 9;
     final startPixelOffset = startMinute / 60.0 * rowHeight;
     final top = (startRowIndex * rowHeight) + startPixelOffset;
@@ -425,14 +430,14 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     final endPixelOffset = endMinute / 60.0 * rowHeight;
     final cardHeight = (endRowIndex * rowHeight + endPixelOffset) - top;
 
-    final left = timeColumnWidth + (dayIndex * dayColumnWidth);
-    final width = dayColumnWidth;
-
     return Positioned(
       top: top,
-      left: left,
-      width: width,
-      height: cardHeight.clamp(20.0, double.infinity),
+      left: timeColumnWidth + (dayIndex * dayColumnWidth),
+      width: dayColumnWidth,
+      height: cardHeight.clamp(
+        rowHeight * 0.5,
+        constraints.maxHeight - top,
+      ), // 오버플로우 방지
       child: GestureDetector(
         onTap: () => _showScheduleDetail(item),
         child: Container(
@@ -463,20 +468,20 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
               children: [
                 Text(
                   item.title,
-                  style: const TextStyle(
-                    fontSize: 8,
+                  style: TextStyle(
+                    fontSize: 8 * (rowHeight / 45.0).clamp(0.7, 1.0),
                     fontWeight: FontWeight.w700,
                     color: Colors.white,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                if (cardHeight > 25) ...[
+                if (cardHeight > rowHeight * 0.6) ...[
                   const SizedBox(height: 1),
                   Text(
                     '${item.startTime}-${item.endTime}',
                     style: TextStyle(
-                      fontSize: 6,
+                      fontSize: 6 * (rowHeight / 45.0).clamp(0.7, 1.0),
                       color: Colors.white.withOpacity(0.9),
                       fontWeight: FontWeight.w500,
                     ),
@@ -484,12 +489,12 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                     overflow: TextOverflow.ellipsis,
                   ),
                 ],
-                if (cardHeight > 40 && item.roomName.isNotEmpty) ...[
+                if (cardHeight > rowHeight && item.roomName.isNotEmpty) ...[
                   const SizedBox(height: 1),
                   Text(
                     '${item.buildingName} ${item.roomName}',
                     style: TextStyle(
-                      fontSize: 6,
+                      fontSize: 6 * (rowHeight / 45.0).clamp(0.7, 1.0),
                       color: Colors.white.withOpacity(0.8),
                       fontWeight: FontWeight.w400,
                     ),
