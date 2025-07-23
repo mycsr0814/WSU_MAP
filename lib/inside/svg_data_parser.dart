@@ -15,7 +15,7 @@ class SvgDataParser {
       String? id =
           rect.getAttribute('inkscape:label') ?? rect.getAttribute('id');
       // null 체크 및 조건부 호출 사용
-      if (id != null && (id.startsWith('R') || int.tryParse(id) != null)) {
+      if ((id!.startsWith('R') || int.tryParse(id) != null)) {
         final x = double.tryParse(rect.getAttribute('x') ?? '');
         final y = double.tryParse(rect.getAttribute('y') ?? '');
         final width = double.tryParse(rect.getAttribute('width') ?? '');
@@ -38,7 +38,7 @@ class SvgDataParser {
           pathElement.getAttribute('id');
       final dAttribute = pathElement.getAttribute('d');
       // null 체크 및 조건부 호출 사용
-      if (id != null && id.startsWith('R') && dAttribute != null) {
+      if (id!.startsWith('R') && dAttribute != null) {
         try {
           final Path path = parseSvgPathData(dAttribute);
           buttons.add({
