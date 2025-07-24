@@ -30,7 +30,7 @@ void main() async {
 
   try {
     await FlutterNaverMap().init(
-      clientId: 'gxa5mf6swg',
+      clientId: 'a7hukqhx2a',
       onAuthFailed: (ex) => debugPrint('NaverMap 인증 실패: $ex'),
     );
     debugPrint('✅ 네이버 지도 초기화 성공');

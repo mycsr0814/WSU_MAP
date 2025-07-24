@@ -2919,6 +2919,114 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'NEW'**
   String get newBadge;
+
+  /// No description provided for @friend_delete_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Friend'**
+  String get friend_delete_title;
+
+  /// No description provided for @friend_delete_warning.
+  ///
+  /// In en, this message translates to:
+  /// **'Please decide carefully'**
+  String get friend_delete_warning;
+
+  /// Friend deletion confirmation message with userName variable
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to remove {userName} from your friends?\nRemoved friends can be added again.'**
+  String friendDeleteQuestion(Object userName);
+
+  /// No description provided for @empty_friend_list_message.
+  ///
+  /// In en, this message translates to:
+  /// **'No friends found.'**
+  String get empty_friend_list_message;
+
+  /// No description provided for @friendDeleteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Friend'**
+  String get friendDeleteTitle;
+
+  /// No description provided for @friendDeleteWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Please decide carefully'**
+  String get friendDeleteWarning;
+
+  /// No description provided for @friendDeleteHeader.
+  ///
+  /// In en, this message translates to:
+  /// **'Friend to Delete'**
+  String get friendDeleteHeader;
+
+  /// Friend deletion confirmation message, includes userName variable
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to remove {userName} from your friend list?\nRemoved friends can be added again.'**
+  String friendDeleteToConfirm(Object userName);
+
+  /// No description provided for @friendDeleteCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get friendDeleteCancel;
+
+  /// No description provided for @friendDeleteButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get friendDeleteButton;
+
+  /// Friend delete success message with userName parameter
+  ///
+  /// In en, this message translates to:
+  /// **'{userName} has been removed from your friends list.'**
+  String friendDeleteSuccessMessage(Object userName);
+
+  /// Error message shown when trying to view the location of an offline friend.
+  ///
+  /// In en, this message translates to:
+  /// **'This friend is currently offline.'**
+  String get friendOfflineError;
+
+  /// No description provided for @scheduleDeleteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Schedule'**
+  String get scheduleDeleteTitle;
+
+  /// No description provided for @scheduleDeleteSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Please decide carefully'**
+  String get scheduleDeleteSubtitle;
+
+  /// No description provided for @scheduleDeleteLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Schedule to delete'**
+  String get scheduleDeleteLabel;
+
+  /// No description provided for @scheduleDeleteDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'\"{title}\" class will be deleted from the schedule.\nDeleted schedules cannot be restored.'**
+  String scheduleDeleteDescription(Object title);
+
+  /// No description provided for @cancelButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get cancelButton;
+
+  /// No description provided for @deleteButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get deleteButton;
 }
 
 class _AppLocalizationsDelegate

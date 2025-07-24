@@ -37,7 +37,6 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
   final OverlayPortalController _infoWindowController =
       OverlayPortalController();
   int _currentNavIndex = 0;
-  final bool _isInitializing = false;
 
   // 🔥 사용자 ID 추적용
   String? _lastUserId;

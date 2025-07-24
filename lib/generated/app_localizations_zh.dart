@@ -1511,4 +1511,66 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get newBadge => '新';
+
+  @override
+  String get friend_delete_title => '删除好友';
+
+  @override
+  String get friend_delete_warning => '请慎重决定';
+
+  @override
+  String friendDeleteQuestion(Object userName) {
+    return '您确定要将$userName从好友列表中删除吗？\n删除的好友可以再次添加。';
+  }
+
+  @override
+  String get empty_friend_list_message => '没有好友。';
+
+  @override
+  String get friendDeleteTitle => '删除好友';
+
+  @override
+  String get friendDeleteWarning => '请慎重决定';
+
+  @override
+  String get friendDeleteHeader => '待删除好友';
+
+  @override
+  String friendDeleteToConfirm(Object userName) {
+    return '您确定要将$userName从好友列表中删除吗？\n删除的好友可以再次添加。';
+  }
+
+  @override
+  String get friendDeleteCancel => '取消';
+
+  @override
+  String get friendDeleteButton => '删除';
+
+  @override
+  String friendDeleteSuccessMessage(Object userName) {
+    return '已从好友列表中删除$userName。';
+  }
+
+  @override
+  String get friendOfflineError => '此好友当前离线。';
+
+  @override
+  String get scheduleDeleteTitle => '删除时间表';
+
+  @override
+  String get scheduleDeleteSubtitle => '请慎重决定';
+
+  @override
+  String get scheduleDeleteLabel => '要删除的时间表';
+
+  @override
+  String scheduleDeleteDescription(Object title) {
+    return '您确定要从时间表中删除“$title”课程吗？\n已删除的时间表无法恢复。';
+  }
+
+  @override
+  String get cancelButton => '取消';
+
+  @override
+  String get deleteButton => '删除';
 }

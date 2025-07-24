@@ -28,53 +28,65 @@ class Building {
 
   String get status => calculateCurrentStatus();
 
-   String calculateCurrentStatus() {
-    if (baseStatus != '운영중') return baseStatus;
+  String calculateCurrentStatus() {
+    if (baseStatus != '운영중' && baseStatus != 'open') return baseStatus;
     final now = DateTime.now();
     final currentHour = now.hour;
     if (currentHour >= 9 && currentHour < 18) {
-      return '운영중';
+      return baseStatus == 'open' ? 'open' : '운영중';
     } else {
-      return '운영종료';
+      return baseStatus == 'open' ? 'closed' : '운영종료';
     }
   }
 
-    String getLocalizedStatus(BuildContext context) {
+  String getLocalizedStatus(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final currentStatus = status; // 기존 status getter 사용
-    
+    final currentStatus = status;
+
     switch (currentStatus) {
       case '운영중':
-        return l10n.status_open;
+      case 'open':
+        return l10n.status_open;   // "Open"
       case '운영종료':
-        return l10n.status_closed;
+      case 'closed':
+        return l10n.status_closed; // "Closed"
+      case '24시간':
+      case '24hours':
+        return l10n.status_24hours; // "24 Hours"
+      case '임시휴무':
+      case 'temp_closed':
+        return l10n.status_temp_closed; // "Temporarily Closed"
+      case '영구휴업':
+      case 'closed_permanently':
+        return l10n.status_closed_permanently; // "Permanently Closed"
       default:
-        return currentStatus; // 24시간, 임시휴무 등은 그대로
+        return currentStatus; // 그 외 상태 문자열 그대로 출력
     }
   }
 
-    String getLocalizedNextStatusChangeTime(BuildContext context) {
+  String getLocalizedNextStatusChangeTime(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final now = DateTime.now();
     final currentHour = now.hour;
-    
-    if (baseStatus != '운영중') return getLocalizedStatus(context);
-    
+
+    // baseStatus도 영어, 한글 둘 다 처리
+    if (baseStatus != '운영중' && baseStatus != 'open') return getLocalizedStatus(context);
+
     if (currentHour < 9) {
-      return '오전 9시에 운영 시작'; // 이 부분도 필요하면 ARB에 추가
+      return l10n.status_next_open;       // 예: Opens at 9:00 AM
     } else if (currentHour < 18) {
-      return '오후 6시에 운영 종료'; // 이 부분도 필요하면 ARB에 추가
+      return l10n.status_next_close;      // 예: Closes at 6:00 PM
     } else {
-      return '내일 오전 9시에 운영 시작'; // 이 부분도 필요하면 ARB에 추가
+      return l10n.status_next_open_tomorrow; // 예: Opens tomorrow at 9:00 AM
     }
   }
 
-  bool get isOpen => status == '운영중';
+  bool get isOpen => status == '운영중' || status == 'open';
 
   String get nextStatusChangeTime {
     final now = DateTime.now();
     final currentHour = now.hour;
-    if (baseStatus != '운영중') return baseStatus;
+    if (baseStatus != '운영중' && baseStatus != 'open') return baseStatus;
     if (currentHour < 9) {
       return '오전 9시에 운영 시작';
     } else if (currentHour < 18) {
@@ -85,7 +97,7 @@ class Building {
   }
 
   String get formattedHours {
-    if (baseStatus != '운영중') return baseStatus;
+    if (baseStatus != '운영중' && baseStatus != 'open') return baseStatus;
     return '09:00 - 18:00';
   }
 

@@ -140,7 +140,7 @@ class _FriendsScreenState extends State<FriendsScreen>
     );
   }
 
-  /// 🔥 친구 상세 정보 다이얼로그 - 위치 제거 버튼 추가
+  /// 🔥 친구 상세 정보 다이얼로그 - 위치 제거 버튼 추가 및 오프라인 처리, 모달창 닫기 통일
   Future<void> _showFriendDetailsDialog(Friend friend) async {
     HapticFeedback.lightImpact();
 
@@ -264,14 +264,6 @@ class _FriendsScreenState extends State<FriendsScreen>
                           ? AppLocalizations.of(context)!.noContactInfo
                           : friend.phone,
                     ),
-                    const SizedBox(height: 16),
-                    _buildDetailRow(
-                      Icons.location_on,
-                      AppLocalizations.of(context)!.lastLocation,
-                      friend.lastLocation.isEmpty
-                          ? AppLocalizations.of(context)!.noLocationInfo
-                          : friend.lastLocation,
-                    ),
                   ],
                 ),
               ),
@@ -290,7 +282,16 @@ class _FriendsScreenState extends State<FriendsScreen>
                             Expanded(
                               child: ElevatedButton.icon(
                                 onPressed: () async {
-                                  Navigator.of(context).pop();
+                                  HapticFeedback.lightImpact();
+                                  Navigator.of(context).pop(); // 항상 모달창 닫기
+                                  if (!friend.isLogin) {
+                                    _showErrorMessage(
+                                      AppLocalizations.of(
+                                        context,
+                                      )!.friendOfflineError,
+                                    );
+                                    return;
+                                  }
                                   await _showFriendLocationOnMap(friend);
                                 },
                                 icon: const Icon(Icons.location_on, size: 18),
@@ -317,6 +318,7 @@ class _FriendsScreenState extends State<FriendsScreen>
                             Expanded(
                               child: ElevatedButton.icon(
                                 onPressed: () async {
+                                  HapticFeedback.lightImpact();
                                   Navigator.of(context).pop();
                                   await _removeFriendLocationFromMap(friend);
                                 },
@@ -524,6 +526,7 @@ class _FriendsScreenState extends State<FriendsScreen>
   }
 
   // 🔥 실시간 상태 표시기가 포함된 헤더
+  // 🔥 실시간 상태 표시기가 포함된 헤더
   Widget _buildHeader() {
     return Container(
       padding: const EdgeInsets.all(20),
@@ -541,20 +544,6 @@ class _FriendsScreenState extends State<FriendsScreen>
         children: [
           Row(
             children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1E3A8A).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(
-                  Icons.people_alt,
-                  color: Color(0xFF1E3A8A),
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1473,7 +1462,7 @@ class _FriendsScreenState extends State<FriendsScreen>
                 child: Row(
                   children: [
                     Expanded(
-                      child: Container(
+                      child: SizedBox(
                         height: 48,
                         child: OutlinedButton(
                           onPressed: () => Navigator.pop(context, false),
@@ -1495,7 +1484,7 @@ class _FriendsScreenState extends State<FriendsScreen>
                     ),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: Container(
+                      child: SizedBox(
                         height: 48,
                         child: ElevatedButton(
                           onPressed: () => Navigator.pop(context, true),
@@ -1730,6 +1719,8 @@ class _FriendsScreenState extends State<FriendsScreen>
 
   /// 친구 삭제 다이얼로그
   Future<void> _showDeleteFriendDialog(Friend friend) async {
+    final l10n = AppLocalizations.of(context)!; // 다국어 텍스트 불러오기
+
     final confirmed = await showDialog<bool>(
       context: context,
       barrierColor: Colors.black.withOpacity(0.5),
@@ -1751,7 +1742,7 @@ class _FriendsScreenState extends State<FriendsScreen>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // 🔥 헤더 - 경고 스타일
+              // 헤더 - 경고 스타일
               Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
@@ -1782,7 +1773,7 @@ class _FriendsScreenState extends State<FriendsScreen>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            '친구 삭제',
+                            l10n.friendDeleteTitle,
                             style: const TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.w700,
@@ -1791,7 +1782,7 @@ class _FriendsScreenState extends State<FriendsScreen>
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            '신중하게 결정해주세요',
+                            l10n.friendDeleteWarning,
                             style: TextStyle(
                               fontSize: 14,
                               color: Colors.red.withOpacity(0.8),
@@ -1805,7 +1796,7 @@ class _FriendsScreenState extends State<FriendsScreen>
                 ),
               ),
 
-              // 🔥 내용
+              // 내용
               Padding(
                 padding: const EdgeInsets.all(24),
                 child: Container(
@@ -1825,9 +1816,9 @@ class _FriendsScreenState extends State<FriendsScreen>
                             size: 20,
                           ),
                           const SizedBox(width: 8),
-                          const Text(
-                            '삭제할 친구',
-                            style: TextStyle(
+                          Text(
+                            l10n.friendDeleteHeader,
+                            style: const TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
                               color: Colors.red,
@@ -1837,7 +1828,7 @@ class _FriendsScreenState extends State<FriendsScreen>
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        '${friend.userName}님을 친구 목록에서 삭제하시겠습니까?\n삭제된 친구는 다시 추가할 수 있습니다.',
+                        l10n.friendDeleteToConfirm(friend.userName),
                         style: const TextStyle(
                           fontSize: 14,
                           color: Color(0xFF64748B),
@@ -1849,7 +1840,7 @@ class _FriendsScreenState extends State<FriendsScreen>
                 ),
               ),
 
-              // 🔥 버튼 영역
+              // 버튼 영역
               Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
@@ -1862,7 +1853,7 @@ class _FriendsScreenState extends State<FriendsScreen>
                 child: Row(
                   children: [
                     Expanded(
-                      child: Container(
+                      child: SizedBox(
                         height: 48,
                         child: OutlinedButton(
                           onPressed: () => Navigator.pop(context, false),
@@ -1872,9 +1863,9 @@ class _FriendsScreenState extends State<FriendsScreen>
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          child: const Text(
-                            '취소',
-                            style: TextStyle(
+                          child: Text(
+                            l10n.friendDeleteCancel,
+                            style: const TextStyle(
                               color: Color(0xFF64748B),
                               fontWeight: FontWeight.w600,
                             ),
@@ -1884,7 +1875,7 @@ class _FriendsScreenState extends State<FriendsScreen>
                     ),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: Container(
+                      child: SizedBox(
                         height: 48,
                         child: ElevatedButton(
                           onPressed: () => Navigator.pop(context, true),
@@ -1896,9 +1887,9 @@ class _FriendsScreenState extends State<FriendsScreen>
                             ),
                             elevation: 2,
                           ),
-                          child: const Text(
-                            '삭제',
-                            style: TextStyle(
+                          child: Text(
+                            l10n.friendDeleteButton,
+                            style: const TextStyle(
                               fontWeight: FontWeight.w600,
                               fontSize: 16,
                             ),
@@ -1917,7 +1908,9 @@ class _FriendsScreenState extends State<FriendsScreen>
 
     if (confirmed == true) {
       await controller.deleteFriend(friend.userId);
-      _showSuccessMessage('${friend.userName}님을 친구 목록에서 삭제했습니다.');
+      final l10n = AppLocalizations.of(context)!;
+      final message = l10n.friendDeleteSuccessMessage(friend.userName);
+      _showSuccessMessage(message);
     }
   }
 
@@ -2013,10 +2006,10 @@ class _FriendsScreenState extends State<FriendsScreen>
                     : RefreshIndicator(
                         color: const Color(0xFF1E3A8A),
                         onRefresh: controller.loadAll,
-                        child: SingleChildScrollView(
-                          physics: const AlwaysScrollableScrollPhysics(),
+                        child: ListView(
                           padding: const EdgeInsets.only(top: 16, bottom: 32),
-                          child: _buildFriendsContent(),
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          children: [_buildFriendsContent()],
                         ),
                       ),
               ),

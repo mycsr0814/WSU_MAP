@@ -1029,16 +1029,50 @@ List<String> _findSimilarNodes(String targetId, Map<String, Offset> nodeMap) {
   }
   // 8/10 계속...
 
-  void _showRoomInfoSheet(BuildContext context, String roomId) async {
-    if (_isNavigationMode) {
-      _showNavigationRoomSheet(context, roomId);
-      return;
-    }
+   void _showRoomInfoSheet(BuildContext context, String roomId) async {
+  // 네비게이션 모드에서는 호실 정보 시트를 다르게 표시
+  if (_isNavigationMode) {
+    _showNavigationRoomSheet(context, roomId);
+    return;
+  }
 
-    setState(() => _selectedRoomId = roomId);
-    String roomIdNoR = roomId.startsWith('R') ? roomId.substring(1) : roomId;
-    String roomDesc = '';
+  setState(() => _selectedRoomId = roomId);
+  String roomIdNoR = roomId.startsWith('R') ? roomId.substring(1) : roomId;
+  
+  // 🔥 JSON 데이터에서 호실 정보 찾기
+  Map<String, dynamic>? roomData;
+  try {
+    // 실제 JSON 데이터에서 해당 호실 정보 검색
+    roomData = await _findRoomDataFromServer(
+      buildingName: widget.buildingName,
+      floorNumber: _selectedFloor?['Floor_Number']?.toString() ?? '',
+      roomName: roomIdNoR,
+    );
+  } catch (e) {
+    debugPrint('호실 데이터 검색 실패: $e');
+    roomData = null;
+  }
 
+  // 🔥 실제 데이터가 있으면 사용하고, 없으면 기본값 사용
+  String roomDesc = '';
+  List<String> roomUsers = [];
+  List<String>? userPhones;
+  List<String>? userEmails;
+
+  if (roomData != null) {
+    // JSON 데이터에서 정보 추출
+    roomDesc = roomData['Room_Description'] ?? '';
+    roomUsers = _parseStringList(roomData['Room_User']);
+    userPhones = _parseStringListNullable(roomData['User_Phone']);
+    userEmails = _parseStringListNullable(roomData['User_Email']);
+    
+    debugPrint('🔍 호실 정보 찾음: $roomIdNoR');
+    debugPrint('   설명: $roomDesc');
+    debugPrint('   담당자: $roomUsers');
+    debugPrint('   전화: $userPhones');
+    debugPrint('   이메일: $userEmails');
+  } else {
+    // 기존 방식으로 설명만 가져오기
     try {
       roomDesc = await _apiService.fetchRoomDescription(
         buildingName: widget.buildingName,
@@ -1049,21 +1083,100 @@ List<String> _findSimilarNodes(String targetId, Map<String, Offset> nodeMap) {
       debugPrint(e.toString());
       roomDesc = '설명을 불러오지 못했습니다.';
     }
-
-    await showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) => RoomInfoSheet(
-        roomInfo: RoomInfo(id: roomId, name: roomIdNoR, desc: roomDesc),
-        onDeparture: () => _setPoint('start', roomId),
-        onArrival: () => _setPoint('end', roomId),
-        buildingName: widget.buildingName,
-        floorNumber: _selectedFloor?['Floor_Number'],
-      ),
-    );
-
-    if (mounted) setState(() => _selectedRoomId = null);
+    
+    debugPrint('⚠️ 호실 정보 없음, 기본 설명만 사용: $roomDesc');
+    roomUsers = [];
+    userPhones = null;
+    userEmails = null;
   }
+
+  await showModalBottomSheet(
+    context: context,
+    backgroundColor: Colors.transparent,
+    builder: (context) => RoomInfoSheet(
+      roomInfo: RoomInfo(
+        id: roomId,
+        name: roomIdNoR,
+        desc: roomDesc,
+        users: roomUsers,
+        phones: userPhones,
+        emails: userEmails,
+      ),
+      onDeparture: () => _setPoint('start', roomId),
+      onArrival: () => _setPoint('end', roomId),
+      buildingName: widget.buildingName,
+      floorNumber: _selectedFloor?['Floor_Number'],
+    ),
+  );
+
+  if (mounted) setState(() => _selectedRoomId = null);
+}
+
+List<String> _parseStringList(dynamic value) {
+  if (value == null) return [];
+  if (value is List) {
+    return value
+        .where((item) => item != null && item.toString().trim().isNotEmpty)
+        .map((item) => item.toString().trim())
+        .toList();
+  }
+  return [];
+}
+
+// 🔥 서버에서 호실 데이터를 찾는 메서드 추가
+Future<Map<String, dynamic>?> _findRoomDataFromServer({
+  required String buildingName,
+  required String floorNumber,
+  required String roomName,
+}) async {
+  try {
+    debugPrint('🔍 호실 검색: $buildingName $floorNumber층 $roomName호');
+    
+    // 🔥 실제 작동하는 API 메서드 사용
+    final List<Map<String, dynamic>> allRooms = await _apiService.fetchAllRooms();
+    
+    debugPrint('📊 전체 호실 수: ${allRooms.length}개');
+    
+    // 🔥 해당 호실 찾기
+    for (final room in allRooms) {
+      final roomBuildingName = room['Building_Name']?.toString() ?? '';
+      final roomFloorNumber = room['Floor_Number']?.toString() ?? '';
+      final roomRoomName = room['Room_Name']?.toString() ?? '';
+      
+      debugPrint('🏠 비교: $roomBuildingName vs $buildingName, $roomFloorNumber vs $floorNumber, $roomRoomName vs $roomName');
+      
+      if (roomBuildingName == buildingName &&
+          roomFloorNumber == floorNumber &&
+          roomRoomName == roomName) {
+        debugPrint('✅ 호실 찾음!');
+        debugPrint('   설명: ${room['Room_Description']}');
+        debugPrint('   담당자: ${room['Room_User']}');
+        debugPrint('   전화: ${room['User_Phone']}');
+        debugPrint('   이메일: ${room['User_Email']}');
+        return room;
+      }
+    }
+    
+    debugPrint('❌ 호실을 찾지 못함: $buildingName $floorNumber층 $roomName호');
+    return null;
+    
+  } catch (e) {
+    debugPrint('❌ _findRoomDataFromServer 오류: $e');
+    return null;
+  }
+}
+
+List<String>? _parseStringListNullable(dynamic value) {
+  if (value == null) return null;
+  if (value is List) {
+    final filtered = value
+        .where((item) => item != null && item.toString().trim().isNotEmpty)
+        .map((item) => item.toString().trim())
+        .toList();
+    return filtered.isEmpty ? null : filtered;
+  }
+  return null;
+}
 
   void _showNavigationRoomSheet(BuildContext context, String roomId) {
     showModalBottomSheet(

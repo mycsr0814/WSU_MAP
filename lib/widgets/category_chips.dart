@@ -1,6 +1,4 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/models/category.dart';
 import 'package:flutter_application_1/services/category_api_service.dart';
 import 'package:flutter_application_1/data/category_fallback_data.dart';
 import 'package:flutter_application_1/utils/CategoryLocalization.dart';
@@ -22,7 +20,6 @@ class CategoryChips extends StatefulWidget {
 class _CategoryChipsState extends State<CategoryChips> {
   List<String> _categories = [];
   bool _isLoading = true;
-  String? _error;
   bool _isApiCalling = false;
   String? _selectedCategory;
   bool _useServerData = true; // 🔥 서버 데이터 사용 여부
@@ -50,7 +47,6 @@ class _CategoryChipsState extends State<CategoryChips> {
 
       setState(() {
         _isLoading = true;
-        _error = null;
       });
 
       List<String> categoryNames = [];
@@ -88,7 +84,6 @@ class _CategoryChipsState extends State<CategoryChips> {
       if (!mounted) return;
 
       setState(() {
-        _error = e.toString();
         _isLoading = false;
         _categories = CategoryFallbackData.getCategories();
         _useServerData = false;

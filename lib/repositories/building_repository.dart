@@ -1,7 +1,6 @@
 // lib/repositories/building_repository.dart - 완전 수정된 버전
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/generated/app_localizations.dart';
 import '../models/building.dart';
 import '../services/building_api_service.dart';
 import '../services/building_data_service.dart';
@@ -86,46 +85,6 @@ class BuildingRepository extends ChangeNotifier {
     _safeNotifyListeners();
 
     debugPrint('✅ BuildingRepository 리셋 완료');
-  }
-
-  /// 🔥 자동 운영상태 키 결정 (번역 없음)
-  String _getAutoOperatingStatusKey(String baseStatus) {
-    // 특별 상태는 자동 변경하지 않음
-    if (baseStatus == '24시간' || baseStatus == '임시휴무' || baseStatus == '휴무') {
-      return baseStatus;
-    }
-
-    // 현재 시간 가져오기
-    final now = DateTime.now();
-    final currentHour = now.hour;
-
-    // 09:00 ~ 18:00 운영중, 나머지는 운영종료
-    if (currentHour >= 9 && currentHour < 18) {
-      return '운영중';
-    } else {
-      return '운영종료';
-    }
-  }
-
-  /// 🔥 지역화된 운영상태 결정 (번역 적용)
-  String _getLocalizedOperatingStatus(BuildContext context, String baseStatus) {
-    final l10n = AppLocalizations.of(context)!;
-
-    // 특별 상태는 자동 변경하지 않음
-    if (baseStatus == '24시간' || baseStatus == '임시휴무' || baseStatus == '휴무') {
-      return baseStatus;
-    }
-
-    // 현재 시간 가져오기
-    final now = DateTime.now();
-    final currentHour = now.hour;
-
-    // 09:00 ~ 18:00 운영중, 나머지는 운영종료
-    if (currentHour >= 9 && currentHour < 18) {
-      return l10n.status_open; // 번역된 "운영중"
-    } else {
-      return l10n.status_closed; // 번역된 "운영종료"
-    }
   }
 
   /// 🔥 메인 데이터 로딩 메서드 - Result 패턴 완전 적용
@@ -261,25 +220,6 @@ class BuildingRepository extends ChangeNotifier {
       );
       return building.copyWith(baseStatus: autoStatus);
     }).toList();
-  }
-
-  /// 🔥 자동 운영상태 결정
-  String _getAutoOperatingStatus(String baseStatus) {
-    // 특별 상태는 자동 변경하지 않음
-    if (baseStatus == '24시간' || baseStatus == '임시휴무' || baseStatus == '휴무') {
-      return baseStatus;
-    }
-
-    // 현재 시간 가져오기
-    final now = DateTime.now();
-    final currentHour = now.hour;
-
-    // 09:00 ~ 18:00 운영중, 나머지는 운영종료
-    if (currentHour >= 9 && currentHour < 18) {
-      return '운영중';
-    } else {
-      return '운영종료';
-    }
   }
 
   /// 🔥 확장된 Fallback 건물 데이터 (23개 건물)
@@ -842,24 +782,6 @@ class BuildingRepository extends ChangeNotifier {
 
     final now = DateTime.now().hour;
     return (now >= 9 && now < 18) ? '운영중' : '운영종료';
-  }
-
-  /// 🔥 Context 기반 운영상태 평가 (다국어 지원)
-  String _getAutoOperatingStatusWithContext(
-    BuildContext context,
-    String baseStatus,
-  ) {
-    final l10n = AppLocalizations.of(context)!;
-    final ignoreList = [
-      l10n.status_24hours,
-      l10n.status_temp_closed,
-      l10n.status_closed_permanently,
-    ];
-
-    if (ignoreList.contains(baseStatus)) return baseStatus;
-
-    final now = DateTime.now().hour;
-    return (now >= 9 && now < 18) ? l10n.status_open : l10n.status_closed;
   }
 
   /// 🔥 Repository 정리 - 안전한 dispose

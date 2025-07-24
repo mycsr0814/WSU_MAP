@@ -88,7 +88,7 @@ class ApiService {
     }
   }
 
-  /// 🔥 새로 추가: 모든 호실 목록을 받아오는 함수
+  /// 🔥 모든 호실 목록을 받아오는 함수
   Future<List<Map<String, dynamic>>> fetchAllRooms() async {
     try {
       print('📞 API 호출: fetchAllRooms()');
@@ -116,7 +116,7 @@ class ApiService {
     }
   }
 
-  /// 🔥 새로 추가: 특정 건물의 호실 목록을 받아오는 함수
+  /// 🔥 특정 건물의 호실 목록을 받아오는 함수
   Future<List<Map<String, dynamic>>> fetchRoomsByBuilding(String buildingName) async {
     try {
       print('📞 API 호출: fetchRoomsByBuilding("$buildingName")');

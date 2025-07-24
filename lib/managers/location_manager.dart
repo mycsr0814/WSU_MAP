@@ -4,10 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:location/location.dart' as loc;
 import 'dart:async';
 import 'dart:io';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
 import 'package:location/location.dart';
-import '../config/api_config.dart';
 import '../services/location_service.dart';
 
 /// 🔥 UI 갱신 콜백 타입들
