@@ -687,5 +687,31 @@
     }
   },
   
-  "newBadge": "NEW"
+  "newBadge": "NEW",
+    "friend_delete_title": "친구 삭제",
+  "friend_delete_warning": "신중하게 결정해주세요",
+  "friendDeleteQuestion": "{userName}님을 친구 목록에서 삭제하시겠습니까?\n삭제된 친구는 다시 추가할 수 있습니다.",
+  "@friendDeleteQuestion": {
+    "description": "사용자 이름이 포함된 친구 삭제 확인 메시지"
+  },
+  "empty_friend_list_message": "친구가 없습니다.",
+    "friendDeleteTitle": "친구 삭제",
+  "friendDeleteWarning": "신중하게 결정해주세요",
+  "friendDeleteHeader": "삭제할 친구",
+  "friendDeleteToConfirm": "{userName}님을 친구 목록에서 삭제하시겠습니까?\n삭제된 친구는 다시 추가할 수 있습니다.",
+  "@friendDeleteToConfirm": {
+    "description": "친구 삭제 확인 메시지, userName 변수 포함",
+    "placeholders": {
+      "userName": {}
+    }
+  },
+  "friendDeleteCancel": "취소",
+  "friendDeleteButton": "삭제",
+  "friendDeleteSuccessMessage": "{userName}님을 친구 목록에서 삭제했습니다.",
+  "@friendDeleteSuccessMessage": {
+    "description": "친구 삭제 성공 메시지, userName 변수 포함",
+    "placeholders": {
+      "userName": {}
+    }
+  }
 }

@@ -1514,4 +1514,43 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get newBadge => 'NEW';
+
+  @override
+  String get friend_delete_title => '친구 삭제';
+
+  @override
+  String get friend_delete_warning => '신중하게 결정해주세요';
+
+  @override
+  String friendDeleteQuestion(Object userName) {
+    return '$userName님을 친구 목록에서 삭제하시겠습니까?\n삭제된 친구는 다시 추가할 수 있습니다.';
+  }
+
+  @override
+  String get empty_friend_list_message => '친구가 없습니다.';
+
+  @override
+  String get friendDeleteTitle => '친구 삭제';
+
+  @override
+  String get friendDeleteWarning => '신중하게 결정해주세요';
+
+  @override
+  String get friendDeleteHeader => '삭제할 친구';
+
+  @override
+  String friendDeleteToConfirm(Object userName) {
+    return '$userName님을 친구 목록에서 삭제하시겠습니까?\n삭제된 친구는 다시 추가할 수 있습니다.';
+  }
+
+  @override
+  String get friendDeleteCancel => '취소';
+
+  @override
+  String get friendDeleteButton => '삭제';
+
+  @override
+  String friendDeleteSuccessMessage(Object userName) {
+    return '$userName님을 친구 목록에서 삭제했습니다.';
+  }
 }

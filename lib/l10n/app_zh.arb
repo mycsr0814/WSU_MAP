@@ -687,5 +687,31 @@
     }
   },
   
-  "newBadge": "新"
+  "newBadge": "新",
+    "friend_delete_title": "删除好友",
+  "friend_delete_warning": "请慎重决定",
+  "friendDeleteQuestion": "您确定要将{userName}从好友列表中删除吗？\n删除的好友可以再次添加。",
+  "@friendDeleteQuestion": {
+    "description": "包含用户名的好友删除确认消息"
+  },
+  "empty_friend_list_message": "没有好友。",
+    "friendDeleteTitle": "删除好友",
+  "friendDeleteWarning": "请慎重决定",
+  "friendDeleteHeader": "待删除好友",
+  "friendDeleteToConfirm": "您确定要将{userName}从好友列表中删除吗？\n删除的好友可以再次添加。",
+  "@friendDeleteToConfirm": {
+    "description": "好友删除确认消息，包含用户名称变量",
+    "placeholders": {
+      "userName": {}
+    }
+  },
+  "friendDeleteCancel": "取消",
+  "friendDeleteButton": "删除",
+    "friendDeleteSuccessMessage": "已从好友列表中删除{userName}。",
+  "@friendDeleteSuccessMessage": {
+    "description": "好友删除成功消息，带有用户名参数",
+    "placeholders": {
+      "userName": {}
+    }
+  }
 }

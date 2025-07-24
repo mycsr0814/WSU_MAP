@@ -788,5 +788,31 @@
     }
   },
   
-  "newBadge": "NEW"
+  "newBadge": "NEW",
+  "friend_delete_title": "Delete Friend",
+  "friend_delete_warning": "Please decide carefully",
+  "friendDeleteQuestion": "Are you sure you want to remove {userName} from your friends?\nRemoved friends can be added again.",
+  "@friendDeleteQuestion": {
+    "description": "Friend deletion confirmation message with userName variable"
+  },
+  "empty_friend_list_message": "No friends found.",
+    "friendDeleteTitle": "Delete Friend",
+  "friendDeleteWarning": "Please decide carefully",
+  "friendDeleteHeader": "Friend to Delete",
+  "friendDeleteToConfirm": "Are you sure you want to remove {userName} from your friend list?\nRemoved friends can be added again.",
+  "@friendDeleteToConfirm": {
+    "description": "Friend deletion confirmation message, includes userName variable",
+    "placeholders": {
+      "userName": {}
+    }
+  },
+  "friendDeleteCancel": "Cancel",
+  "friendDeleteButton": "Delete",
+  "friendDeleteSuccessMessage": "{userName} has been removed from your friends list.",
+  "@friendDeleteSuccessMessage": {
+    "description": "Friend delete success message with userName parameter",
+    "placeholders": {
+      "userName": {}
+    }
+  }
 }

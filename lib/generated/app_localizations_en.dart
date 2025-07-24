@@ -1546,4 +1546,43 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get newBadge => 'NEW';
+
+  @override
+  String get friend_delete_title => 'Delete Friend';
+
+  @override
+  String get friend_delete_warning => 'Please decide carefully';
+
+  @override
+  String friendDeleteQuestion(Object userName) {
+    return 'Are you sure you want to remove $userName from your friends?\nRemoved friends can be added again.';
+  }
+
+  @override
+  String get empty_friend_list_message => 'No friends found.';
+
+  @override
+  String get friendDeleteTitle => 'Delete Friend';
+
+  @override
+  String get friendDeleteWarning => 'Please decide carefully';
+
+  @override
+  String get friendDeleteHeader => 'Friend to Delete';
+
+  @override
+  String friendDeleteToConfirm(Object userName) {
+    return 'Are you sure you want to remove $userName from your friend list?\nRemoved friends can be added again.';
+  }
+
+  @override
+  String get friendDeleteCancel => 'Cancel';
+
+  @override
+  String get friendDeleteButton => 'Delete';
+
+  @override
+  String friendDeleteSuccessMessage(Object userName) {
+    return '$userName has been removed from your friends list.';
+  }
 }

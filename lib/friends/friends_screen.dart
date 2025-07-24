@@ -264,14 +264,7 @@ class _FriendsScreenState extends State<FriendsScreen>
                           ? AppLocalizations.of(context)!.noContactInfo
                           : friend.phone,
                     ),
-                    const SizedBox(height: 16),
-                    _buildDetailRow(
-                      Icons.location_on,
-                      AppLocalizations.of(context)!.lastLocation,
-                      friend.lastLocation.isEmpty
-                          ? AppLocalizations.of(context)!.noLocationInfo
-                          : friend.lastLocation,
-                    ),
+
                   ],
                 ),
               ),
@@ -1717,196 +1710,200 @@ class _FriendsScreenState extends State<FriendsScreen>
 
   /// 친구 삭제 다이얼로그
   Future<void> _showDeleteFriendDialog(Friend friend) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      barrierColor: Colors.black.withOpacity(0.5),
-      builder: (context) => Dialog(
-        backgroundColor: Colors.transparent,
-        child: Container(
-          width: MediaQuery.of(context).size.width * 0.9,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
-              ),
-            ],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // 🔥 헤더 - 경고 스타일
-              Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: Colors.red.withOpacity(0.1),
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(20),
-                    topRight: Radius.circular(20),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 60,
-                      height: 60,
-                      decoration: BoxDecoration(
-                        color: Colors.red.withOpacity(0.2),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.warning_outlined,
-                        color: Colors.red,
-                        size: 30,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '친구 삭제',
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.red,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '신중하게 결정해주세요',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.red.withOpacity(0.8),
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+  final l10n = AppLocalizations.of(context)!;  // 다국어 텍스트 불러오기
 
-              // 🔥 내용
-              Padding(
-                padding: const EdgeInsets.all(24),
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFEF2F2),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.red.withOpacity(0.2)),
+  final confirmed = await showDialog<bool>(
+    context: context,
+    barrierColor: Colors.black.withOpacity(0.5),
+    builder: (context) => Dialog(
+      backgroundColor: Colors.transparent,
+      child: Container(
+        width: MediaQuery.of(context).size.width * 0.9,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // 헤더 - 경고 스타일
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.red.withOpacity(0.1),
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(20),
+                  topRight: Radius.circular(20),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 60,
+                    height: 60,
+                    decoration: BoxDecoration(
+                      color: Colors.red.withOpacity(0.2),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.warning_outlined,
+                      color: Colors.red,
+                      size: 30,
+                    ),
                   ),
-                  child: Column(
-                    children: [
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.info_outline,
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          l10n.friendDeleteTitle,
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
                             color: Colors.red,
-                            size: 20,
-                          ),
-                          const SizedBox(width: 8),
-                          const Text(
-                            '삭제할 친구',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.red,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        '${friend.userName}님을 친구 목록에서 삭제하시겠습니까?\n삭제된 친구는 다시 추가할 수 있습니다.',
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: Color(0xFF64748B),
-                          height: 1.5,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              // 🔥 버튼 영역
-              Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF8FAFC),
-                  borderRadius: const BorderRadius.only(
-                    bottomLeft: Radius.circular(20),
-                    bottomRight: Radius.circular(20),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Container(
-                        height: 48,
-                        child: OutlinedButton(
-                          onPressed: () => Navigator.pop(context, false),
-                          style: OutlinedButton.styleFrom(
-                            side: const BorderSide(color: Color(0xFFE2E8F0)),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          child: const Text(
-                            '취소',
-                            style: TextStyle(
-                              color: Color(0xFF64748B),
-                              fontWeight: FontWeight.w600,
-                            ),
                           ),
                         ),
-                      ),
+                        const SizedBox(height: 4),
+                        Text(
+                          l10n.friendDeleteWarning,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.red.withOpacity(0.8),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Container(
-                        height: 48,
-                        child: ElevatedButton(
-                          onPressed: () => Navigator.pop(context, true),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.red,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            elevation: 2,
-                          ),
-                          child: const Text(
-                            '삭제',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 16,
-                            ),
+                  ),
+                ],
+              ),
+            ),
+
+            // 내용
+            Padding(
+              padding: const EdgeInsets.all(24),
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFEF2F2),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.red.withOpacity(0.2)),
+                ),
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.info_outline,
+                          color: Colors.red,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          l10n.friendDeleteHeader,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.red,
                           ),
                         ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      l10n.friendDeleteToConfirm(friend.userName),
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Color(0xFF64748B),
+                        height: 1.5,
                       ),
                     ),
                   ],
                 ),
               ),
-            ],
-          ),
+            ),
+
+            // 버튼 영역
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(20),
+                  bottomRight: Radius.circular(20),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: SizedBox(
+                      height: 48,
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Color(0xFFE2E8F0)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: Text(
+                          l10n.friendDeleteCancel,
+                          style: const TextStyle(
+                            color: Color(0xFF64748B),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: SizedBox(
+                      height: 48,
+                      child: ElevatedButton(
+                        onPressed: () => Navigator.pop(context, true),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 2,
+                        ),
+                        child: Text(
+                          l10n.friendDeleteButton,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
-    );
+    ),
+  );
 
-    if (confirmed == true) {
-      await controller.deleteFriend(friend.userId);
-      _showSuccessMessage('${friend.userName}님을 친구 목록에서 삭제했습니다.');
-    }
-  }
+if (confirmed == true) {
+  await controller.deleteFriend(friend.userId);
+  final l10n = AppLocalizations.of(context)!;
+  final message = l10n.friendDeleteSuccessMessage(friend.userName);
+  _showSuccessMessage(message);
+}
+}
 
   Widget _buildEmptyState(String message) {
     return Padding(
@@ -1942,75 +1939,77 @@ class _FriendsScreenState extends State<FriendsScreen>
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final loading = controller.isLoading;
-    final error = controller.errorMessage;
+@override
+Widget build(BuildContext context) {
+  final loading = controller.isLoading;
+  final error = controller.errorMessage;
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
-      resizeToAvoidBottomInset: true,
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFFF8FAFC), Color(0xFFE2E8F0)],
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              _buildHeader(),
-              Expanded(
-                child: loading
-                    ? const Center(
-                        child: CircularProgressIndicator(
-                          color: Color(0xFF1E3A8A),
-                        ),
-                      )
-                    : error != null
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(
-                              Icons.error_outline,
-                              color: Color(0xFFEF4444),
-                              size: 48,
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              error,
-                              style: const TextStyle(
-                                color: Color(0xFFEF4444),
-                                fontSize: 16,
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            ElevatedButton(
-                              onPressed: () {
-                                controller.loadAll();
-                              },
-                              child: const Text('다시 시도'),
-                            ),
-                          ],
-                        ),
-                      )
-                    : RefreshIndicator(
-                        color: const Color(0xFF1E3A8A),
-                        onRefresh: controller.loadAll,
-                        child: SingleChildScrollView(
-                          physics: const AlwaysScrollableScrollPhysics(),
-                          padding: const EdgeInsets.only(top: 16, bottom: 32),
-                          child: _buildFriendsContent(),
-                        ),
-                      ),
-              ),
-            ],
-          ),
+  return Scaffold(
+    backgroundColor: const Color(0xFFF8FAFC),
+    resizeToAvoidBottomInset: true,
+    body: Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xFFF8FAFC), Color(0xFFE2E8F0)],
         ),
       ),
-    );
-  }
+      child: SafeArea(
+        child: Column(
+          children: [
+            _buildHeader(),
+            Expanded(
+              child: loading
+                  ? const Center(
+                      child: CircularProgressIndicator(
+                        color: Color(0xFF1E3A8A),
+                      ),
+                    )
+                  : error != null
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(
+                            Icons.error_outline,
+                            color: Color(0xFFEF4444),
+                            size: 48,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            error,
+                            style: const TextStyle(
+                              color: Color(0xFFEF4444),
+                              fontSize: 16,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: () {
+                              controller.loadAll();
+                            },
+                            child: const Text('다시 시도'),
+                          ),
+                        ],
+                      ),
+                    )
+                  : RefreshIndicator(
+                      color: const Color(0xFF1E3A8A),
+                      onRefresh: controller.loadAll,
+                      child: ListView(
+                        padding: const EdgeInsets.only(top: 16, bottom: 32),
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        children: [
+                          _buildFriendsContent(),
+                        ],
+                      ),
+                    ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
 }
+    }

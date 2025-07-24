@@ -172,11 +172,6 @@ Widget _buildContent(BuildContext context, AppLocalizations l10n) {
   );
 }
 
-
-
-
-
-
   Widget _buildHeader() {
     return Row(
       children: [
@@ -267,22 +262,9 @@ Widget _buildContent(BuildContext context, AppLocalizations l10n) {
             color: Colors.grey.shade600,
           ),
         ),
-        const Spacer(),
-        TextButton(
-          onPressed: () => onShowDetails(building),
-          style: TextButton.styleFrom(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            minimumSize: Size.zero,
-            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          ),
-          child: Text(
-            l10n.building_details,
-            style: const TextStyle(
-              fontSize: 13,
-              color: Colors.blue,
-            ),
-          ),
-        ),
+       
+        
+      
       ],
     );
   }
