@@ -1,4 +1,4 @@
-// lib/inside/path_painter.dart - 네비게이션 모드 지원 업데이트
+// lib/inside/path_painter.dart - 디버깅 개선 버전
 
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
@@ -22,9 +22,37 @@ class PathPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    if (pathPoints.length < 2) return;
+    // 🔥 강화된 디버깅 로그
+    debugPrint('🎨 === PathPainter.paint 시작 ===');
+    debugPrint('   pathPoints: ${pathPoints.length}개');
+    debugPrint('   scale: $scale');
+    debugPrint('   pathColor: $pathColor');
+    debugPrint('   isNavigationMode: $isNavigationMode');
+    debugPrint('   Canvas size: ${size.width} x ${size.height}');
+    
+    if (pathPoints.isEmpty) {
+      debugPrint('❌ pathPoints가 비어있음');
+      return;
+    }
+    
+    if (pathPoints.length == 1) {
+      debugPrint('⚠️ pathPoints가 1개뿐임: ${pathPoints.first}');
+      // 단일 점은 원으로 표시
+      _drawSinglePoint(canvas);
+      return;
+    }
 
-    // 🔥 경로 타입에 따른 스타일 설정
+    // 🔥 경로 점들의 상세 정보 출력
+    debugPrint('   시작점: ${pathPoints.first}');
+    debugPrint('   끝점: ${pathPoints.last}');
+    debugPrint('   중간점들: ${pathPoints.skip(1).take(pathPoints.length - 2).toList()}');
+    
+    // 🔥 스케일 적용 후 좌표들 확인
+    final scaledPoints = pathPoints.map((p) => p * scale).toList();
+    debugPrint('   스케일 적용 후 시작점: ${scaledPoints.first}');
+    debugPrint('   스케일 적용 후 끝점: ${scaledPoints.last}');
+
+    // 경로 스타일 설정
     final Paint pathPaint = Paint()
       ..color = pathColor ?? (isNavigationMode ? Colors.blue : Colors.red)
       ..strokeWidth = strokeWidth ?? (isNavigationMode ? 6.0 : 4.0)
@@ -42,47 +70,73 @@ class PathPainter extends CustomPainter {
         ],
         stops: const [0.0, 0.5, 1.0],
       ).createShader(Rect.fromPoints(
-        pathPoints.first * scale,
-        pathPoints.last * scale,
+        scaledPoints.first,
+        scaledPoints.last,
       ));
     }
 
-    final Path path = Path();
-    
-    // 첫 번째 점으로 이동
-    final firstPoint = pathPoints.first * scale;
-    path.moveTo(firstPoint.dx, firstPoint.dy);
-
-    // 🔥 부드러운 곡선 경로 생성 (네비게이션 모드)
+    // 경로 그리기
     if (isNavigationMode && pathPoints.length > 2) {
-      _drawSmoothPath(canvas, pathPaint);
+      _drawSmoothPath(canvas, pathPaint, scaledPoints);
     } else {
-      // 기존 직선 경로
-      for (int i = 1; i < pathPoints.length; i++) {
-        final point = pathPoints[i] * scale;
-        path.lineTo(point.dx, point.dy);
-      }
-      canvas.drawPath(path, pathPaint);
+      _drawStraightPath(canvas, pathPaint, scaledPoints);
     }
 
-    // 🔥 시작점과 끝점 마커
-    _drawStartEndMarkers(canvas);
+    debugPrint('✅ 경로 그리기 완료');
 
-    // 🔥 방향 화살표 (옵션)
-    if (showDirectionArrows) {
-      _drawDirectionArrows(canvas);
+    // 시작점과 끝점 마커
+    _drawStartEndMarkers(canvas, scaledPoints);
+
+    // 방향 화살표 (옵션)
+    if (showDirectionArrows && pathPoints.length > 1) {
+      _drawDirectionArrows(canvas, scaledPoints);
     }
 
-    // 🔥 네비게이션 모드에서 진행 상황 표시
+    // 네비게이션 모드에서 진행 상황 표시
     if (isNavigationMode) {
-      _drawProgressIndicator(canvas);
+      _drawProgressIndicator(canvas, scaledPoints);
     }
+    
+    debugPrint('🎨 === PathPainter.paint 완료 ===');
+  }
+
+  /// 🔥 단일 점 표시
+  void _drawSinglePoint(Canvas canvas) {
+    final point = pathPoints.first * scale;
+    final paint = Paint()
+      ..color = Colors.orange
+      ..style = PaintingStyle.fill;
+    
+    canvas.drawCircle(point, 12.0, paint);
+    
+    // 테두리
+    final borderPaint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3.0;
+    
+    canvas.drawCircle(point, 12.0, borderPaint);
+    
+    debugPrint('✅ 단일 점 표시: $point');
+  }
+
+  /// 🔥 직선 경로 그리기
+  void _drawStraightPath(Canvas canvas, Paint pathPaint, List<Offset> scaledPoints) {
+    final Path path = Path();
+    path.moveTo(scaledPoints.first.dx, scaledPoints.first.dy);
+
+    for (int i = 1; i < scaledPoints.length; i++) {
+      path.lineTo(scaledPoints[i].dx, scaledPoints[i].dy);
+      debugPrint('   직선 연결: ${scaledPoints[i-1]} -> ${scaledPoints[i]}');
+    }
+
+    canvas.drawPath(path, pathPaint);
+    debugPrint('✅ 직선 경로 그리기 완료');
   }
 
   /// 🔥 부드러운 곡선 경로 그리기
-  void _drawSmoothPath(Canvas canvas, Paint pathPaint) {
+  void _drawSmoothPath(Canvas canvas, Paint pathPaint, List<Offset> scaledPoints) {
     final Path smoothPath = Path();
-    final scaledPoints = pathPoints.map((p) => p * scale).toList();
     
     if (scaledPoints.isEmpty) return;
     
@@ -116,19 +170,21 @@ class PathPainter extends CustomPainter {
     }
 
     canvas.drawPath(smoothPath, pathPaint);
+    debugPrint('✅ 부드러운 경로 그리기 완료');
   }
 
   /// 🔥 시작점과 끝점 마커 그리기
-  void _drawStartEndMarkers(Canvas canvas) {
-    if (pathPoints.isEmpty) return;
+  void _drawStartEndMarkers(Canvas canvas, List<Offset> scaledPoints) {
+    if (scaledPoints.isEmpty) return;
 
     // 시작점 마커 (초록색 원)
-    final startPoint = pathPoints.first * scale;
+    final startPoint = scaledPoints.first;
     final startPaint = Paint()
       ..color = Colors.green
       ..style = PaintingStyle.fill;
     
-    canvas.drawCircle(startPoint, isNavigationMode ? 8.0 : 6.0, startPaint);
+    final startRadius = isNavigationMode ? 10.0 : 8.0;
+    canvas.drawCircle(startPoint, startRadius, startPaint);
     
     // 시작점 테두리
     final startBorderPaint = Paint()
@@ -136,15 +192,16 @@ class PathPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2.0;
     
-    canvas.drawCircle(startPoint, isNavigationMode ? 8.0 : 6.0, startBorderPaint);
+    canvas.drawCircle(startPoint, startRadius, startBorderPaint);
 
-    // 끝점 마커 (빨간색 원)
-    final endPoint = pathPoints.last * scale;
+    // 끝점 마커
+    final endPoint = scaledPoints.last;
     final endPaint = Paint()
       ..color = isNavigationMode ? Colors.orange : Colors.red
       ..style = PaintingStyle.fill;
     
-    canvas.drawCircle(endPoint, isNavigationMode ? 10.0 : 8.0, endPaint);
+    final endRadius = isNavigationMode ? 12.0 : 10.0;
+    canvas.drawCircle(endPoint, endRadius, endPaint);
     
     // 끝점 테두리
     final endBorderPaint = Paint()
@@ -152,15 +209,17 @@ class PathPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2.0;
     
-    canvas.drawCircle(endPoint, isNavigationMode ? 10.0 : 8.0, endBorderPaint);
+    canvas.drawCircle(endPoint, endRadius, endBorderPaint);
 
-    // 🔥 네비게이션 모드에서는 목적지에 깃발 아이콘
+    // 네비게이션 모드에서는 목적지에 깃발 아이콘
     if (isNavigationMode) {
       _drawDestinationFlag(canvas, endPoint);
     }
+    
+    debugPrint('✅ 시작/끝점 마커 그리기 완료');
   }
 
-  /// 🔥 목적지 깃발 그리기
+  /// 목적지 깃발 그리기
   void _drawDestinationFlag(Canvas canvas, Offset position) {
     final flagPaint = Paint()
       ..color = Colors.red
@@ -185,18 +244,18 @@ class PathPainter extends CustomPainter {
     canvas.drawPath(flagPath, flagPaint);
   }
 
-  /// 🔥 방향 화살표 그리기
-  void _drawDirectionArrows(Canvas canvas) {
-    if (pathPoints.length < 2) return;
+  /// 방향 화살표 그리기
+  void _drawDirectionArrows(Canvas canvas, List<Offset> scaledPoints) {
+    if (scaledPoints.length < 2) return;
 
     final arrowPaint = Paint()
       ..color = (pathColor ?? Colors.red).withOpacity(0.8)
       ..style = PaintingStyle.fill;
 
     // 경로 중간 지점들에 화살표 그리기
-    for (int i = 1; i < pathPoints.length - 1; i += 2) {
-      final current = pathPoints[i] * scale;
-      final next = pathPoints[i + 1] * scale;
+    for (int i = 1; i < scaledPoints.length - 1; i += 2) {
+      final current = scaledPoints[i];
+      final next = scaledPoints[i + 1];
       
       // 방향 벡터 계산
       final direction = next - current;
@@ -218,14 +277,13 @@ class PathPainter extends CustomPainter {
       
       canvas.drawPath(arrowPath, arrowPaint);
     }
+    
+    debugPrint('✅ 방향 화살표 그리기 완료');
   }
 
-  /// 🔥 진행 상황 표시기 (네비게이션 모드)
-  void _drawProgressIndicator(Canvas canvas) {
-    // 현재는 간단한 점선 효과로 구현
-    // 실제로는 GPS 위치나 진행 상황에 따라 동적으로 변경 가능
-    
-    if (pathPoints.length < 2) return;
+  /// 진행 상황 표시기 (네비게이션 모드)
+  void _drawProgressIndicator(Canvas canvas, List<Offset> scaledPoints) {
+    if (scaledPoints.length < 2) return;
 
     final progressPaint = Paint()
       ..color = Colors.lightBlue.withOpacity(0.6)
@@ -236,12 +294,14 @@ class PathPainter extends CustomPainter {
     final dashWidth = 10.0;
     final dashSpace = 5.0;
     
-    for (int i = 0; i < pathPoints.length - 1; i++) {
-      final start = pathPoints[i] * scale;
-      final end = pathPoints[i + 1] * scale;
+    for (int i = 0; i < scaledPoints.length - 1; i++) {
+      final start = scaledPoints[i];
+      final end = scaledPoints[i + 1];
       
       _drawDashedLine(canvas, start, end, dashWidth, dashSpace, progressPaint);
     }
+    
+    debugPrint('✅ 진행 상황 표시기 그리기 완료');
   }
 
   /// 점선 그리기 헬퍼 메서드
@@ -281,136 +341,3 @@ class PathPainter extends CustomPainter {
     return true;
   }
 }
-
-// 🔥 애니메이션을 지원하는 PathPainter
-class AnimatedPathPainter extends PathPainter {
-  final double animationProgress;
-  final bool showProgress;
-
-  AnimatedPathPainter({
-    required List<Offset> pathPoints,
-    required double scale,
-    Color? pathColor,
-    double? strokeWidth,
-    bool isNavigationMode = false,
-    bool showDirectionArrows = true,
-    this.animationProgress = 1.0,
-    this.showProgress = false,
-  }) : super(
-         pathPoints: pathPoints,
-         scale: scale,
-         pathColor: pathColor,
-         strokeWidth: strokeWidth,
-         isNavigationMode: isNavigationMode,
-         showDirectionArrows: showDirectionArrows,
-       );
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    if (pathPoints.length < 2) return;
-
-    // 애니메이션 진행률에 따라 표시할 점들 계산
-    final int pointsToShow = (pathPoints.length * animationProgress).round();
-    final animatedPoints = pathPoints.take(pointsToShow).toList();
-    
-    if (animatedPoints.length < 2) return;
-
-    // 기본 경로 그리기
-    final Paint pathPaint = Paint()
-      ..color = pathColor ?? (isNavigationMode ? Colors.blue : Colors.red)
-      ..strokeWidth = strokeWidth ?? (isNavigationMode ? 6.0 : 4.0)
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
-
-    final Path path = Path();
-    final firstPoint = animatedPoints.first * scale;
-    path.moveTo(firstPoint.dx, firstPoint.dy);
-
-    for (int i = 1; i < animatedPoints.length; i++) {
-      final point = animatedPoints[i] * scale;
-      path.lineTo(point.dx, point.dy);
-    }
-
-    canvas.drawPath(path, pathPaint);
-
-    // 진행 상황 표시
-    if (showProgress && animatedPoints.isNotEmpty) {
-      _drawAnimationProgress(canvas, animatedPoints);
-    }
-
-    // 시작점과 현재 위치 마커
-    _drawAnimationMarkers(canvas, animatedPoints);
-  }
-
-  void _drawAnimationProgress(Canvas canvas, List<Offset> animatedPoints) {
-    // 현재 위치에 펄스 효과
-    if (animatedPoints.isNotEmpty) {
-      final currentPosition = animatedPoints.last * scale;
-      
-      // 펄스 링 그리기
-      for (int i = 0; i < 3; i++) {
-        final radius = 15.0 + (i * 10.0);
-        final opacity = 0.3 - (i * 0.1);
-        
-        final pulsePaint = Paint()
-          ..color = Colors.blue.withOpacity(opacity)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 2.0;
-        
-        canvas.drawCircle(currentPosition, radius, pulsePaint);
-      }
-    }
-  }
-
-  void _drawAnimationMarkers(Canvas canvas, List<Offset> animatedPoints) {
-    if (animatedPoints.isEmpty) return;
-
-    // 시작점 (초록색)
-    final startPoint = animatedPoints.first * scale;
-    final startPaint = Paint()
-      ..color = Colors.green
-      ..style = PaintingStyle.fill;
-    
-    canvas.drawCircle(startPoint, 8.0, startPaint);
-
-    // 현재 위치 (파란색, 더 큰 원)
-    if (animatedPoints.length > 1) {
-      final currentPoint = animatedPoints.last * scale;
-      final currentPaint = Paint()
-        ..color = Colors.blue
-        ..style = PaintingStyle.fill;
-      
-      canvas.drawCircle(currentPoint, 10.0, currentPaint);
-      
-      // 현재 위치 테두리
-      final borderPaint = Paint()
-        ..color = Colors.white
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 2.0;
-      
-      canvas.drawCircle(currentPoint, 10.0, borderPaint);
-    }
-
-    // 목적지 (원래 경로의 마지막 점)
-    if (pathPoints.isNotEmpty) {
-      final endPoint = pathPoints.last * scale;
-      final endPaint = Paint()
-        ..color = animationProgress >= 1.0 ? Colors.green : Colors.red.withOpacity(0.5)
-        ..style = PaintingStyle.fill;
-      
-      canvas.drawCircle(endPoint, 8.0, endPaint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(CustomPainter oldDelegate) {
-    if (oldDelegate is AnimatedPathPainter) {
-      return super.shouldRepaint(oldDelegate) ||
-             animationProgress != oldDelegate.animationProgress ||
-             showProgress != oldDelegate.showProgress;
-    }
-    return true;
-  }
-}
-
