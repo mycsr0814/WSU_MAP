@@ -41,11 +41,10 @@ class _UnifiedNavigationStepperPageState extends State<UnifiedNavigationStepperP
   void initState() {
     super.initState();
 
-    // 출발 실내 경로가 있다면 층별로 분리하여 단계 추가 (높은 층 → 낮은 층)
+    // 출발 실내 경로가 있다면 층별로 분리하여 단계 추가 (서버 순서대로)
     if (widget.departureNodeIds.isNotEmpty) {
       final depFloors = _splitNodeIdsByFloor(widget.departureNodeIds);
-      final sortedFloors = depFloors.keys.toList()..sort((a, b) => int.parse(b).compareTo(int.parse(a)));
-      for (final floor in sortedFloors) {
+      for (final floor in depFloors.keys) {
         _steps.add(_StepData(
           type: StepType.indoor,
           building: widget.departureBuilding,
@@ -64,11 +63,10 @@ class _UnifiedNavigationStepperPageState extends State<UnifiedNavigationStepperP
       ));
     }
 
-    // 도착 실내 경로가 있다면 층별로 분리하여 단계 추가 (낮은 층 → 높은 층)
+    // 도착 실내 경로가 있다면 층별로 분리하여 단계 추가 (서버 순서대로)
     if (widget.arrivalNodeIds.isNotEmpty) {
       final arrFloors = _splitNodeIdsByFloor(widget.arrivalNodeIds);
-      final sortedFloors = arrFloors.keys.toList()..sort((a, b) => int.parse(a).compareTo(int.parse(b)));
-      for (final floor in sortedFloors) {
+      for (final floor in arrFloors.keys) {
         _steps.add(_StepData(
           type: StepType.indoor,
           building: widget.arrivalBuilding,
