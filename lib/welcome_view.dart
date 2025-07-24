@@ -2,11 +2,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../components/woosong_button.dart';
-///import '../selection/auth_selection_view.dart';
-import '../generated/app_localizations.dart'; // 생성된 localization 파일 import
+import '../generated/app_localizations.dart';
 import '../auth/user_auth.dart';
 import 'providers/app_language_provider.dart';
-import 'package:flutter_application_1/managers/location_manager.dart'; // 🔥 추가
+import 'package:flutter_application_1/managers/location_manager.dart';
 
 enum AppLanguage { korean, chinese, english }
 

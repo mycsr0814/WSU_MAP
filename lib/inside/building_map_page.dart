@@ -1029,11 +1029,12 @@ List<String> _findSimilarNodes(String targetId, Map<String, Offset> nodeMap) {
   }
   // 8/10 계속...
 
-  void _showRoomInfoSheet(BuildContext context, String roomId) async {
-    if (_isNavigationMode) {
-      _showNavigationRoomSheet(context, roomId);
-      return;
-    }
+   void _showRoomInfoSheet(BuildContext context, String roomId) async {
+  // 네비게이션 모드에서는 호실 정보 시트를 다르게 표시
+  if (_isNavigationMode) {
+    _showNavigationRoomSheet(context, roomId);
+    return;
+  }
 
   setState(() => _selectedRoomId = roomId);
   String roomIdNoR = roomId.startsWith('R') ? roomId.substring(1) : roomId;
@@ -1108,8 +1109,74 @@ List<String> _findSimilarNodes(String targetId, Map<String, Offset> nodeMap) {
     ),
   );
 
-    if (mounted) setState(() => _selectedRoomId = null);
+  if (mounted) setState(() => _selectedRoomId = null);
+}
+
+List<String> _parseStringList(dynamic value) {
+  if (value == null) return [];
+  if (value is List) {
+    return value
+        .where((item) => item != null && item.toString().trim().isNotEmpty)
+        .map((item) => item.toString().trim())
+        .toList();
   }
+  return [];
+}
+
+// 🔥 서버에서 호실 데이터를 찾는 메서드 추가
+Future<Map<String, dynamic>?> _findRoomDataFromServer({
+  required String buildingName,
+  required String floorNumber,
+  required String roomName,
+}) async {
+  try {
+    debugPrint('🔍 호실 검색: $buildingName $floorNumber층 $roomName호');
+    
+    // 🔥 실제 작동하는 API 메서드 사용
+    final List<Map<String, dynamic>> allRooms = await _apiService.fetchAllRooms();
+    
+    debugPrint('📊 전체 호실 수: ${allRooms.length}개');
+    
+    // 🔥 해당 호실 찾기
+    for (final room in allRooms) {
+      final roomBuildingName = room['Building_Name']?.toString() ?? '';
+      final roomFloorNumber = room['Floor_Number']?.toString() ?? '';
+      final roomRoomName = room['Room_Name']?.toString() ?? '';
+      
+      debugPrint('🏠 비교: $roomBuildingName vs $buildingName, $roomFloorNumber vs $floorNumber, $roomRoomName vs $roomName');
+      
+      if (roomBuildingName == buildingName &&
+          roomFloorNumber == floorNumber &&
+          roomRoomName == roomName) {
+        debugPrint('✅ 호실 찾음!');
+        debugPrint('   설명: ${room['Room_Description']}');
+        debugPrint('   담당자: ${room['Room_User']}');
+        debugPrint('   전화: ${room['User_Phone']}');
+        debugPrint('   이메일: ${room['User_Email']}');
+        return room;
+      }
+    }
+    
+    debugPrint('❌ 호실을 찾지 못함: $buildingName $floorNumber층 $roomName호');
+    return null;
+    
+  } catch (e) {
+    debugPrint('❌ _findRoomDataFromServer 오류: $e');
+    return null;
+  }
+}
+
+List<String>? _parseStringListNullable(dynamic value) {
+  if (value == null) return null;
+  if (value is List) {
+    final filtered = value
+        .where((item) => item != null && item.toString().trim().isNotEmpty)
+        .map((item) => item.toString().trim())
+        .toList();
+    return filtered.isEmpty ? null : filtered;
+  }
+  return null;
+}
 
   void _showNavigationRoomSheet(BuildContext context, String roomId) {
     showModalBottomSheet(

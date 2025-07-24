@@ -155,86 +155,73 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     );
   }
 
-  Widget _buildHeader() {
-    final l10n = AppLocalizations.of(context);
+Widget _buildHeader() {
+  final l10n = AppLocalizations.of(context);
 
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Color(0x0F000000),
-            blurRadius: 10,
-            offset: Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: const Color(0xFF1E3A8A).withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(
-              Icons.schedule,
-              color: Color(0xFF1E3A8A),
-              size: 24,
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  l10n?.timetable ?? 'Timetable',
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF1E3A8A),
+  return Container(
+    padding: const EdgeInsets.all(20),
+    decoration: const BoxDecoration(
+      color: Colors.white,
+      boxShadow: [
+        BoxShadow(
+          color: Color(0x0F000000),
+          blurRadius: 10,
+          offset: Offset(0, 2),
+        ),
+      ],
+    ),
+    child: Row(
+      children: [
+        // 시간표(시계) 아이콘 부분 삭제됨
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                l10n?.timetable ?? 'Timetable',
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF1E3A8A),
+                ),
+              ),
+              Row(
+                children: [
+                  Text(
+                    l10n?.current_year(_getCurrentYear()) ??
+                        '${_getCurrentYear()}',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
-                ),
-                Row(
-                  children: [
-                    Text(
-                      l10n?.current_year(_getCurrentYear()) ??
-                          '${_getCurrentYear()}',
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey,
-                        fontWeight: FontWeight.w500,
-                      ),
+                  const SizedBox(width: 8),
+                  Text(
+                    _currentSemester,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: Color(0xFF1E3A8A),
+                      fontWeight: FontWeight.w600,
                     ),
-                    const SizedBox(width: 8),
-                    Text(
-                      _currentSemester,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: Color(0xFF1E3A8A),
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+                  ),
+                ],
+              ),
+            ],
           ),
-          IconButton(
-            onPressed: _showAddScheduleDialog,
-            icon: const Icon(
-              Icons.add_circle_outline,
-              color: Color(0xFF1E3A8A),
-              size: 28,
-            ),
+        ),
+        IconButton(
+          onPressed: _showAddScheduleDialog,
+          icon: const Icon(
+            Icons.add_circle_outline,
+            color: Color(0xFF1E3A8A),
+            size: 28,
           ),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
+}
 
   Widget _buildScheduleView() {
     return Container(
@@ -293,7 +280,6 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
             children: [
               Column(
                 children: timeSlots.asMap().entries.map((entry) {
-                  final index = entry.key;
                   final timeSlot = entry.value;
                   final isCurrentTime = _isCurrentTimeSlot(
                     timeSlot,
@@ -510,25 +496,6 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     );
   }
 
-  Widget _buildEmptySlot() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.grey.shade50,
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: Center(
-        child: Text(
-          '·',
-          style: TextStyle(
-            fontSize: 16,
-            color: Colors.grey.shade300,
-            fontWeight: FontWeight.w300,
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildDayHeaders() {
     final l10n = AppLocalizations.of(context);
     final days = [
@@ -580,25 +547,6 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     return slots;
   }
 
-  String _getDayShortName(int dayOfWeek) {
-    final l10n = AppLocalizations.of(context);
-
-    switch (dayOfWeek) {
-      case 1:
-        return l10n?.monday ?? 'Mon';
-      case 2:
-        return l10n?.tuesday ?? 'Tue';
-      case 3:
-        return l10n?.wednesday ?? 'Wed';
-      case 4:
-        return l10n?.thursday ?? 'Thu';
-      case 5:
-        return l10n?.friday ?? 'Fri';
-      default:
-        return '';
-    }
-  }
-
   bool _isCurrentTimeSlot(String timeSlot, int currentHour, int currentMinute) {
     final slotHour = int.parse(timeSlot.split(':')[0]);
     return currentHour == slotHour;
@@ -613,24 +561,6 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       }
     }
     return slots;
-  }
-
-  ScheduleItem? _getScheduleForTimeAndDay(String timeSlot, int dayOfWeek) {
-    for (final item in _scheduleItems) {
-      if (item.dayOfWeek == dayOfWeek &&
-          _isTimeInRange(timeSlot, item.startTime, item.endTime)) {
-        return item;
-      }
-    }
-    return null;
-  }
-
-  bool _isTimeInRange(String timeSlot, String startTime, String endTime) {
-    final slotTime = _parseTime(timeSlot);
-    final start = _parseTime(startTime);
-    final end = _parseTime(endTime);
-
-    return slotTime >= start && slotTime < end;
   }
 
   int _parseTime(String time) {
@@ -657,221 +587,197 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     }
   }
 
-  Widget _buildDetailRow(IconData icon, String label, String value) {
-    return Row(
-      children: [
-        Icon(icon, size: 20, color: const Color(0xFF1E3A8A)),
-        const SizedBox(width: 12),
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: Color(0xFF1E3A8A),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            value,
-            style: const TextStyle(fontSize: 14, color: Colors.black87),
-          ),
-        ),
-      ],
-    );
-  }
-
   Future<void> _showDeleteConfirmDialog(ScheduleItem item) async {
-    final l10n = AppLocalizations.of(context);
+  final l10n = AppLocalizations.of(context)!; // null 체크 위해 '!' 추가
 
-    final result = await showDialog<bool>(
-      context: context,
-      barrierColor: Colors.black.withOpacity(0.5),
-      builder: (context) => Dialog(
-        backgroundColor: Colors.transparent,
-        child: Container(
-          width: MediaQuery.of(context).size.width * 0.9,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
-              ),
-            ],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: Colors.red.withOpacity(0.1),
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(20),
-                    topRight: Radius.circular(20),
-                  ),
+  final result = await showDialog<bool>(
+    context: context,
+    barrierColor: Colors.black.withOpacity(0.5),
+    builder: (context) => Dialog(
+      backgroundColor: Colors.transparent,
+      child: Container(
+        width: MediaQuery.of(context).size.width * 0.9,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.red.withOpacity(0.1),
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(20),
+                  topRight: Radius.circular(20),
                 ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 60,
-                      height: 60,
-                      decoration: BoxDecoration(
-                        color: Colors.red.withOpacity(0.2),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.warning_outlined,
-                        color: Colors.red,
-                        size: 30,
-                      ),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 60,
+                    height: 60,
+                    decoration: BoxDecoration(
+                      color: Colors.red.withOpacity(0.2),
+                      shape: BoxShape.circle,
                     ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '시간표 삭제',
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w700,
+                    child: const Icon(
+                      Icons.warning_outlined,
+                      color: Colors.red,
+                      size: 30,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          l10n.scheduleDeleteTitle,
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.red,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          l10n.scheduleDeleteSubtitle,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.red.withOpacity(0.8),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFEF2F2),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.red.withOpacity(0.2)),
+                    ),
+                    child: Column(
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.info_outline,
                               color: Colors.red,
+                              size: 20,
                             ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '신중하게 결정해주세요',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.red.withOpacity(0.8),
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFEF2F2),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.red.withOpacity(0.2)),
-                      ),
-                      child: Column(
-                        children: [
-                          Row(
-                            children: [
-                              const Icon(
-                                Icons.info_outline,
+                            const SizedBox(width: 8),
+                            Text(
+                              l10n.scheduleDeleteLabel,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
                                 color: Colors.red,
-                                size: 20,
                               ),
-                              const SizedBox(width: 8),
-                              const Text(
-                                '삭제할 시간표',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.red,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            '"${item.title}" 수업을 시간표에서 삭제하시겠습니까?\n삭제된 시간표는 복구할 수 없습니다.',
-                            style: const TextStyle(
-                              fontSize: 14,
-                              color: Color(0xFF64748B),
-                              height: 1.5,
                             ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          l10n.scheduleDeleteDescription(item.title),
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: Color(0xFF64748B),
+                            height: 1.5,
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF8FAFC),
-                  borderRadius: const BorderRadius.only(
-                    bottomLeft: Radius.circular(20),
-                    bottomRight: Radius.circular(20),
                   ),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: SizedBox(
-                        height: 48,
-                        child: OutlinedButton(
-                          onPressed: () => Navigator.pop(context, false),
-                          style: OutlinedButton.styleFrom(
-                            side: const BorderSide(color: Color(0xFFE2E8F0)),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          child: const Text(
-                            '취소',
-                            style: TextStyle(
-                              color: Color(0xFF64748B),
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: SizedBox(
-                        height: 48,
-                        child: ElevatedButton(
-                          onPressed: () => Navigator.pop(context, true),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.red,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            elevation: 2,
-                          ),
-                          child: const Text(
-                            '삭제',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 16,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
+                ],
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(20),
+                  bottomRight: Radius.circular(20),
                 ),
               ),
-            ],
-          ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: SizedBox(
+                      height: 48,
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Color(0xFFE2E8F0)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: Text(
+                          l10n.cancelButton,
+                          style: const TextStyle(
+                            color: Color(0xFF64748B),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: SizedBox(
+                      height: 48,
+                      child: ElevatedButton(
+                        onPressed: () => Navigator.pop(context, true),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 2,
+                        ),
+                        child: Text(
+                          l10n.deleteButton,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
-    );
+    ),
+  );
 
-    if (result == true) {
-      await _deleteScheduleItem(item);
-    }
+  if (result == true) {
+    await _deleteScheduleItem(item);
   }
+}
 
   Future<void> _showScheduleFormDialog({
     ScheduleItem? initialItem,

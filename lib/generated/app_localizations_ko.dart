@@ -1553,4 +1553,27 @@ class AppLocalizationsKo extends AppLocalizations {
   String friendDeleteSuccessMessage(Object userName) {
     return '$userName님을 친구 목록에서 삭제했습니다.';
   }
+
+  @override
+  String get friendOfflineError => '현재 오프라인입니다.';
+
+  @override
+  String get scheduleDeleteTitle => '시간표 삭제';
+
+  @override
+  String get scheduleDeleteSubtitle => '신중하게 결정해주세요';
+
+  @override
+  String get scheduleDeleteLabel => '삭제할 시간표';
+
+  @override
+  String scheduleDeleteDescription(Object title) {
+    return '\"$title\" 수업을 시간표에서 삭제하시겠습니까?\n삭제된 시간표는 복구할 수 없습니다.';
+  }
+
+  @override
+  String get cancelButton => '취소';
+
+  @override
+  String get deleteButton => '삭제';
 }

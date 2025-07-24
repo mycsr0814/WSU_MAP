@@ -1550,4 +1550,27 @@ class AppLocalizationsZh extends AppLocalizations {
   String friendDeleteSuccessMessage(Object userName) {
     return '已从好友列表中删除$userName。';
   }
+
+  @override
+  String get friendOfflineError => '此好友当前离线。';
+
+  @override
+  String get scheduleDeleteTitle => '删除时间表';
+
+  @override
+  String get scheduleDeleteSubtitle => '请慎重决定';
+
+  @override
+  String get scheduleDeleteLabel => '要删除的时间表';
+
+  @override
+  String scheduleDeleteDescription(Object title) {
+    return '您确定要从时间表中删除“$title”课程吗？\n已删除的时间表无法恢复。';
+  }
+
+  @override
+  String get cancelButton => '取消';
+
+  @override
+  String get deleteButton => '删除';
 }

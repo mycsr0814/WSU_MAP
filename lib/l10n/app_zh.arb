@@ -713,5 +713,20 @@
     "placeholders": {
       "userName": {}
     }
+  },
+  "friendOfflineError": "此好友当前离线。",
+  "@friendOfflineError": {
+    "description": "Error message shown when trying to view the location of an offline friend."
+  },
+    "scheduleDeleteTitle": "删除时间表",
+  "scheduleDeleteSubtitle": "请慎重决定",
+  "scheduleDeleteLabel": "要删除的时间表",
+  "scheduleDeleteDescription": "您确定要从时间表中删除“{title}”课程吗？\n已删除的时间表无法恢复。",
+  "cancelButton": "取消",
+  "deleteButton": "删除",
+  "@scheduleDeleteDescription": {
+    "placeholders": {
+      "title": {}
+    }
   }
 }

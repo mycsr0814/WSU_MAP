@@ -3,7 +3,6 @@
 import 'package:flutter_application_1/inside/api_service.dart';
 import 'package:flutter_application_1/models/building.dart';
 import 'package:flutter_application_1/models/search_result.dart';
-import 'package:flutter_application_1/map/building_data.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/repositories/building_repository.dart';
 

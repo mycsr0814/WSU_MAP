@@ -1585,4 +1585,27 @@ class AppLocalizationsEn extends AppLocalizations {
   String friendDeleteSuccessMessage(Object userName) {
     return '$userName has been removed from your friends list.';
   }
+
+  @override
+  String get friendOfflineError => 'This friend is currently offline.';
+
+  @override
+  String get scheduleDeleteTitle => 'Delete Schedule';
+
+  @override
+  String get scheduleDeleteSubtitle => 'Please decide carefully';
+
+  @override
+  String get scheduleDeleteLabel => 'Schedule to delete';
+
+  @override
+  String scheduleDeleteDescription(Object title) {
+    return '\"$title\" class will be deleted from the schedule.\nDeleted schedules cannot be restored.';
+  }
+
+  @override
+  String get cancelButton => 'Cancel';
+
+  @override
+  String get deleteButton => 'Delete';
 }

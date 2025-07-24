@@ -12,7 +12,6 @@ class BuildingMarkerService {
   final List<NMarker> _buildingMarkers = [];
   final Set<String> _buildingMarkerIds = {};
   bool _buildingMarkersVisible = true;
-  NMarker? _selectedMarker;
 
   // 마커 클릭 콜백
   Function(NMarker, Building)? _onBuildingMarkerTap;
@@ -62,7 +61,6 @@ class BuildingMarkerService {
 
       _buildingMarkers.clear();
       _buildingMarkerIds.clear();
-      _selectedMarker = null;
 
       debugPrint('✅ 모든 건물 마커 완전 제거 완료');
     } catch (e) {
@@ -70,7 +68,6 @@ class BuildingMarkerService {
 
       _buildingMarkers.clear();
       _buildingMarkerIds.clear();
-      _selectedMarker = null;
     }
   }
 
@@ -114,8 +111,6 @@ class BuildingMarkerService {
     } catch (e) {
       debugPrint('❌ API 기본 마커 로드 오류: $e');
       _lastApiError = 'API 연결 실패: $e';
-
-      await _loadFallbackMarkers(mapController);
     } finally {
       _isLoadingFromApi = false;
     }
@@ -211,55 +206,6 @@ class BuildingMarkerService {
     } catch (e) {
       debugPrint('❌ 건물 마커 배치 추가 실패: $e');
       rethrow;
-    }
-  }
-
-  /// API 실패 시 폴백 마커 로드 - 배치 처리 적용
-  Future<void> _loadFallbackMarkers(NaverMapController mapController) async {
-    try {
-      debugPrint('🔄 API 실패 - 폴백 마커 배치 로드 시작');
-
-      final fallbackBuildings = [
-        Building(
-          name: '우송대학교 본관',
-          lat: 36.3370,
-          lng: 127.4450,
-          category: '교육시설',
-          info: '',
-          baseStatus: '',
-          hours: '',
-          phone: '',
-          description: '',
-        ),
-        Building(
-          name: '도서관',
-          lat: 36.3375,
-          lng: 127.4445,
-          category: '교육시설',
-          info: '',
-          baseStatus: '',
-          hours: '',
-          phone: '',
-          description: '',
-        ),
-        Building(
-          name: '학생회관',
-          lat: 36.3365,
-          lng: 127.4455,
-          category: '편의시설',
-          info: '',
-          baseStatus: '',
-          hours: '',
-          phone: '',
-          description: '',
-        ),
-      ];
-
-      await _addBuildingMarkersBatch(mapController, fallbackBuildings);
-
-      debugPrint('✅ 폴백 마커 배치 로드 완료: ${_buildingMarkers.length}개');
-    } catch (e) {
-      debugPrint('❌ 폴백 마커 배치 로드도 실패: $e');
     }
   }
 
@@ -483,7 +429,6 @@ class BuildingMarkerService {
       const NOverlayImage.fromAssetImage('lib/asset/building_marker_blue.png'),
     );
     marker.setSize(const Size(110, 110));
-    _selectedMarker = marker;
   }
 
   /// 모든 건물 마커 스타일 초기화
@@ -492,7 +437,6 @@ class BuildingMarkerService {
       marker.setIcon(_blueBuildingIcon);
       marker.setSize(const Size(40, 40));
     }
-    _selectedMarker = null;
   }
 
   /// 재로그인 시 마커 재초기화
@@ -537,7 +481,6 @@ class BuildingMarkerService {
     debugPrint('🧹 BuildingMarkerService 정리');
     _buildingMarkers.clear();
     _buildingMarkerIds.clear();
-    _selectedMarker = null;
     _onBuildingMarkerTap = null;
     _mapController = null;
     _isLoadingFromApi = false;

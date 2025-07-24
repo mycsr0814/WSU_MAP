@@ -814,5 +814,20 @@
     "placeholders": {
       "userName": {}
     }
+  },
+   "friendOfflineError": "This friend is currently offline.",
+  "@friendOfflineError": {
+    "description": "Error message shown when trying to view the location of an offline friend."
+  },
+    "scheduleDeleteTitle": "Delete Schedule",
+  "scheduleDeleteSubtitle": "Please decide carefully",
+  "scheduleDeleteLabel": "Schedule to delete",
+  "scheduleDeleteDescription": "\"{title}\" class will be deleted from the schedule.\nDeleted schedules cannot be restored.",
+  "cancelButton": "Cancel",
+  "deleteButton": "Delete",
+  "@scheduleDeleteDescription": {
+    "placeholders": {
+      "title": {}
+    }
   }
 }

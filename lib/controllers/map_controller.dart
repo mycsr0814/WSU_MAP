@@ -5,22 +5,16 @@ import 'package:flutter_application_1/controllers/location_controllers.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:location/location.dart' as loc;
 import 'package:flutter_application_1/services/map_service.dart';
-import 'package:flutter_application_1/services/route_service.dart';
 import 'package:flutter_application_1/services/path_api_service.dart';
 import 'package:flutter_application_1/models/building.dart';
-import 'package:flutter_application_1/models/category.dart';
 import 'package:flutter_application_1/models/category_marker_data.dart';
 import 'package:flutter_application_1/repositories/building_repository.dart';
 import 'package:flutter_application_1/services/map/friend_location_marker_service.dart';
 import 'package:flutter_application_1/friends/friend.dart';
-import 'dart:math' as math;
 import 'package:flutter_application_1/core/result.dart';
 
 class MapScreenController extends ChangeNotifier {
   MapService? _mapService;
-  RouteService? _routeService;
-  NMarker? _selectedMarker;
-  final Map<String, NMarker> _buildingMarkers = {};
 
   // 🔥 BuildingRepository 사용 - _allBuildings 제거
   final BuildingRepository _buildingRepository = BuildingRepository();
@@ -52,9 +46,6 @@ class MapScreenController extends ChangeNotifier {
 
   // 🔥 내 위치 관련 상태 완전 개선
   LocationController? _locationController;
-
-  // 위치 권한 오류
-  bool _hasLocationPermissionError = false;
 
   // 언어 변경 감지
   Locale? _currentLocale;
@@ -138,7 +129,6 @@ class MapScreenController extends ChangeNotifier {
 
     // 에러 상태 클리어
     _categoryError = null;
-    _hasLocationPermissionError = false;
 
     // 친구 위치 마커 정리
     clearFriendLocationMarkers();
@@ -156,7 +146,6 @@ class MapScreenController extends ChangeNotifier {
 
       // 서비스 초기화
       _mapService = MapService();
-      _routeService = RouteService();
 
       // 🔥 친구 위치 마커 서비스 초기화
       await _friendLocationMarkerService.loadMarkerIcon();
@@ -943,7 +932,6 @@ class MapScreenController extends ChangeNotifier {
   }
 
   void clearLocationError() {
-    _hasLocationPermissionError = false;
     notifyListeners();
   }
 

@@ -333,7 +333,7 @@ class RoomInfoSheet extends StatelessWidget {
                               '/directions',
                               arguments: roomData,
                             );
-                          } catch (e, stackTrace) {
+                          } catch (e) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Row(
@@ -387,7 +387,7 @@ class RoomInfoSheet extends StatelessWidget {
                               '/directions',
                               arguments: roomData,
                             );
-                          } catch (e, stackTrace) {
+                          } catch (e) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Row(

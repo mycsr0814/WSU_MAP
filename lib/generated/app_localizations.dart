@@ -2985,6 +2985,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{userName} has been removed from your friends list.'**
   String friendDeleteSuccessMessage(Object userName);
+
+  /// Error message shown when trying to view the location of an offline friend.
+  ///
+  /// In en, this message translates to:
+  /// **'This friend is currently offline.'**
+  String get friendOfflineError;
+
+  /// No description provided for @scheduleDeleteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Schedule'**
+  String get scheduleDeleteTitle;
+
+  /// No description provided for @scheduleDeleteSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Please decide carefully'**
+  String get scheduleDeleteSubtitle;
+
+  /// No description provided for @scheduleDeleteLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Schedule to delete'**
+  String get scheduleDeleteLabel;
+
+  /// No description provided for @scheduleDeleteDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'\"{title}\" class will be deleted from the schedule.\nDeleted schedules cannot be restored.'**
+  String scheduleDeleteDescription(Object title);
+
+  /// No description provided for @cancelButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get cancelButton;
+
+  /// No description provided for @deleteButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get deleteButton;
 }
 
 class _AppLocalizationsDelegate

@@ -56,7 +56,6 @@ class UnifiedNavigationController extends ChangeNotifier {
   // 네비게이션 데이터
   Building? _startBuilding;
   Building? _endBuilding;
-  NLatLng? _startLocation;
   
   // 단계별 데이터
   List<NLatLng>? _outdoorCoordinates;
@@ -115,7 +114,6 @@ class UnifiedNavigationController extends ChangeNotifier {
     try {
       debugPrint('🚀 현재 위치에서 네비게이션 시작: 내 위치 → ${toBuilding.name}');
       
-      _startLocation = currentLocation;
       _endBuilding = toBuilding;
       
       final response = await UnifiedPathService.getPathFromLocation(
@@ -441,7 +439,6 @@ Future<bool> onOutdoorNavigationCompleted() async {
     _currentPathResponse = null;
     _startBuilding = null;
     _endBuilding = null;
-    _startLocation = null;
     _outdoorCoordinates = null;
     _departureIndoorNodes = null;
     _arrivalIndoorNodes = null;

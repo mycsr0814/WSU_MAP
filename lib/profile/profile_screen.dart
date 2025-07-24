@@ -745,7 +745,7 @@ Widget _buildHeader(AppLocalizations l10n) {
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      l10n.logout_success ?? '로그아웃되었습니다.',
+                      l10n.logout_success,
                       style: const TextStyle(
                         fontWeight: FontWeight.w500,
                         fontSize: 14,

@@ -1,24 +1,22 @@
-// lib/models/search_result.dart - roomUser 포함 안전성 강화버전
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter_application_1/models/building.dart';
 
 enum SearchResultType {
-  building,  // 건물
-  room,      // 호실
+  building, // 건물
+  room, // 호실
 }
 
 class SearchResult {
   final SearchResultType type;
-  final String displayName;    // 표시될 이름 (예: "W19 101호")
-  final String searchText;     // 검색용 텍스트
-  final Building building;     // 기본 건물 정보
-  final String? roomNumber;    // 호실 번호 (호실인 경우)
-  final int? floorNumber;      // 층 번호 (호실인 경우)
+  final String displayName; // 표시될 이름 (예: "W19 101호")
+  final String searchText; // 검색용 텍스트
+  final Building building; // 기본 건물 정보
+  final String? roomNumber; // 호실 번호 (호실인 경우)
+  final int? floorNumber; // 층 번호 (호실인 경우)
   final String? roomDescription; // 호실 설명 (호실인 경우)
-  final List<String>? roomUser;  // ▶︎ 호실 사용자/담당자
-  final List<String>? roomPhone;  // 추가
-  final List<String>? roomEmail;  
+  final List<String>? roomUser; // ▶︎ 호실 사용자/담당자
+  final List<String>? roomPhone; // 추가
+  final List<String>? roomEmail;
 
   SearchResult({
     required this.type,
@@ -29,16 +27,14 @@ class SearchResult {
     this.floorNumber,
     this.roomDescription,
     this.roomUser,
-    this.roomPhone,    // 추가
+    this.roomPhone, // 추가
     this.roomEmail,
   });
 
   // 건물 검색 결과 생성
   factory SearchResult.fromBuilding(Building building) {
     try {
-      if (building == null) {
-        throw ArgumentError('Building cannot be null');
-      }
+      // building은 non-nullable이므로 null 체크 제거
 
       final buildingName = building.name.isNotEmpty ? building.name : '알 수 없는 건물';
       final searchTextParts = <String>[
@@ -58,9 +54,9 @@ class SearchResult {
       debugPrint('❌ SearchResult.fromBuilding 생성 오류: $e');
       return SearchResult(
         type: SearchResultType.building,
-        displayName: building?.name ?? '알 수 없는 건물',
-        searchText: building?.name ?? '알 수 없는 건물',
-        building: building ?? _createFallbackBuilding(),
+        displayName: building.name,
+        searchText: building.name,
+        building: building,
       );
     }
   }
@@ -72,13 +68,12 @@ class SearchResult {
     required int floorNumber,
     String? roomDescription,
     List<String>? roomUser,
-    List<String>? roomPhone,    // 추가
-    List<String>? roomEmail,    
+    List<String>? roomPhone, // 추가
+    List<String>? roomEmail,
   }) {
     try {
-      if (building == null) {
-        throw ArgumentError('Building cannot be null');
-      }
+      // building은 non-nullable이므로 null 체크 제거
+
       if (roomNumber.isEmpty) {
         throw ArgumentError('Room number cannot be empty');
       }
@@ -108,28 +103,13 @@ class SearchResult {
         floorNumber: floorNumber,
         roomDescription: roomDescription,
         roomUser: roomUser,
-        roomPhone: roomPhone,   // 추가
-        roomEmail: roomEmail,  
+        roomPhone: roomPhone,
+        roomEmail: roomEmail,
       );
     } catch (e) {
       debugPrint('❌ SearchResult.fromRoom 생성 오류: $e');
       return SearchResult.fromBuilding(building);
     }
-  }
-
-  static Building _createFallbackBuilding() {
-    return Building(
-      name: '알 수 없는 건물',
-      info: '정보 없음',
-      lat: 0.0,
-      lng: 0.0,
-      category: '건물',
-      baseStatus: '알 수 없음',
-      hours: '',
-      phone: '',
-      imageUrl: '',
-      description: '오류로 인한 기본 건물',
-    );
   }
 
   bool get isBuilding {
@@ -143,8 +123,7 @@ class SearchResult {
 
   bool get isRoom {
     try {
-      return type == SearchResultType.room &&
-          roomNumber?.isNotEmpty == true;
+      return type == SearchResultType.room && roomNumber != null && roomNumber!.isNotEmpty;
     } catch (e) {
       debugPrint('❌ isRoom getter 오류: $e');
       return false;
@@ -156,7 +135,7 @@ class SearchResult {
       if (isRoom) {
         final buildingName = building.name.isNotEmpty ? building.name : '알 수 없는 건물';
         final floor = floorNumber != null && floorNumber! > 0 ? '${floorNumber}층 ' : '';
-        final room = roomNumber?.isNotEmpty == true ? '${roomNumber}호' : '알 수 없는 호실';
+        final room = roomNumber != null && roomNumber!.isNotEmpty ? '${roomNumber}호' : '알 수 없는 호실';
         return '$buildingName $floor$room';
       }
       return displayName.isNotEmpty ? displayName : '알 수 없는 건물';
@@ -173,15 +152,16 @@ class SearchResult {
 
       if (building.name.isNotEmpty) parts.add(building.name.toLowerCase());
       if (displayName.isNotEmpty) parts.add(displayName.toLowerCase());
-      if (roomNumber?.isNotEmpty == true) parts.add(roomNumber!.toLowerCase());
-      if (roomDescription?.isNotEmpty == true) parts.add(roomDescription!.toLowerCase());
-      // roomUser도 추가
+      if (roomNumber != null && roomNumber!.isNotEmpty) parts.add(roomNumber!.toLowerCase());
+      if (roomDescription != null && roomDescription!.isNotEmpty) parts.add(roomDescription!.toLowerCase());
+
       if (roomUser != null && roomUser!.isNotEmpty) {
         parts.add(roomUser!
             .where((user) => user.isNotEmpty)
             .map((user) => user.toLowerCase())
             .join(' '));
       }
+
       return parts.join(' ');
     } catch (e) {
       debugPrint('❌ searchableText getter 오류: $e');
@@ -193,14 +173,12 @@ class SearchResult {
     try {
       if (isRoom) {
         final buildingName = building.name.isNotEmpty ? building.name : '알 수 없는 건물';
-        final roomInfo = roomNumber?.isNotEmpty == true ? roomNumber! : '알 수 없는 호실';
+        final roomInfo = roomNumber != null && roomNumber!.isNotEmpty ? roomNumber! : '알 수 없는 호실';
         final description = 'floor:${floorNumber ?? 1},room:$roomInfo';
 
         return Building(
           name: buildingName,
-          info: roomDescription?.isNotEmpty == true
-              ? roomDescription!
-              : '$buildingName ${roomInfo}호',
+          info: roomDescription?.isNotEmpty == true ? roomDescription! : '$buildingName ${roomInfo}호',
           lat: building.lat,
           lng: building.lng,
           category: building.category.isNotEmpty ? building.category : '강의실',
@@ -263,15 +241,13 @@ class SearchResult {
 
 // 검색 결과 그룹화 확장
 extension SearchResultGrouping on List<SearchResult> {
-
   Map<Building, List<SearchResult>> groupByBuilding() {
     final Map<Building, List<SearchResult>> grouped = {};
 
     try {
       for (final result in this) {
-        if (result.building != null) {
-          grouped.putIfAbsent(result.building, () => []).add(result);
-        }
+        // building은 non-nullable이므로 null 체크 제거
+        grouped.putIfAbsent(result.building, () => []).add(result);
       }
     } catch (e) {
       debugPrint('❌ groupByBuilding 오류: $e');
@@ -312,7 +288,7 @@ extension SearchResultGrouping on List<SearchResult> {
 
   List<SearchResult> fromBuilding(Building building) {
     try {
-      if (building == null) return [];
+      // building은 non-nullable이므로 null 체크 제거
       return where((result) => result.building == building).toList();
     } catch (e) {
       debugPrint('❌ fromBuilding 필터링 오류: $e');
