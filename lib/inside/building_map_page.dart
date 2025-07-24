@@ -1962,23 +1962,9 @@ void _monitorPathDisplayStatus() {
                 
                 if (_showTransitionPrompt)
                   _buildTransitionPrompt(),
-
-                // 🔥 우측 상단 - 디버그 정보 표시
-                if (_isNavigationMode && (_matchedNodes.isNotEmpty || _failedNodes.isNotEmpty))
-                  Positioned(
-                    right: 16,
-                    top: 16,
-                    child: _buildDebugInfo(),
-                  ),
               ],
             ),
           ),
-          
-          if (!_isFloorListLoading && _error == null)
-            Container(
-              margin: const EdgeInsets.all(16),
-              child: _buildPathInfo(),
-            ),
         ],
       ),
     );
@@ -2073,29 +2059,7 @@ void _monitorPathDisplayStatus() {
 
   Widget _buildPathInfo() {
     if (_isNavigationMode) {
-      return Card(
-        elevation: 6,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        child: Padding(
-          padding: const EdgeInsets.all(12.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildNavigationPointInfo(
-                "출발", 
-                _getNavigationStartLabel(), 
-                Colors.green
-              ),
-              const Icon(Icons.arrow_forward_rounded, color: Colors.grey),
-              _buildNavigationPointInfo(
-                "도착", 
-                _getNavigationEndLabel(), 
-                Colors.blue
-              ),
-            ],
-          ),
-        ),
-      );
+      return const SizedBox.shrink(); // 네비게이션 모드에서는 아무것도 반환하지 않음
     }
     
     return Card(
