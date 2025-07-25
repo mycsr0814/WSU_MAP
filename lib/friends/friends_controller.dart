@@ -89,7 +89,35 @@ class FriendsController extends ChangeNotifier {
       case 'friend_logged_out':
         _handleFriendLoggedOut(message);
         break;
+
+      // 🔥 실시간 친구 위치 업데이트 처리
+      case 'friend_location_update':
+        _handleFriendLocationUpdate(message);
+        break;
     }
+  }
+
+  // 친구 위치 실시간 업데이트 핸들러
+  void _handleFriendLocationUpdate(Map<String, dynamic> message) {
+    final userId = message['userId'];
+    final x = message['x'];
+    final y = message['y'];
+    debugPrint('📍 친구 위치 실시간 업데이트: $userId ($x, $y)');
+    for (int i = 0; i < friends.length; i++) {
+      if (friends[i].userId == userId) {
+        friends[i] = Friend(
+          userId: friends[i].userId,
+          userName: friends[i].userName,
+          profileImage: friends[i].profileImage,
+          phone: friends[i].phone,
+          isLogin: friends[i].isLogin,
+          lastLocation: '$x,$y',
+        );
+        debugPrint('✅ ${friends[i].userName} 위치 갱신: $x, $y');
+        break;
+      }
+    }
+    notifyListeners();
   }
 
   // 🔌 연결 상태 변경 처리
