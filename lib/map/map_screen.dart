@@ -333,15 +333,15 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
               const SizedBox(height: 12),
               CategoryChips(
                 selectedCategory: _controller.selectedCategory,
-                onCategorySelected: (category, buildingNames) async {
-                  debugPrint('카테고리 선택: $category, 건물 이름들: $buildingNames');
+                onCategorySelected: (category, buildingInfoList) async {
+                  debugPrint('카테고리 선택: $category, 건물 정보들: $buildingInfoList');
                   // 1. 기존 마커 모두 제거
                   await _buildingMarkerService.clearAllMarkers();
                   // 2. 선택 상태 및 정보창 정리
                   _controller.clearSelectedBuilding();
                   _controller.closeInfoWindow(_infoWindowController);
                   // 3. 새 카테고리 마커만 추가
-                  _controller.selectCategoryByNames(category, buildingNames);
+                  _controller.selectCategoryByNames(category, buildingInfoList, context);
                 },
               ),
             ],

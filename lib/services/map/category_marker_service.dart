@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application_1/map/widgets/category_marker_widget.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 import '../../models/category_marker_data.dart';
+import 'package:flutter_application_1/map/widgets/building_floor_sheet.dart'; // Added import for BuildingFloorSheet
 
 class CategoryMarkerService {
   NaverMapController? _mapController;
@@ -42,7 +43,7 @@ class CategoryMarkerService {
   }
 
   /// 카테고리 아이콘 마커 표시 (항상 기존 마커 완전 제거 후 추가)
-  Future<void> showCategoryIconMarkers(List<CategoryMarkerData> categoryData) async {
+  Future<void> showCategoryIconMarkers(List<CategoryMarkerData> categoryData, BuildContext context) async {
     if (!_iconsPreGenerated) {
       debugPrint('❌ 마커 아이콘이 사전 생성되지 않음. preGenerateMarkerIcons() 먼저 호출 필요');
       return;
@@ -62,6 +63,16 @@ class CategoryMarkerService {
         );
         marker.setOnTapListener((marker) {
           debugPrint('카테고리 마커 클릭: ${data.buildingName} (${data.category})');
+          // 층 정보 바텀시트 띄우기
+          showModalBottomSheet(
+            context: context,
+            isScrollControlled: true,
+            backgroundColor: Colors.transparent,
+            builder: (context) => BuildingFloorSheet(
+              buildingName: data.buildingName,
+              floors: data.floors,
+            ),
+          );
         });
         if (_mapController != null) {
           await _mapController!.addOverlay(marker);

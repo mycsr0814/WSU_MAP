@@ -113,6 +113,11 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
     if (_startBuilding != null && _endBuilding != null) {
       _calculateRoutePreview();
     }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final locationManager = Provider.of<LocationManager>(context, listen: false);
+      locationManager.requestLocationQuickly(); // 언어 변경 후에도 위치 강제 갱신
+    });
   }
 
   void _handleRoomData(Map<String, dynamic> roomData) {
@@ -1157,6 +1162,7 @@ void _handleNavigationFailure() {
   @override
   @override
   Widget build(BuildContext context) {
+    final locationManager = Provider.of<LocationManager>(context); // 항상 최신 상태 구독
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       appBar: _buildAppBar(),
@@ -1615,13 +1621,11 @@ void _navigateToRoomDirectly(SearchResult result) {
 
   Widget _buildDirectionsView() {
     final l10n = AppLocalizations.of(context)!;
-
     return Stack(
       children: [
         Column(
           children: [
             const SizedBox(height: 16),
-
             // preset 및 호실 알림 메시지
             if (widget.presetStart != null ||
                 widget.presetEnd != null ||
@@ -1660,6 +1664,7 @@ void _navigateToRoomDirectly(SearchResult result) {
 
             // 출발지 입력
             _buildLocationInput(
+              isStartLocation: true,
               icon: Icons.my_location,
               iconColor: const Color(0xFF10B981),
               hint: l10n.enter_start_location,
@@ -1708,6 +1713,7 @@ void _navigateToRoomDirectly(SearchResult result) {
 
             // 도착지 입력
             _buildLocationInput(
+              isStartLocation: false,
               icon: Icons.location_on,
               iconColor: const Color(0xFFEF4444),
               hint: l10n.enter_end_location,
@@ -2061,15 +2067,14 @@ void _navigateToRoomDirectly(SearchResult result) {
   }
 
   Widget _buildLocationInput({
+    required bool isStartLocation,
     required IconData icon,
     required Color iconColor,
     required String hint,
     required Building? selectedBuilding,
-    Map<String, dynamic>? roomInfo,
+    required Map<String, dynamic>? roomInfo,
     required VoidCallback onTap,
   }) {
-    final bool isStartLocation = hint.contains('출발지');
-
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       decoration: BoxDecoration(
@@ -2165,8 +2170,8 @@ void _navigateToRoomDirectly(SearchResult result) {
             ),
           ),
 
-          // 출발지인 경우 "내 위치" 옵션 추가
-          if (isStartLocation && selectedBuilding == null) ...[
+          // 출발지인 경우 "내 위치" 옵션 항상 추가
+          if (isStartLocation) ...[
             const Divider(height: 1),
             Material(
               color: Colors.transparent,

@@ -173,8 +173,9 @@ class MapService {
   // 🔥 카테고리 관련 메서드들 - 서비스로 위임
   Future<void> showCategoryIconMarkers(
     List<CategoryMarkerData> categoryData,
+    BuildContext context,
   ) async {
-    await _categoryMarkerService.showCategoryIconMarkers(categoryData);
+    await _categoryMarkerService.showCategoryIconMarkers(categoryData, context);
   }
 
   Future<void> clearCategoryMarkers() async {

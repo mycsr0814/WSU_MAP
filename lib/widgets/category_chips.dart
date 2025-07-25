@@ -4,7 +4,7 @@ import 'package:flutter_application_1/data/category_fallback_data.dart';
 import 'package:flutter_application_1/utils/CategoryLocalization.dart';
 
 class CategoryChips extends StatefulWidget {
-  final Function(String, List<String>) onCategorySelected;
+  final Function(String, List<Map<String, dynamic>>) onCategorySelected;
   final String? selectedCategory;
 
   const CategoryChips({
@@ -92,15 +92,16 @@ class _CategoryChipsState extends State<CategoryChips> {
     }
   }
 
-  Future<List<String>> _getCategoryBuildingNames(String category) async {
+  Future<List<Map<String, dynamic>>> _getCategoryBuildingInfoList(String category) async {
     try {
-      debugPrint('🎯 getCategoryBuildingNames 호출: $category (서버 데이터: $_useServerData)');
+      debugPrint('🎯 getCategoryBuildingInfoList 호출: $category (서버 데이터: $_useServerData)');
       if (_useServerData) {
         try {
-          final buildingNames = await CategoryApiService.getCategoryBuildingNames(category);
-          if (buildingNames.isNotEmpty) {
-            debugPrint('🏢 서버에서 건물 목록 반환: $buildingNames');
-            return buildingNames;
+          // 서버에서 [{Building_Name, Floor_Numbers}] 형태로 받아온다고 가정
+          final response = await CategoryApiService.getCategoryBuildingInfoList(category);
+          if (response.isNotEmpty) {
+            debugPrint('🏢 서버에서 건물+층 목록 반환: $response');
+            return response;
           } else {
             debugPrint('⚠️ 서버에서 해당 카테고리의 건물을 찾지 못함, fallback 사용');
           }
@@ -111,7 +112,8 @@ class _CategoryChipsState extends State<CategoryChips> {
       debugPrint('🔄 Fallback 데이터에서 건물 목록 조회...');
       final buildings = CategoryFallbackData.getBuildingsByCategory(category);
       debugPrint('🏢 Fallback에서 건물 목록 반환: $buildings');
-      return buildings;
+      // fallback은 층 정보 없이 건물명만 있으므로, floors는 빈 배열로 처리
+      return buildings.map((name) => {'Building_Name': name, 'Floor_Numbers': <String>[]}).toList();
     } catch (e) {
       debugPrint('❌ 카테고리 건물 조회 완전 실패: $e');
       return [];
@@ -152,16 +154,16 @@ class _CategoryChipsState extends State<CategoryChips> {
     try {
       debugPrint('📡 API 호출 시작: $category');
 
-      final buildingNames = await _getCategoryBuildingNames(category);
+      final buildingInfoList = await _getCategoryBuildingInfoList(category);
 
-      debugPrint('📡 API 호출 완료: $category, 건물 수: ${buildingNames.length}');
-      debugPrint('📍 건물 이름 목록: $buildingNames');
+      debugPrint('📡 API 호출 완료: $category, 건물 수: ${buildingInfoList.length}');
+      debugPrint('📍 건물+층 목록: $buildingInfoList');
 
       setState(() {
         _isLoading = false;
       });
 
-      widget.onCategorySelected(category, buildingNames);
+      widget.onCategorySelected(category, buildingInfoList);
     } catch (e) {
       debugPrint('❌ API 호출 오류: $e');
       setState(() {

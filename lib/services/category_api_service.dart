@@ -158,6 +158,48 @@ class CategoryApiService {
     }
   }
 
+  /// 🔥 카테고리별 건물+층 정보 조회 (서버에서 [{Building_Name, Floor_Numbers}] 형태)
+  static Future<List<Map<String, dynamic>>> getCategoryBuildingInfoList(String categoryId, {bool forceRefresh = false}) async {
+    try {
+      debugPrint('🎯 getCategoryBuildingInfoList 호출: $categoryId');
+      final isConnected = await _checkConnection();
+      if (!isConnected) {
+        debugPrint('⚠️ 서버 연결 불가, fallback 데이터에서 건물 조회');
+        final fallback = CategoryFallbackData.getBuildingsByCategory(categoryId);
+        return fallback.map((name) => {'Building_Name': name, 'Floor_Numbers': <String>[]}).toList();
+      }
+      final categoryParam = _getKoreanCategoryIfExists(categoryId);
+      // ✅ 경로를 /category/{카테고리명} 으로 수정
+      final response = await http.get(
+        Uri.parse('$baseUrl/${Uri.encodeComponent(categoryParam)}'),
+        headers: {'Content-Type': 'application/json'},
+      ).timeout(const Duration(seconds: 8));
+      debugPrint('📡 getCategoryBuildingInfoList 응답: ${response.statusCode}');
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        List<Map<String, dynamic>> result = [];
+        for (var item in data) {
+          if (item is Map<String, dynamic> && item.containsKey('Building_Name')) {
+            result.add({
+              'Building_Name': item['Building_Name'],
+              'Floor_Numbers': (item['Floor_Numbers'] as List<dynamic>? ?? []).map((e) => e.toString()).toList(),
+            });
+          }
+        }
+        debugPrint('🏢 서버에서 건물+층 목록 조회 성공: $result');
+        return result;
+      } else {
+        debugPrint('❌ 서버 응답 오류: ${response.statusCode}, fallback 사용');
+        final fallback = CategoryFallbackData.getBuildingsByCategory(categoryId);
+        return fallback.map((name) => {'Building_Name': name, 'Floor_Numbers': <String>[]}).toList();
+      }
+    } catch (e) {
+      debugPrint('🚨 getCategoryBuildingInfoList 에러: $e, fallback 사용');
+      final fallback = CategoryFallbackData.getBuildingsByCategory(categoryId);
+      return fallback.map((name) => {'Building_Name': name, 'Floor_Numbers': <String>[]}).toList();
+    }
+  }
+
   /// 🧹 캐시 명시적 삭제
   static void clearCache() {
     _cachedCategories = null;

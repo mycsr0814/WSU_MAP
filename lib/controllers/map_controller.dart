@@ -206,8 +206,12 @@ class MapScreenController extends ChangeNotifier {
 
   void _onLocaleChanged(Locale newLocale) {
     debugPrint('언어 변경으로 인한 마커 재생성 시작');
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _refreshBuildingMarkers();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _refreshBuildingMarkers();
+      // 언어 변경 시 마커가 숨겨져 있으면 다시 보이게
+      _showAllBuildingMarkers();
+      // 내 위치도 다시 표시
+      await moveToMyLocation();
     });
   }
 
@@ -524,13 +528,13 @@ class MapScreenController extends ChangeNotifier {
   /// 🔥 건물 이름 목록으로 카테고리 아이콘 마커 표시 - BuildingRepository 사용
   Future<void> selectCategoryByNames(
     String category,
-    List<String> buildingNames,
+    List<Map<String, dynamic>> buildingInfoList,
+    BuildContext context,
   ) async {
     debugPrint('=== 카테고리 선택 요청: $category ===');
-    debugPrint('🔍 받은 건물 이름들: $buildingNames');
+    debugPrint('🔍 받은 건물 정보들: $buildingInfoList');
 
-    // 빈 배열이거나 빈 카테고리면 해제
-    if (category.isEmpty || buildingNames.isEmpty) {
+    if (category.isEmpty || buildingInfoList.isEmpty) {
       debugPrint('⚠️ 카테고리가 비어있음 - 해제 처리');
       await clearCategorySelection();
       return;
@@ -542,7 +546,6 @@ class MapScreenController extends ChangeNotifier {
       return;
     }
 
-    // 이전 카테고리 정리 (마커 완전 제거)
     if (_selectedCategory != null) {
       debugPrint('이전 카테고리($_selectedCategory) 정리');
       await _clearCategoryMarkers();
@@ -552,15 +555,14 @@ class MapScreenController extends ChangeNotifier {
     _isCategoryLoading = true;
     notifyListeners();
 
-    // MapService에 마지막 카테고리 선택 정보 저장
-    _mapService?.saveLastCategorySelection(category, buildingNames);
+    _mapService?.saveLastCategorySelection(category, buildingInfoList.map((e) => e['Building_Name'] as String).toList());
 
     try {
       debugPrint('기존 건물 마커들 숨기기...');
-      _hideAllBuildingMarkers();
+      _hideAllBuildingMarkers(); // 반드시 빌딩 마커 숨기기
 
       debugPrint('카테고리 아이콘 마커들 표시...');
-      await _showCategoryIconMarkers(buildingNames, category);
+      await _showCategoryIconMarkers(buildingInfoList, category, context);
 
       debugPrint('✅ 카테고리 선택 완료: $category');
     } catch (e) {
@@ -574,17 +576,17 @@ class MapScreenController extends ChangeNotifier {
 
   /// 🔥 카테고리 아이콘 마커들 표시 - BuildingRepository 사용
   Future<void> _showCategoryIconMarkers(
-    List<String> buildingNames,
+    List<Map<String, dynamic>> buildingInfoList,
     String category,
+    BuildContext context,
   ) async {
     debugPrint('🔍 === 카테고리 매칭 디버깅 시작 ===');
     debugPrint('🔍 선택된 카테고리: $category');
-    debugPrint('🔍 API에서 받은 건물 이름들: $buildingNames');
+    debugPrint('🔍 API에서 받은 건물 정보들: $buildingInfoList');
 
     final allBuildings = _buildingRepository.allBuildings;
     debugPrint('🔍 전체 건물 데이터 개수: ${allBuildings.length}');
 
-    // BuildingRepository가 로딩되지 않았으면 대기 (재귀적 재시도)
     if (!_buildingRepository.isLoaded || allBuildings.length <= 1) {
       debugPrint('⏳ BuildingRepository 데이터 대기 중... 잠시 후 재시도');
       await Future.delayed(const Duration(seconds: 1));
@@ -592,20 +594,23 @@ class MapScreenController extends ChangeNotifier {
         await _buildingRepository.getAllBuildings();
         if (_buildingRepository.isLoaded &&
             _buildingRepository.allBuildings.length > 1) {
-          await _showCategoryIconMarkers(buildingNames, category);
+          await _showCategoryIconMarkers(buildingInfoList, category, context);
         }
       }
       return;
     }
 
-    debugPrint('🔍 카테고리 아이콘 마커 표시 시작: ${buildingNames.length}개');
+    debugPrint('🔍 카테고리 아이콘 마커 표시 시작: ${buildingInfoList.length}개');
 
     final categoryMarkerLocations = <CategoryMarkerData>[];
 
-    for (final buildingName in buildingNames) {
-      debugPrint('🔍 건물 검색 중: "$buildingName"');
+    for (final info in buildingInfoList) {
+      final buildingName = info['Building_Name'] as String? ?? '';
+      final floors = (info['Floor_Numbers'] as List<dynamic>? ?? []).map((e) => e.toString()).toList();
+      debugPrint('🔍 건물 검색 중: "$buildingName" (floors: $floors)');
       final building = _findBuildingByName(buildingName, allBuildings);
       if (building != null) {
+        debugPrint('✅ 마커 floors 전달: $floors');
         categoryMarkerLocations.add(
           CategoryMarkerData(
             buildingName: building.name,
@@ -613,15 +618,16 @@ class MapScreenController extends ChangeNotifier {
             lng: building.lng,
             category: category,
             icon: _getCategoryIcon(category),
+            floors: floors,
           ),
         );
-        debugPrint('✅ 카테고리 마커 추가: ${building.name} - $category 아이콘');
+        debugPrint('✅ 카테고리 마커 추가: ${building.name} - $category 아이콘, floors: $floors');
       }
     }
 
     debugPrint('🔍 === 매칭 결과 ===');
     debugPrint(
-      '🔍 총 매칭된 건물 수: ${categoryMarkerLocations.length}/${buildingNames.length}',
+      '🔍 총 매칭된 건물 수: ${categoryMarkerLocations.length}/${buildingInfoList.length}',
     );
 
     if (categoryMarkerLocations.isEmpty) {
@@ -631,7 +637,7 @@ class MapScreenController extends ChangeNotifier {
     }
 
     debugPrint('📍 카테고리 마커 표시 시작...');
-    await _mapService?.showCategoryIconMarkers(categoryMarkerLocations);
+    await _mapService?.showCategoryIconMarkers(categoryMarkerLocations, context);
 
     debugPrint('✅ 카테고리 아이콘 마커 표시 완료: ${categoryMarkerLocations.length}개');
     debugPrint('🔍 === 카테고리 매칭 디버깅 끝 ===');
@@ -689,9 +695,10 @@ class MapScreenController extends ChangeNotifier {
           [];
 
       if (savedBuildingNames.isNotEmpty) {
+        final infoList = savedBuildingNames.map((name) => {'Building_Name': name, 'Floor_Numbers': <String>[]}).toList();
         Future.microtask(
           () =>
-              _showCategoryIconMarkers(savedBuildingNames, _selectedCategory!),
+              _showCategoryIconMarkers(infoList, _selectedCategory!, _currentContext!),
         );
       }
     }
@@ -760,7 +767,7 @@ class MapScreenController extends ChangeNotifier {
     _selectedCategory = null;
     _isCategoryLoading = false;
     debugPrint('모든 건물 마커 다시 표시 시작...');
-    _showAllBuildingMarkers();
+    _showAllBuildingMarkers(); // 해제 시에만 빌딩 마커 다시 보이기
     debugPrint('✅ 카테고리 선택 해제 완료');
     notifyListeners();
   }
@@ -787,7 +794,8 @@ class MapScreenController extends ChangeNotifier {
     // 🔥 현재 선택된 카테고리가 있으면 재매칭
     if (_selectedCategory != null && _selectedCategory == category) {
       debugPrint('🔁 서버 데이터 도착 후 카테고리 재매칭: $_selectedCategory');
-      _showCategoryIconMarkers(buildingNames, category);
+      final infoList = buildingNames.map((name) => {'Building_Name': name, 'Floor_Numbers': <String>[]}).toList();
+      _showCategoryIconMarkers(infoList, category, _currentContext!);
     }
   }
 

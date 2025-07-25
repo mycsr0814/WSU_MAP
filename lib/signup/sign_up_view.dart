@@ -32,7 +32,6 @@ class SignUpView extends StatefulWidget {
 }
 
 class _SignUpViewState extends State<SignUpView> with TickerProviderStateMixin {
-  UserType userType = UserType.student;
   final usernameController = TextEditingController();
   final passwordController = TextEditingController();
   final confirmPasswordController = TextEditingController();
@@ -246,55 +245,7 @@ class _SignUpViewState extends State<SignUpView> with TickerProviderStateMixin {
                       ),
                       const SizedBox(height: 30),
 
-                      // 사용자 타입 선택
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              l10n.user_type,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF1E3A8A),
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            Container(
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(12),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.05),
-                                    blurRadius: 10,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                              child: ToggleButtons(
-                                isSelected: UserType.values.map((t) => t == userType).toList(),
-                                onPressed: userAuth.isLoading ? null : (idx) => setState(() => userType = UserType.values[idx]),
-                                borderRadius: BorderRadius.circular(12),
-                                selectedColor: Colors.white,
-                                fillColor: const Color(0xFF1E3A8A),
-                                color: const Color(0xFF64748B),
-                                constraints: const BoxConstraints(minHeight: 44, minWidth: 80),
-                                children: UserType.values
-                                    .map((type) => Padding(
-                                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                                          child: Text(
-                                            type.displayName(context),
-                                            style: const TextStyle(fontWeight: FontWeight.w500),
-                                          ),
-                                        ))
-                                    .toList(),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                      // 사용자 유형 선택 UI 제거
                       const SizedBox(height: 24),
 
                       // 회원가입 폼
@@ -349,13 +300,12 @@ class _SignUpViewState extends State<SignUpView> with TickerProviderStateMixin {
                             ),
                             
                             // 선택 입력 필드들
-                            if (userType != UserType.external)
-                              WoosongInputField(
-                                icon: Icons.numbers_outlined,
-                                label: '${l10n.student_number} (${l10n.optional})',
-                                controller: stuNumberController,
-                                hint: l10n.enter_student_number,
-                              ),
+                            WoosongInputField(
+                              icon: Icons.numbers_outlined,
+                              label: '${l10n.student_number} (${l10n.optional})',
+                              controller: stuNumberController,
+                              hint: l10n.enter_student_number,
+                            ),
                             WoosongInputField(
                               icon: Icons.email_outlined,
                               label: '${l10n.email} (${l10n.optional})',

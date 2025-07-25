@@ -1,6 +1,6 @@
 // lib/config/api_config.dart
 class ApiConfig {
-  static const String baseHost = 'http://3.25.114.88';
+  static const String baseHost = 'http://54.206.100.147';
   static const int buildingPort = 3000;
   static const int userPort = 3001;
 
