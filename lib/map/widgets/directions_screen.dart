@@ -521,11 +521,6 @@ Future<void> _processRouteResponse(UnifiedPathResponse? response) async {
       throw Exception('경로 계산 API 응답이 null입니다');
     }
     
-    // 🔥 응답 데이터 유효성 검사
-    if (response.result == null) {
-      throw Exception('응답의 result가 null입니다');
-    }
-    
     if (!mounted) {
       debugPrint('⚠️ 컴포넌트가 unmounted 상태입니다');
       return;

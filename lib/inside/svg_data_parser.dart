@@ -122,7 +122,7 @@ static List<String> _extractAllPossibleIds(XmlElement element) {
   
   // 2. 텍스트 콘텐츠
   if (element.name.local == 'text' || element.name.local == 'tspan') {
-    String? textContent = element.innerText?.trim();
+    String? textContent = element.innerText.trim();
     if (textContent != null && textContent.isNotEmpty) {
       ids.add(textContent);
       
@@ -446,123 +446,6 @@ static void _printDetailedNodeAnalysis(Map<String, Offset> nodes) {
     }
   });
 }
-
-
-
-
-  /// 요소에서 가장 적절한 ID 추출
-  static String? _getBestId(XmlElement element) {
-    // 우선순위에 따라 ID 추출
-    String? id = element.getAttribute('inkscape:label') ?? 
-                element.getAttribute('id') ??
-                element.getAttribute('name');
-    
-    // 텍스트 요소의 경우 내용도 확인
-    if ((id == null || !_isRealNodeId(id)) && 
-        (element.name.local == 'text' || element.name.local == 'tspan')) {
-      String? textContent = element.innerText?.trim();
-      if (textContent != null && _isRealNodeId(textContent)) {
-        id = textContent;
-      }
-    }
-    
-    return id;
-  }
-
-  /// 🔥 실제 노드 ID인지 확인 (가상 노드 제외)
-  /// 🔥 수정: 복도 노드(b1, b10 등) 포함하도록 개선
-static bool _isRealNodeId(String id) {
-  if (id.isEmpty || id.length > 30) return false;
-  
-  // 🔥 복도 노드 패턴 추가 (b1, b2, b10, b11 등)
-  if (RegExp(r'^b\d+$', caseSensitive: false).hasMatch(id)) {
-    print('✅ 복도 노드 발견: $id');
-    return true;
-  }
-  
-  // 호실 번호 패턴 (201, 202, R201, R202 등)
-  if (RegExp(r'^\d{3}$').hasMatch(id)) return true;
-  if (RegExp(r'^R\d{3}$').hasMatch(id)) return true;
-  
-  // 2자리 숫자 (28, 29 등)
-  if (RegExp(r'^\d{2}$').hasMatch(id)) return true;
-  if (RegExp(r'^R\d{2}$').hasMatch(id)) return true;
-  
-  // @ 포함 패턴 (층 정보 포함)
-  if (id.contains('@')) {
-    String baseId = id.split('@')[0];
-    return _isRealNodeId(baseId);
-  }
-  
-  // 🔥 입구/출구 노드 패턴 추가
-  if (RegExp(r'(entrance|enterence|exit)', caseSensitive: false).hasMatch(id)) {
-    print('✅ 입구/출구 노드 발견: $id');
-    return true;
-  }
-  
-  // 🔥 계단 노드 패턴 강화
-  if (RegExp(r'(stair|elevator|계단|엘리베이터)', caseSensitive: false).hasMatch(id)) {
-    print('✅ 시설 노드 발견: $id');
-    return true;
-  }
-  
-  // 🔥 indoor/outdoor 패턴 추가
-  if (RegExp(r'(indoor|outdoor)', caseSensitive: false).hasMatch(id)) {
-    print('✅ 실내/실외 노드 발견: $id');
-    return true;
-  }
-  
-  // 특수 노드 패턴
-  if (RegExp(r'^[NnPpSs]\d+$').hasMatch(id)) return true;
-  
-  return false;
-}
-
-  /// 요소에서 실제 좌표 추출
-  static Offset? _extractRealOffset(XmlElement element) {
-    try {
-      switch (element.name.local) {
-        case 'rect':
-          final x = double.tryParse(element.getAttribute('x') ?? '');
-          final y = double.tryParse(element.getAttribute('y') ?? '');
-          final width = double.tryParse(element.getAttribute('width') ?? '');
-          final height = double.tryParse(element.getAttribute('height') ?? '');
-          
-          if (x != null && y != null && width != null && height != null) {
-            return Offset(x + width / 2, y + height / 2);
-          }
-          break;
-          
-        case 'circle':
-          final cx = double.tryParse(element.getAttribute('cx') ?? '');
-          final cy = double.tryParse(element.getAttribute('cy') ?? '');
-          if (cx != null && cy != null) {
-            return Offset(cx, cy);
-          }
-          break;
-          
-        case 'path':
-          final d = element.getAttribute('d');
-          if (d != null && d.isNotEmpty) {
-            return _extractPathCenter(d);
-          }
-          break;
-          
-        case 'text':
-        case 'tspan':
-          final x = double.tryParse(element.getAttribute('x') ?? '');
-          final y = double.tryParse(element.getAttribute('y') ?? '');
-          if (x != null && y != null) {
-            return Offset(x, y);
-          }
-          break;
-      }
-    } catch (e) {
-      print('❌ 좌표 추출 오류: ${element.name.local} - $e');
-    }
-    
-    return null;
-  }
 
   /// Path에서 중심점 추출
   static Offset? _extractPathCenter(String pathData) {

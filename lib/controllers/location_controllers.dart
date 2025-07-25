@@ -345,11 +345,8 @@ class LocationController extends ChangeNotifier {
   /// 원형 위치 마커 추가 (정확도 표시) - ID 추적 (fallback용) - 작은 크기
   Future<void> _addLocationCircle(NLatLng location, double? accuracy) async {
     try {
-      // 🔥 원 크기 줄이기: 기존 5.0~100.0 → 3.0~15.0
-      final circleRadius = accuracy != null && accuracy > 0
-          ? accuracy.clamp(3.0, 10.0) // 최대 15미터로 제한
-          : 5.0; // 기본값도 8미터로 축소
-
+      // 원 크기 고정: 항상 20m
+      final circleRadius = 20.0;
       final circleId =
           'my_location_circle_${DateTime.now().millisecondsSinceEpoch}';
       _myLocationCircle = NCircleOverlay(
@@ -358,14 +355,12 @@ class LocationController extends ChangeNotifier {
         radius: circleRadius,
         color: const Color(
           0xFF1E3A8A,
-        ).withOpacity(0.2), // 🔥 투명도도 줄임 (0.3 → 0.2)
+        ).withOpacity(0.2),
         outlineColor: const Color(0xFF1E3A8A),
-        outlineWidth: 1.5, // 🔥 테두리도 얇게 (2 → 1.5)
+        outlineWidth: 1.5,
       );
-
       await _mapController!.addOverlay(_myLocationCircle!);
-      _locationOverlayIds.add(circleId); // 🔥 ID 추적
-
+      _locationOverlayIds.add(circleId);
       debugPrint('✅ 작은 위치 원형 마커 추가 (반지름: ${circleRadius}m, ID: $circleId)');
     } catch (e) {
       debugPrint('❌ 위치 원형 마커 추가 실패: $e');

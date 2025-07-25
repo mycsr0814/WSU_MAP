@@ -322,12 +322,6 @@ class IntegratedSearchService {
       try {
         roomList = await apiService.fetchRoomsByBuilding(apiBuildingName);
         
-        // 🔥 null 체크 및 빈 리스트 체크
-        if (roomList == null) {
-          debugPrint('⚠️ API 응답이 null: $apiBuildingName');
-          roomList = [];
-        }
-        
         // 🔥 결과를 캐시에 저장
         if (roomList.isNotEmpty) {
           _cacheRooms(apiBuildingName, roomList);
@@ -399,12 +393,6 @@ class IntegratedSearchService {
       try {
         final apiService = ApiService();
         allRooms = await apiService.fetchAllRooms();
-        
-        // 🔥 null 체크
-        if (allRooms == null) {
-          debugPrint('⚠️ 전체 호실 API 응답이 null');
-          allRooms = [];
-        }
         
         if (allRooms.isNotEmpty) {
           _cacheRooms('ALL_ROOMS', allRooms);

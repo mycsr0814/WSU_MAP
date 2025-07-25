@@ -46,10 +46,6 @@ class _ProfileEditPageState extends State<ProfileEditPage> with TickerProviderSt
     ));
     
     _animationController.forward();
-    
-    // TODO: 기존 사용자 정보로 초기화
-    // _nameController.text = ...;
-    // _emailController.text = ...;
   }
 
   @override
@@ -70,7 +66,6 @@ class _ProfileEditPageState extends State<ProfileEditPage> with TickerProviderSt
       try {
         // 실제 저장 로직 구현
         final userAuth = Provider.of<UserAuth>(context, listen: false);
-        final name = _nameController.text.trim();
         final email = _emailController.text.trim();
         final phone = _phoneController.text.trim();
         final password = _passwordController.text.trim();
@@ -95,6 +90,7 @@ class _ProfileEditPageState extends State<ProfileEditPage> with TickerProviderSt
           );
           return;
         }
+        debugPrint('프로필 수정: email=$email, phone=$phone, password=${password.isNotEmpty}');
         final success = await userAuth.updateUserInfo(
           email: email,
           phone: phone,
@@ -236,37 +232,6 @@ class _ProfileEditPageState extends State<ProfileEditPage> with TickerProviderSt
                         ),
                         child: Column(
                           children: [
-                            // 이름 입력
-                            TextFormField(
-                              controller: _nameController,
-                              decoration: InputDecoration(
-                                labelText: l10n.name,
-                                prefixIcon: const Icon(
-                                  Icons.person_outline,
-                                  color: Color(0xFF1E3A8A),
-                                ),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: const BorderSide(
-                                    color: Color(0xFF1E3A8A),
-                                    width: 2,
-                                  ),
-                                ),
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 16,
-                                ),
-                              ),
-                              // 이름은 필수 아님
-                              validator: (value) {
-                                return null;
-                              },
-                              enabled: !_isLoading,
-                            ),
-                            const SizedBox(height: 20),
                             // 이메일 입력
                             TextFormField(
                               controller: _emailController,

@@ -84,18 +84,11 @@ class MapLocationService {
     double zoom = 16.0,
   }) async {
     if (_mapController == null) return;
-    
-    if (locationData.latitude == null || locationData.longitude == null) {
-      debugPrint('❌ 유효하지 않은 위치 데이터');
-      return;
-    }
-    
+    if (locationData.latitude == null || locationData.longitude == null) return;
     final location = NLatLng(locationData.latitude!, locationData.longitude!);
-    
     try {
-      debugPrint('🔄 내 위치 업데이트: ${location.latitude}, ${location.longitude}');
-      
-      // 기존 마커가 있으면 위치만 이동
+      debugPrint('🔄 내 위치 업데이트:  ${location.latitude}, ${location.longitude}');
+      // 이미 원이 있으면 위치만 이동
       if (_myLocationCircle != null) {
         _myLocationCircle!.setCenter(location);
         debugPrint('📍 원형 마커 위치 이동');
@@ -107,18 +100,12 @@ class MapLocationService {
         await showMyLocation(locationData, shouldMoveCamera: shouldMoveCamera);
         return;
       }
-      
-      // 위치 저장
       _currentDisplayLocation = location;
-      
-      // 필요한 경우 카메라 이동
       if (shouldMoveCamera) {
         await _moveCameraToLocation(location, zoom);
       }
-      
     } catch (e) {
       debugPrint('❌ 내 위치 업데이트 실패: $e');
-      // 실패 시 새로 생성
       await showMyLocation(locationData, shouldMoveCamera: shouldMoveCamera);
     }
   }
@@ -126,7 +113,7 @@ class MapLocationService {
   /// 원형 위치 마커 추가 (정확도 표시)
   Future<void> _addLocationCircle(NLatLng location, double? accuracy) async {
     try {
-      final circleRadius = accuracy != null && accuracy > 0 ? accuracy.clamp(5.0, 100.0) : 10.0;
+      final circleRadius = 20.0;
       
       final circleId = 'my_location_circle_${DateTime.now().millisecondsSinceEpoch}';
       _myLocationCircle = NCircleOverlay(
