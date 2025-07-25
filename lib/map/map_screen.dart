@@ -20,6 +20,8 @@ import '../generated/app_localizations.dart';
 import 'package:app_settings/app_settings.dart';
 import 'package:flutter_application_1/widgets/category_chips.dart';
 import '../auth/user_auth.dart';
+import 'package:flutter_application_1/managers/location_manager.dart';
+import 'package:flutter_naver_map/flutter_naver_map.dart';
 
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
@@ -299,93 +301,105 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
       });
     }
 
-    return Stack(
-      children: [
-        MapView(
-          onMapReady: (mapController) async {
-            await _controller.onMapReady(mapController);
-            debugPrint('🗺️ 지도 준비 완료!');
-            // ✅ 지도 준비 완료 후 내 위치로 자동 이동
-            await _controller.moveToMyLocation();
-          },
-          onTap: () => _controller.closeInfoWindow(_infoWindowController),
-        ),
-        if (_controller.isCategoryLoading) _buildCategoryLoadingIndicator(),
-        // 검색바와 카테고리 칩들
-        Positioned(
-          top: MediaQuery.of(context).padding.top + 10,
-          left: 16,
-          right: 16,
-          child: Column(
-            children: [
-              BuildingSearchBar(
-                onBuildingSelected: (building) {
-                  if (_controller.selectedCategory != null) {
-                    _controller.clearCategorySelection();
-                  }
-                  _controller.selectBuilding(building);
-                  if (mounted) _infoWindowController.show();
-                },
-                onSearchFocused: () =>
-                    _controller.closeInfoWindow(_infoWindowController),
-                onDirectionsTap: () => _openDirectionsScreen(),
-              ),
-              const SizedBox(height: 12),
-              CategoryChips(
-                selectedCategory: _controller.selectedCategory,
-                onCategorySelected: (category, buildingInfoList) async {
-                  debugPrint('카테고리 선택: $category, 건물 정보들: $buildingInfoList');
-                  // 1. 기존 마커 모두 제거
-                  await _buildingMarkerService.clearAllMarkers();
-                  // 2. 선택 상태 및 정보창 정리
-                  _controller.clearSelectedBuilding();
-                  _controller.closeInfoWindow(_infoWindowController);
-                  // 3. 새 카테고리 마커만 추가
-                  _controller.selectCategoryByNames(category, buildingInfoList, context);
-                },
-              ),
-            ],
-          ),
-        ),
-        // 네비게이션 상태 카드
-        if (_navigationManager.showNavigationStatus) ...[
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 27,
-            child: Center(
-              child: SizedBox(
-                width: MediaQuery.of(context).size.width * 0.7,
-                child: _buildNavigationStatusCard(),
+    return Consumer<LocationManager>(
+      builder: (context, locationManager, child) {
+        if (locationManager != null && locationManager.hasValidLocation) {
+          controller.updateUserLocationMarker(
+            NLatLng(
+              locationManager.currentLocation!.latitude!,
+              locationManager.currentLocation!.longitude!,
+            ),
+          );
+        }
+        return Stack(
+          children: [
+            MapView(
+              onMapReady: (mapController) async {
+                await _controller.onMapReady(mapController);
+                debugPrint('🗺️ 지도 준비 완료!');
+                // ✅ 지도 준비 완료 후 내 위치로 자동 이동
+                await _controller.moveToMyLocation();
+              },
+              onTap: () => _controller.closeInfoWindow(_infoWindowController),
+            ),
+            if (_controller.isCategoryLoading) _buildCategoryLoadingIndicator(),
+            // 검색바와 카테고리 칩들
+            Positioned(
+              top: MediaQuery.of(context).padding.top + 10,
+              left: 16,
+              right: 16,
+              child: Column(
+                children: [
+                  BuildingSearchBar(
+                    onBuildingSelected: (building) {
+                      if (_controller.selectedCategory != null) {
+                        _controller.clearCategorySelection();
+                      }
+                      _controller.selectBuilding(building);
+                      if (mounted) _infoWindowController.show();
+                    },
+                    onSearchFocused: () =>
+                        _controller.closeInfoWindow(_infoWindowController),
+                    onDirectionsTap: () => _openDirectionsScreen(),
+                  ),
+                  const SizedBox(height: 12),
+                  CategoryChips(
+                    selectedCategory: _controller.selectedCategory,
+                    onCategorySelected: (category, buildingInfoList) async {
+                      debugPrint('카테고리 선택: $category, 건물 정보들: $buildingInfoList');
+                      // 1. 기존 마커 모두 제거
+                      await _buildingMarkerService.clearAllMarkers();
+                      // 2. 선택 상태 및 정보창 정리
+                      _controller.clearSelectedBuilding();
+                      _controller.closeInfoWindow(_infoWindowController);
+                      // 3. 새 카테고리 마커만 추가
+                      _controller.selectCategoryByNames(category, buildingInfoList, context);
+                    },
+                  ),
+                ],
               ),
             ),
-          ),
-        ],
-        // 경로 계산, 위치 에러, 경로 초기화 버튼 등 기타 UI
-        if (controller.isLoading &&
-            controller.startBuilding != null &&
-            controller.endBuilding != null)
-          _buildRouteLoadingIndicator(),
-        if (controller.hasLocationPermissionError) _buildLocationError(),
-        if (controller.hasActiveRoute &&
-            !_navigationManager.showNavigationStatus)
-          Positioned(
-            left: 16,
-            right: 100,
-            bottom: 30,
-            child: _buildClearNavigationButton(controller),
-          ),
-        // 우측 하단 컨트롤 버튼
-        Positioned(
-          right: 16,
-          bottom: 27,
-          child: MapControls(
-            controller: controller,
-            onMyLocationPressed: () => _controller.moveToMyLocation(),
-          ),
-        ),
-        _buildBuildingInfoWindow(controller),
-      ],
+            // 네비게이션 상태 카드
+            if (_navigationManager.showNavigationStatus) ...[
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 27,
+                child: Center(
+                  child: SizedBox(
+                    width: MediaQuery.of(context).size.width * 0.7,
+                    child: _buildNavigationStatusCard(),
+                  ),
+                ),
+              ),
+            ],
+            // 경로 계산, 위치 에러, 경로 초기화 버튼 등 기타 UI
+            if (controller.isLoading &&
+                controller.startBuilding != null &&
+                controller.endBuilding != null)
+              _buildRouteLoadingIndicator(),
+            if (controller.hasLocationPermissionError) _buildLocationError(),
+            if (controller.hasActiveRoute &&
+                !_navigationManager.showNavigationStatus)
+              Positioned(
+                left: 16,
+                right: 100,
+                bottom: 30,
+                child: _buildClearNavigationButton(controller),
+              ),
+            // 우측 하단 컨트롤 버튼
+            Positioned(
+              right: 16,
+              bottom: 27,
+              child: MapControls(
+                controller: controller,
+                onMyLocationPressed: () => _controller.moveToMyLocation(),
+              ),
+            ),
+            _buildBuildingInfoWindow(controller),
+          ],
+        );
+      },
     );
   }
 

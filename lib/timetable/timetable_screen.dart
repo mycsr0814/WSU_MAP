@@ -1456,11 +1456,8 @@ Widget _buildHeader() {
           ),
         ),
         builder: (context, fieldController, focusNode) {
-          if (controller != null) {
-            fieldController = controller;
-          }
           return TextFormField(
-            controller: fieldController,
+            controller: controller ?? fieldController,
             focusNode: focusNode,
             enabled: enabled,
             style: TextStyle(

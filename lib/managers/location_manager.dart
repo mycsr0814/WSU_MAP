@@ -45,7 +45,7 @@ class LocationManager extends ChangeNotifier {
   // 🔥 즉시 UI 갱신을 위한 플래그
   bool _needsImmediateUIUpdate = false;
   DateTime? _lastUIUpdateTime;
-  static const Duration _uiUpdateThrottle = Duration(milliseconds: 500);
+  static const Duration _uiUpdateThrottle = Duration(milliseconds: 100); // 더 빠르게
 
   // 캐시 관리
   DateTime? _lastLocationTime;
@@ -689,10 +689,18 @@ class LocationManager extends ChangeNotifier {
   }) {
     debugPrint('🔄 개선된 실시간 위치 추적 시작...');
 
+    // 위치 서비스 빠른 갱신 설정
+    _location.changeSettings(
+      interval: 1000, // 1초마다 위치 갱신
+      distanceFilter: 1, // 1m 이동마다 갱신
+      accuracy: loc.LocationAccuracy.high,
+    );
+
     _trackingSubscription?.cancel();
 
     _trackingSubscription = _location.onLocationChanged.listen(
       (loc.LocationData locationData) {
+        debugPrint('📍 위치 이벤트: ${locationData.latitude}, ${locationData.longitude}');
         if (_isLocationDataValid(locationData) &&
             isActualGPSLocation(locationData)) {
           currentLocation = locationData;

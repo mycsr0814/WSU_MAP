@@ -15,6 +15,7 @@ import 'generated/app_localizations.dart';
 import 'providers/app_language_provider.dart';
 import 'dart:io';
 import 'dart:async';
+import 'package:connectivity_plus/connectivity_plus.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -84,6 +85,7 @@ class _CampusNavigatorAppState extends State<CampusNavigatorApp>
 
   late final UserAuth _userAuth;
   late final LocationManager _locationManager;
+  late final StreamSubscription<List<ConnectivityResult>> _connectivitySubscription;
 
   @override
   void initState() {
@@ -94,6 +96,16 @@ class _CampusNavigatorAppState extends State<CampusNavigatorApp>
     _userAuth = Provider.of<UserAuth>(context, listen: false);
     _locationManager = Provider.of<LocationManager>(context, listen: false);
 
+    // 네트워크 상태 변화 감지 및 WebSocket 재연결
+    _connectivitySubscription = Connectivity().onConnectivityChanged.listen((List<ConnectivityResult> results) {
+      // 하나라도 연결된 네트워크가 있으면 재연결 시도
+      final hasConnection = results.any((r) => r != ConnectivityResult.none);
+      if (hasConnection && _userAuth.isLoggedIn && _userAuth.userId != null) {
+        WebSocketService().connect(_userAuth.userId!);
+        debugPrint('🌐 네트워크 변경 감지 - 웹소켓 재연결 시도');
+      }
+    });
+
     _initializeApp();
   }
 
@@ -101,6 +113,7 @@ class _CampusNavigatorAppState extends State<CampusNavigatorApp>
   void dispose() {
     _systemUIResetTimer?.cancel(); // 👈 타이머 정리
     WidgetsBinding.instance.removeObserver(this);
+    _connectivitySubscription.cancel();
     super.dispose();
   }
 
