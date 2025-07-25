@@ -139,7 +139,7 @@ class _UnifiedNavigationStepperPageState extends State<UnifiedNavigationStepperP
     return Scaffold(
       appBar: AppBar(
         title: Text(_getCurrentStepTitle()),
-        backgroundColor: currentStep.type == StepType.indoor ? Colors.indigo : Colors.blue,
+        backgroundColor: Colors.indigo, // 실내/실외 모두 동일 색상 적용
         elevation: 0,
         actions: [
           Center(
@@ -207,9 +207,7 @@ class _UnifiedNavigationStepperPageState extends State<UnifiedNavigationStepperP
             ElevatedButton(
               onPressed: _goToNextStep,
               style: ElevatedButton.styleFrom(
-                backgroundColor: currentStep.type == StepType.indoor 
-                    ? Colors.indigo 
-                    : Colors.blue,
+                backgroundColor: Colors.indigo, // 실내/실외 모두 동일 색상 적용
                 foregroundColor: Colors.white,
               ),
               child: const Text('다음'),

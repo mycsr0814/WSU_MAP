@@ -59,7 +59,7 @@ class WebSocketService {
     try {
       await disconnect(); // 기존 연결 정리
 
-      final wsUrl = 'ws://:3002/friend/ws';
+      final wsUrl = 'ws://54.206.100.147:3002/friend/ws';
       debugPrint('🔌 웹소켓 연결 시도: $wsUrl');
 
       _channel = WebSocketChannel.connect(
