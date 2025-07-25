@@ -10,6 +10,7 @@ import 'package:flutter_application_1/friends/friends_controller.dart';
 import 'package:flutter_application_1/generated/app_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_application_1/controllers/map_controller.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class FriendsScreen extends StatefulWidget {
   final String userId;
@@ -263,6 +264,10 @@ class _FriendsScreenState extends State<FriendsScreen>
                       friend.phone.isEmpty
                           ? AppLocalizations.of(context)!.noContactInfo
                           : friend.phone,
+                      isClickable: friend.phone.isNotEmpty,
+                      onTap: friend.phone.isNotEmpty
+                          ? () => _handlePhone(context, friend.phone)
+                          : null,
                     ),
                   ],
                 ),
@@ -375,45 +380,49 @@ class _FriendsScreenState extends State<FriendsScreen>
   }
 
   /// 상세 정보 행 위젯
-  Widget _buildDetailRow(IconData icon, String label, String value) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: const Color(0xFF1E3A8A).withOpacity(0.1),
-            borderRadius: BorderRadius.circular(8),
+  Widget _buildDetailRow(IconData icon, String label, String value, {bool isClickable = false, VoidCallback? onTap}) {
+    return InkWell(
+      onTap: isClickable ? onTap : null,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: const Color(0xFF1E3A8A).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, color: const Color(0xFF1E3A8A), size: 20),
           ),
-          child: Icon(icon, color: const Color(0xFF1E3A8A), size: 20),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey,
-                  fontWeight: FontWeight.w500,
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                value,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF1E3A8A),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: isClickable ? const Color(0xFF10B981) : const Color(0xFF1E3A8A),
+                    decoration: isClickable ? TextDecoration.underline : null,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -522,6 +531,29 @@ class _FriendsScreenState extends State<FriendsScreen>
       setModalState?.call(() {
         _isAddingFriend = false;
       });
+    }
+  }
+
+  void _handlePhone(BuildContext context, String phone) async {
+    HapticFeedback.lightImpact();
+    final uri = Uri.parse('tel:$phone');
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.error_outline, color: Colors.white, size: 20),
+              const SizedBox(width: 12),
+              const Expanded(child: Text('전화앱을 열 수 없습니다.')),
+            ],
+          ),
+          backgroundColor: const Color(0xFFEF4444),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        ),
+      );
     }
   }
 

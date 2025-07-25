@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../generated/app_localizations.dart';
+import 'package:provider/provider.dart';
+import '../auth/user_auth.dart';
 
 class ProfileEditPage extends StatefulWidget {
   const ProfileEditPage({super.key});
@@ -12,6 +14,9 @@ class _ProfileEditPageState extends State<ProfileEditPage> with TickerProviderSt
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
   
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
@@ -51,21 +56,52 @@ class _ProfileEditPageState extends State<ProfileEditPage> with TickerProviderSt
   void dispose() {
     _nameController.dispose();
     _emailController.dispose();
+    _phoneController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
     _animationController.dispose();
     super.dispose();
   }
 
   Future<void> _saveProfile() async {
     final l10n = AppLocalizations.of(context)!;
-    
     if (_formKey.currentState?.validate() ?? false) {
       setState(() => _isLoading = true);
-      
       try {
-        // TODO: 실제 저장 로직 구현
-        await Future.delayed(const Duration(seconds: 1)); // 시뮬레이션
-        
-        if (mounted) {
+        // 실제 저장 로직 구현
+        final userAuth = Provider.of<UserAuth>(context, listen: false);
+        final name = _nameController.text.trim();
+        final email = _emailController.text.trim();
+        final phone = _phoneController.text.trim();
+        final password = _passwordController.text.trim();
+        final confirmPassword = _confirmPasswordController.text.trim();
+        if (password.isNotEmpty && password != confirmPassword) {
+          setState(() => _isLoading = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  const Icon(Icons.error, color: Colors.white),
+                  const SizedBox(width: 8),
+                  Text(l10n.password_mismatch),
+                ],
+              ),
+              backgroundColor: Colors.red,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+          );
+          return;
+        }
+        final success = await userAuth.updateUserInfo(
+          email: email,
+          phone: phone,
+          password: password.isNotEmpty ? password : null,
+          context: context,
+        );
+        if (success && mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Row(
@@ -83,6 +119,23 @@ class _ProfileEditPageState extends State<ProfileEditPage> with TickerProviderSt
             ),
           );
           Navigator.pop(context);
+        } else if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  const Icon(Icons.error, color: Colors.white),
+                  const SizedBox(width: 8),
+                  Text(userAuth.lastError ?? l10n.update_error),
+                ],
+              ),
+              backgroundColor: Colors.red,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+          );
         }
       } catch (e) {
         if (mounted) {
@@ -207,16 +260,13 @@ class _ProfileEditPageState extends State<ProfileEditPage> with TickerProviderSt
                                   vertical: 16,
                                 ),
                               ),
+                              // 이름은 필수 아님
                               validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return l10n.name_required;
-                                }
                                 return null;
                               },
                               enabled: !_isLoading,
                             ),
                             const SizedBox(height: 20),
-
                             // 이메일 입력
                             TextFormField(
                               controller: _emailController,
@@ -242,13 +292,113 @@ class _ProfileEditPageState extends State<ProfileEditPage> with TickerProviderSt
                                 ),
                               ),
                               keyboardType: TextInputType.emailAddress,
+                              // 이메일은 필수 아님, 입력 시만 형식 체크
                               validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return l10n.email_required;
-                                }
-                                if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
-                                    .hasMatch(value)) {
+                                if (value != null && value.isNotEmpty && !RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
                                   return '올바른 이메일 형식을 입력하세요';
+                                }
+                                return null;
+                              },
+                              enabled: !_isLoading,
+                            ),
+                            const SizedBox(height: 20),
+                            // 전화번호 입력
+                            TextFormField(
+                              controller: _phoneController,
+                              decoration: InputDecoration(
+                                labelText: l10n.phone,
+                                prefixIcon: const Icon(
+                                  Icons.phone_outlined,
+                                  color: Color(0xFF1E3A8A),
+                                ),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: const BorderSide(
+                                    color: Color(0xFF1E3A8A),
+                                    width: 2,
+                                  ),
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 16,
+                                ),
+                              ),
+                              keyboardType: TextInputType.phone,
+                              // 전화번호도 필수 아님, 입력 시만 형식 체크
+                              validator: (value) {
+                                if (value != null && value.isNotEmpty && !RegExp(r'^010[-]?\d{4}[-]?\d{4}$').hasMatch(value)) {
+                                  return '올바른 전화번호 형식을 입력하세요';
+                                }
+                                return null;
+                              },
+                              enabled: !_isLoading,
+                            ),
+                            const SizedBox(height: 20),
+                            // 비밀번호 입력
+                            TextFormField(
+                              controller: _passwordController,
+                              decoration: InputDecoration(
+                                labelText: l10n.password,
+                                prefixIcon: const Icon(
+                                  Icons.lock_outline,
+                                  color: Color(0xFF1E3A8A),
+                                ),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: const BorderSide(
+                                    color: Color(0xFF1E3A8A),
+                                    width: 2,
+                                  ),
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 16,
+                                ),
+                              ),
+                              obscureText: true,
+                              validator: (value) {
+                                if (value != null && value.isNotEmpty && value.length < 6) {
+                                  return l10n.password_too_short;
+                                }
+                                return null;
+                              },
+                              enabled: !_isLoading,
+                            ),
+                            const SizedBox(height: 20),
+                            // 비밀번호 확인 입력
+                            TextFormField(
+                              controller: _confirmPasswordController,
+                              decoration: InputDecoration(
+                                labelText: l10n.confirm_password,
+                                prefixIcon: const Icon(
+                                  Icons.lock_outline,
+                                  color: Color(0xFF1E3A8A),
+                                ),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: const BorderSide(
+                                    color: Color(0xFF1E3A8A),
+                                    width: 2,
+                                  ),
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 16,
+                                ),
+                              ),
+                              obscureText: true,
+                              validator: (value) {
+                                if (_passwordController.text.isNotEmpty && value != _passwordController.text) {
+                                  return l10n.password_mismatch;
                                 }
                                 return null;
                               },
