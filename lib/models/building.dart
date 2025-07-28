@@ -11,6 +11,7 @@ class Building {
   final String hours;
   final String phone;
   final String? imageUrl;
+  final List<String>? imageUrls; // 서버에서 받아온 이미지 URL 배열
   final String description;
 
   const Building({
@@ -23,6 +24,7 @@ class Building {
     required this.hours,
     required this.phone,
     this.imageUrl,
+    this.imageUrls,
     required this.description,
   });
 
@@ -175,6 +177,19 @@ class Building {
     // status는 서버로부터 영어 키 혹은 상태 문자열로 받는다
     final String baseStatus = json['baseStatus'] ?? json['status'] ?? 'open'; // English key!
 
+    // imageUrls 파싱 - Image 필드가 배열로 오는 경우 처리
+    List<String>? imageUrls = null;
+    if (json['Image'] is List) {
+      imageUrls = List<String>.from(json['Image']).map((url) => url.toString()).toList();
+      print('🖼️ 서버 이미지 URL 배열: $imageUrls');
+    } else if (json['File'] is List) {
+      imageUrls = List<String>.from(json['File']).map((url) => url.toString()).toList();
+      print('🖼️ 서버 이미지 URL 배열 (File): $imageUrls');
+    } else if (json['imageUrls'] is List) {
+      imageUrls = List<String>.from(json['imageUrls']).map((url) => url.toString()).toList();
+      print('🖼️ 서버 이미지 URL 배열 (imageUrls): $imageUrls');
+    }
+
     return Building(
       name: buildingName,
       info: description,
@@ -184,7 +199,8 @@ class Building {
       baseStatus: baseStatus,
       hours: json['hours'] ?? '09:00 - 18:00',
       phone: json['phone'] ?? '042-821-5678',
-      imageUrl: json['File'] ?? json['imageUrl'],
+      imageUrl: imageUrls?.isNotEmpty == true ? imageUrls![0] : null, // 첫 번째 이미지를 기본 이미지로 사용
+      imageUrls: imageUrls,
       description: description,
     );
   } catch (e) {
@@ -200,6 +216,7 @@ class Building {
       hours: '09:00 - 18:00',
       phone: '042-821-5678',
       imageUrl: null,
+      imageUrls: null,
       description: '',
     );
   }
@@ -247,6 +264,7 @@ class Building {
       'hours': hours,
       'phone': phone,
       'imageUrl': imageUrl,
+      'imageUrls': imageUrls,
       'description': description,
     };
   }
@@ -256,7 +274,7 @@ class Building {
       'Building_Name': name,
       'Location': '($lat,$lng)',
       'Description': info,
-      'File': imageUrl,
+      'File': imageUrls ?? (imageUrl != null ? [imageUrl!] : []),
     };
   }
 
@@ -270,6 +288,7 @@ class Building {
     String? hours,
     String? phone,
     String? imageUrl,
+    List<String>? imageUrls,
     String? description,
   }) {
     return Building(
@@ -282,6 +301,7 @@ class Building {
       hours: hours ?? this.hours,
       phone: phone ?? this.phone,
       imageUrl: imageUrl ?? this.imageUrl,
+      imageUrls: imageUrls ?? this.imageUrls,
       description: description ?? this.description,
     );
   }

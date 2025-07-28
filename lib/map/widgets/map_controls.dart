@@ -27,6 +27,10 @@ class MapControls extends StatelessWidget {
               const SizedBox(height: 12),
             ],
 
+            // 🔥 친구 모두 보기 버튼
+            _buildShowAllFriendsButton(context),
+            const SizedBox(height: 12),
+
             // 기존 카테고리/건물 마커 토글 버튼
             _buildCompactControlButton(
               onPressed: () async {
@@ -50,6 +54,58 @@ class MapControls extends StatelessWidget {
           ],
         );
       },
+    );
+  }
+
+  /// 🔥 친구 모두 보기 버튼
+  Widget _buildShowAllFriendsButton(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () async {
+          HapticFeedback.lightImpact();
+
+          try {
+            // 모든 친구 위치 표시
+            await controller.showAllFriendLocations();
+          } catch (e) {
+            // 에러 메시지는 controller에서 처리됨
+            debugPrint('친구 모두 보기 실패: $e');
+          }
+        },
+        borderRadius: BorderRadius.circular(28),
+        child: Container(
+          width: 56,
+          height: 56,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(28),
+            border: Border.all(
+              color: const Color(0xFF10B981).withOpacity(0.3),
+              width: 2,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.08),
+                blurRadius: 16,
+                offset: const Offset(0, 4),
+              ),
+              BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: const Center(
+            child: Icon(
+              Icons.people,
+              color: Color(0xFF10B981),
+              size: 24,
+            ),
+          ),
+        ),
+      ),
     );
   }
 

@@ -12,6 +12,8 @@ import 'package:flutter_application_1/repositories/building_repository.dart';
 import 'package:flutter_application_1/services/map/friend_location_marker_service.dart';
 import 'package:flutter_application_1/friends/friend.dart';
 import 'package:flutter_application_1/core/result.dart';
+import 'package:flutter_application_1/friends/friends_controller.dart';
+import 'package:provider/provider.dart';
 
 class MapScreenController extends ChangeNotifier {
   MapService? _mapService;
@@ -400,6 +402,111 @@ class MapScreenController extends ChangeNotifier {
   /// 🔥 모든 친구 위치를 포함하는 영역으로 카메라 이동
   Future<void> moveCameraToAllFriends() async {
     await _friendLocationMarkerService.moveCameraToAllFriends();
+  }
+
+  /// 🔥 모든 친구 위치 표시
+  Future<void> showAllFriendLocations() async {
+    try {
+      debugPrint('=== 모든 친구 위치 표시 시작 ===');
+      
+      // 1. 지도 컨트롤러 확인
+      final mapController = _mapService?.getController();
+      if (mapController == null) {
+        debugPrint('❌ 지도 컨트롤러가 설정되지 않음');
+        throw Exception('지도가 아직 준비되지 않았습니다');
+      }
+
+      // 2. FriendsController 가져오기
+      final friendsController = _getFriendsController();
+      if (friendsController == null) {
+        debugPrint('❌ FriendsController를 찾을 수 없음');
+        throw Exception('친구 데이터에 접근할 수 없습니다');
+      }
+
+      // 3. 기존 친구 마커들 모두 제거
+      debugPrint('기존 친구 마커들 제거 중...');
+      await _friendLocationMarkerService.clearAllFriendLocationMarkers();
+
+      // 4. 모든 친구의 위치 마커 추가
+      debugPrint('모든 친구 위치 마커 추가 중...');
+      int addedCount = 0;
+      
+      for (final friend in friendsController.friends) {
+        if (friend.lastLocation.isNotEmpty) {
+          try {
+            await _friendLocationMarkerService.addFriendLocationMarker(friend);
+            addedCount++;
+            debugPrint('✅ 친구 위치 마커 추가: ${friend.userName}');
+          } catch (e) {
+            debugPrint('⚠️ 친구 위치 마커 추가 실패: ${friend.userName} - $e');
+          }
+        } else {
+          debugPrint('⚠️ 위치 정보 없음: ${friend.userName}');
+        }
+      }
+
+      debugPrint('✅ 모든 친구 위치 마커 표시 완료: $addedCount명');
+      debugPrint('=== 모든 친구 위치 표시 완료 ===');
+
+      // 5. UI 업데이트
+      notifyListeners();
+      
+      // 6. 성공 메시지 표시
+      if (_currentContext != null) {
+        ScaffoldMessenger.of(_currentContext!).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.people, color: Colors.white, size: 20),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    '친구 $addedCount명의 위치를 지도에 표시했습니다.',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w500,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: const Color(0xFF10B981),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('❌ 모든 친구 위치 표시 실패: $e');
+      debugPrint('=== 모든 친구 위치 표시 실패 ===');
+
+      // 사용자에게 알림
+      if (_currentContext != null) {
+        ScaffoldMessenger.of(_currentContext!).showSnackBar(
+          SnackBar(
+            content: Text('친구 위치를 표시할 수 없습니다: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+
+      throw Exception('친구 위치를 표시할 수 없습니다: $e');
+    }
+  }
+
+  /// 🔥 FriendsController 가져오기 (Provider를 통해)
+  FriendsController? _getFriendsController() {
+    try {
+      // Provider를 통해 FriendsController 가져오기
+      return Provider.of<FriendsController>(_currentContext!, listen: false);
+    } catch (e) {
+      debugPrint('❌ FriendsController 가져오기 실패: $e');
+      return null;
+    }
   }
 
   /// 🔥 현재 표시된 친구 위치 마커 개수

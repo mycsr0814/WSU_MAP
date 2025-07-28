@@ -110,7 +110,24 @@ class _BuildingInfoWindowState extends State<BuildingInfoWindow> {
   }
 
 Widget _buildContent(BuildContext context, AppLocalizations l10n) {
-  final imagePath = getImageForBuilding(widget.building.name);
+  // 서버 이미지가 있으면 사용, 없으면 로컬 이미지 사용
+  String? imagePath;
+  bool isNetworkImage = false;
+  
+  if (widget.building.imageUrls != null && widget.building.imageUrls!.isNotEmpty) {
+    // 서버에서 받아온 이미지 사용
+    imagePath = widget.building.imageUrls![0]; // 첫 번째 이미지 사용
+    isNetworkImage = true;
+  } else if (widget.building.imageUrl != null && widget.building.imageUrl!.isNotEmpty) {
+    // 단일 서버 이미지 사용
+    imagePath = widget.building.imageUrl!;
+    isNetworkImage = true;
+  } else {
+    // 로컬 이미지 사용
+    imagePath = getImageForBuilding(widget.building.name);
+    isNetworkImage = false;
+  }
+
   return Padding(
     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
     child: Column(
@@ -128,12 +145,41 @@ Widget _buildContent(BuildContext context, AppLocalizations l10n) {
                   children: [
                     Center(
                       child: InteractiveViewer(
-                        child: Image.asset(
-                          imagePath,
-                          fit: BoxFit.contain,
-                          width: MediaQuery.of(context).size.width,
-                          height: MediaQuery.of(context).size.height,
-                        ),
+                        child: isNetworkImage
+                            ? Image.network(
+                                imagePath!,
+                                fit: BoxFit.contain,
+                                width: MediaQuery.of(context).size.width,
+                                height: MediaQuery.of(context).size.height,
+                                loadingBuilder: (context, child, loadingProgress) {
+                                  if (loadingProgress == null) return child;
+                                  return Center(
+                                    child: CircularProgressIndicator(
+                                      value: loadingProgress.expectedTotalBytes != null
+                                          ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                                          : null,
+                                    ),
+                                  );
+                                },
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Center(
+                                    child: Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Icon(Icons.error, size: 48, color: Colors.grey),
+                                        SizedBox(height: 16),
+                                        Text('이미지를 불러올 수 없습니다', style: TextStyle(color: Colors.grey)),
+                                      ],
+                                    ),
+                                  );
+                                },
+                              )
+                            : Image.asset(
+                                imagePath!,
+                                fit: BoxFit.contain,
+                                width: MediaQuery.of(context).size.width,
+                                height: MediaQuery.of(context).size.height,
+                              ),
                       ),
                     ),
                     Positioned(
@@ -151,12 +197,49 @@ Widget _buildContent(BuildContext context, AppLocalizations l10n) {
           },
           child: ClipRRect(
             borderRadius: BorderRadius.circular(8),
-            child: Image.asset(
-              imagePath,
-              width: 56,
-              height: 56,
-              fit: BoxFit.cover,
-            ),
+            child: isNetworkImage
+                ? Image.network(
+                    imagePath!,
+                    width: 56,
+                    height: 56,
+                    fit: BoxFit.cover,
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return Container(
+                        width: 56,
+                        height: 56,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[200],
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Center(
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            value: loadingProgress.expectedTotalBytes != null
+                                ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                                : null,
+                          ),
+                        ),
+                      );
+                    },
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        width: 56,
+                        height: 56,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[200],
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Icon(Icons.error, color: Colors.grey),
+                      );
+                    },
+                  )
+                : Image.asset(
+                    imagePath!,
+                    width: 56,
+                    height: 56,
+                    fit: BoxFit.cover,
+                  ),
           ),
         ),
         const SizedBox(height: 12),
