@@ -22,8 +22,10 @@ class CategoryFallbackData {
   'printer': ['W1', 'W10', 'W12', 'W13', 'W16', 'W19', 'W5', 'W7'],
   'copier': ['W1', 'W10', 'W12', 'W13', 'W16', 'W19', 'W5', 'W7'],
 
-  // 금융
+  // 금융 (서버에서 지원하지 않으므로 fallback만 사용)
   'atm': ['W1', 'W16'],
+  'bank_atm': ['W1', 'W16'],
+  'bank': ['W1', 'W16'],
 
   // 안전시설
   'extinguisher': ['W1', 'W10', 'W11', 'W12', 'W13', 'W14', 'W15', 'W16',
@@ -41,9 +43,20 @@ class CategoryFallbackData {
   'post': ['W16'],
 };
 
-   /// 🔥 카테고리 목록 가져오기
+   /// 🔥 카테고리 목록 가져오기 (서버에서 지원하는 카테고리만)
   static List<String> getCategories() {
-    return categoryBuildingMap.keys.toList()..sort();
+    // ATM은 서버에서 "은행(atm)"으로 저장되어 있으므로 포함
+    final serverSupportedCategories = [
+      'cafe', 'restaurant', 'convenience', 'vending', 'water',
+      'printer', 'copier', 'library', 'bookstore', 'post',
+      'gym', 'fitness', 'lounge', 'extinguisher', 'atm'
+    ];
+    return serverSupportedCategories;
+  }
+
+  /// 🔥 ATM 전용 fallback 데이터 (서버에서 지원하지 않음)
+  static List<String> getAtmBuildings() {
+    return ['W1', 'W16'];
   }
 
   static List<String> getBuildingsByCategory(String category) {
@@ -94,7 +107,8 @@ class CategoryFallbackData {
     case 'copier':
       return Icons.content_copy;
     case 'atm':
-      return Icons.atm;
+    case 'bank_atm': return Icons.atm; // ATM 아이콘
+    case 'bank': return Icons.atm; // SVG의 bank ID도 ATM 아이콘
     case 'library':
       return Icons.local_library;
     case 'fitness':
@@ -103,9 +117,9 @@ class CategoryFallbackData {
     case 'lounge':
       return Icons.weekend;
     case 'extinguisher':
-      return Icons.fire_extinguisher;
+    case 'fire_extinguisher': return Icons.fire_extinguisher; // 🔥 소화기 추가
     case 'water':
-      return Icons.water_drop;
+    case 'water_purifier': return Icons.water_drop; // 🔥 정수기 추가
     case 'bookstore':
       return Icons.menu_book;
     case 'post':
@@ -144,13 +158,17 @@ class CategoryUtils {
     case 'vending': return 0xFF2196F3;
     case 'printer':
     case 'copier': return 0xFF9C27B0;
-    case 'atm': return 0xFF4CAF50;
+    case 'atm':
+    case 'bank_atm': return 0xFF4CAF50; // ATM 색상 (초록색)
+    case 'bank': return 0xFF4CAF50; // SVG의 bank ID도 ATM 색상
     case 'library': return 0xFF3F51B5;
     case 'fitness':
     case 'gym': return 0xFFFF9800;
     case 'lounge': return 0xFFE91E63;
-    case 'extinguisher': return 0xFFF44336;
-    case 'water': return 0xFF00BCD4;
+    case 'extinguisher':
+    case 'fire_extinguisher': return 0xFFF44336; // 🔥 소화기 추가
+    case 'water':
+    case 'water_purifier': return 0xFF00BCD4; // 🔥 정수기 추가
     case 'bookstore': return 0xFF673AB7;
     case 'post': return 0xFF4CAF50;
     default: return 0xFF757575;

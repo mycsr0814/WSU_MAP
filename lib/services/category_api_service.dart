@@ -162,6 +162,47 @@ class CategoryApiService {
   static Future<List<Map<String, dynamic>>> getCategoryBuildingInfoList(String categoryId, {bool forceRefresh = false}) async {
     try {
       debugPrint('🎯 getCategoryBuildingInfoList 호출: $categoryId');
+      
+      // ATM은 서버에서 "은행(atm)"으로 저장되어 있으므로 해당 이름으로 요청
+      if (categoryId == 'atm' || categoryId == 'bank_atm' || categoryId == 'bank') {
+        debugPrint('🏧 ATM 카테고리는 서버에서 "은행(atm)"으로 저장되어 있음');
+        final isConnected = await _checkConnection();
+        if (!isConnected) {
+          debugPrint('⚠️ 서버 연결 불가, ATM fallback 사용');
+          final atmBuildings = CategoryFallbackData.getAtmBuildings();
+          return atmBuildings.map((name) => {'Building_Name': name, 'Floor_Numbers': <String>[]}).toList();
+        }
+        
+        // 서버에 "은행(atm)"으로 요청
+        final response = await http.get(
+          Uri.parse('$baseUrl/${Uri.encodeComponent("은행(atm)")}'),
+          headers: {'Content-Type': 'application/json'},
+        ).timeout(const Duration(seconds: 8));
+        
+        debugPrint('📡 ATM 서버 응답: ${response.statusCode}');
+        if (response.statusCode == 200) {
+          final List<dynamic> data = json.decode(response.body);
+          List<Map<String, dynamic>> result = [];
+          for (var item in data) {
+            if (item is Map<String, dynamic> && item.containsKey('Building_Name')) {
+              result.add({
+                'Building_Name': item['Building_Name'],
+                'Floor_Numbers': (item['Floor_Numbers'] as List<dynamic>? ?? []).map((e) => e.toString()).toList(),
+              });
+            }
+          }
+          debugPrint('🏢 ATM 서버에서 건물+층 목록 조회 성공: $result');
+          if (result.isNotEmpty) {
+            return result;
+          }
+        }
+        
+        // 서버에서 데이터가 없으면 fallback 사용
+        debugPrint('⚠️ ATM 서버 데이터 없음, fallback 사용');
+        final atmBuildings = CategoryFallbackData.getAtmBuildings();
+        return atmBuildings.map((name) => {'Building_Name': name, 'Floor_Numbers': <String>[]}).toList();
+      }
+      
       final isConnected = await _checkConnection();
       if (!isConnected) {
         debugPrint('⚠️ 서버 연결 불가, fallback 데이터에서 건물 조회');
@@ -187,6 +228,11 @@ class CategoryApiService {
           }
         }
         debugPrint('🏢 서버에서 건물+층 목록 조회 성공: $result');
+        // 🔥 데이터가 비어 있으면 fallback 사용
+        if (result.isEmpty) {
+          final fallback = CategoryFallbackData.getBuildingsByCategory(categoryId);
+          return fallback.map((name) => {'Building_Name': name, 'Floor_Numbers': <String>[]}).toList();
+        }
         return result;
       } else {
         debugPrint('❌ 서버 응답 오류: ${response.statusCode}, fallback 사용');
@@ -209,11 +255,15 @@ class CategoryApiService {
 
   /// 🧠 ID에서 한글명 찾기 (없으면 그대로 반환)
   static String _getKoreanCategoryIfExists(String id) {
+    debugPrint('🔍 _getKoreanCategoryIfExists 호출: $id');
+    
     final map = CategoryNameMapper.koreanToId.entries.firstWhere(
       (entry) => entry.value == id,
       orElse: () => const MapEntry('', ''),
     );
-    return map.key.isNotEmpty ? map.key : id;
+    final result = map.key.isNotEmpty ? map.key : id;
+    debugPrint('🔍 _getKoreanCategoryIfExists 결과: $id → $result');
+    return result;
   }
 
   /// 🔄 fallback 호출

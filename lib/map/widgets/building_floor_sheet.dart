@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/inside/building_map_page.dart';
 
 class BuildingFloorSheet extends StatelessWidget {
   final String buildingName;
@@ -103,6 +104,21 @@ class BuildingFloorSheet extends StatelessWidget {
                           child: ListTile(
                             leading: Icon(Icons.layers, color: Colors.blue.shade400),
                             title: Text('${floor}층', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+                            onTap: () {
+                              debugPrint('🏢 층 선택: ${buildingName} ${floor}층');
+                              // 바텀시트 닫기
+                              Navigator.pop(context);
+                              // BuildingMapPage로 이동 (해당 층으로)
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => BuildingMapPage(
+                                    buildingName: buildingName,
+                                    targetFloorNumber: int.tryParse(floor),
+                                  ),
+                                ),
+                              );
+                            },
                           ),
                         ),
                       );
