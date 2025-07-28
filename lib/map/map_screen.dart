@@ -1,6 +1,7 @@
 // lib/map/map_screen.dart - 로그아웃/재로그인 마커 문제 해결 버전
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_application_1/controllers/location_controllers.dart';
 import 'package:flutter_application_1/friends/friends_screen.dart';
 import 'package:flutter_application_1/friends/friend.dart';
@@ -22,6 +23,9 @@ import 'package:flutter_application_1/widgets/category_chips.dart';
 import '../auth/user_auth.dart';
 import 'package:flutter_application_1/managers/location_manager.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
+import 'package:flutter_application_1/friends/friends_controller.dart';
+import 'package:flutter_application_1/map/building_data.dart';
+import 'package:flutter_application_1/models/building.dart';
 
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
@@ -105,6 +109,9 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
         _reinitializeMapForNewUser();
       }
     }
+
+    // 🔥 시간표에서 전달받은 건물 정보 처리
+    _handleBuildingInfoFromTimetable();
   }
 
   /// 🔥 새 사용자를 위한 맵 재초기화
@@ -246,6 +253,176 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
       print('길찾기 결과 받음: $result');
       _navigationManager.handleDirectionsResult(result, context);
     }
+  }
+
+  /// 🔥 시간표에서 전달받은 건물 정보 처리
+  void _handleBuildingInfoFromTimetable() {
+    final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    if (args != null && args.containsKey('showBuilding')) {
+      final buildingName = args['showBuilding'] as String;
+      final buildingInfo = args['buildingInfo'] as Map<String, dynamic>?;
+      
+      debugPrint('🏢 시간표에서 건물 정보 받음: $buildingName');
+      debugPrint('🏢 건물 상세 정보: $buildingInfo');
+      
+      // 지도가 준비된 후 건물 정보 표시
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _showBuildingFromTimetable(buildingName, buildingInfo);
+      });
+    }
+  }
+
+  /// 🔥 시간표에서 전달받은 건물 정보로 건물 선택 및 정보창 표시
+  Future<void> _showBuildingFromTimetable(String buildingName, Map<String, dynamic>? buildingInfo) async {
+    try {
+      debugPrint('🏢 시간표 건물 정보 표시 시작: $buildingName');
+      
+      // 1. 지도가 완전히 로드될 때까지 대기
+      int retryCount = 0;
+      while (!_controller.isMapReady && retryCount < 10) {
+        await Future.delayed(const Duration(milliseconds: 500));
+        retryCount++;
+        debugPrint('🗺️ 지도 로딩 대기 중... ($retryCount/10)');
+      }
+      
+      if (!_controller.isMapReady) {
+        debugPrint('❌ 지도 로딩 시간 초과');
+        return;
+      }
+      
+      // 2. 건물 데이터에서 해당 건물 찾기
+      final buildings = BuildingDataProvider.getBuildingData(context);
+      debugPrint('🏢 전체 건물 수: ${buildings.length}');
+      debugPrint('🏢 찾을 건물 이름: $buildingName');
+      
+      // 모든 건물 이름 출력 (디버깅용)
+      for (int i = 0; i < buildings.length; i++) {
+        debugPrint('🏢 건물 $i: ${buildings[i].name}');
+      }
+      
+      // 건물 이름 매칭 로직
+      Building? targetBuilding;
+      
+      // 1차: 정확한 이름 매칭
+      try {
+        targetBuilding = buildings.firstWhere(
+          (building) => building.name.toLowerCase() == buildingName.toLowerCase(),
+        );
+        debugPrint('✅ 정확한 이름 매칭 성공: ${targetBuilding.name}');
+      } catch (e) {
+        debugPrint('❌ 정확한 이름 매칭 실패: $e');
+      }
+      
+      // 2차: 건물 코드 매칭 (W1, W2 등)
+      if (targetBuilding == null) {
+        try {
+          final searchCode = _extractBuildingCode(buildingName);
+          debugPrint('🏢 추출된 건물 코드: $searchCode');
+          
+          targetBuilding = buildings.firstWhere(
+            (building) {
+              final buildingCode = _extractBuildingCode(building.name);
+              return buildingCode.toLowerCase() == searchCode.toLowerCase();
+            },
+          );
+          debugPrint('✅ 건물 코드 매칭 성공: ${targetBuilding.name}');
+        } catch (e) {
+          debugPrint('❌ 건물 코드 매칭 실패: $e');
+        }
+      }
+      
+      // 3차: 부분 매칭 (포함 관계)
+      if (targetBuilding == null) {
+        try {
+          targetBuilding = buildings.firstWhere(
+            (building) {
+              final buildingNameLower = building.name.toLowerCase();
+              final searchNameLower = buildingName.toLowerCase();
+              
+              return buildingNameLower.contains(searchNameLower) || 
+                     searchNameLower.contains(buildingNameLower);
+            },
+          );
+          debugPrint('✅ 부분 매칭 성공: ${targetBuilding.name}');
+        } catch (e) {
+          debugPrint('❌ 부분 매칭 실패: $e');
+        }
+      }
+      
+      // 4차: 첫 번째 건물 사용
+      if (targetBuilding == null) {
+        targetBuilding = buildings.first;
+        debugPrint('⚠️ 기본 건물 사용: ${targetBuilding.name}');
+      }
+      
+      debugPrint('🏢 최종 선택된 건물: ${targetBuilding.name}');
+      
+      // 3. 건물 선택
+      _controller.selectBuilding(targetBuilding);
+      
+      // 4. 잠시 후 정보창 표시 (지도 업데이트 대기)
+      await Future.delayed(const Duration(milliseconds: 1500));
+      
+      // 5. 정보창 표시
+      if (mounted) {
+        if (!_infoWindowController.isShowing) {
+          _infoWindowController.show();
+          debugPrint('✅ 정보창 표시됨');
+        } else {
+          debugPrint('ℹ️ 정보창이 이미 표시 중');
+        }
+      }
+      
+      // 6. 성공 메시지 표시
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.location_on, color: Colors.white, size: 20),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    buildingInfo != null 
+                        ? '${buildingInfo['name']} ${buildingInfo['floorNumber']}층 ${buildingInfo['roomName']}호 위치를 표시했습니다.'
+                        : '$buildingName 위치를 표시했습니다.',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w500,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: const Color(0xFF8B5CF6),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+      
+      debugPrint('✅ 시간표 건물 정보 표시 완료');
+    } catch (e) {
+      debugPrint('❌ 시간표 건물 정보 표시 실패: $e');
+    }
+  }
+
+  /// 🔥 건물명에서 건물 코드 추출 헬퍼 메서드
+  String _extractBuildingCode(String buildingName) {
+    final regex = RegExp(r'\(([^)]+)\)');
+    final match = regex.firstMatch(buildingName);
+    if (match != null) {
+      return match.group(1)!;
+    }
+    final spaceSplit = buildingName.trim().split(' ');
+    if (spaceSplit.isNotEmpty &&
+        RegExp(r'^[A-Za-z0-9\-]+$').hasMatch(spaceSplit[0])) {
+      return spaceSplit[0];
+    }
+    return buildingName;
   }
 
   @override

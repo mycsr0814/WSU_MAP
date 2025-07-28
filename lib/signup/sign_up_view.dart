@@ -300,12 +300,12 @@ class _SignUpViewState extends State<SignUpView> with TickerProviderStateMixin {
                             ),
                             
                             // 선택 입력 필드들
-                            WoosongInputField(
-                              icon: Icons.numbers_outlined,
-                              label: '${l10n.student_number} (${l10n.optional})',
-                              controller: stuNumberController,
-                              hint: l10n.enter_student_number,
-                            ),
+                              WoosongInputField(
+                                icon: Icons.numbers_outlined,
+                                label: '${l10n.student_number} (${l10n.optional})',
+                                controller: stuNumberController,
+                                hint: l10n.enter_student_number,
+                              ),
                             WoosongInputField(
                               icon: Icons.email_outlined,
                               label: '${l10n.email} (${l10n.optional})',

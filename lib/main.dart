@@ -312,6 +312,7 @@ class _CampusNavigatorAppState extends State<CampusNavigatorApp>
             GlobalCupertinoLocalizations.delegate,
           ],
           routes: {
+            '/map': (context) => const MapScreen(),
             '/directions': (context) {
               final args =
                   ModalRoute.of(context)?.settings.arguments

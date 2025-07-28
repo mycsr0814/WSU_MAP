@@ -10,6 +10,7 @@ import 'package:flutter_application_1/services/websocket_service.dart'; // 🔥 
 import 'help_page.dart';
 import 'app_info_page.dart';
 import 'profile_edit_page.dart';
+import 'profile_action_page.dart'; // 🔥 ProfileActionPage 추가
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -135,112 +136,167 @@ Widget _buildHeader(AppLocalizations l10n) {
     UserAuth userAuth,
     AppLocalizations l10n,
   ) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF1E3A8A), Color(0xFF3B82F6)],
-        ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF1E3A8A).withOpacity(0.3),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
+    return InkWell(
+      borderRadius: BorderRadius.circular(20),
+      onTap: userAuth.isLoggedIn
+          ? () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => ProfileActionPage(userAuth: userAuth, l10n: l10n, onLogout: () => _handleLogout(userAuth), onDelete: () => _handleMenuTap(l10n.delete_account), onEdit: () => _handleMenuTap(l10n.edit_profile)),
+                ),
+              )
+          : null,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFF1E3A8A), Color(0xFF3B82F6)],
           ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 60,
-            height: 60,
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(30),
-              border: Border.all(
-                color: Colors.white.withOpacity(0.3),
-                width: 2,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF1E3A8A).withOpacity(0.3),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 60,
+              height: 60,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(30),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.3),
+                  width: 2,
+                ),
+              ),
+              child: Icon(
+                userAuth.currentUserIcon,
+                size: 28,
+                color: Colors.white,
               ),
             ),
-            child: Icon(
-              userAuth.currentUserIcon,
-              size: 28,
-              color: Colors.white,
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  userAuth.isLoggedIn
-                      ? userAuth.getCurrentUserDisplayName(context)
-                      : l10n.guest_user,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    // 🔥 여기가 핵심! 역할 대신 사용자 ID 표시
-                    userAuth.isLoggedIn && !userAuth.isGuest
-                        ? userAuth.userId ??
-                              l10n
-                                  .user // 실제 로그인 ID 표시
-                        : (userAuth.userRole?.displayName(context) ??
-                              l10n.guest_role), // 게스트는 기존처럼
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    userAuth.isLoggedIn
+                        ? userAuth.getCurrentUserDisplayName(context)
+                        : l10n.guest_user,
                     style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
                       color: Colors.white,
                     ),
                   ),
+                  const SizedBox(height: 4),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      userAuth.isLoggedIn && !userAuth.isGuest
+                          ? userAuth.userId ?? l10n.user
+                          : (userAuth.userRole?.displayName(context) ?? l10n.guest_role),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (userAuth.isLoggedIn)
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.check_circle,
+                  color: Colors.white,
+                  size: 20,
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showProfileActionSheet(BuildContext context, UserAuth userAuth, AppLocalizations l10n) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 24),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.edit_outlined, color: Color(0xFF1E3A8A)),
+                  title: Text(l10n.edit_profile, style: const TextStyle(fontWeight: FontWeight.w600)),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _handleMenuTap(l10n.edit_profile);
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.delete_outline, color: Colors.red),
+                  title: Text(l10n.delete_account, style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.red)),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _handleMenuTap(l10n.delete_account);
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.logout, color: Color(0xFF1E3A8A)),
+                  title: Text(l10n.logout, style: const TextStyle(fontWeight: FontWeight.w600)),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _handleLogout(userAuth);
+                  },
                 ),
               ],
             ),
           ),
-          if (userAuth.isLoggedIn)
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(
-                Icons.check_circle,
-                color: Colors.white,
-                size: 20,
-              ),
-            ),
-        ],
-      ),
+        );
+      },
     );
   }
 
   Widget _buildMenuList(UserAuth userAuth, AppLocalizations l10n) {
     final menuItems = [
-      if (!userAuth.isGuest)
-        {
-          'icon': Icons.edit_outlined,
-          'title': l10n.edit_profile,
-          'subtitle': l10n.edit_profile_subtitle,
-        },
       {
         'icon': Icons.help_outline,
         'title': l10n.help,
@@ -251,13 +307,6 @@ Widget _buildHeader(AppLocalizations l10n) {
         'title': l10n.app_info,
         'subtitle': l10n.app_info_subtitle,
       },
-      if (!userAuth.isGuest)
-        {
-          'icon': Icons.delete_outline,
-          'title': l10n.delete_account,
-          'subtitle': l10n.delete_account_subtitle,
-          'isDestructive': true,
-        },
     ];
 
     return Column(
@@ -271,8 +320,6 @@ Widget _buildHeader(AppLocalizations l10n) {
             onTap: () => _handleMenuTap(item['title'] as String),
           ),
         ),
-        const SizedBox(height: 24),
-        _buildLogoutButton(),
       ],
     );
   }

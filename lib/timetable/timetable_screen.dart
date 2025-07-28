@@ -1609,6 +1609,31 @@ Widget _buildHeader() {
     );
   }
 
+  void _showBuildingLocation(ScheduleItem item) {
+    debugPrint('🏢 시간표에서 위치 보기 버튼 클릭됨');
+    debugPrint('🏢 건물 이름: ${item.buildingName}');
+    debugPrint('🏢 층수: ${item.floorNumber}');
+    debugPrint('🏢 호실: ${item.roomName}');
+    debugPrint('🏢 전체 아이템 정보: $item');
+    
+    // 메인 지도 화면으로 이동하면서 건물 정보를 전달
+    Navigator.pushNamedAndRemoveUntil(
+      context,
+      '/map',
+      (route) => false, // 모든 이전 화면 제거
+      arguments: {
+        'showBuilding': item.buildingName,
+        'buildingInfo': {
+          'name': item.buildingName,
+          'floorNumber': item.floorNumber,
+          'roomName': item.roomName,
+        }
+      },
+    );
+    
+    debugPrint('🏢 네비게이션 완료');
+  }
+
   void _showScheduleDetail(ScheduleItem item) {
     final l10n = AppLocalizations.of(context);
 
@@ -1756,6 +1781,28 @@ Widget _buildHeader() {
                               label: const Text('추천경로'),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF10B981),
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: SizedBox(
+                            height: 44,
+                            child: ElevatedButton.icon(
+                              onPressed: () {
+                                debugPrint('🔘 위치 보기 버튼 클릭됨!');
+                                Navigator.pop(context);
+                                _showBuildingLocation(item);
+                              },
+                              icon: const Icon(Icons.location_on, size: 18),
+                              label: const Text('위치 보기'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF8B5CF6),
                                 foregroundColor: Colors.white,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(10),

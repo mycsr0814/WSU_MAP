@@ -315,6 +315,12 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
   // 3. 경로 미리보기 계산 시 (건물 코드/층번호 일치 보장)
 Future<void> _calculateRoutePreview() async {
   try {
+    // 내위치가 설정되지 않았으면 자동으로 설정
+    if (_startBuilding == null) {
+      debugPrint('📍 내위치가 설정되지 않음. 자동으로 내위치 설정');
+      _setMyLocationAsStart();
+    }
+    
     if (_startBuilding == null || _endBuilding == null) {
       debugPrint('⚠️ 출발지 또는 도착지가 없어서 경로 계산 불가');
       return;
@@ -746,6 +752,17 @@ int _safeExtractFloorNumber(Map<String, dynamic> roomInfo, String key) {
       _searchController.clear();
     });
     _focusNode.requestFocus();
+    
+    // 내위치가 설정되어 있으면 검색 가능하도록 안내
+    if (_startBuilding?.name == '내 위치') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('검색창에서 다른 출발지를 선택하거나 내위치를 유지할 수 있습니다'),
+          backgroundColor: Colors.blue,
+          duration: Duration(seconds: 3),
+        ),
+      );
+    }
   }
 
   void _selectEndLocation() {
@@ -900,6 +917,11 @@ void _onSearchResultSelected(SearchResult result) {
         _searchController.clear();
       });
       debugPrint('✅ 도착지 건물 설정: ${cleanBuilding.name}');
+      
+      // 🔥 도착지 설정 시 출발지가 비어있으면 내 위치 자동 설정
+      if (_startBuilding == null) {
+        _setMyLocationAsStart();
+      }
     }
     
     _focusNode.unfocus();
@@ -923,6 +945,118 @@ void _onSearchResultSelected(SearchResult result) {
   }
 }
 
+// 🔥 내 위치를 출발지로 설정하는 메서드
+void _setMyLocationAsStart() {
+  try {
+    debugPrint('📍 내 위치를 출발지로 자동 설정');
+    
+    final locationManager = Provider.of<LocationManager>(context, listen: false);
+    
+    if (locationManager.hasValidLocation && locationManager.currentLocation != null) {
+      final myLocationBuilding = Building(
+        name: '내 위치',
+        info: '현재 위치에서 출발',
+        lat: locationManager.currentLocation!.latitude!,
+        lng: locationManager.currentLocation!.longitude!,
+        category: '현재위치',
+        baseStatus: '사용가능',
+        hours: '',
+        phone: '',
+        imageUrl: '',
+        description: '현재 위치에서 길찾기를 시작합니다',
+      );
+
+      setState(() {
+        _startBuilding = myLocationBuilding;
+        _startRoomInfo = null;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(
+                Icons.my_location,
+                color: Colors.white,
+                size: 16,
+              ),
+              const SizedBox(width: 8),
+              const Text('내 위치가 출발지로 자동 설정되었습니다'),
+            ],
+          ),
+          backgroundColor: const Color(0xFF10B981),
+          duration: const Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.all(16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+      );
+    } else {
+      // 위치 정보가 없으면 기본 위치 사용
+      final defaultLocationBuilding = Building(
+        name: '내 위치',
+        info: '현재 위치에서 출발 (기본 위치)',
+        lat: 36.338133,
+        lng: 127.446423,
+        category: '현재위치',
+        baseStatus: '사용가능',
+        hours: '',
+        phone: '',
+        imageUrl: '',
+        description: '현재 위치에서 길찾기를 시작합니다',
+      );
+
+      setState(() {
+        _startBuilding = defaultLocationBuilding;
+        _startRoomInfo = null;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(
+                Icons.warning,
+                color: Colors.white,
+                size: 16,
+              ),
+              const SizedBox(width: 8),
+              const Text('기본 위치가 출발지로 설정되었습니다'),
+            ],
+          ),
+          backgroundColor: Colors.orange,
+          duration: const Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.all(16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+      );
+    }
+  } catch (e) {
+    debugPrint('❌ 내 위치 자동 설정 오류: $e');
+  }
+}
+
+  // 🔥 기본 내위치 Building 객체 반환
+  Building _getDefaultMyLocation() {
+    return Building(
+      name: '내 위치',
+      info: '현재 위치에서 출발',
+      lat: 36.338133, // 기본 위도
+      lng: 127.446423, // 기본 경도
+      category: '현재위치',
+      baseStatus: '사용가능',
+      hours: '',
+      phone: '',
+      imageUrl: '',
+      description: '현재 위치에서 길찾기를 시작합니다',
+    );
+  }
+
   void _swapLocations() {
     if (_startBuilding != null && _endBuilding != null) {
       setState(() {
@@ -945,6 +1079,13 @@ void _onSearchResultSelected(SearchResult result) {
 void _startUnifiedNavigation() {
   try {
     debugPrint('=== 통합 네비게이션 시작 ===');
+    
+    // 내위치가 설정되지 않았으면 자동으로 설정
+    if (_startBuilding == null) {
+      debugPrint('📍 내위치가 설정되지 않음. 자동으로 내위치 설정');
+      _setMyLocationAsStart();
+    }
+    
     debugPrint('출발지: ${_startBuilding?.name} (호실: ${_startRoomInfo?['roomName'] ?? 'None'})');
     debugPrint('도착지: ${_endBuilding?.name} (호실: ${_endRoomInfo?['roomName'] ?? 'None'})');
     debugPrint('PathResponse 상태: ${_previewResponse != null ? '있음' : 'null'}');
@@ -1447,9 +1588,9 @@ void _handleSearchResultTap(SearchResult result) {
       // 길찾기 모드: 출발지/도착지 설정
       _onSearchResultSelected(result);
     } else {
-      // 🔥 단독 검색 모드: 강의실이면 바로 이동
+      // 🔥 단독 검색 모드: 강의실이면 건물 정보창 표시
       if (result.isRoom) {
-        _navigateToRoomDirectly(result);
+        _showBuildingInfoForRoom(result);
       } else {
         // 건물이면 길찾기 모드로 설정
         _onSearchResultSelected(result);
@@ -1468,9 +1609,8 @@ void _handleSearchResultTap(SearchResult result) {
   }
 }
 
-
-// 🔥 강의실로 바로 이동하는 메서드 추가
-void _navigateToRoomDirectly(SearchResult result) {
+// 🔥 강의실 검색 결과에서 건물 정보창 표시하는 메서드
+void _showBuildingInfoForRoom(SearchResult result) {
   try {
     if (!result.isRoom || result.building == null) {
       debugPrint('❌ 유효하지 않은 강의실 정보');
@@ -1492,44 +1632,34 @@ void _navigateToRoomDirectly(SearchResult result) {
       return;
     }
 
-    debugPrint('🎯 강의실로 바로 이동: ${result.displayName}');
+    debugPrint('🎯 강의실 검색 결과에서 건물 정보창 표시: ${result.displayName}');
     debugPrint('   건물: $buildingCode');
     debugPrint('   층: $floorNumber');
     debugPrint('   호실: $roomNumber');
 
-    // 사용자에게 이동 중임을 알림
+    // 사용자에게 건물 정보창이 표시됨을 알림
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('${result.displayName ?? roomNumber}로 이동 중...'),
+        content: Text('${result.building.name} 건물 정보를 표시합니다'),
         duration: const Duration(seconds: 2),
         backgroundColor: Colors.blue,
       ),
     );
 
-    // BuildingMapPage로 직접 이동
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => BuildingMapPage(
-          buildingName: buildingCode,
-          targetRoomId: roomNumber,
-          targetFloorNumber: floorNumber,
-        ),
-      ),
-    );
+    // 건물 정보창 표시를 위해 _onSearchResultSelected 호출
+    _onSearchResultSelected(result);
   } catch (e) {
-    debugPrint('❌ 강의실 직접 이동 오류: $e');
+    debugPrint('❌ 강의실 건물 정보창 표시 오류: $e');
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('강의실 이동 중 오류가 발생했습니다'),
+          content: Text('건물 정보 표시 중 오류가 발생했습니다'),
           backgroundColor: Colors.red,
         ),
       );
     }
   }
 }
-
 
   Widget _buildBuildingResultItem(Building building, {bool isRecent = false}) {
     return Container(
@@ -1662,8 +1792,8 @@ void _navigateToRoomDirectly(SearchResult result) {
               isStartLocation: true,
               icon: Icons.my_location,
               iconColor: const Color(0xFF10B981),
-              hint: l10n.enter_start_location,
-              selectedBuilding: _startBuilding,
+              hint: '내 위치',
+              selectedBuilding: _startBuilding ?? _getDefaultMyLocation(),
               roomInfo: _startRoomInfo,
               onTap: _selectStartLocation,
             ),
@@ -1835,9 +1965,7 @@ void _navigateToRoomDirectly(SearchResult result) {
           right: 16,
           bottom: MediaQuery.of(context).padding.bottom + 16,
           child: ElevatedButton(
-            onPressed: (_startBuilding != null && _endBuilding != null)
-                ? _startUnifiedNavigation
-                : null,
+            onPressed: _endBuilding != null ? _startUnifiedNavigation : null,
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF1E3A8A),
               disabledBackgroundColor: Colors.grey.shade300,
@@ -1855,9 +1983,7 @@ void _navigateToRoomDirectly(SearchResult result) {
                 Icon(
                   Icons.navigation,
                   size: 20,
-                  color: (_startBuilding != null && _endBuilding != null)
-                      ? Colors.white
-                      : Colors.grey.shade500,
+                  color: _endBuilding != null ? Colors.white : Colors.grey.shade500,
                 ),
                 const SizedBox(width: 8),
                 Text(
@@ -1865,9 +1991,7 @@ void _navigateToRoomDirectly(SearchResult result) {
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: (_startBuilding != null && _endBuilding != null)
-                        ? Colors.white
-                        : Colors.grey.shade500,
+                    color: _endBuilding != null ? Colors.white : Colors.grey.shade500,
                   ),
                 ),
               ],
@@ -2084,336 +2208,82 @@ void _navigateToRoomDirectly(SearchResult result) {
           ),
         ],
       ),
-      child: Column(
-        children: [
-          // 기본 위치 입력
-          Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: onTap,
-              borderRadius: BorderRadius.circular(12),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: iconColor.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Icon(icon, color: iconColor, size: 20),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (selectedBuilding != null) ...[
-                            Text(
-                              selectedBuilding.name,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.black87,
-                              ),
-                            ),
-                            // 🔥 호실 정보 표시
-                            if (roomInfo != null) ...[
-                              const SizedBox(height: 2),
-                              Text(
-                                '${roomInfo['floorNumber'] ?? ''}층 ${roomInfo['roomName'] ?? ''}호',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: Colors.blue.shade600,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ] else if (selectedBuilding
-                                .category
-                                .isNotEmpty) ...[
-                              const SizedBox(height: 2),
-                              Text(
-                                selectedBuilding.category,
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: Colors.grey.shade600,
-                                ),
-                              ),
-                            ],
-                          ] else ...[
-                            Text(
-                              hint,
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Colors.grey.shade500,
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                    Icon(
-                      Icons.chevron_right,
-                      color: Colors.grey.shade400,
-                      size: 20,
-                    ),
-                  ],
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: iconColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Icon(icon, color: iconColor, size: 20),
                 ),
-              ),
-            ),
-          ),
-
-          // 출발지인 경우 "내 위치" 옵션 항상 추가
-          if (isStartLocation) ...[
-            const Divider(height: 1),
-            Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: () async {
-                  try {
-                    if (!mounted) return;
-
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Row(
-                          children: [
-                            SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(
-                                color: Colors.white,
-                                strokeWidth: 2,
-                              ),
-                            ),
-                            SizedBox(width: 12),
-                            Text('현재 위치를 가져오는 중...'),
-                          ],
-                        ),
-                        backgroundColor: Color(0xFF2196F3),
-                        duration: Duration(seconds: 5),
-                        behavior: SnackBarBehavior.floating,
-                        margin: EdgeInsets.all(16),
-                      ),
-                    );
-
-                    final locationManager = Provider.of<LocationManager>(
-                      context,
-                      listen: false,
-                    );
-
-                    if (locationManager.hasValidLocation &&
-                        locationManager.currentLocation != null) {
-                      final myLocationBuilding = Building(
-                        name: '내 위치',
-                        info: '현재 위치에서 출발',
-                        lat: locationManager.currentLocation!.latitude!,
-                        lng: locationManager.currentLocation!.longitude!,
-                        category: '현재위치',
-                        baseStatus: '사용가능',
-                        hours: '',
-                        phone: '',
-                        imageUrl: '',
-                        description: '현재 위치에서 길찾기를 시작합니다',
-                      );
-
-                      setState(() {
-                        _startBuilding = myLocationBuilding;
-                        _startRoomInfo = null; // 현재 위치는 호실 정보 없음
-                      });
-
-                      if (mounted) {
-                        ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Row(
-                              children: [
-                                const Icon(
-                                  Icons.my_location,
-                                  color: Colors.white,
-                                  size: 16,
-                                ),
-                                const SizedBox(width: 8),
-                                const Text('현재 위치가 출발지로 설정되었습니다'),
-                              ],
-                            ),
-                            backgroundColor: const Color(0xFF10B981),
-                            duration: const Duration(seconds: 2),
-                            behavior: SnackBarBehavior.floating,
-                            margin: const EdgeInsets.all(16),
-                            shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            ),
-                          ),
-                        );
-
-                        // 🔥 현재 위치 설정 후 미리보기 계산
-                        if (_endBuilding != null) {
-                          _calculateRoutePreview();
-                        }
-                      }
-                    } else {
-                      await locationManager.requestLocation();
-                      await Future.delayed(const Duration(milliseconds: 500));
-
-                      if (locationManager.hasValidLocation &&
-                          locationManager.currentLocation != null) {
-                        final myLocationBuilding = Building(
-                          name: '내 위치',
-                          info: '현재 위치에서 출발',
-                          lat: locationManager.currentLocation!.latitude!,
-                          lng: locationManager.currentLocation!.longitude!,
-                          category: '현재위치',
-                          baseStatus: '사용가능',
-                          hours: '',
-                          phone: '',
-                          imageUrl: '',
-                          description: '현재 위치에서 길찾기를 시작합니다',
-                        );
-
-                        if (mounted) {
-                          setState(() {
-                            _startBuilding = myLocationBuilding;
-                            _startRoomInfo = null;
-                          });
-
-                          ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Row(
-                                children: [
-                                  const Icon(
-                                    Icons.my_location,
-                                    color: Colors.white,
-                                    size: 16,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  const Text('현재 위치가 출발지로 설정되었습니다'),
-                                ],
-                              ),
-                              backgroundColor: const Color(0xFF10B981),
-                              duration: const Duration(seconds: 2),
-                              behavior: SnackBarBehavior.floating,
-                              margin: const EdgeInsets.all(16),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                            ),
-                          );
-
-                          // 🔥 현재 위치 설정 후 미리보기 계산
-                          if (_endBuilding != null) {
-                            _calculateRoutePreview();
-                          }
-                        }
-                      } else {
-                        throw Exception('위치를 가져올 수 없습니다');
-                      }
-                    }
-                  } catch (e) {
-                    final myLocationBuilding = Building(
-                      name: '내 위치',
-                      info: '현재 위치에서 출발 (기본 위치)',
-                      lat: 36.338133,
-                      lng: 127.446423,
-                      category: '현재위치',
-                      baseStatus: '사용가능',
-                      hours: '',
-                      phone: '',
-                      imageUrl: '',
-                      description: '현재 위치에서 길찾기를 시작합니다',
-                    );
-
-                    setState(() {
-                      _startBuilding = myLocationBuilding;
-                      _startRoomInfo = null;
-                    });
-
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Row(
-                            children: [
-                              const Icon(
-                                Icons.warning,
-                                color: Colors.white,
-                                size: 16,
-                              ),
-                              const SizedBox(width: 8),
-                              const Text('기본 위치를 사용합니다'),
-                            ],
-                          ),
-                          backgroundColor: Colors.orange,
-                          duration: const Duration(seconds: 2),
-                        ),
-                      );
-
-                      // 🔥 기본 위치 설정 후 미리보기 계산
-                      if (_endBuilding != null) {
-                        _calculateRoutePreview();
-                      }
-                    }
-                  }
-                },
-                borderRadius: const BorderRadius.only(
-                  bottomLeft: Radius.circular(12),
-                  bottomRight: Radius.circular(12),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF2196F3).withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(20),
+                      if (selectedBuilding != null) ...[
+                        Text(
+                          selectedBuilding.name,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black87,
+                          ),
                         ),
-                        child: const Icon(
-                          Icons.my_location,
-                          color: Color(0xFF2196F3),
-                          size: 20,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      const Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '내 위치',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.black87,
-                              ),
+                        // 🔥 호실 정보 표시
+                        if (roomInfo != null) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            '${roomInfo['floorNumber'] ?? ''}층 ${roomInfo['roomName'] ?? ''}호',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.blue.shade600,
+                              fontWeight: FontWeight.w500,
                             ),
-                            SizedBox(height: 2),
-                            Text(
-                              '현재 위치에서 출발',
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: Colors.blue,
-                              ),
+                          ),
+                        ] else if (selectedBuilding
+                            .category
+                            .isNotEmpty) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            selectedBuilding.category,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey.shade600,
                             ),
-                          ],
+                          ),
+                        ],
+                      ] else ...[
+                        Text(
+                          hint,
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey.shade500,
+                          ),
                         ),
-                      ),
-                      Icon(
-                        Icons.gps_fixed,
-                        color: Colors.grey.shade400,
-                        size: 20,
-                      ),
+                      ],
                     ],
                   ),
                 ),
-              ),
+                Icon(
+                  Icons.chevron_right,
+                  color: Colors.grey.shade400,
+                  size: 20,
+                ),
+              ],
             ),
-          ],
-        ],
+          ),
+        ),
       ),
     );
   }

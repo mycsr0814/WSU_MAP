@@ -36,7 +36,7 @@ if (lower.contains('w17-서관')) return 'lib/asset/w17-서관.jpeg';
 
 
 
-class BuildingInfoWindow extends StatelessWidget {
+class BuildingInfoWindow extends StatefulWidget {
   final Building building;
   final VoidCallback onClose;
   final Function(Building) onShowDetails;
@@ -54,6 +54,11 @@ class BuildingInfoWindow extends StatelessWidget {
     this.onShowFloorPlan,
   });
 
+  @override
+  State<BuildingInfoWindow> createState() => _BuildingInfoWindowState();
+}
+
+class _BuildingInfoWindowState extends State<BuildingInfoWindow> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -105,7 +110,7 @@ class BuildingInfoWindow extends StatelessWidget {
   }
 
 Widget _buildContent(BuildContext context, AppLocalizations l10n) {
-  final imagePath = getImageForBuilding(building.name);
+  final imagePath = getImageForBuilding(widget.building.name);
   return Padding(
     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
     child: Column(
@@ -177,7 +182,7 @@ Widget _buildContent(BuildContext context, AppLocalizations l10n) {
       children: [
         Expanded(
           child: Text(
-            building.name,
+            widget.building.name,
             style: const TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.bold,
@@ -186,7 +191,7 @@ Widget _buildContent(BuildContext context, AppLocalizations l10n) {
           ),
         ),
         IconButton(
-          onPressed: onClose,
+          onPressed: widget.onClose,
           icon: const Icon(
             Icons.close,
             color: Colors.grey,
@@ -204,7 +209,7 @@ Widget _buildContent(BuildContext context, AppLocalizations l10n) {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          '${building.category} · ${l10n.woosong_university}',
+          '${widget.building.category} · ${l10n.woosong_university}',
           style: TextStyle(
             fontSize: 14,
             color: Colors.grey.shade600,
@@ -235,7 +240,7 @@ Widget _buildContent(BuildContext context, AppLocalizations l10n) {
   }
 
   Widget _buildStatusAndHours(AppLocalizations l10n) {
-    Color statusColor = building.status == l10n.operating ? Colors.green : Colors.red;
+    Color statusColor = widget.building.status == l10n.operating ? Colors.green : Colors.red;
     
     return Row(
       children: [
@@ -246,7 +251,7 @@ Widget _buildContent(BuildContext context, AppLocalizations l10n) {
             borderRadius: BorderRadius.circular(3),
           ),
           child: Text(
-            building.status,
+            widget.building.status,
             style: const TextStyle(
               color: Colors.white,
               fontSize: 11,
@@ -256,7 +261,7 @@ Widget _buildContent(BuildContext context, AppLocalizations l10n) {
         ),
         const SizedBox(width: 8),
         Text(
-          building.hours,
+          widget.building.hours,
           style: TextStyle(
             fontSize: 13,
             color: Colors.grey.shade600,
@@ -342,11 +347,11 @@ Widget _buildContent(BuildContext context, AppLocalizations l10n) {
     height: 50,
     child: ElevatedButton(
       onPressed: () {
-        print('🔘 내부도면보기 버튼 클릭됨: ${building.name}');
+        print('🔘 내부도면보기 버튼 클릭됨: ${widget.building.name}');
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => BuildingMapPage(buildingName: building.name),
+            builder: (_) => BuildingMapPage(buildingName: widget.building.name),
           ),
         );
       },
@@ -386,32 +391,51 @@ Widget _buildContent(BuildContext context, AppLocalizations l10n) {
         child: SizedBox(
           height: 50,
           child: ElevatedButton(
-            onPressed: onSetStart != null ? () async {
-              debugPrint('출발지 버튼 클릭됨: ${building.name}');
+            onPressed: widget.onSetStart != null ? () async {
+              print('출발지 버튼 클릭됨: ${widget.building.name}');
+              print('onSetStart 콜백 존재: ${widget.onSetStart != null}');
               
-              // InfoWindow 먼저 닫기
-              onClose();
-              
-              if (!context.mounted) return;
-              
-              // DirectionsScreen으로 이동하고 결과 받기
+              print('다이얼로그 표시 시도...');
               try {
-                final result = await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => DirectionsScreen(presetStart: building),
-                  ),
-                );
+                final result = await _showLocationSettingDialog(context, widget.building.name, '출발지');
+                print('다이얼로그 결과: $result');
                 
-                debugPrint('DirectionsScreen 결과: $result');
-                
-                // 결과가 있으면 onSetStart 콜백 호출하여 상위로 전달
-                if (result != null && onSetStart != null) {
-                  // 실제 onSetStart 콜백 호출 (map_screen으로 데이터 전달)
-                  onSetStart!(result);
+                if (result == 'room_selection') {
+                  // 호실 선택하기 - 내부 도면으로 이동
+                  print('호실 선택하기 선택됨');
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => BuildingMapPage(buildingName: widget.building.name),
+                    ),
+                  );
+                } else if (result == 'confirm') {
+                  // 확인 - 바로 출발지로 설정
+                  print('확인 선택됨');
+                  widget.onClose();
+                  if (!context.mounted) return;
+                  
+                  try {
+                    final directionsResult = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => DirectionsScreen(presetStart: widget.building),
+                      ),
+                    );
+                    
+                    print('DirectionsScreen 결과: $directionsResult');
+                    
+                    if (directionsResult != null && widget.onSetStart != null) {
+                      widget.onSetStart!(directionsResult);
+                    }
+                  } catch (e) {
+                    print('DirectionsScreen 이동 실패: $e');
+                  }
+                } else {
+                  print('취소 또는 null 결과: $result');
                 }
               } catch (e) {
-                debugPrint('DirectionsScreen 이동 실패: $e');
+                print('다이얼로그 표시 실패: $e');
               }
             } : null,
             style: ElevatedButton.styleFrom(
@@ -445,32 +469,51 @@ Widget _buildContent(BuildContext context, AppLocalizations l10n) {
         child: SizedBox(
           height: 50,
           child: ElevatedButton(
-            onPressed: onSetEnd != null ? () async {
-              debugPrint('도착지 버튼 클릭됨: ${building.name}');
+            onPressed: widget.onSetEnd != null ? () async {
+              print('도착지 버튼 클릭됨: ${widget.building.name}');
+              print('onSetEnd 콜백 존재: ${widget.onSetEnd != null}');
               
-              // InfoWindow 먼저 닫기
-              onClose();
-              
-              if (!context.mounted) return;
-              
-              // DirectionsScreen으로 이동하고 결과 받기
+              print('다이얼로그 표시 시도...');
               try {
-                final result = await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => DirectionsScreen(presetEnd: building),
-                  ),
-                );
+                final result = await _showLocationSettingDialog(context, widget.building.name, '도착지');
+                print('다이얼로그 결과: $result');
                 
-                debugPrint('DirectionsScreen 결과: $result');
-                
-                // 결과가 있으면 onSetEnd 콜백 호출하여 상위로 전달
-                if (result != null && onSetEnd != null) {
-                  // 실제 onSetEnd 콜백 호출 (map_screen으로 데이터 전달)
-                  onSetEnd!(result);
+                if (result == 'room_selection') {
+                  // 호실 선택하기 - 내부 도면으로 이동
+                  print('호실 선택하기 선택됨');
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => BuildingMapPage(buildingName: widget.building.name),
+                    ),
+                  );
+                } else if (result == 'confirm') {
+                  // 확인 - 바로 도착지로 설정
+                  print('확인 선택됨');
+                  widget.onClose();
+                  if (!context.mounted) return;
+                  
+                  try {
+                    final directionsResult = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => DirectionsScreen(presetEnd: widget.building),
+                      ),
+                    );
+                    
+                    print('DirectionsScreen 결과: $directionsResult');
+                    
+                    if (directionsResult != null && widget.onSetEnd != null) {
+                      widget.onSetEnd!(directionsResult);
+                    }
+                  } catch (e) {
+                    print('DirectionsScreen 이동 실패: $e');
+                  }
+                } else {
+                  print('취소 또는 null 결과: $result');
                 }
               } catch (e) {
-                debugPrint('DirectionsScreen 이동 실패: $e');
+                print('다이얼로그 표시 실패: $e');
               }
             } : null,
             style: ElevatedButton.styleFrom(
@@ -501,4 +544,156 @@ Widget _buildContent(BuildContext context, AppLocalizations l10n) {
     ],
   );
 }
+
+  /// 위치 설정 다이얼로그 표시
+  Future<String?> _showLocationSettingDialog(BuildContext context, String buildingName, String locationType) {
+    print('_showLocationSettingDialog 호출됨');
+    print('건물명: $buildingName');
+    print('위치 타입: $locationType');
+    
+    return Navigator.of(context).push<String>(
+      PageRouteBuilder<String>(
+        opaque: false,
+        barrierDismissible: false,
+        barrierColor: Colors.black54,
+        pageBuilder: (BuildContext context, _, __) {
+          return _LocationSettingDialog(
+            buildingName: buildingName,
+            locationType: locationType,
+          );
+        },
+      ),
+    );
+  }
+}
+
+/// 위치 설정 다이얼로그 위젯
+class _LocationSettingDialog extends StatelessWidget {
+  final String buildingName;
+  final String locationType;
+
+  const _LocationSettingDialog({
+    required this.buildingName,
+    required this.locationType,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: Center(
+        child: Container(
+          margin: const EdgeInsets.all(32),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.2),
+                blurRadius: 10,
+                spreadRadius: 0,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // 제목
+                Row(
+                  children: [
+                    Icon(
+                      locationType == '출발지' ? Icons.play_arrow : Icons.flag,
+                      color: locationType == '출발지' ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+                      size: 24,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        '$locationType 설정',
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                // 내용
+                Text(
+                  '$buildingName을 $locationType로 설정하시겠습니까?',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    color: Colors.black87,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+                // 버튼들
+                Row(
+                  children: [
+                    // 호실 선택하기 버튼
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          print('호실 선택하기 버튼 클릭됨');
+                          Navigator.of(context).pop('room_selection');
+                        },
+                        icon: const Icon(Icons.room, size: 18),
+                        label: const Text('호실 선택하기'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF7C3AED),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    // 확인 버튼
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          print('확인 버튼 클릭됨');
+                          Navigator.of(context).pop('confirm');
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: locationType == '출발지' ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: const Text('확인'),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    // 취소 버튼
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () {
+                          print('취소 버튼 클릭됨');
+                          Navigator.of(context).pop('cancel');
+                        },
+                        style: OutlinedButton.styleFrom(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: const Text('취소'),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }

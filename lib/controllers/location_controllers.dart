@@ -346,7 +346,7 @@ class LocationController extends ChangeNotifier {
   Future<void> _addLocationCircle(NLatLng location, double? accuracy) async {
     try {
       // 원 크기 고정: 항상 20m
-      final circleRadius = 20.0;
+      final circleRadius = 10.0;
       final circleId =
           'my_location_circle_${DateTime.now().millisecondsSinceEpoch}';
       _myLocationCircle = NCircleOverlay(
