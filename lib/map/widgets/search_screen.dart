@@ -82,8 +82,8 @@ Future<void> _onSearchChanged() async {
   // 🔥 기존 _onResultSelected 메서드 수정
   void _onResultSelected(SearchResult result) {
     if (result.isRoom) {
-      // 🔥 강의실인 경우 BuildingMapPage로 직접 이동
-      _navigateToRoom(result);
+      // 🔥 강의실인 경우 건물 정보창 표시
+      _showBuildingInfoForRoom(result);
     } else {
       // 건물인 경우 기존 방식대로
       widget.onBuildingSelected(result.building);
@@ -91,35 +91,29 @@ Future<void> _onSearchChanged() async {
     }
   }
 
-  // 🔥 새로 추가: 강의실로 직접 이동하는 메서드
-  void _navigateToRoom(SearchResult result) {
+  // 🔥 새로 추가: 강의실 검색 결과에서 건물 정보창 표시하는 메서드
+  void _showBuildingInfoForRoom(SearchResult result) {
     final buildingCode = _extractBuildingCode(result.building.name);
     
-    debugPrint('🎯 강의실로 바로 이동: ${result.displayName}');
+    debugPrint('🎯 강의실 검색 결과에서 건물 정보창 표시: ${result.displayName}');
     debugPrint('   건물: $buildingCode');
     debugPrint('   층: ${result.floorNumber}');
     debugPrint('   호실: ${result.roomNumber}');
     
-    // 사용자에게 이동 중임을 알림
+    // 사용자에게 건물 정보창이 표시됨을 알림
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('${result.displayName}로 이동 중...'),
+        content: Text('${result.building.name} 건물 정보를 표시합니다'),
         duration: const Duration(seconds: 2),
         backgroundColor: Colors.blue,
       ),
     );
     
-    // BuildingMapPage로 직접 이동
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => BuildingMapPage(
-          buildingName: buildingCode,
-          targetRoomId: result.roomNumber,      // 🔥 자동 선택할 강의실
-          targetFloorNumber: result.floorNumber, // 🔥 해당 층으로 이동
-        ),
-      ),
-    );
+    // 건물 정보창 표시를 위해 onBuildingSelected 콜백 호출
+    widget.onBuildingSelected(result.building);
+    
+    // 검색 화면 닫기
+    Navigator.pop(context);
   }
 
   // 🔥 건물명에서 건물 코드 추출 헬퍼 메서드
