@@ -78,6 +78,17 @@ class MapScreenController extends ChangeNotifier {
   bool _isCategoryLoading = false;
   String? _categoryError;
 
+  // 실시간 친구 위치 추적용 상태
+  String? trackedFriendId;
+
+  /// 실시간으로 친구 위치 마커를 업데이트 (friendsController에서 호출)
+  Future<void> updateTrackedFriendMarker(Friend friend) async {
+    if (trackedFriendId == null || trackedFriendId != friend.userId) return;
+    // 기존 마커가 있으면 위치만 이동, 없으면 새로 추가
+    await _friendLocationMarkerService.addFriendLocationMarker(friend);
+    notifyListeners();
+  }
+
   // Getters
   Building? get selectedBuilding => _selectedBuilding;
   Building? get startBuilding => _startBuilding;
