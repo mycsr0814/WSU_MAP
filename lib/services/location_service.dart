@@ -55,7 +55,7 @@ class LocationService {
   Timer? _requestTimer;
   Completer<LocationResult>? _currentRequest;
 
-  // 캐시 유효 시간 (기본 30초)
+  // 캐시 유효 시간 (2분에서 30초로 다시 조정)
   static const Duration _cacheValidDuration = Duration(seconds: 30);
 
   // 🔥 위치 전송 성공 콜백들
@@ -340,7 +340,7 @@ class LocationService {
   /// 🔥 재시도가 포함된 위치 요청 (개선된 버전)
   Future<LocationResult> _requestLocationWithRetry({
     Duration? timeout,
-    int maxRetries = 3,
+    int maxRetries = 2,  // 3에서 2로 줄임
   }) async {
     if (_isRequesting) {
       debugPrint('⚠️ 이미 위치 요청 중');
@@ -355,7 +355,7 @@ class LocationService {
         debugPrint('🔄 위치 요청 시도 $attempt/$maxRetries');
 
         final timeoutDuration =
-            timeout ?? Duration(seconds: attempt == 1 ? 8 : 12);
+            timeout ?? Duration(seconds: attempt == 1 ? 3 : 5);  // 5초에서 3초, 8초에서 5초로 더 단축
 
         try {
           final locationData = await _location.getLocation().timeout(

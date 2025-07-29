@@ -21,10 +21,11 @@ class _InquiryPageState extends State<InquiryPage> {
   
   // 문의 유형 목록
   final List<String> _inquiryTypes = [
+    '경로 안내 오류',
+    '장소/정보 오류',
     '버그 신고',
     '기능 제안',
-    '사용법 문의',
-    '기타',
+    '기타 문의',
   ];
 
   @override
@@ -96,7 +97,7 @@ class _InquiryPageState extends State<InquiryPage> {
         Row(
           children: [
             Text(
-              '문의유형',
+              '문의 유형',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
@@ -130,21 +131,41 @@ class _InquiryPageState extends State<InquiryPage> {
               color: _selectedInquiryType == null ? Colors.red : Colors.grey[300]!,
               width: 1.5,
             ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
           child: DropdownButtonFormField<String>(
             value: _selectedInquiryType,
             decoration: const InputDecoration(
               border: InputBorder.none,
-              contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             ),
             hint: Text(
               '문의 유형을 선택해주세요',
-              style: TextStyle(color: Colors.grey[500]),
+              style: TextStyle(
+                color: Colors.grey[500],
+                fontSize: 14,
+              ),
             ),
             items: _inquiryTypes.map((String type) {
               return DropdownMenuItem<String>(
                 value: type,
-                child: Text(type),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Text(
+                    type,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: Color(0xFF1E3A8A),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
               );
             }).toList(),
             onChanged: (String? newValue) {
@@ -158,6 +179,23 @@ class _InquiryPageState extends State<InquiryPage> {
               }
               return null;
             },
+            dropdownColor: Colors.white,
+            icon: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1E3A8A).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: const Icon(
+                Icons.keyboard_arrow_down,
+                color: Color(0xFF1E3A8A),
+                size: 20,
+              ),
+            ),
+            iconSize: 24,
+            elevation: 8,
+            menuMaxHeight: 200,
+            borderRadius: BorderRadius.circular(12),
           ),
         ),
       ],
@@ -366,7 +404,7 @@ class _InquiryPageState extends State<InquiryPage> {
                 Icon(Icons.add_photo_alternate, color: Colors.grey[600]),
                 const SizedBox(width: 8),
                 Text(
-                  '사진 첨부',
+                  _selectedImages.isEmpty ? '사진 첨부 (최대 1장)' : '사진 첨부됨',
                   style: TextStyle(
                     color: Colors.grey[600],
                     fontSize: 16,
@@ -405,7 +443,7 @@ class _InquiryPageState extends State<InquiryPage> {
                 Container(
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1E3A8A).withOpacity(0.1),
+                    color: const Color(0xFF1E3A8A).withOpacity(0.05),
                     borderRadius: const BorderRadius.only(
                       topLeft: Radius.circular(20),
                       topRight: Radius.circular(20),
@@ -417,8 +455,8 @@ class _InquiryPageState extends State<InquiryPage> {
                         width: 48,
                         height: 48,
                         decoration: BoxDecoration(
-                          color: const Color(0xFF2563EB).withOpacity(0.2),
-                          shape: BoxShape.circle,
+                          color: const Color(0xFF1E3A8A).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
                         ),
                         child: const Icon(
                           Icons.add_photo_alternate,
@@ -455,7 +493,7 @@ class _InquiryPageState extends State<InquiryPage> {
                 ),
                 // 옵션들
                 Container(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
                   child: Column(
                     children: [
                       _buildImageOption(
@@ -468,6 +506,7 @@ class _InquiryPageState extends State<InquiryPage> {
                           _pickImage(ImageSource.gallery);
                         },
                       ),
+                      const SizedBox(height: 8),
                       _buildImageOption(
                         icon: Icons.camera_alt,
                         title: '카메라',
@@ -488,7 +527,7 @@ class _InquiryPageState extends State<InquiryPage> {
                   child: OutlinedButton(
                     onPressed: () => Navigator.of(context).pop(),
                     style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
                       side: BorderSide(color: Colors.grey[300]!),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -525,27 +564,34 @@ class _InquiryPageState extends State<InquiryPage> {
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
           child: Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: color.withOpacity(0.3)),
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: color.withOpacity(0.2)),
+              boxShadow: [
+                BoxShadow(
+                  color: color.withOpacity(0.05),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
             child: Row(
               children: [
                 Container(
-                  width: 48,
-                  height: 48,
+                  width: 56,
+                  height: 56,
                   decoration: BoxDecoration(
-                    color: color.withOpacity(0.2),
-                    shape: BoxShape.circle,
+                    color: color.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
                     icon,
                     color: color,
-                    size: 24,
+                    size: 28,
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -561,21 +607,28 @@ class _InquiryPageState extends State<InquiryPage> {
                           color: Colors.grey[800],
                         ),
                       ),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: 4),
                       Text(
                         subtitle,
                         style: TextStyle(
-                          fontSize: 12,
+                          fontSize: 13,
                           color: Colors.grey[600],
                         ),
                       ),
                     ],
                   ),
                 ),
-                Icon(
-                  Icons.arrow_forward_ios,
-                  color: color.withOpacity(0.5),
-                  size: 16,
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    Icons.arrow_forward_ios,
+                    color: color,
+                    size: 16,
+                  ),
                 ),
               ],
             ),
@@ -587,6 +640,17 @@ class _InquiryPageState extends State<InquiryPage> {
 
   Future<void> _pickImage(ImageSource source) async {
     try {
+      // 🔥 최대 1장만 첨부 가능
+      if (_selectedImages.isNotEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('사진은 최대 1장만 첨부할 수 있습니다'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
+
       final XFile? image = await _picker.pickImage(source: source);
       if (image != null) {
         setState(() {

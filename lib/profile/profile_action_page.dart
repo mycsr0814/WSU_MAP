@@ -28,6 +28,34 @@ class _ProfileActionPageState extends State<ProfileActionPage> {
   bool _isUpdating = false; // 업데이트 중 상태
 
   @override
+  void initState() {
+    super.initState();
+    _fetchLocationShareStatus();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _fetchLocationShareStatus();
+  }
+
+  Future<void> _fetchLocationShareStatus() async {
+    setState(() => _isUpdating = true);
+    final userId = widget.userAuth.userId;
+    if (userId != null && userId.isNotEmpty) {
+      final status = await AuthService().getShareLocationStatus(userId);
+      debugPrint('🔥 서버에서 받아온 위치공유 상태: $status');
+      setState(() {
+        _isLocationEnabled = status ?? false;
+        _isUpdating = false;
+      });
+    } else {
+      debugPrint('❗ userId가 null 또는 빈 문자열');
+      setState(() => _isUpdating = false);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -219,98 +247,32 @@ class _ProfileActionPageState extends State<ProfileActionPage> {
   }
 
   /// 🔥 위치 허용 토글 변경 처리
-  Future<void> _onLocationToggleChanged(bool value) async {
+  void _onLocationToggleChanged(bool value) async {
     setState(() {
       _isUpdating = true;
     });
-
-    try {
-      // 현재 로그인된 사용자 ID 가져오기
-      final currentUserId = widget.userAuth.userId;
-      if (currentUserId == null) {
-        throw Exception('로그인된 사용자 정보를 찾을 수 없습니다');
-      }
-
-      // 서버에 위치 공유 설정 업데이트 요청
-      final authService = AuthService();
-      final success = await authService.updateShareLocation(currentUserId, value);
-
-      if (success) {
+    final userId = widget.userAuth.userId;
+    final prev = _isLocationEnabled;
+    setState(() {
+      _isLocationEnabled = value;
+    });
+    if (userId != null && userId.isNotEmpty) {
+      final success = await AuthService().updateShareLocation(userId, value);
+      if (!success && mounted) {
+        // 실패 시 원래대로 롤백
         setState(() {
-          _isLocationEnabled = value;
+          _isLocationEnabled = prev;
         });
-
-        // 성공 메시지 표시
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Row(
-                children: [
-                  Icon(
-                    value ? Icons.location_on : Icons.location_off,
-                    color: Colors.white,
-                    size: 20,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      value ? '위치 공유가 활성화되었습니다' : '위치 공유가 비활성화되었습니다',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w500,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              backgroundColor: const Color(0xFF10B981),
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-              duration: const Duration(seconds: 3),
-            ),
-          );
-        }
-      } else {
-        // 실패 시 원래 상태로 되돌리기
-        setState(() {
-          _isLocationEnabled = !value;
-        });
-
-        // 실패 메시지 표시
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('위치 공유 설정 변경에 실패했습니다'),
-              backgroundColor: Colors.red,
-              duration: Duration(seconds: 3),
-            ),
-          );
-        }
-      }
-    } catch (e) {
-      debugPrint('위치 공유 설정 변경 오류: $e');
-      
-      // 실패 시 원래 상태로 되돌리기
-      setState(() {
-        _isLocationEnabled = !value;
-      });
-
-      // 에러 메시지 표시
-      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('위치 공유 설정 변경 중 오류가 발생했습니다: $e'),
+          const SnackBar(
+            content: Text('서버에 위치공유 상태 저장에 실패했습니다.'),
             backgroundColor: Colors.red,
-            duration: const Duration(seconds: 3),
           ),
         );
       }
-    } finally {
-      setState(() {
-        _isUpdating = false;
-      });
     }
+    setState(() {
+      _isUpdating = false;
+    });
   }
 } 

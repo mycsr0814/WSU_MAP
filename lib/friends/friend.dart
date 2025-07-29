@@ -8,6 +8,7 @@ class Friend {
   final String phone;
   final bool isLogin;
   final String lastLocation;
+  final bool isLocationPublic;
 
   Friend({
     required this.userId,
@@ -16,6 +17,7 @@ class Friend {
     required this.phone,
     required this.isLogin,
     required this.lastLocation,
+    required this.isLocationPublic,
   });
 
   factory Friend.fromJson(Map<String, dynamic> json) {
@@ -40,6 +42,13 @@ class Friend {
         'lastLocation',
         'location',
       ]),
+      isLocationPublic: _extractBool(json, [
+        'isLocationPublic',
+        'locationPublic',
+        'is_location_public',
+        'location_public',
+        'is_locationPublic',
+      ]),
     );
   }
 
@@ -51,6 +60,7 @@ class Friend {
       'phone': phone,
       'isLogin': isLogin,
       'lastLocation': lastLocation,
+      'isLocationPublic': isLocationPublic,
     };
   }
 }

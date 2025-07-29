@@ -27,6 +27,7 @@ class BuildingMapPage extends StatefulWidget {
   final UnifiedNavigationController? navigationController;
   final String? targetRoomId;
   final int? targetFloorNumber;
+  final String? locationType; // 출발지/도착지 설정용
 
   const BuildingMapPage({
     super.key,
@@ -36,6 +37,7 @@ class BuildingMapPage extends StatefulWidget {
     this.navigationController,
     this.targetRoomId,
     this.targetFloorNumber,
+    this.locationType, // 출발지/도착지 설정용
   });
 
   @override
@@ -680,32 +682,7 @@ List<String> _findSimilarNodes(String targetId, Map<String, Offset> nodeMap) {
     debugPrint('🎯 사용 가능한 카테고리: $_availableCategories');
   }
 
-  /// 🔥 카테고리 필터링 적용 (카테고리 데이터용)
-  void _applyCategoryFilter(String? category) {
-    setState(() {
-      if (category == null) {
-        // 필터 해제 - 모든 카테고리 표시
-        _selectedCategories.clear();
-        _showAllCategories = true;
-      } else {
-        // 선택된 카테고리만 필터링
-        _selectedCategories.add(category);
-        _showAllCategories = false;
-      }
-      _isCategoryFiltering = _selectedCategories.isNotEmpty;
-      
-      if (_showAllCategories) {
-        _filteredCategoryData = List.from(_categoryData);
-      } else {
-        _filteredCategoryData = _categoryData.where((cat) {
-          final catName = cat['category']?.toString() ?? '';
-          return _selectedCategories.contains(catName);
-        }).toList();
-      }
-    });
 
-    debugPrint('🎯 카테고리 필터 적용: $_selectedCategories -> ${_filteredCategoryData.length}개 카테고리');
-  }
 
   Future<void> _loadNodesForFloor(
     String floorNumber,
@@ -1555,7 +1532,7 @@ List<String>? _parseStringListNullable(dynamic value) {
                 if (!_isFloorListLoading && _error == null && _floorList.length > 1)
                   Positioned(
                     left: 16,
-                    bottom: 100,
+                    bottom: 20,
                     child: _buildFloorSelector(),
                   ),
                 
@@ -1628,30 +1605,26 @@ List<String>? _parseStringListNullable(dynamic value) {
             // 개별 카테고리 버튼 클릭
             if (_selectedCategories.contains(category)) {
               // 이미 선택된 카테고리 해제
-              setState(() {
-                _selectedCategories.remove(category);
-                _showAllCategories = false;
-                _isCategoryFiltering = _selectedCategories.isNotEmpty;
-                if (_selectedCategories.isEmpty) {
-                  _filteredCategoryData.clear();
-                } else {
-                  _filteredCategoryData = _categoryData.where((cat) {
-                    final catName = cat['category']?.toString() ?? '';
-                    return _selectedCategories.contains(catName);
-                  }).toList();
-                }
-              });
-            } else {
-              // 새로운 카테고리 추가
-              setState(() {
-                _selectedCategories.add(category);
-                _showAllCategories = _selectedCategories.length == _availableCategories.length;
-                _isCategoryFiltering = true;
+              _selectedCategories.remove(category);
+              _showAllCategories = false;
+              _isCategoryFiltering = _selectedCategories.isNotEmpty;
+              if (_selectedCategories.isEmpty) {
+                _filteredCategoryData.clear();
+              } else {
                 _filteredCategoryData = _categoryData.where((cat) {
                   final catName = cat['category']?.toString() ?? '';
                   return _selectedCategories.contains(catName);
                 }).toList();
-              });
+              }
+            } else {
+              // 새로운 카테고리 추가
+              _selectedCategories.add(category);
+              _showAllCategories = _selectedCategories.length == _availableCategories.length;
+              _isCategoryFiltering = true;
+              _filteredCategoryData = _categoryData.where((cat) {
+                final catName = cat['category']?.toString() ?? '';
+                return _selectedCategories.contains(catName);
+              }).toList();
             }
           }
         });
@@ -1664,9 +1637,15 @@ List<String>? _parseStringListNullable(dynamic value) {
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected ? const Color(0xFF1E3A8A) : Colors.grey.shade300,
-            width: 1,
+            width: isSelected ? 1.5 : 1.0,
           ),
-          boxShadow: [
+          boxShadow: isSelected ? [
+            BoxShadow(
+              color: const Color(0xFF1E3A8A).withOpacity(0.2),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ] : [
             BoxShadow(
               color: Colors.black.withOpacity(0.1),
               blurRadius: 4,
@@ -1718,108 +1697,147 @@ List<String>? _parseStringListNullable(dynamic value) {
     return CategoryFallbackData.getCategoryIcon(mappedCategory);
   }
 
-  // 🔥 카테고리 색상 가져오기 (메인 화면과 동일)
-  Color _getCategoryColor(String category) {
-    // bank를 atm으로 매핑 (SVG의 bank ID를 ATM으로 표시)
-    final mappedCategory = category == 'bank' ? 'atm' : category;
-    
-    final colorValue = CategoryUtils.getCategoryColorValue(mappedCategory);
-    return Color(colorValue);
-  }
-
   /// 🔥 카테고리 정보 시트 표시
-  void _showCategoryInfoSheet(BuildContext context, Map<String, dynamic> category) {
-    final categoryName = category['category']?.toString() ?? '';
-    final displayName = _getCategoryDisplayName(categoryName);
+  void _showCategoryInfoSheet(BuildContext context, Map<String, dynamic> categoryData) {
+    final categoryName = categoryData['category']?.toString() ?? '알 수 없음';
+    final categoryDesc = categoryData['description']?.toString() ?? '설명이 없습니다.';
     
     showModalBottomSheet(
       context: context,
-      isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.only(
+          borderRadius: const BorderRadius.only(
             topLeft: Radius.circular(20),
             topRight: Radius.circular(20),
           ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
+            ),
+          ],
         ),
-        child: DraggableScrollableSheet(
-          initialChildSize: 0.3,
-          minChildSize: 0.2,
-          maxChildSize: 0.5,
-          builder: (context, scrollController) {
-            return Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // 드래그 핸들
+            Center(
+              child: Container(
+                margin: const EdgeInsets.only(top: 12, bottom: 8),
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            // 헤더
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              child: Row(
                 children: [
-                  Center(
-                    child: Container(
-                      width: 40,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade300,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: _getCategoryColor(categoryName).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      _getCategoryIcon(categoryName),
+                      color: _getCategoryColor(categoryName),
+                      size: 28,
                     ),
                   ),
-                  const SizedBox(height: 20),
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: _getCategoryColor(categoryName).withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          CategoryLocalization.getLabel(context, categoryName),
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
                         ),
-                        child: Icon(
-                          _getCategoryIcon(categoryName),
-                          color: _getCategoryColor(categoryName),
-                          size: 24,
+                        const SizedBox(height: 4),
+                        Text(
+                          categoryName,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey.shade600,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              displayName,
-                              style: const TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black87,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              '카테고리: $categoryName',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey.shade600,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  Text(
-                    '이 위치에 $displayName이 있습니다.',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      color: Colors.black87,
+                      ],
                     ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close, color: Colors.grey),
+                    onPressed: () => Navigator.pop(context),
                   ),
                 ],
               ),
-            );
-          },
+            ),
+            const Divider(height: 1, thickness: 0.5),
+            // 내용
+            Padding(
+              padding: const EdgeInsets.all(24),
+              child: Text(
+                categoryDesc,
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.grey.shade700,
+                  height: 1.5,
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+          ],
         ),
       ),
     );
+  }
+
+  /// 🔥 카테고리 색상 가져오기
+  Color _getCategoryColor(String category) {
+    switch (category) {
+      case 'cafe':
+        return const Color(0xFF8B5CF6); // 보라색
+      case 'restaurant':
+        return const Color(0xFFEF4444); // 빨간색
+      case 'convenience':
+        return const Color(0xFF10B981); // 초록색
+      case 'vending':
+        return const Color(0xFFF59E0B); // 주황색
+      case 'atm':
+      case 'bank':
+        return const Color(0xFF059669); // 진한 초록색
+      case 'library':
+        return const Color(0xFF3B82F6); // 파란색
+      case 'fitness':
+      case 'gym':
+        return const Color(0xFFDC2626); // 진한 빨간색
+      case 'lounge':
+        return const Color(0xFF7C3AED); // 보라색
+      case 'extinguisher':
+      case 'fire_extinguisher':
+        return const Color(0xFFEA580C); // 주황색
+      case 'water':
+      case 'water_purifier':
+        return const Color(0xFF0891B2); // 청록색
+      case 'bookstore':
+        return const Color(0xFF059669); // 초록색
+      case 'post':
+        return const Color(0xFF7C2D12); // 갈색
+      default:
+        return const Color(0xFF1E3A8A); // Woosong Blue
+    }
   }
 
   Widget _buildFloorSelector() {

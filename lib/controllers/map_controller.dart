@@ -13,7 +13,7 @@ import 'package:flutter_application_1/services/map/friend_location_marker_servic
 import 'package:flutter_application_1/friends/friend.dart';
 import 'package:flutter_application_1/core/result.dart';
 import 'package:flutter_application_1/friends/friends_controller.dart';
-import 'package:provider/provider.dart';
+
 
 class MapScreenController extends ChangeNotifier {
   MapService? _mapService;
@@ -422,11 +422,21 @@ class MapScreenController extends ChangeNotifier {
         throw Exception('친구 데이터에 접근할 수 없습니다');
       }
 
-      // 3. 기존 친구 마커들 모두 제거
+      // 3. 친구 데이터 강제 새로고침
+      debugPrint('친구 데이터 새로고침 중...');
+      await friendsController.loadAll();
+      
+      // 4. 친구 목록 확인
+      debugPrint('친구 목록 확인: ${friendsController.friends.length}명');
+      for (final friend in friendsController.friends) {
+        debugPrint('친구: ${friend.userName}, 온라인: ${friend.isLogin}, 위치: ${friend.lastLocation}');
+      }
+
+      // 5. 기존 친구 마커들 모두 제거
       debugPrint('기존 친구 마커들 제거 중...');
       await _friendLocationMarkerService.clearAllFriendLocationMarkers();
 
-      // 4. 모든 친구의 위치 마커 추가
+      // 6. 모든 친구의 위치 마커 추가
       debugPrint('모든 친구 위치 마커 추가 중...');
       int addedCount = 0;
       int onlineCount = 0;
@@ -455,18 +465,24 @@ class MapScreenController extends ChangeNotifier {
       }
 
       debugPrint('✅ 모든 친구 위치 마커 표시 완료: $addedCount명');
+      debugPrint('온라인: $onlineCount명, 오프라인: $offlineCount명');
       debugPrint('=== 모든 친구 위치 표시 완료 ===');
 
-      // 5. UI 업데이트
+      // 7. UI 업데이트
       notifyListeners();
       
-      // 6. 결과 메시지 표시
+      // 8. 결과 메시지 표시
       if (_currentContext != null) {
         String message;
         Color backgroundColor;
         IconData icon;
         
-        if (offlineCount > 0) {
+        if (friendsController.friends.isEmpty) {
+          // 친구가 없는 경우
+          message = '친구가 없습니다.\n친구를 추가한 후 다시 시도해주세요.';
+          backgroundColor = const Color(0xFF6B7280); // 회색 (정보)
+          icon = Icons.info;
+        } else if (offlineCount > 0) {
           // 오프라인 친구가 있는 경우
           if (addedCount > 0) {
             // 온라인 친구도 있고 오프라인 친구도 있는 경우
@@ -476,8 +492,8 @@ class MapScreenController extends ChangeNotifier {
           } else {
             // 모든 친구가 오프라인인 경우
             message = '모든 친구가 오프라인 상태입니다.\n친구가 온라인에 접속하면 위치를 확인할 수 있습니다.';
-            backgroundColor = const Color(0xFF6B7280); // 회색 (정보)
-            icon = Icons.info;
+            backgroundColor = const Color(0xFFEF4444); // 빨간색 (오류)
+            icon = Icons.offline_bolt;
           }
         } else {
           // 모든 친구가 온라인인 경우
@@ -513,7 +529,8 @@ class MapScreenController extends ChangeNotifier {
         );
         
         // 오프라인 친구가 있는 경우 추가 다이얼로그 표시
-        if (offlineCount > 0) {
+        if (offlineCount > 0 && addedCount == 0) {
+          // 모든 친구가 오프라인인 경우에만 다이얼로그 표시
           WidgetsBinding.instance.addPostFrameCallback((_) {
             _showOfflineFriendsDialog(offlineFriends, offlineCount);
           });
@@ -528,13 +545,14 @@ class MapScreenController extends ChangeNotifier {
         ScaffoldMessenger.of(_currentContext!).showSnackBar(
           SnackBar(
             content: Text('친구 위치를 표시할 수 없습니다: $e'),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 3),
+            backgroundColor: const Color(0xFFEF4444),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
           ),
         );
       }
-
-      throw Exception('친구 위치를 표시할 수 없습니다: $e');
     }
   }
 

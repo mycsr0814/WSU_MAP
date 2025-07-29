@@ -479,67 +479,26 @@ class _FriendsScreenState extends State<FriendsScreen>
   /// 친구 추가 처리 함수
   Future<void> _handleAddFriend([StateSetter? setModalState]) async {
     final id = _addController.text.trim();
-
     if (id.isEmpty) {
-      _showErrorMessage(AppLocalizations.of(context)!.errorEnterFriendId);
+      _showErrorMessage('아이디를 입력하세요');
       return;
     }
-
-    if (id == widget.userId) {
-      _showErrorMessage(AppLocalizations.of(context)!.errorCannotAddSelf);
-      return;
-    }
-
-    HapticFeedback.lightImpact();
-
-    setState(() {
-      _isAddingFriend = true;
-    });
-
-    setModalState?.call(() {
-      _isAddingFriend = true;
-    });
-
+    setState(() => _isAddingFriend = true);
     try {
       await controller.addFriend(id);
-
-      // 🔥 성공 시에만 모달창 닫기
       if (controller.errorMessage == null) {
-        _showSuccessMessage(
-          AppLocalizations.of(context)!.friendRequestSent(id),
-        );
+        // 성공
+        _showSuccessMessage('친구 요청이 성공적으로 전송되었습니다');
         _addController.clear();
-
-        // 🔥 친구 요청 성공 시에만 모달창 닫기
-        if (mounted) {
-          Navigator.of(context).pop();
-        }
+        if (mounted) Navigator.of(context).pop();
       } else {
-        // 🔥 실패 시 에러 메시지만 표시하고 모달창은 유지
-        _showErrorMessage(
-          controller.errorMessage ??
-              AppLocalizations.of(context)!.errorAddFriend,
-        );
-        
-        // 🔥 실패 후에도 친구 목록을 다시 로드하여 정상 상태 유지
-        await controller.loadAll();
+        // 실패
+        _showErrorMessage(controller.errorMessage!);
       }
     } catch (e) {
-      // 🔥 네트워크 오류 등 예외 발생 시에도 모달창 유지
-      _showErrorMessage(AppLocalizations.of(context)!.errorNetworkError);
-      
-      // 🔥 예외 발생 후에도 친구 목록을 다시 로드하여 정상 상태 유지
-      await controller.loadAll();
+      _showErrorMessage('친구 추가 중 오류가 발생했습니다');
     } finally {
-      if (mounted) {
-        setState(() {
-          _isAddingFriend = false;
-        });
-      }
-
-      setModalState?.call(() {
-        _isAddingFriend = false;
-      });
+      setState(() => _isAddingFriend = false);
     }
   }
 
@@ -1568,7 +1527,7 @@ class _FriendsScreenState extends State<FriendsScreen>
 
   Widget _buildSectionHeader(String title, {IconData? icon}) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      padding: const EdgeInsets.all(20),
       child: Row(
         children: [
           if (icon != null) ...[
@@ -1591,7 +1550,7 @@ class _FriendsScreenState extends State<FriendsScreen>
   // 🔥 실시간 업데이트되는 메인 친구 목록
   Widget _buildFriendsContent() {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
+      margin: EdgeInsets.zero, // 화면에 꽉 차게
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -1633,7 +1592,7 @@ class _FriendsScreenState extends State<FriendsScreen>
   Widget _buildFriendTile(Friend friend) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -1684,71 +1643,19 @@ class _FriendsScreenState extends State<FriendsScreen>
                 ),
                 const SizedBox(width: 16),
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        friend.userName,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 16,
-                          color: Color(0xFF1E3A8A),
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '${AppLocalizations.of(context)!.id}: ${_maskUserId(friend.userId)}',
-                        style: const TextStyle(
-                          color: Color(0xFF64748B),
-                          fontSize: 14,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          Container(
-                            width: 8,
-                            height: 8,
-                            decoration: BoxDecoration(
-                              color: friend.isLogin
-                                  ? Colors.green
-                                  : Colors.grey,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            friend.isLogin
-                                ? AppLocalizations.of(context)!.online
-                                : AppLocalizations.of(context)!.offline,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: friend.isLogin
-                                  ? Colors.green
-                                  : Colors.grey,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
+                  child: Text(
+                    friend.userName,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFEF4444).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: IconButton(
-                    icon: const Icon(
-                      Icons.person_remove,
-                      color: Color(0xFFEF4444),
-                      size: 18,
-                    ),
-                    onPressed: () => _showDeleteFriendDialog(friend),
-                  ),
+                IconButton(
+                  icon: const Icon(Icons.person_remove, color: Color(0xFFEF4444)),
+                  tooltip: '친구 삭제',
+                  onPressed: () => _showDeleteFriendDialog(friend),
                 ),
               ],
             ),

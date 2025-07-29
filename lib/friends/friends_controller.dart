@@ -112,6 +112,7 @@ class FriendsController extends ChangeNotifier {
           phone: friends[i].phone,
           isLogin: friends[i].isLogin,
           lastLocation: '$x,$y',
+          isLocationPublic: friends[i].isLocationPublic,
         );
         debugPrint('✅ ${friends[i].userName} 위치 갱신: $x, $y');
         break;
@@ -178,6 +179,7 @@ class FriendsController extends ChangeNotifier {
           phone: friends[i].phone,
           isLogin: isOnline,
           lastLocation: friends[i].lastLocation,
+          isLocationPublic: friends[i].isLocationPublic,
         );
 
         debugPrint(
@@ -212,6 +214,7 @@ class FriendsController extends ChangeNotifier {
           phone: friends[i].phone,
           isLogin: false, // 🔥 오프라인으로 변경
           lastLocation: friends[i].lastLocation,
+          isLocationPublic: friends[i].isLocationPublic,
         );
 
         debugPrint('✅ ${friends[i].userName}님 상태를 오프라인으로 업데이트');
@@ -235,6 +238,7 @@ class FriendsController extends ChangeNotifier {
           phone: friends[i].phone,
           isLogin: isOnline,
           lastLocation: friends[i].lastLocation,
+          isLocationPublic: friends[i].isLocationPublic,
         );
       }
     }
@@ -400,8 +404,29 @@ class FriendsController extends ChangeNotifier {
       errorMessage = null;
       notifyListeners();
     } catch (e) {
-      errorMessage = e.toString();
       debugPrint('❌ 친구 추가 실패: $e');
+      
+      // 🔥 구체적인 에러 메시지 설정
+      String errorMsg = '친구 추가에 실패했습니다';
+      
+      if (e.toString().contains('존재하지 않는 사용자')) {
+        errorMsg = '존재하지 않는 사용자입니다';
+      } else if (e.toString().contains('이미 친구')) {
+        errorMsg = '이미 친구인 사용자입니다';
+      } else if (e.toString().contains('이미 요청')) {
+        errorMsg = '이미 친구 요청을 보낸 사용자입니다';
+      } else if (e.toString().contains('자기 자신')) {
+        errorMsg = '자기 자신을 친구로 추가할 수 없습니다';
+      } else if (e.toString().contains('잘못된')) {
+        errorMsg = '잘못된 사용자 ID입니다';
+      } else if (e.toString().contains('서버 오류')) {
+        errorMsg = '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요';
+      } else {
+        errorMsg = e.toString().replaceAll('Exception: ', '');
+      }
+      
+      errorMessage = errorMsg;
+      debugPrint('❌ 에러 메시지 설정: $errorMessage');
       
       // 🔥 실패 시에도 기존 친구 목록을 유지하기 위해 전체 데이터 다시 로드
       try {

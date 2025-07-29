@@ -18,7 +18,7 @@ class BuildingDataProvider {
         baseStatus: l10n.operating,
         hours: '08:00 - 18:00',
         phone: '042-821-5678',
-        imageUrl: 'lib/resource/ws1.jpg',
+        imageUrl: null,
         description: l10n.woosong_library_desc,
       ),
       Building(
@@ -30,7 +30,7 @@ class BuildingDataProvider {
         baseStatus: l10n.operating,
         hours: '08:00 - 18:00',
         phone: '042-821-5678',
-        imageUrl: 'lib/resource/solpark.jpg',
+        imageUrl: null,
         description: l10n.sol_cafe_desc,
       ),
       Building(
@@ -42,7 +42,7 @@ class BuildingDataProvider {
         baseStatus: l10n.operating,
         hours: '08:00 - 18:00',
         phone: '042-821-5678',
-        imageUrl: 'lib/resource/1suk.jpg',
+        imageUrl: null,
         description: l10n.cheongun_1_dormitory_desc,
       ),
       Building(
@@ -54,7 +54,7 @@ class BuildingDataProvider {
         baseStatus: l10n.operating,
         hours: '08:00 - 18:00',
         phone: '042-821-5678',
-        imageUrl: 'lib/resource/ws2.jpg',
+        imageUrl: null,
         description: l10n.industry_cooperation_desc,
       ),
       Building(
@@ -66,7 +66,7 @@ class BuildingDataProvider {
         baseStatus: l10n.operating,
         hours: '08:00 - 18:00',
         phone: '042-821-5678',
-        imageUrl: 'lib/resource/ws2-1.jpg',
+        imageUrl: null,
         description: l10n.rotc_desc,
       ),
       Building(
@@ -78,7 +78,7 @@ class BuildingDataProvider {
         baseStatus: l10n.operating,
         hours: '08:00 - 18:00',
         phone: '042-821-5678',
-        imageUrl: 'lib/resource/ws3.jpg',
+        imageUrl: null,
         description: l10n.international_dormitory_desc,
       ),
       Building(
@@ -90,7 +90,7 @@ class BuildingDataProvider {
         baseStatus: l10n.operating,
         hours: '08:00 - 18:00',
         phone: '042-821-5678',
-        imageUrl: 'lib/resource/ws4.jpg',
+        imageUrl: null,
         description: l10n.railway_logistics_desc,
       ),
       Building(
@@ -102,7 +102,7 @@ class BuildingDataProvider {
         baseStatus: l10n.operating,
         hours: '08:00 - 18:00',
         phone: '042-821-5678',
-        imageUrl: 'lib/resource/ws5.jpg',
+        imageUrl: null,
         description: l10n.health_medical_science_desc,
       ),
       Building(
@@ -114,7 +114,7 @@ class BuildingDataProvider {
         baseStatus: l10n.operating,
         hours: '08:00 - 18:00',
         phone: '042-821-5678',
-        imageUrl: 'lib/resource/ws6.jpg',
+        imageUrl: null,
         description: l10n.liberal_arts_desc,
       ),
       Building(
@@ -126,7 +126,7 @@ class BuildingDataProvider {
         baseStatus: l10n.operating,
         hours: '08:00 - 18:00',
         phone: '042-821-5678',
-        imageUrl: 'lib/resource/ws7.jpg',
+        imageUrl: null,
         description: l10n.woosong_hall_desc,
       ),
       Building(
@@ -138,7 +138,7 @@ class BuildingDataProvider {
         baseStatus: l10n.operating,
         hours: '08:00 - 18:00',
         phone: '042-821-5678',
-        imageUrl: 'lib/resource/ws8.jpg',
+        imageUrl: null,
         description: l10n.woosong_kindergarten_desc,
       ),
       Building(
@@ -150,7 +150,7 @@ class BuildingDataProvider {
         baseStatus: l10n.operating,
         hours: '08:00 - 18:00',
         phone: '042-821-5678',
-        imageUrl: 'lib/resource/ws9.jpg',
+        imageUrl: null,
         description: l10n.west_campus_culinary_desc,
       ),
       Building(
@@ -162,7 +162,7 @@ class BuildingDataProvider {
         baseStatus: l10n.operating,
         hours: '08:00 - 18:00',
         phone: '042-821-5678',
-        imageUrl: 'lib/resource/ws10.jpg',
+        imageUrl: null,
         description: l10n.social_welfare_desc,
       ),
       Building(
@@ -174,7 +174,7 @@ class BuildingDataProvider {
         baseStatus: l10n.operating,
         hours: '06:00 - 22:00',
         phone: '042-821-1234',
-        imageUrl: 'lib/resource/ws11.jpg',
+        imageUrl: null,
         description: l10n.gymnasium_desc,
       ),
       Building(
@@ -186,7 +186,7 @@ class BuildingDataProvider {
         baseStatus: l10n.operating,
         hours: '08:00 - 18:00',
         phone: '042-821-5678',
-        imageUrl: 'lib/resource/ws12.jpg',
+        imageUrl: null,
         description: l10n.sica_desc,
       ),
       Building(
@@ -198,7 +198,7 @@ class BuildingDataProvider {
         baseStatus: l10n.operating,
         hours: '07:00 - 21:00',
         phone: '042-821-9999',
-        imageUrl: 'lib/resource/ws13.jpg',
+        imageUrl: null,
         description: l10n.woosong_tower_desc,
       ),
       Building(
@@ -210,7 +210,7 @@ class BuildingDataProvider {
         baseStatus: l10n.operating,
         hours: '08:00 - 18:00',
         phone: '042-821-5678',
-        imageUrl: 'lib/resource/ws14.jpg',
+        imageUrl: null,
         description: l10n.culinary_center_desc,
       ),
       Building(
@@ -222,7 +222,7 @@ class BuildingDataProvider {
         baseStatus: l10n.operating,
         hours: '08:00 - 18:00',
         phone: '042-821-5678',
-        imageUrl: 'lib/resource/ws15.jpg',
+        imageUrl: null,
         description: l10n.food_architecture_desc,
       ),
       Building(
@@ -234,7 +234,7 @@ class BuildingDataProvider {
         baseStatus: l10n.operating,
         hours: '08:00 - 18:00',
         phone: '042-821-5678',
-        imageUrl: 'lib/resource/ws16.jpg',
+        imageUrl: null,
         description: l10n.student_hall_desc,
       ),
       Building(
@@ -246,7 +246,7 @@ class BuildingDataProvider {
         baseStatus: l10n.operating,
         hours: '08:00 - 18:00',
         phone: '042-821-5678',
-        imageUrl: 'lib/resource/ws17.jpg',
+        imageUrl: null,
         description: l10n.media_convergence_desc,
       ),
       Building(
@@ -258,7 +258,7 @@ class BuildingDataProvider {
         baseStatus: l10n.operating,
         hours: '08:00 - 18:00',
         phone: '042-821-5678',
-        imageUrl: 'lib/asset/w17-동관.jpeg',
+        imageUrl: null,
         description: "W17 동관",
       ),
       Building(
@@ -270,7 +270,7 @@ class BuildingDataProvider {
         baseStatus: l10n.operating,
         hours: '08:00 - 18:00',
         phone: '042-821-5678',
-        imageUrl: 'lib/asset/w17-서관.jpeg',
+        imageUrl: null,
         description: "W17 서관",
       ),
       Building(
@@ -282,7 +282,7 @@ class BuildingDataProvider {
         baseStatus: l10n.operating,
         hours: '08:00 - 18:00',
         phone: '042-821-5678',
-        imageUrl: 'lib/resource/ws18.jpg',
+        imageUrl: null,
         description: l10n.woosong_arts_center_desc,
       ),
       Building(
@@ -294,7 +294,7 @@ class BuildingDataProvider {
         baseStatus: l10n.operating,
         hours: '08:00 - 18:00',
         phone: '042-821-5678',
-        imageUrl: 'lib/resource/ws19.jpg',
+        imageUrl: null,
         description: l10n.west_campus_andycut_desc,
       ),
     ];

@@ -829,5 +829,6 @@
     "placeholders": {
       "title": {}
     }
-  }
+  },
+  "phone_required": "Please enter your phone number"
 }

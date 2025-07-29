@@ -2,7 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/generated/app_localizations.dart';
-import 'package:flutter_application_1/inside/building_map_page.dart';
+
 import 'package:flutter_application_1/models/building.dart';
 import 'package:flutter_application_1/models/search_result.dart';
 import 'package:flutter_application_1/services/integrated_search_service.dart';
@@ -971,6 +971,11 @@ void _setMyLocationAsStart() {
         _startRoomInfo = null;
       });
 
+      // 🔥 내 위치 설정 후 미리보기 계산
+      if (_endBuilding != null) {
+        Future.microtask(() => _calculateRoutePreview());
+      }
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Row(
@@ -1012,6 +1017,11 @@ void _setMyLocationAsStart() {
         _startBuilding = defaultLocationBuilding;
         _startRoomInfo = null;
       });
+
+      // 🔥 기본 위치 설정 후 미리보기 계산
+      if (_endBuilding != null) {
+        Future.microtask(() => _calculateRoutePreview());
+      }
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

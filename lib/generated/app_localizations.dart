@@ -3027,6 +3027,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Delete'**
   String get deleteButton;
+
+  /// No description provided for @phone_required.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter your phone number'**
+  String get phone_required;
 }
 
 class _AppLocalizationsDelegate

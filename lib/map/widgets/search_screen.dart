@@ -6,7 +6,7 @@ import 'package:flutter_application_1/models/building.dart';
 import 'package:flutter_application_1/models/search_result.dart';
 import 'package:flutter_application_1/services/integrated_search_service.dart';
 // 🔥 BuildingMapPage import 추가
-import 'package:flutter_application_1/inside/building_map_page.dart';
+
 
 class SearchScreen extends StatefulWidget {
   final Function(Building) onBuildingSelected;

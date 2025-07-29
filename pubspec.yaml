@@ -55,43 +55,6 @@ flutter:
   uses-material-design: true
   generate: true
 
-  # 최종 프로젝트의 asset 목록을 그대로 유지했습니다.
-  # 만약 hatesvg 프로젝트처럼 서버에서 SVG를 불러온다면 해당 asset은 제거해도 됩니다.
+  # 서버에서 이미지를 받아오므로 로컬 asset 이미지들은 제거
   assets:
     - lib/asset/building_marker_blue.png
-    - lib/resource/solpark.jpg
-    - lib/resource/1suk.jpg
-    - lib/resource/ws2-1.jpg
-    - lib/resource/ws1.jpg
-    - lib/resource/ws2.jpg
-    - lib/resource/ws3.jpg
-    - lib/resource/ws4.jpg
-    - lib/resource/ws5.jpg
-    - lib/resource/ws6.jpg
-    - lib/resource/ws7.jpg
-    - lib/resource/ws8.jpg
-    - lib/resource/ws9.jpg
-    - lib/resource/ws10.jpg
-    - lib/resource/ws11.jpg
-    - lib/resource/ws12.jpg
-    - lib/resource/ws13.jpg
-    - lib/resource/ws14.jpg
-    - lib/resource/ws15.jpg
-    - lib/resource/ws16.jpg
-    - lib/resource/ws17.jpg
-    - lib/resource/ws18.jpg
-    - lib/resource/ws19.jpg
-    - lib/asset/w1.jpeg
-    - lib/asset/w6.jpeg
-    - lib/asset/w7.jpeg
-    - lib/asset/w9.jpeg
-    - lib/asset/w10.jpeg
-    - lib/asset/w11.jpeg
-    - lib/asset/w12.jpeg
-    - lib/asset/w13.jpeg
-    - lib/asset/w14.jpeg
-    - lib/asset/w15.jpeg
-    - lib/asset/w17-서관.jpeg
-    - lib/asset/w17-동관.jpeg
-    - lib/asset/w18.jpeg
-    - lib/asset/w19.jpeg

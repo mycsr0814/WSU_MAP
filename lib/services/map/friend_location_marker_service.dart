@@ -109,40 +109,35 @@ class FriendLocationMarkerService {
 
   /// 친구 위치 마커 추가
   Future<void> addFriendLocationMarker(Friend friend) async {
+    if (!friend.isLocationPublic) {
+      debugPrint('❌ 위치공유 미허용 친구: ${friend.userName}');
+      await _removeFriendLocationMarker(friend.userId);
+      return;
+    }
     if (_mapController == null) {
       debugPrint('❌ 지도 컨트롤러가 없음');
       return;
     }
-
     if (_context == null) {
       debugPrint('❌ Context가 설정되지 않음');
       return;
     }
-
-    // 🔥 마커 아이콘이 로딩되지 않았다면 로딩
     if (!_markerIconLoaded) {
       await loadMarkerIcon();
     }
-
-    // 친구의 위치 정보 파싱
     final location = _parseLocation(friend.lastLocation);
     if (location == null) {
       debugPrint('❌ 친구 위치 정보 파싱 실패: ${friend.lastLocation}');
       return;
     }
-
     try {
-      // 기존 마커 제거
       await _removeFriendLocationMarker(friend.userId);
-
-      // 🔥 랜덤 색상 생성
       final markerColor = _generateRandomColor();
-
       final markerId = 'friend_location_${friend.userId}';
       final marker = NMarker(
         id: markerId,
         position: location,
-        icon: await _createCircleMarker(markerColor), // 🔥 원형 마커 사용
+        icon: await _createCircleMarker(markerColor),
         caption: NOverlayCaption(
           text: friend.userName,
           color: markerColor,
@@ -151,13 +146,9 @@ class FriendLocationMarkerService {
         ),
         size: const Size(40, 40),
       );
-
       await _mapController!.addOverlay(marker);
       _friendLocationMarkers[friend.userId] = marker;
-
       debugPrint('✅ 친구 위치 마커 추가 완료: ${friend.userName}');
-
-      // 마커 위치로 카메라 이동
       await _moveCameraToLocation(location);
     } catch (e) {
       debugPrint('❌ 친구 위치 마커 추가 실패: $e');

@@ -49,7 +49,7 @@ class LocationManager extends ChangeNotifier {
 
   // 캐시 관리
   DateTime? _lastLocationTime;
-  static const Duration _cacheValidDuration = Duration(seconds: 30);
+  static const Duration _cacheValidDuration = Duration(seconds: 30);  // 2분에서 30초로 다시 조정
 
   // 기존 Getters
   bool get isInitialized => _isInitialized;
@@ -124,8 +124,78 @@ class LocationManager extends ChangeNotifier {
       return currentLocation;
     }
 
-    // 새 위치 요청
-    return await requestLocation();
+    // 🔥 매우 빠른 위치 요청 (Welcome 화면용)
+    return await _requestLocationVeryQuickly();
+  }
+
+  /// 🔥 매우 빠른 위치 요청 (Welcome 화면 전용)
+  Future<LocationData?> _requestLocationVeryQuickly() async {
+    if (_currentLocationRequest != null) {
+      return await _currentLocationRequest!.future;
+    }
+
+    final completer = Completer<LocationData?>();
+    _currentLocationRequest = completer;
+
+    try {
+      debugPrint('🚀 매우 빠른 위치 요청 시작...');
+
+      // 1. 직접 위치 요청 (가장 빠름)
+      try {
+        final locationData = await _location.getLocation().timeout(
+          const Duration(seconds: 2), // 매우 짧은 타임아웃
+          onTimeout: () {
+            debugPrint('⏰ 직접 위치 요청 타임아웃 (2초)');
+            throw TimeoutException('직접 위치 요청 타임아웃', const Duration(seconds: 2));
+          },
+        );
+
+        currentLocation = locationData;
+        _lastLocationTime = DateTime.now();
+        _hasLocationPermissionError = false;
+        notifyListeners();
+
+        debugPrint('✅ 매우 빠른 위치 요청 성공!');
+        completer.complete(locationData);
+        return locationData;
+
+      } catch (directError) {
+        debugPrint('⚠️ 직접 위치 요청 실패: $directError');
+        
+        // 2. LocationService를 통한 요청 (백업)
+        try {
+          final locationResult = await _locationService.getCurrentLocation(
+            forceRefresh: true,
+            timeout: const Duration(seconds: 3), // 짧은 타임아웃
+          );
+
+          if (locationResult.isSuccess && locationResult.locationData != null) {
+            currentLocation = locationResult.locationData!;
+            _lastLocationTime = DateTime.now();
+            _hasLocationPermissionError = false;
+            notifyListeners();
+
+            debugPrint('✅ LocationService를 통한 빠른 위치 요청 성공!');
+            completer.complete(locationResult.locationData);
+            return locationResult.locationData;
+          } else {
+            throw Exception('LocationService 위치 요청 실패');
+          }
+
+        } catch (serviceError) {
+          debugPrint('❌ LocationService 위치 요청도 실패: $serviceError');
+          completer.complete(null);
+          return null;
+        }
+      }
+
+    } catch (e) {
+      debugPrint('❌ 매우 빠른 위치 요청 실패: $e');
+      completer.complete(null);
+      return null;
+    } finally {
+      _currentLocationRequest = null;
+    }
   }
 
   /// 🔥 개선된 초기화 (권한 요청 추가)
@@ -295,7 +365,7 @@ class LocationManager extends ChangeNotifier {
       // 2. 🔥 LocationService를 통한 위치 요청
       final locationResult = await _locationService.getCurrentLocation(
         forceRefresh: true,
-        timeout: const Duration(seconds: 12),
+        timeout: const Duration(seconds: 5),  // 8초에서 5초로 더 단축
       );
 
       if (locationResult.isSuccess && locationResult.locationData != null) {
@@ -363,10 +433,10 @@ class LocationManager extends ChangeNotifier {
 
       // 실제 위치 요청
       final locationData = await _location.getLocation().timeout(
-        const Duration(seconds: 10),
+        const Duration(seconds: 4),  // 6초에서 4초로 더 단축
         onTimeout: () {
           debugPrint('⏰ 직접 위치 획득 타임아웃');
-          throw TimeoutException('직접 위치 획득 타임아웃', const Duration(seconds: 10));
+          throw TimeoutException('직접 위치 획득 타임아웃', const Duration(seconds: 4));
         },
       );
 

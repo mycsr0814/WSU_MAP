@@ -23,6 +23,8 @@ class _CategoryChipsState extends State<CategoryChips> {
   bool _isApiCalling = false;
   String? _selectedCategory;
   bool _useServerData = true; // 🔥 서버 데이터 사용 여부
+  final ScrollController _scrollController = ScrollController();
+  double _lastScrollPosition = 0.0;
 
   @override
   void initState() {
@@ -128,6 +130,9 @@ class _CategoryChipsState extends State<CategoryChips> {
       return;
     }
 
+    // 현재 스크롤 위치 저장
+    _lastScrollPosition = _scrollController.position.pixels;
+
     if (category == null) {
       setState(() {
         _selectedCategory = null;
@@ -137,10 +142,22 @@ class _CategoryChipsState extends State<CategoryChips> {
     }
 
     if (_selectedCategory == category) {
+      // 같은 카테고리를 다시 누르면 선택 해제하고 맨 앞으로 스크롤
       setState(() {
         _selectedCategory = null;
       });
       widget.onCategorySelected('', []);
+      
+      // 맨 앞으로 스크롤
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _scrollController.hasClients) {
+          _scrollController.animateTo(
+            0.0,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+          );
+        }
+      });
       return;
     }
 
@@ -164,6 +181,17 @@ class _CategoryChipsState extends State<CategoryChips> {
       });
 
       widget.onCategorySelected(category, buildingInfoList);
+      
+      // 스크롤 위치 복원
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _scrollController.hasClients) {
+          _scrollController.animateTo(
+            _lastScrollPosition,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+          );
+        }
+      });
     } catch (e) {
       debugPrint('❌ API 호출 오류: $e');
       setState(() {
@@ -270,6 +298,7 @@ class _CategoryChipsState extends State<CategoryChips> {
 
           Expanded(
             child: ListView.separated(
+              controller: _scrollController, // 스크롤 컨트롤러 연결
               scrollDirection: Axis.horizontal,
               itemCount: _categories.length,
               separatorBuilder: (context, index) => const SizedBox(width: 8),
@@ -333,9 +362,19 @@ class _CategoryChipsState extends State<CategoryChips> {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: isSelected ? const Color(0xFF1E3A8A) : Colors.white,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey[300]!),
+          border: Border.all(
+            color: isSelected ? const Color(0xFF1E3A8A) : Colors.grey[300]!,
+            width: isSelected ? 1.5 : 1.0,
+          ),
+          boxShadow: isSelected ? [
+            BoxShadow(
+              color: const Color(0xFF1E3A8A).withOpacity(0.2),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ] : null,
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -358,11 +397,5 @@ class _CategoryChipsState extends State<CategoryChips> {
         ),
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    debugPrint('🧹 CategoryChips dispose');
-    super.dispose();
   }
 }

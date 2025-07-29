@@ -1573,4 +1573,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get deleteButton => '删除';
+
+  @override
+  String get phone_required => '请输入您的电话号码';
 }

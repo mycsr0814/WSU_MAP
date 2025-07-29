@@ -52,8 +52,11 @@ class MapLocationService {
     try {
       debugPrint('📍 내 위치 표시: ${location.latitude}, ${location.longitude}');
       
-      // 1. 기존 내 위치 마커 제거
+      // 🔥 기존 오버레이 완전 제거 후 새로 생성
       await _removeMyLocationOverlays();
+      
+      // 🔥 약간의 지연으로 지도 상태 안정화
+      await Future.delayed(const Duration(milliseconds: 50));
       
       // 2. 새로운 위치 마커 추가
       if (showAccuracyCircle) {
@@ -88,24 +91,40 @@ class MapLocationService {
     final location = NLatLng(locationData.latitude!, locationData.longitude!);
     try {
       debugPrint('🔄 내 위치 업데이트:  ${location.latitude}, ${location.longitude}');
-      // 이미 원이 있으면 위치만 이동
+      
+      // 🔥 안전한 위치 업데이트
       if (_myLocationCircle != null) {
-        _myLocationCircle!.setCenter(location);
-        debugPrint('📍 원형 마커 위치 이동');
+        try {
+          _myLocationCircle!.setCenter(location);
+          debugPrint('📍 원형 마커 위치 이동');
+        } catch (e) {
+          debugPrint('⚠️ 원형 마커 이동 실패, 새로 생성: $e');
+          await showMyLocation(locationData, shouldMoveCamera: shouldMoveCamera);
+          return;
+        }
       } else if (_myLocationMarker != null) {
-        _myLocationMarker!.setPosition(location);
-        debugPrint('📍 마커 위치 이동');
+        try {
+          _myLocationMarker!.setPosition(location);
+          debugPrint('📍 마커 위치 이동');
+        } catch (e) {
+          debugPrint('⚠️ 마커 이동 실패, 새로 생성: $e');
+          await showMyLocation(locationData, shouldMoveCamera: shouldMoveCamera);
+          return;
+        }
       } else {
         // 마커가 없으면 새로 생성
+        debugPrint('🔄 기존 마커가 없음, 새로 생성');
         await showMyLocation(locationData, shouldMoveCamera: shouldMoveCamera);
         return;
       }
+      
       _currentDisplayLocation = location;
       if (shouldMoveCamera) {
         await _moveCameraToLocation(location, zoom);
       }
     } catch (e) {
       debugPrint('❌ 내 위치 업데이트 실패: $e');
+      // 오류 발생 시 완전히 새로 생성
       await showMyLocation(locationData, shouldMoveCamera: shouldMoveCamera);
     }
   }
@@ -113,9 +132,10 @@ class MapLocationService {
   /// 원형 위치 마커 추가 (정확도 표시)
   Future<void> _addLocationCircle(NLatLng location, double? accuracy) async {
     try {
-      final circleRadius = 20.0;
+      final circleRadius = 10.0;  // 20.0에서 10.0으로 절반 크기로 줄임
       
-      final circleId = 'my_location_circle_${DateTime.now().millisecondsSinceEpoch}';
+      // 🔥 고정 ID 사용으로 중복 방지
+      const circleId = 'my_location_circle';
       _myLocationCircle = NCircleOverlay(
         id: circleId,
         center: location,
@@ -137,7 +157,8 @@ class MapLocationService {
   /// 일반 위치 마커 추가
   Future<void> _addLocationMarker(NLatLng location) async {
     try {
-      final markerId = 'my_location_marker_${DateTime.now().millisecondsSinceEpoch}';
+      // 🔥 고정 ID 사용으로 중복 방지
+      const markerId = 'my_location_marker';
       _myLocationMarker = NMarker(
         id: markerId,
         position: location,
@@ -227,20 +248,38 @@ class MapLocationService {
   /// 내 위치 오버레이 제거
   Future<void> _removeMyLocationOverlays() async {
     try {
-      if (_myLocationMarker != null) {
-        await _mapController!.deleteOverlay(_myLocationMarker!.info);
-        _myLocationMarker = null;
-        debugPrint('🗑️ 기존 위치 마커 제거');
+      // 🔥 강제로 null로 설정하여 중복 방지
+      NCircleOverlay? circleToRemove = _myLocationCircle;
+      NMarker? markerToRemove = _myLocationMarker;
+      
+      // 먼저 참조를 null로 설정
+      _myLocationCircle = null;
+      _myLocationMarker = null;
+      
+      // 그 다음 오버레이 제거
+      if (circleToRemove != null) {
+        try {
+          await _mapController!.deleteOverlay(circleToRemove.info);
+          debugPrint('🗑️ 기존 위치 원형 마커 제거');
+        } catch (e) {
+          debugPrint('⚠️ 원형 마커 제거 실패 (이미 제거됨): $e');
+        }
       }
       
-      if (_myLocationCircle != null) {
-        await _mapController!.deleteOverlay(_myLocationCircle!.info);
-        _myLocationCircle = null;
-        debugPrint('🗑️ 기존 위치 원형 마커 제거');
+      if (markerToRemove != null) {
+        try {
+          await _mapController!.deleteOverlay(markerToRemove.info);
+          debugPrint('🗑️ 기존 위치 마커 제거');
+        } catch (e) {
+          debugPrint('⚠️ 마커 제거 실패 (이미 제거됨): $e');
+        }
       }
       
     } catch (e) {
-      debugPrint('⚠️ 기존 위치 오버레이 제거 중 오류 (무시): $e');
+      debugPrint('❌ 내 위치 오버레이 제거 중 오류: $e');
+      // 오류가 발생해도 참조는 null로 유지
+      _myLocationCircle = null;
+      _myLocationMarker = null;
     }
   }
 

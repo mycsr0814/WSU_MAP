@@ -239,21 +239,104 @@ Future<void> _prepareLocationInBackground() async {
   void _showLanguageDialog() async {
     final result = await showDialog<AppLanguage>(
       context: context,
+      barrierDismissible: true,
       builder: (context) {
-        return AlertDialog(
-          title: Text(_getLanguageText()),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: AppLanguage.values.map((lang) {
-              return RadioListTile<AppLanguage>(
-                value: lang,
-                groupValue: _selectedLanguage,
-                title: Text(languageToString(lang)),
-                onChanged: (value) {
-                  Navigator.of(context).pop(value);
-                },
-              );
-            }).toList(),
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.08),
+                  blurRadius: 24,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // 상단 아이콘+타이틀
+                Padding(
+                  padding: const EdgeInsets.only(top: 32, bottom: 12),
+                  child: Column(
+                    children: [
+                      const Icon(Icons.language, color: Color(0xFF1E3A8A), size: 36),
+                      const SizedBox(height: 12),
+                      Text(
+                        _getLanguageText(),
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF1E3A8A),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // 언어 선택 버튼들
+                ...AppLanguage.values.map((lang) {
+                  final selected = lang == _selectedLanguage;
+                  return GestureDetector(
+                    onTap: () => Navigator.of(context).pop(lang),
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 6),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                      decoration: BoxDecoration(
+                        color: selected ? const Color(0xFF1E3A8A).withOpacity(0.08) : Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: selected ? const Color(0xFF1E3A8A) : Colors.grey[300]!,
+                          width: selected ? 2 : 1,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            selected ? Icons.radio_button_checked : Icons.radio_button_off,
+                            color: selected ? const Color(0xFF1E3A8A) : Colors.grey[400],
+                          ),
+                          const SizedBox(width: 16),
+                          Text(
+                            languageToString(lang),
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 16,
+                              color: selected ? const Color(0xFF1E3A8A) : Colors.grey[800],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }),
+                const SizedBox(height: 16),
+                // 취소 버튼
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      side: BorderSide(color: Colors.grey[300]!),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text(
+                      '취소',
+                      style: TextStyle(
+                        color: Color(0xFF64748B),
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         );
       },

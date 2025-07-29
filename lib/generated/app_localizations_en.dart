@@ -1608,4 +1608,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deleteButton => 'Delete';
+
+  @override
+  String get phone_required => 'Please enter your phone number';
 }

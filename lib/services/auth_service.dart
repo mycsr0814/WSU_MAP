@@ -318,6 +318,30 @@ class AuthService {
     }
   }
 
+  /// 🔥 위치 공유 상태 조회
+  Future<bool?> getShareLocationStatus(String userId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('${ApiConfig.userBase}/get_share_location_status/$userId'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      );
+      if (response.statusCode == 200) {
+        final body = response.body.toLowerCase();
+        if (body.contains('true') || body.contains('on') || body.contains('enabled') || body.contains('1')) {
+          return true;
+        } else if (body.contains('false') || body.contains('off') || body.contains('disabled') || body.contains('0')) {
+          return false;
+        }
+      }
+      return null;
+    } catch (e) {
+      debugPrint('❌ 위치 공유 상태 조회 오류: $e');
+      return null;
+    }
+  }
+
   /// 🔥 사용자 존재 여부 확인
   Future<bool> checkUserExists(String userId) async {
     try {

@@ -163,256 +163,151 @@ class _ProfileEditPageState extends State<ProfileEditPage> with TickerProviderSt
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    
     return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: Text(l10n.edit_profile),
-        backgroundColor: const Color(0xFF1E3A8A),
-        foregroundColor: Colors.white,
+        title: Text(l10n.edit_profile,
+            style: TextStyle(
+              color: Colors.grey[800],
+              fontWeight: FontWeight.w600,
+            )),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        foregroundColor: Colors.grey[800],
       ),
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFFF8FAFC),
-              Color(0xFFE2E8F0),
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: FadeTransition(
-            opacity: _fadeAnimation,
-            child: SlideTransition(
-              position: _slideAnimation,
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    children: [
-                      // 프로필 이미지
-                      Container(
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
-                              blurRadius: 20,
-                              offset: const Offset(0, 8),
-                            ),
-                          ],
-                        ),
-                        child: CircleAvatar(
-                          radius: 50,
-                          backgroundColor: const Color(0xFF1E3A8A).withOpacity(0.1),
-                          child: const Icon(
-                            Icons.person,
-                            size: 50,
-                            color: Color(0xFF1E3A8A),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 32),
-
-                      // 입력 폼 카드
-                      Container(
-                        padding: const EdgeInsets.all(24),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(20),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
-                              blurRadius: 20,
-                              offset: const Offset(0, 8),
-                            ),
-                          ],
-                        ),
-                        child: Column(
-                          children: [
-                            // 이메일 입력
-                            TextFormField(
-                              controller: _emailController,
-                              decoration: InputDecoration(
-                                labelText: l10n.email,
-                                prefixIcon: const Icon(
-                                  Icons.email_outlined,
-                                  color: Color(0xFF1E3A8A),
-                                ),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: const BorderSide(
-                                    color: Color(0xFF1E3A8A),
-                                    width: 2,
-                                  ),
-                                ),
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 16,
-                                ),
-                              ),
-                              keyboardType: TextInputType.emailAddress,
-                              // 이메일은 필수 아님, 입력 시만 형식 체크
-                              validator: (value) {
-                                if (value != null && value.isNotEmpty && !RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
-                                  return '올바른 이메일 형식을 입력하세요';
-                                }
-                                return null;
-                              },
-                              enabled: !_isLoading,
-                            ),
-                            const SizedBox(height: 20),
-                            // 전화번호 입력
-                            TextFormField(
-                              controller: _phoneController,
-                              decoration: InputDecoration(
-                                labelText: l10n.phone,
-                                prefixIcon: const Icon(
-                                  Icons.phone_outlined,
-                                  color: Color(0xFF1E3A8A),
-                                ),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: const BorderSide(
-                                    color: Color(0xFF1E3A8A),
-                                    width: 2,
-                                  ),
-                                ),
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 16,
-                                ),
-                              ),
-                              keyboardType: TextInputType.phone,
-                              // 전화번호도 필수 아님, 입력 시만 형식 체크
-                              validator: (value) {
-                                if (value != null && value.isNotEmpty && !RegExp(r'^010[-]?\d{4}[-]?\d{4}$').hasMatch(value)) {
-                                  return '올바른 전화번호 형식을 입력하세요';
-                                }
-                                return null;
-                              },
-                              enabled: !_isLoading,
-                            ),
-                            const SizedBox(height: 20),
-                            // 비밀번호 입력
-                            TextFormField(
-                              controller: _passwordController,
-                              decoration: InputDecoration(
-                                labelText: l10n.password,
-                                prefixIcon: const Icon(
-                                  Icons.lock_outline,
-                                  color: Color(0xFF1E3A8A),
-                                ),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: const BorderSide(
-                                    color: Color(0xFF1E3A8A),
-                                    width: 2,
-                                  ),
-                                ),
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 16,
-                                ),
-                              ),
-                              obscureText: true,
-                              validator: (value) {
-                                if (value != null && value.isNotEmpty && value.length < 6) {
-                                  return l10n.password_too_short;
-                                }
-                                return null;
-                              },
-                              enabled: !_isLoading,
-                            ),
-                            const SizedBox(height: 20),
-                            // 비밀번호 확인 입력
-                            TextFormField(
-                              controller: _confirmPasswordController,
-                              decoration: InputDecoration(
-                                labelText: l10n.confirm_password,
-                                prefixIcon: const Icon(
-                                  Icons.lock_outline,
-                                  color: Color(0xFF1E3A8A),
-                                ),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: const BorderSide(
-                                    color: Color(0xFF1E3A8A),
-                                    width: 2,
-                                  ),
-                                ),
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 16,
-                                ),
-                              ),
-                              obscureText: true,
-                              validator: (value) {
-                                if (_passwordController.text.isNotEmpty && value != _passwordController.text) {
-                                  return l10n.password_mismatch;
-                                }
-                                return null;
-                              },
-                              enabled: !_isLoading,
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 32),
-
-                      // 저장 버튼
-                      SizedBox(
-                        width: double.infinity,
-                        height: 56,
-                        child: ElevatedButton(
-                          onPressed: _isLoading ? null : _saveProfile,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF1E3A8A),
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            elevation: 0,
-                            shadowColor: Colors.transparent,
-                          ),
-                          child: _isLoading
-                              ? const SizedBox(
-                                  width: 24,
-                                  height: 24,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                  ),
-                                )
-                              : Text(
-                                  l10n.save,
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                        ),
-                      ),
-                    ],
-                  ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 이름
+                _buildProfileField(
+                  label: l10n.name,
+                  controller: _nameController,
+                  icon: Icons.person,
+                  validator: (value) => value == null || value.trim().isEmpty ? l10n.name_required : null,
                 ),
-              ),
+                const SizedBox(height: 20),
+                // 이메일
+                _buildProfileField(
+                  label: l10n.email,
+                  controller: _emailController,
+                  icon: Icons.email,
+                  validator: (value) => value == null || value.trim().isEmpty ? l10n.email_required : null,
+                ),
+                const SizedBox(height: 20),
+                // 전화번호
+                _buildProfileField(
+                  label: l10n.phone,
+                  controller: _phoneController,
+                  icon: Icons.phone,
+                  validator: (value) => value == null || value.trim().isEmpty ? l10n.phone_required : null,
+                ),
+                const SizedBox(height: 20),
+                // 비밀번호
+                _buildProfileField(
+                  label: l10n.password,
+                  controller: _passwordController,
+                  icon: Icons.lock,
+                  obscureText: true,
+                  validator: (value) => null,
+                ),
+                const SizedBox(height: 20),
+                // 비밀번호 확인
+                _buildProfileField(
+                  label: l10n.confirm_password,
+                  controller: _confirmPasswordController,
+                  icon: Icons.lock_outline,
+                  obscureText: true,
+                  validator: (value) => null,
+                ),
+                const SizedBox(height: 40),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          side: BorderSide(color: Colors.grey[300]!),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: Text(
+                          l10n.cancel,
+                          style: TextStyle(
+                            color: Colors.grey[700],
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: _isLoading ? null : _saveProfile,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF1E3A8A),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: _isLoading
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                              )
+                            : Text(
+                                l10n.save,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProfileField({
+    required String label,
+    required TextEditingController controller,
+    required IconData icon,
+    bool obscureText = false,
+    String? Function(String?)? validator,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[300]!),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: TextFormField(
+          controller: controller,
+          obscureText: obscureText,
+          decoration: InputDecoration(
+            icon: Icon(icon, color: const Color(0xFF1E3A8A)),
+            labelText: label,
+            border: InputBorder.none,
+          ),
+          validator: validator,
         ),
       ),
     );

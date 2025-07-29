@@ -482,7 +482,7 @@
   "navigation_ended": "길찾기가 종료되었습니다",
   "route_preview": "경로 미리보기",
   "calculating_optimal_route": "최적 경로를 계산하고 있습니다...",
-  "set_departure_and_destination": "출발지와 도착지를 설정해주세요\\n건물명 또는 호실을 입력할 수 있습니다",
+  "set_departure_and_destination": "출발지와 도착지를 설정해주세요. 건물명 또는 호실을 입력할 수 있습니다",
   "total_distance": "총 거리",
   "route_type": "경로 타입",
   "departure_indoor": "출발지 실내",
@@ -734,5 +734,6 @@
     "placeholders": {
       "title": {}
     }
-  }
+  },
+  "phone_required": "전화번호를 입력해주세요"
 }

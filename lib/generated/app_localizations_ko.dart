@@ -1208,7 +1208,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get set_departure_and_destination =>
-      '출발지와 도착지를 설정해주세요\\n건물명 또는 호실을 입력할 수 있습니다';
+      '출발지와 도착지를 설정해주세요. 건물명 또는 호실을 입력할 수 있습니다';
 
   @override
   String get total_distance => '총 거리';
@@ -1576,4 +1576,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get deleteButton => '삭제';
+
+  @override
+  String get phone_required => '전화번호를 입력해주세요';
 }

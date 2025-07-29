@@ -98,6 +98,7 @@ class FriendApiService {
     print('[DEBUG] 응답 길이: ${res.body.length}');
     print('[DEBUG] 응답 내용 (원본): "${res.body}"');
     print('[DEBUG] 응답 내용 (소문자): "${res.body.toLowerCase()}"');
+    print('[DEBUG] 응답 헤더: ${res.headers}');
 
     // 🔥 응답 상태 코드 확인 (200이 아닌 모든 경우를 에러로 처리)
     if (res.statusCode != 200) {
@@ -145,6 +146,7 @@ class FriendApiService {
           }
       }
       
+      print('[ERROR] 에러 메시지: $errorMessage');
       throw Exception(errorMessage);
     }
     

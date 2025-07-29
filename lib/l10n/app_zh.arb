@@ -728,5 +728,6 @@
     "placeholders": {
       "title": {}
     }
-  }
+  },
+  "phone_required": "请输入您的电话号码"
 }

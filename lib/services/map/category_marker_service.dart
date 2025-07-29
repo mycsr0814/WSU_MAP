@@ -63,14 +63,17 @@ class CategoryMarkerService {
         );
         marker.setOnTapListener((marker) {
           debugPrint('카테고리 마커 클릭: ${data.buildingName} (${data.category})');
-          // 층 정보 바텀시트 띄우기
+          // 층 정보 바텀시트 띄우기 - 고정된 높이로 설정
           showModalBottomSheet(
             context: context,
             isScrollControlled: true,
             backgroundColor: Colors.transparent,
+            isDismissible: true, // 다른 곳을 누르면 닫힘
+            enableDrag: true, // 드래그로 닫기 가능
             builder: (context) => BuildingFloorSheet(
               buildingName: data.buildingName,
               floors: data.floors,
+              category: data.category, // 카테고리 정보 전달
             ),
           );
         });

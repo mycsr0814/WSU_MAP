@@ -5,6 +5,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_application_1/controllers/location_controllers.dart';
 import 'package:flutter_application_1/friends/friends_screen.dart';
 import 'package:flutter_application_1/friends/friend.dart';
+import 'package:flutter_application_1/friends/friends_controller.dart';
+import 'package:flutter_application_1/friends/friend_repository.dart';
+import 'package:flutter_application_1/friends/friend_api_service.dart';
 import 'package:flutter_application_1/services/map/building_marker_service.dart';
 import 'package:flutter_application_1/timetable/timetable_screen.dart';
 import 'package:provider/provider.dart';
@@ -23,9 +26,10 @@ import 'package:flutter_application_1/widgets/category_chips.dart';
 import '../auth/user_auth.dart';
 import 'package:flutter_application_1/managers/location_manager.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
-import 'package:flutter_application_1/friends/friends_controller.dart';
+
 import 'package:flutter_application_1/map/building_data.dart';
 import 'package:flutter_application_1/models/building.dart';
+import 'package:flutter_application_1/inside/building_map_page.dart';
 
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
@@ -39,6 +43,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
   late NavigationStateManager _navigationManager;
   late BuildingMarkerService _buildingMarkerService;
   late LocationController _locationController;
+  late FriendsController _friendsController; // 🔥 FriendsController 추가
 
   final OverlayPortalController _infoWindowController =
       OverlayPortalController();
@@ -57,6 +62,20 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
 
     debugPrint('🗺️ MapScreen 초기화 시작');
     _initializeMapScreen();
+
+    // 지도 진입 시 Welcome에서 받아온 위치가 있으면 즉시 표시
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final locationManager = context.read<LocationManager>();
+      if (locationManager.hasValidLocation && locationManager.currentLocation != null) {
+        debugPrint('✅ Welcome에서 받아온 위치를 지도에 즉시 표시');
+        _controller.updateUserLocationMarker(
+          NLatLng(
+            locationManager.currentLocation!.latitude!,
+            locationManager.currentLocation!.longitude!,
+          ),
+        );
+      }
+    });
   }
 
   /// 🔥 맵 스크린 초기화 로직
@@ -79,6 +98,12 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
         ..addListener(() => setState(() {}));
 
       _controller.setLocationController(_locationController);
+
+      // 🔥 FriendsController 초기화
+      _friendsController = FriendsController(
+        FriendRepository(FriendApiService()),
+        userAuth.userId ?? '',
+      );
 
       // 기타 초기화
       _navigationManager = NavigationStateManager();
@@ -277,7 +302,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
         _showBuildingFromTimetable(buildingName, buildingInfo);
       });
       
-      // 🔥 arguments 클리어 (다음 화면 전환 시 중복 처리 방지)
+      // �� arguments 클리어 (다음 화면 전환 시 중복 처리 방지)
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted && ModalRoute.of(context) != null) {
           final route = ModalRoute.of(context)!;
@@ -461,8 +486,11 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
       });
     }
 
-    return ChangeNotifierProvider.value(
-      value: _controller,
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider.value(value: _controller),
+        ChangeNotifierProvider.value(value: _friendsController),
+      ],
       child: Consumer<MapScreenController>(
         builder: (context, controller, child) {
           return Scaffold(
@@ -1103,7 +1131,15 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
           onShowDetails: (building) =>
               BuildingDetailSheet.show(context, building),
           onShowFloorPlan: (building) {
-            // FloorPlanDialog.show(context, building);
+            // 내부도면 페이지로 이동
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => BuildingMapPage(
+                  buildingName: building.name,
+                ),
+              ),
+            );
           },
           onSetStart: (result) {
             if (result is Map<String, dynamic>) {
