@@ -6,8 +6,9 @@ class CategoryNameMapper {
     '식당': 'restaurant',
     '프린터': 'printer',
     '복사기': 'copier',
-    'ATM': 'atm',
-    '은행(atm)': 'atm',
+    'ATM': 'atm', // ATM 매핑
+    '은행(atm)': 'atm', // 은행(atm) 매핑
+    'bank': 'atm', // SVG의 bank ID 매핑
     '보건소': 'health_center',
     '의료': 'medical',
     '라운지': 'lounge',

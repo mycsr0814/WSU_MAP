@@ -49,6 +49,68 @@ class SvgDataParser {
     return buttons;
   }
 
+  /// 🔥 카테고리 요소들 파싱 (새로 추가)
+  static List<Map<String, dynamic>> parseCategoryData(String svgContent) {
+    final List<Map<String, dynamic>> categories = [];
+    final document = XmlDocument.parse(svgContent);
+
+    try {
+      // Category 그룹 찾기
+      final categoryGroups = document.findAllElements('g').where((g) {
+        final id = g.getAttribute('id');
+        return id != null && id.toLowerCase().contains('category');
+      });
+
+      for (var categoryGroup in categoryGroups) {
+        print('🔍 Category 그룹 발견: ${categoryGroup.getAttribute('id')}');
+        
+        // Category 그룹 안의 rect 요소들 찾기
+        final rects = categoryGroup.findAllElements('rect');
+        for (var rect in rects) {
+          String? id = rect.getAttribute('id');
+          if (id != null && id.isNotEmpty) {
+            final x = double.tryParse(rect.getAttribute('x') ?? '');
+            final y = double.tryParse(rect.getAttribute('y') ?? '');
+            final width = double.tryParse(rect.getAttribute('width') ?? '');
+            final height = double.tryParse(rect.getAttribute('height') ?? '');
+            
+            if (x != null && y != null && width != null && height != null) {
+              // 카테고리 ID에서 숫자 부분 제거 (예: water_purifier-2 -> water_purifier)
+              final cleanId = _cleanCategoryId(id);
+              
+              categories.add({
+                'id': id,
+                'category': cleanId,
+                'type': 'rect',
+                'rect': Rect.fromLTWH(x, y, width, height),
+              });
+              
+              print('✅ 카테고리 요소 발견: $id -> $cleanId');
+            }
+          }
+        }
+      }
+      
+      print('🎯 카테고리 파싱 완료: ${categories.length}개');
+      
+    } catch (e) {
+      print('❌ 카테고리 파싱 오류: $e');
+    }
+
+    return categories;
+  }
+
+  /// 🔥 카테고리 ID 정리 (숫자 부분 제거)
+  static String _cleanCategoryId(String id) {
+    // "-숫자" 패턴 제거
+    final regex = RegExp(r'^(.+?)-\d+$');
+    final match = regex.firstMatch(id);
+    if (match != null) {
+      return match.group(1) ?? id;
+    }
+    return id;
+  }
+
   /// 🔥 완전히 새로 작성한 노드 파싱 함수 - 가상 노드 제거
   static Map<String, Offset> parseAllNodes(String svgContent) {
   final Map<String, Offset> nodes = {};

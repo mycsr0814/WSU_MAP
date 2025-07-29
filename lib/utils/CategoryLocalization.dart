@@ -15,13 +15,17 @@ class CategoryLocalization {
       case 'water': return l10n.water_purifier;
       case 'printer': return l10n.printer;
       case 'copier': return l10n.copier;
-      case 'atm': return l10n.atm;
-      case 'bank_atm': return l10n.bank_atm;
+      case 'atm': return l10n.atm; // ATM 표시
+      case 'bank_atm': return l10n.bank_atm; // 은행(atm) 표시
+      case 'bank': return l10n.atm; // SVG의 bank ID도 ATM으로 표시
+      case 'fire_extinguisher': return l10n.extinguisher; // 🔥 소화기 추가
+      case 'water_purifier': return l10n.water_purifier; // 🔥 정수기 추가
+      case 'post_office': return l10n.post_office; // 🔥 우체국 추가
+      case 'post': return l10n.post_office; // 🔥 post도 우체국으로 매핑
       case 'medical': return l10n.medical;
       case 'health_center': return l10n.health_center;
       case 'library': return l10n.library;
       case 'bookstore': return l10n.bookstore;
-      case 'post_office': return l10n.post_office;
       case 'gym': return l10n.gym;
       case 'fitness_center': return l10n.fitness_center;
       case 'lounge': return l10n.lounge;

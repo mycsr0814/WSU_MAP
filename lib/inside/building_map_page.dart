@@ -17,6 +17,8 @@ import '../inside/path_painter.dart';
 // 새로 추가된 imports
 import '../services/unified_path_service.dart';
 import '../controllers/unified_navigation_controller.dart';
+import '../data/category_fallback_data.dart'; // CategoryUtils를 위한 import
+import '../utils/CategoryLocalization.dart'; // CategoryLocalization을 위한 import
 
 class BuildingMapPage extends StatefulWidget {
   final String buildingName;
@@ -71,6 +73,14 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
   // 검색 결과 자동 선택 관련 상태
   bool _shouldAutoSelectRoom = false;
   String? _autoSelectRoomId;
+
+  // 🔥 카테고리 필터링 관련 상태 변수들
+  Set<String> _selectedCategories = {}; // 🔥 다중 선택을 위해 Set으로 변경
+  List<Map<String, dynamic>> _categoryData = []; // 카테고리 데이터
+  List<Map<String, dynamic>> _filteredCategoryData = []; // 필터링된 카테고리 데이터
+  List<String> _availableCategories = [];
+  bool _isCategoryFiltering = false;
+  bool _showAllCategories = false; // 🔥 전체 카테고리 표시 여부
 
   // 🔥 디버그 정보 표시용 상태 변수들 - 초기값 설정
   String _debugInfo = '노드 매칭 대기 중...';
@@ -628,13 +638,18 @@ List<String> _findSimilarNodes(String targetId, Map<String, Offset> nodeMap) {
 
       final svgContent = svgResponse.body;
       final buttons = SvgDataParser.parseButtonData(svgContent);
+      final categories = SvgDataParser.parseCategoryData(svgContent); // 🔥 카테고리 데이터 로드
 
       if (mounted) {
         setState(() {
           _svgUrl = svgUrl;
           _buttonData = buttons;
+          _categoryData = categories; // 🔥 카테고리 데이터 저장
           _isMapLoading = false;
         });
+
+        // 🔥 카테고리 추출 및 필터링 초기화
+        _extractCategoriesFromCategoryData();
 
         if (_shouldAutoSelectRoom) {
           _handleAutoRoomSelection();
@@ -648,6 +663,48 @@ List<String> _findSimilarNodes(String targetId, Map<String, Offset> nodeMap) {
         });
       }
     }
+  }
+
+  /// 🔥 카테고리 데이터에서 사용 가능한 카테고리 추출
+  void _extractCategoriesFromCategoryData() {
+    final categories = <String>{};
+    for (final category in _categoryData) {
+      final categoryName = category['category']?.toString() ?? '';
+      if (categoryName.isNotEmpty) {
+        categories.add(categoryName);
+      }
+    }
+    
+    // 메인과 동일하게 알파벳 순으로 정렬
+    _availableCategories = categories.toList()..sort();
+    debugPrint('🎯 사용 가능한 카테고리: $_availableCategories');
+  }
+
+  /// 🔥 카테고리 필터링 적용 (카테고리 데이터용)
+  void _applyCategoryFilter(String? category) {
+    setState(() {
+      if (category == null) {
+        // 필터 해제 - 모든 카테고리 표시
+        _selectedCategories.clear();
+        _showAllCategories = true;
+      } else {
+        // 선택된 카테고리만 필터링
+        _selectedCategories.add(category);
+        _showAllCategories = false;
+      }
+      _isCategoryFiltering = _selectedCategories.isNotEmpty;
+      
+      if (_showAllCategories) {
+        _filteredCategoryData = List.from(_categoryData);
+      } else {
+        _filteredCategoryData = _categoryData.where((cat) {
+          final catName = cat['category']?.toString() ?? '';
+          return _selectedCategories.contains(catName);
+        }).toList();
+      }
+    });
+
+    debugPrint('🎯 카테고리 필터 적용: $_selectedCategories -> ${_filteredCategoryData.length}개 카테고리');
   }
 
   Future<void> _loadNodesForFloor(
@@ -1240,16 +1297,31 @@ List<String>? _parseStringListNullable(dynamic value) {
                 (scenePoint.dy - topOffset) / (totalScale * svgScale),
               );
 
-              for (var button in _buttonData.reversed) {
-                bool isHit = false;
-                if (button['type'] == 'path') {
-                  isHit = (button['path'] as Path).contains(svgTapPosition);
-                } else {
-                  isHit = (button['rect'] as Rect).contains(svgTapPosition);
+              // 🔥 카테고리 필터링 중일 때는 카테고리 데이터만 체크
+              if (_isCategoryFiltering && _selectedCategories.isNotEmpty) {
+                for (var category in _filteredCategoryData.reversed) {
+                  bool isHit = false;
+                  if (category['type'] == 'rect') {
+                    isHit = (category['rect'] as Rect).contains(svgTapPosition);
+                  }
+                  if (isHit) {
+                    _showCategoryInfoSheet(context, category);
+                    break;
+                  }
                 }
-                if (isHit) {
-                  _showRoomInfoSheet(context, button['id']);
-                  break;
+              } else {
+                // 일반적인 버튼 데이터 체크
+                for (var button in _buttonData.reversed) {
+                  bool isHit = false;
+                  if (button['type'] == 'path') {
+                    isHit = (button['path'] as Path).contains(svgTapPosition);
+                  } else {
+                    isHit = (button['rect'] as Rect).contains(svgTapPosition);
+                  }
+                  if (isHit) {
+                    _showRoomInfoSheet(context, button['id']);
+                    break;
+                  }
                 }
               }
             },
@@ -1310,7 +1382,7 @@ List<String>? _parseStringListNullable(dynamic value) {
                       ),
                     ),
 
-                  if (_selectedRoomId != null)
+                  if (_selectedRoomId != null && !_isCategoryFiltering)
                     ..._buttonData
                         .where((button) => button['id'] == _selectedRoomId)
                         .map((button) {
@@ -1338,6 +1410,56 @@ List<String>? _parseStringListNullable(dynamic value) {
                           );
                         })
                         .toList(),
+
+                  // 🔥 카테고리 마커 표시 (다중 선택 지원)
+                  if (_isCategoryFiltering && _selectedCategories.isNotEmpty)
+                    ..._filteredCategoryData.map((category) {
+                      final rect = category['rect'] as Rect;
+                      final categoryName = category['category']?.toString() ?? '';
+                      
+                      // 🔥 마커 위치를 rect의 중심으로 설정
+                      final centerX = rect.left + rect.width / 2;
+                      final centerY = rect.top + rect.height / 2;
+                      final markerSize = 7.0; // 🔥 마커 크기 아주 조금 더 줄임 (9 -> 7)
+                      
+                      final scaledCenterX = leftOffset + centerX * totalScale * svgScale;
+                      final scaledCenterY = topOffset + centerY * totalScale * svgScale;
+                      final scaledMarkerSize = markerSize * totalScale * svgScale;
+                      
+                      final markerRect = Rect.fromCenter(
+                        center: Offset(scaledCenterX, scaledCenterY),
+                        width: scaledMarkerSize,
+                        height: scaledMarkerSize,
+                      );
+
+                      return Positioned.fromRect(
+                        rect: markerRect,
+                        child: IgnorePointer(
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: _getCategoryColor(categoryName), // 🔥 각 카테고리별 색상 사용
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: Colors.white,
+                                width: 0.5, // 테두리 유지
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: _getCategoryColor(categoryName).withOpacity(0.15), // 🔥 각 카테고리별 색상 사용
+                                  blurRadius: 2,
+                                  offset: const Offset(0, 0.5),
+                                ),
+                              ],
+                            ),
+                            child: Icon(
+                              _getCategoryIcon(categoryName), // 🔥 각 카테고리별 아이콘 사용
+                              color: Colors.white,
+                              size: scaledMarkerSize * 0.7, // 아이콘 크기 유지
+                            ),
+                          ),
+                        ),
+                      );
+                    }).toList(),
                 ],
               ),
             ),
@@ -1379,31 +1501,42 @@ List<String>? _parseStringListNullable(dynamic value) {
                     padding: const EdgeInsets.all(12),
                   ),
                 ),
-                const Spacer(),
+                
+                // 🔥 카테고리 필터링 버튼들을 뒤로가기 버튼 옆으로 이동
+                if (!_isFloorListLoading && _error == null && _availableCategories.isNotEmpty)
+                  Expanded(
+                    child: Container(
+                      height: 50,
+                      margin: const EdgeInsets.only(left: 12, right: 12),
+                      child: _buildCategoryChips(),
+                    ),
+                  ),
+                
+                // 자동선택 버튼을 더 작게 만들거나 조건부로 표시
                 if (_shouldAutoSelectRoom)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
                       color: Colors.blue.withOpacity(0.9),
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(16),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         const SizedBox(
-                          width: 16,
-                          height: 16,
+                          width: 12,
+                          height: 12,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
                             valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                           ),
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: 6),
                         Text(
-                          '${_autoSelectRoomId} 검색 중',
+                          '${_autoSelectRoomId}',
                           style: const TextStyle(
                             color: Colors.white,
-                            fontSize: 14,
+                            fontSize: 12,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -1435,7 +1568,259 @@ List<String>? _parseStringListNullable(dynamic value) {
       ),
     );
   }
-  // 10/10 마지막...
+
+  /// 🔥 카테고리 칩 위젯 (컴팩트 버전)
+  Widget _buildCategoryChips() {
+    return ListView.builder(
+      scrollDirection: Axis.horizontal,
+      itemCount: _availableCategories.length + 1, // +1 for "전체" 버튼
+      itemBuilder: (context, index) {
+        if (index == 0) {
+          // "전체" 버튼
+          return Padding(
+            padding: const EdgeInsets.only(right: 4),
+            child: _buildCategoryChip(
+              '전체',
+              null,
+              _showAllCategories,
+            ),
+          );
+        } else {
+          final category = _availableCategories[index - 1];
+          final isSelected = _selectedCategories.contains(category);
+          return Padding(
+            padding: const EdgeInsets.only(right: 4),
+            child: _buildCategoryChip(
+              _getCategoryDisplayName(category),
+              category,
+              isSelected,
+            ),
+          );
+        }
+      },
+    );
+  }
+
+  /// 🔥 카테고리 칩 (컴팩트 버전)
+  Widget _buildCategoryChip(String displayName, String? category, bool isSelected) {
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          if (category == null) {
+            // 전체 버튼 클릭
+            if (_showAllCategories || _selectedCategories.length == _availableCategories.length) {
+              // 전체가 이미 선택되어 있으면 모두 해제
+              _selectedCategories.clear();
+              _showAllCategories = false;
+              _isCategoryFiltering = false;
+              _filteredCategoryData.clear();
+            } else {
+              // 전체 선택
+              _selectedCategories = _availableCategories.toSet();
+              _showAllCategories = true;
+              _isCategoryFiltering = true;
+              _filteredCategoryData = _categoryData.where((cat) {
+                final catName = cat['category']?.toString() ?? '';
+                return _selectedCategories.contains(catName);
+              }).toList();
+            }
+          } else {
+            // 개별 카테고리 버튼 클릭
+            if (_selectedCategories.contains(category)) {
+              // 이미 선택된 카테고리 해제
+              setState(() {
+                _selectedCategories.remove(category);
+                _showAllCategories = false;
+                _isCategoryFiltering = _selectedCategories.isNotEmpty;
+                if (_selectedCategories.isEmpty) {
+                  _filteredCategoryData.clear();
+                } else {
+                  _filteredCategoryData = _categoryData.where((cat) {
+                    final catName = cat['category']?.toString() ?? '';
+                    return _selectedCategories.contains(catName);
+                  }).toList();
+                }
+              });
+            } else {
+              // 새로운 카테고리 추가
+              setState(() {
+                _selectedCategories.add(category);
+                _showAllCategories = _selectedCategories.length == _availableCategories.length;
+                _isCategoryFiltering = true;
+                _filteredCategoryData = _categoryData.where((cat) {
+                  final catName = cat['category']?.toString() ?? '';
+                  return _selectedCategories.contains(catName);
+                }).toList();
+              });
+            }
+          }
+        });
+        debugPrint('🎯 카테고리 선택 변경: $_selectedCategories -> ${_filteredCategoryData.length}개 카테고리');
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFF1E3A8A) : Colors.white.withOpacity(0.9),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? const Color(0xFF1E3A8A) : Colors.grey.shade300,
+            width: 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              _getCategoryIcon(category),
+              size: 12,
+              color: isSelected ? Colors.white : Colors.grey.shade600,
+            ),
+            const SizedBox(width: 3),
+            Text(
+              displayName,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w500,
+                color: isSelected ? Colors.white : Colors.grey.shade700,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 🔥 카테고리 표시 이름 가져오기 (메인 화면과 동일)
+  String _getCategoryDisplayName(String? category) {
+    if (category == null) return '전체';
+    
+    // bank를 atm으로 매핑 (SVG의 bank ID를 ATM으로 표시)
+    final displayCategory = category == 'bank' ? 'atm' : category;
+    
+    // 메인 화면과 동일하게 CategoryLocalization 사용
+    return CategoryLocalization.getLabel(context, displayCategory);
+  }
+
+  /// 🔥 카테고리 아이콘 가져오기 (메인 화면과 동일)
+  IconData _getCategoryIcon(String? category) {
+    if (category == null) return Icons.list;
+    
+    // bank를 atm으로 매핑 (SVG의 bank ID를 ATM으로 표시)
+    final mappedCategory = category == 'bank' ? 'atm' : category;
+    
+    return CategoryFallbackData.getCategoryIcon(mappedCategory);
+  }
+
+  // 🔥 카테고리 색상 가져오기 (메인 화면과 동일)
+  Color _getCategoryColor(String category) {
+    // bank를 atm으로 매핑 (SVG의 bank ID를 ATM으로 표시)
+    final mappedCategory = category == 'bank' ? 'atm' : category;
+    
+    final colorValue = CategoryUtils.getCategoryColorValue(mappedCategory);
+    return Color(colorValue);
+  }
+
+  /// 🔥 카테고리 정보 시트 표시
+  void _showCategoryInfoSheet(BuildContext context, Map<String, dynamic> category) {
+    final categoryName = category['category']?.toString() ?? '';
+    final displayName = _getCategoryDisplayName(categoryName);
+    
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
+          ),
+        ),
+        child: DraggableScrollableSheet(
+          initialChildSize: 0.3,
+          minChildSize: 0.2,
+          maxChildSize: 0.5,
+          builder: (context, scrollController) {
+            return Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade300,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: _getCategoryColor(categoryName).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(
+                          _getCategoryIcon(categoryName),
+                          color: _getCategoryColor(categoryName),
+                          size: 24,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              displayName,
+                              style: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              '카테고리: $categoryName',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    '이 위치에 $displayName이 있습니다.',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      color: Colors.black87,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
 
   Widget _buildFloorSelector() {
     return Card(
