@@ -11,6 +11,7 @@ import 'help_page.dart';
 import 'app_info_page.dart';
 import 'profile_edit_page.dart';
 import 'profile_action_page.dart'; // 🔥 ProfileActionPage 추가
+import 'inquiry_page.dart'; // 🔥 InquiryPage 추가
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -306,6 +307,11 @@ Widget _buildHeader(AppLocalizations l10n) {
         'icon': Icons.info_outline,
         'title': l10n.app_info,
         'subtitle': l10n.app_info_subtitle,
+      },
+      {
+        'icon': Icons.contact_support,
+        'title': '문의하기',
+        'subtitle': '버그 신고 및 기능 제안',
       },
     ];
 
@@ -816,7 +822,7 @@ Widget _buildHeader(AppLocalizations l10n) {
         // 로딩 다이얼로그 닫기
         if (mounted) Navigator.pop(context);
 
-        // 🔥 오류 발생 시에도 웹소켓 해제 시도
+        // �� 오류 발생 시에도 웹소켓 해제 시도
         try {
           final wsService = WebSocketService();
           await wsService.disconnect();
@@ -880,6 +886,11 @@ Widget _buildHeader(AppLocalizations l10n) {
       );
     } else if (title == l10n.delete_account) {
       _showDeleteDialog();
+    } else if (title == '문의하기') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const InquiryPage()),
+      );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

@@ -405,7 +405,7 @@ class MapScreenController extends ChangeNotifier {
   }
 
   /// 🔥 모든 친구 위치 표시
-  Future<void> showAllFriendLocations() async {
+  Future<void> showAllFriendLocations(FriendsController friendsController) async {
     try {
       debugPrint('=== 모든 친구 위치 표시 시작 ===');
       
@@ -416,8 +416,7 @@ class MapScreenController extends ChangeNotifier {
         throw Exception('지도가 아직 준비되지 않았습니다');
       }
 
-      // 2. FriendsController 가져오기
-      final friendsController = _getFriendsController();
+      // 2. FriendsController는 인자로 받음
       if (friendsController == null) {
         debugPrint('❌ FriendsController를 찾을 수 없음');
         throw Exception('친구 데이터에 접근할 수 없습니다');
@@ -430,18 +429,28 @@ class MapScreenController extends ChangeNotifier {
       // 4. 모든 친구의 위치 마커 추가
       debugPrint('모든 친구 위치 마커 추가 중...');
       int addedCount = 0;
+      int onlineCount = 0;
+      int offlineCount = 0;
+      List<String> offlineFriends = [];
       
       for (final friend in friendsController.friends) {
-        if (friend.lastLocation.isNotEmpty) {
-          try {
-            await _friendLocationMarkerService.addFriendLocationMarker(friend);
-            addedCount++;
-            debugPrint('✅ 친구 위치 마커 추가: ${friend.userName}');
-          } catch (e) {
-            debugPrint('⚠️ 친구 위치 마커 추가 실패: ${friend.userName} - $e');
+        if (friend.isLogin) {
+          onlineCount++;
+          if (friend.lastLocation.isNotEmpty) {
+            try {
+              await _friendLocationMarkerService.addFriendLocationMarker(friend);
+              addedCount++;
+              debugPrint('✅ 친구 위치 마커 추가: ${friend.userName}');
+            } catch (e) {
+              debugPrint('⚠️ 친구 위치 마커 추가 실패: ${friend.userName} - $e');
+            }
+          } else {
+            debugPrint('⚠️ 위치 정보 없음: ${friend.userName}');
           }
         } else {
-          debugPrint('⚠️ 위치 정보 없음: ${friend.userName}');
+          offlineCount++;
+          offlineFriends.add(friend.userName);
+          debugPrint('⚠️ 오프라인 친구: ${friend.userName}');
         }
       }
 
@@ -451,17 +460,41 @@ class MapScreenController extends ChangeNotifier {
       // 5. UI 업데이트
       notifyListeners();
       
-      // 6. 성공 메시지 표시
+      // 6. 결과 메시지 표시
       if (_currentContext != null) {
+        String message;
+        Color backgroundColor;
+        IconData icon;
+        
+        if (offlineCount > 0) {
+          // 오프라인 친구가 있는 경우
+          if (addedCount > 0) {
+            // 온라인 친구도 있고 오프라인 친구도 있는 경우
+            message = '친구 $addedCount명의 위치를 표시했습니다.\n오프라인 친구 $offlineCount명은 표시되지 않습니다.';
+            backgroundColor = const Color(0xFFF59E0B); // 주황색 (경고)
+            icon = Icons.warning;
+          } else {
+            // 모든 친구가 오프라인인 경우
+            message = '모든 친구가 오프라인 상태입니다.\n친구가 온라인에 접속하면 위치를 확인할 수 있습니다.';
+            backgroundColor = const Color(0xFF6B7280); // 회색 (정보)
+            icon = Icons.info;
+          }
+        } else {
+          // 모든 친구가 온라인인 경우
+          message = '친구 $addedCount명의 위치를 지도에 표시했습니다.';
+          backgroundColor = const Color(0xFF10B981); // 초록색 (성공)
+          icon = Icons.people;
+        }
+        
         ScaffoldMessenger.of(_currentContext!).showSnackBar(
           SnackBar(
             content: Row(
               children: [
-                const Icon(Icons.people, color: Colors.white, size: 20),
+                Icon(icon, color: Colors.white, size: 20),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    '친구 $addedCount명의 위치를 지도에 표시했습니다.',
+                    message,
                     style: const TextStyle(
                       fontWeight: FontWeight.w500,
                       fontSize: 14,
@@ -470,14 +503,21 @@ class MapScreenController extends ChangeNotifier {
                 ),
               ],
             ),
-            backgroundColor: const Color(0xFF10B981),
+            backgroundColor: backgroundColor,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(10),
             ),
-            duration: const Duration(seconds: 3),
+            duration: const Duration(seconds: 4),
           ),
         );
+        
+        // 오프라인 친구가 있는 경우 추가 다이얼로그 표시
+        if (offlineCount > 0) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _showOfflineFriendsDialog(offlineFriends, offlineCount);
+          });
+        }
       }
     } catch (e) {
       debugPrint('❌ 모든 친구 위치 표시 실패: $e');
@@ -498,16 +538,172 @@ class MapScreenController extends ChangeNotifier {
     }
   }
 
-  /// 🔥 FriendsController 가져오기 (Provider를 통해)
-  FriendsController? _getFriendsController() {
-    try {
-      // Provider를 통해 FriendsController 가져오기
-      return Provider.of<FriendsController>(_currentContext!, listen: false);
-    } catch (e) {
-      debugPrint('❌ FriendsController 가져오기 실패: $e');
-      return null;
-    }
+  /// 🔥 오프라인 친구 다이얼로그 표시
+  void _showOfflineFriendsDialog(List<String> offlineFriends, int offlineCount) {
+    if (_currentContext == null) return;
+    
+    showDialog(
+      context: _currentContext!,
+      builder: (BuildContext context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // 헤더
+                Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF59E0B).withOpacity(0.1),
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(20),
+                      topRight: Radius.circular(20),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF59E0B).withOpacity(0.2),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.offline_bolt,
+                          color: Color(0xFFF59E0B),
+                          size: 24,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '오프라인 친구',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.grey[800],
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              '현재 접속하지 않은 친구 $offlineCount명',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // 오프라인 친구 목록
+                Container(
+                  constraints: BoxConstraints(
+                    maxHeight: MediaQuery.of(context).size.height * 0.3,
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      children: offlineFriends.map((friendName) {
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[50],
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.grey[200]!),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.person_off,
+                                color: Colors.grey[500],
+                                size: 20,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  friendName,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey[700],
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[300],
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  '오프라인',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    color: Colors.grey[600],
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ),
+                // 확인 버튼
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFF59E0B),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: Text(
+                      '확인',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
+
+  /// 🔥 FriendsController 가져오기 (Provider를 통해)
+  // _getFriendsController 메서드는 더 이상 필요 없음
 
   /// 🔥 현재 표시된 친구 위치 마커 개수
   int get displayedFriendCount =>

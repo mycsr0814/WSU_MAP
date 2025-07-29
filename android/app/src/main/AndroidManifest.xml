@@ -37,6 +37,16 @@
     <!-- [선택 추가] 배터리 최적화 제외 요청 권한 (안정적인 백그라운드 실행) -->
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
 
+    <!-- =========== 📷 이미지 선택 권한 추가 =========== -->
+    <!-- [필수 추가] 카메라 사용 권한 -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    
+    <!-- [권장 추가] 외부 저장소 읽기 권한 (Android 10 이하) -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    
+    <!-- [권장 추가] 외부 저장소 쓰기 권한 (Android 10 이하) -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+
     <!-- =========== 애플리케이션 설정 =========== -->
     <application
         android:label="Campus Navigator"

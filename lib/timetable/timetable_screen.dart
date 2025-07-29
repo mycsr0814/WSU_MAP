@@ -599,12 +599,12 @@ Widget _buildHeader() {
         width: MediaQuery.of(context).size.width * 0.9,
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withOpacity(0.08),
               blurRadius: 20,
-              offset: const Offset(0, 10),
+              offset: const Offset(0, 8),
             ),
           ],
         ),
@@ -878,12 +878,12 @@ Widget _buildHeader() {
                 width: MediaQuery.of(context).size.width * 0.95,
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
+                      color: Colors.black.withOpacity(0.08),
                       blurRadius: 20,
-                      offset: const Offset(0, 10),
+                      offset: const Offset(0, 8),
                     ),
                   ],
                 ),
@@ -1646,12 +1646,12 @@ Widget _buildHeader() {
           width: MediaQuery.of(context).size.width * 0.9,
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.1),
+                color: Colors.black.withOpacity(0.08),
                 blurRadius: 20,
-                offset: const Offset(0, 10),
+                offset: const Offset(0, 8),
               ),
             ],
           ),

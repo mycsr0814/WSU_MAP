@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_application_1/controllers/map_controller.dart';
 import 'package:flutter_application_1/managers/location_manager.dart';
+import 'package:flutter_application_1/friends/friends_controller.dart';
 
 class MapControls extends StatelessWidget {
   final MapScreenController controller;
@@ -66,8 +67,9 @@ class MapControls extends StatelessWidget {
           HapticFeedback.lightImpact();
 
           try {
-            // 모든 친구 위치 표시
-            await controller.showAllFriendLocations();
+            // Provider로 friendsController를 가져와서 인자로 넘김
+            final friendsController = Provider.of<FriendsController>(context, listen: false);
+            await controller.showAllFriendLocations(friendsController);
           } catch (e) {
             // 에러 메시지는 controller에서 처리됨
             debugPrint('친구 모두 보기 실패: $e');
@@ -318,18 +320,13 @@ class MapControls extends StatelessWidget {
           height: 56,
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(28),
+            borderRadius: BorderRadius.circular(12),
             border: Border.all(color: Colors.grey.shade200, width: 1),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.08),
-                blurRadius: 16,
-                offset: const Offset(0, 4),
-              ),
-              BoxShadow(
-                color: Colors.black.withOpacity(0.04),
-                blurRadius: 4,
-                offset: const Offset(0, 2),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
               ),
             ],
           ),

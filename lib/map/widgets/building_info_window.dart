@@ -63,68 +63,97 @@ class _BuildingInfoWindowState extends State<BuildingInfoWindow> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     
-    return Positioned(
-      left: 0,
-      right: 0,
-      bottom: 0,
-      child: Material(
-        color: Colors.transparent,
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(20),
-              topRight: Radius.circular(20),
+    return Stack(
+      children: [
+        // 🔥 배경 터치 영역 (UI 외부를 누르면 닫기)
+        Positioned.fill(
+          child: GestureDetector(
+            onTap: () {
+              // 외부 터치 시 건물 정보 창 닫기
+              widget.onClose();
+            },
+            child: Container(
+              color: Colors.transparent,
             ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 10,
-                spreadRadius: 0,
-                offset: const Offset(0, -2),
-              ),
-            ],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _buildDragHandle(),
-              _buildContent(context, l10n),
-            ],
           ),
         ),
-      ),
+        // 🔥 건물 정보 UI
+        Positioned(
+          left: 0,
+          right: 0,
+          bottom: 0,
+          child: Material(
+            color: Colors.transparent,
+            child: GestureDetector(
+              // 🔥 UI 내부 터치 시 이벤트 소비 (외부 터치 방지)
+              onTap: () {
+                // UI 내부 터치 시 아무것도 하지 않음
+              },
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(20),
+                    topRight: Radius.circular(20),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 10,
+                      spreadRadius: 0,
+                      offset: const Offset(0, -2),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _buildDragHandle(),
+                    _buildContent(context, l10n),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
   Widget _buildDragHandle() {
-    return Container(
-      width: 40,
-      height: 4,
-      margin: const EdgeInsets.only(top: 12, bottom: 8),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade300,
-        borderRadius: BorderRadius.circular(2),
+    return GestureDetector(
+      onTap: () {
+        // 🔥 드래그 핸들 터치 시 창 닫기
+        widget.onClose();
+      },
+      child: Container(
+        width: 40,
+        height: 4,
+        margin: const EdgeInsets.only(top: 12, bottom: 8),
+        decoration: BoxDecoration(
+          color: Colors.grey.shade300,
+          borderRadius: BorderRadius.circular(2),
+        ),
       ),
     );
   }
 
 Widget _buildContent(BuildContext context, AppLocalizations l10n) {
   // 서버 이미지가 있으면 사용, 없으면 로컬 이미지 사용
-  String? imagePath;
+  List<String> imagePaths = [];
   bool isNetworkImage = false;
   
   if (widget.building.imageUrls != null && widget.building.imageUrls!.isNotEmpty) {
-    // 서버에서 받아온 이미지 사용
-    imagePath = widget.building.imageUrls![0]; // 첫 번째 이미지 사용
+    // 서버에서 받아온 여러 이미지 사용
+    imagePaths = widget.building.imageUrls!;
     isNetworkImage = true;
   } else if (widget.building.imageUrl != null && widget.building.imageUrl!.isNotEmpty) {
     // 단일 서버 이미지 사용
-    imagePath = widget.building.imageUrl!;
+    imagePaths = [widget.building.imageUrl!];
     isNetworkImage = true;
   } else {
     // 로컬 이미지 사용
-    imagePath = getImageForBuilding(widget.building.name);
+    imagePaths = [getImageForBuilding(widget.building.name)];
     isNetworkImage = false;
   }
 
@@ -133,116 +162,11 @@ Widget _buildContent(BuildContext context, AppLocalizations l10n) {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        GestureDetector(
-          onTap: () {
-            showDialog(
-              context: context,
-              barrierDismissible: true,
-              builder: (_) => Dialog(
-                insetPadding: EdgeInsets.zero,
-                backgroundColor: Colors.transparent,
-                child: Stack(
-                  children: [
-                    Center(
-                      child: InteractiveViewer(
-                        child: isNetworkImage
-                            ? Image.network(
-                                imagePath!,
-                                fit: BoxFit.contain,
-                                width: MediaQuery.of(context).size.width,
-                                height: MediaQuery.of(context).size.height,
-                                loadingBuilder: (context, child, loadingProgress) {
-                                  if (loadingProgress == null) return child;
-                                  return Center(
-                                    child: CircularProgressIndicator(
-                                      value: loadingProgress.expectedTotalBytes != null
-                                          ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
-                                          : null,
-                                    ),
-                                  );
-                                },
-                                errorBuilder: (context, error, stackTrace) {
-                                  return Center(
-                                    child: Column(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        Icon(Icons.error, size: 48, color: Colors.grey),
-                                        SizedBox(height: 16),
-                                        Text('이미지를 불러올 수 없습니다', style: TextStyle(color: Colors.grey)),
-                                      ],
-                                    ),
-                                  );
-                                },
-                              )
-                            : Image.asset(
-                                imagePath!,
-                                fit: BoxFit.contain,
-                                width: MediaQuery.of(context).size.width,
-                                height: MediaQuery.of(context).size.height,
-                              ),
-                      ),
-                    ),
-                    Positioned(
-                      top: 32,
-                      right: 32,
-                      child: IconButton(
-                        icon: Icon(Icons.close, color: Colors.white, size: 32),
-                        onPressed: () => Navigator.of(context).pop(),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: isNetworkImage
-                ? Image.network(
-                    imagePath!,
-                    width: 56,
-                    height: 56,
-                    fit: BoxFit.cover,
-                    loadingBuilder: (context, child, loadingProgress) {
-                      if (loadingProgress == null) return child;
-                      return Container(
-                        width: 56,
-                        height: 56,
-                        decoration: BoxDecoration(
-                          color: Colors.grey[200],
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Center(
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            value: loadingProgress.expectedTotalBytes != null
-                                ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
-                                : null,
-                          ),
-                        ),
-                      );
-                    },
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        width: 56,
-                        height: 56,
-                        decoration: BoxDecoration(
-                          color: Colors.grey[200],
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Icon(Icons.error, color: Colors.grey),
-                      );
-                    },
-                  )
-                : Image.asset(
-                    imagePath!,
-                    width: 56,
-                    height: 56,
-                    fit: BoxFit.cover,
-                  ),
-          ),
-        ),
-        const SizedBox(height: 12),
+        // 🔥 여러 이미지를 표시하는 갤러리
+        if (imagePaths.isNotEmpty) ...[
+          _buildImageGallery(imagePaths, isNetworkImage),
+          const SizedBox(height: 12),
+        ],
         _buildHeader(),
         const SizedBox(height: 12),
         _buildLocationInfo(l10n),
@@ -259,6 +183,184 @@ Widget _buildContent(BuildContext context, AppLocalizations l10n) {
     ),
   );
 }
+
+  /// 🔥 여러 이미지를 표시하는 갤러리 위젯
+  Widget _buildImageGallery(List<String> imagePaths, bool isNetworkImage) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // 이미지 갤러리
+        SizedBox(
+          height: 120,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: imagePaths.length,
+            itemBuilder: (context, index) {
+              return GestureDetector(
+                onTap: () => _showImageDialog(imagePaths, index, isNetworkImage),
+                child: Container(
+                  margin: EdgeInsets.only(right: index < imagePaths.length - 1 ? 8 : 0),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: isNetworkImage
+                        ? Image.network(
+                            imagePaths[index],
+                            width: 120,
+                            height: 120,
+                            fit: BoxFit.cover,
+                            loadingBuilder: (context, child, loadingProgress) {
+                              if (loadingProgress == null) return child;
+                              return Container(
+                                width: 120,
+                                height: 120,
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[200],
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Center(
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    value: loadingProgress.expectedTotalBytes != null
+                                        ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                                        : null,
+                                  ),
+                                ),
+                              );
+                            },
+                            errorBuilder: (context, error, stackTrace) {
+                              return Container(
+                                width: 120,
+                                height: 120,
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[200],
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Icon(Icons.error, color: Colors.grey),
+                              );
+                            },
+                          )
+                        : Image.asset(
+                            imagePaths[index],
+                            width: 120,
+                            height: 120,
+                            fit: BoxFit.cover,
+                          ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+        // 이미지 개수 표시
+        if (imagePaths.length > 1) ...[
+          const SizedBox(height: 8),
+          Text(
+            '${imagePaths.length}개의 이미지',
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey[600],
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  /// 🔥 이미지 전체화면 다이얼로그
+  void _showImageDialog(List<String> imagePaths, int initialIndex, bool isNetworkImage) {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (_) => Dialog(
+        insetPadding: EdgeInsets.zero,
+        backgroundColor: Colors.transparent,
+        child: Stack(
+          children: [
+            // 이미지 뷰어
+            PageView.builder(
+              itemCount: imagePaths.length,
+              controller: PageController(initialPage: initialIndex),
+              itemBuilder: (context, index) {
+                return Center(
+                  child: InteractiveViewer(
+                    child: isNetworkImage
+                        ? Image.network(
+                            imagePaths[index],
+                            fit: BoxFit.contain,
+                            width: MediaQuery.of(context).size.width,
+                            height: MediaQuery.of(context).size.height,
+                            loadingBuilder: (context, child, loadingProgress) {
+                              if (loadingProgress == null) return child;
+                              return Center(
+                                child: CircularProgressIndicator(
+                                  value: loadingProgress.expectedTotalBytes != null
+                                      ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                                      : null,
+                                ),
+                              );
+                            },
+                            errorBuilder: (context, error, stackTrace) {
+                              return Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.error, size: 48, color: Colors.grey),
+                                    SizedBox(height: 16),
+                                    Text('이미지를 불러올 수 없습니다', style: TextStyle(color: Colors.grey)),
+                                  ],
+                                ),
+                              );
+                            },
+                          )
+                        : Image.asset(
+                            imagePaths[index],
+                            fit: BoxFit.contain,
+                            width: MediaQuery.of(context).size.width,
+                            height: MediaQuery.of(context).size.height,
+                          ),
+                  ),
+                );
+              },
+            ),
+            // 닫기 버튼
+            Positioned(
+              top: 32,
+              right: 32,
+              child: IconButton(
+                icon: Icon(Icons.close, color: Colors.white, size: 32),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+            ),
+            // 이미지 인덱스 표시 (여러 이미지인 경우)
+            if (imagePaths.length > 1)
+              Positioned(
+                bottom: 32,
+                left: 0,
+                right: 0,
+                child: Center(
+                  child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.7),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      '${initialIndex + 1} / ${imagePaths.length}',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
 
   Widget _buildHeader() {
     return Row(

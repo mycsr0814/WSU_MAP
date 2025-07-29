@@ -28,6 +28,7 @@ dependencies:
   flutter_svg: ^2.2.0
   path_drawing: ^1.0.1
   connectivity_plus: ^6.0.3
+  image_picker: ^1.0.7
 
 
   # http 패키지는 최신 버전인 ^1.2.1로 통합했습니다.

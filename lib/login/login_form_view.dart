@@ -222,7 +222,7 @@ class _LoginFormViewState extends State<LoginFormView> with TickerProviderStateM
                       padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black.withOpacity(0.08),

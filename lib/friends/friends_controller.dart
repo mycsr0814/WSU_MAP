@@ -387,12 +387,29 @@ class FriendsController extends ChangeNotifier {
   Future<void> addFriend(String addId) async {
     try {
       debugPrint('👤 친구 추가 요청: $addId');
+      
+      // 🔥 요청 시작 시 에러 메시지 초기화
+      errorMessage = null;
+      notifyListeners();
+      
       await repository.requestFriend(myId, addId);
       await quickUpdate();
       debugPrint('✅ 친구 추가 요청 완료');
+      
+      // 🔥 성공 시 에러 메시지 확실히 초기화
+      errorMessage = null;
+      notifyListeners();
     } catch (e) {
       errorMessage = e.toString();
       debugPrint('❌ 친구 추가 실패: $e');
+      
+      // 🔥 실패 시에도 기존 친구 목록을 유지하기 위해 전체 데이터 다시 로드
+      try {
+        await loadAll();
+      } catch (loadError) {
+        debugPrint('❌ 친구 목록 복구 실패: $loadError');
+      }
+      
       notifyListeners();
     }
   }

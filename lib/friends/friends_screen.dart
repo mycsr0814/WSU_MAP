@@ -161,12 +161,12 @@ class _FriendsScreenState extends State<FriendsScreen>
           width: MediaQuery.of(context).size.width * 0.9,
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.1),
+                color: Colors.black.withOpacity(0.08),
                 blurRadius: 20,
-                offset: const Offset(0, 10),
+                offset: const Offset(0, 8),
               ),
             ],
           ),
@@ -503,24 +503,33 @@ class _FriendsScreenState extends State<FriendsScreen>
     try {
       await controller.addFriend(id);
 
+      // 🔥 성공 시에만 모달창 닫기
       if (controller.errorMessage == null) {
         _showSuccessMessage(
           AppLocalizations.of(context)!.friendRequestSent(id),
         );
         _addController.clear();
 
-        // 🔥 친구 요청 성공 시 모달창 닫기
+        // 🔥 친구 요청 성공 시에만 모달창 닫기
         if (mounted) {
           Navigator.of(context).pop();
         }
       } else {
+        // 🔥 실패 시 에러 메시지만 표시하고 모달창은 유지
         _showErrorMessage(
           controller.errorMessage ??
               AppLocalizations.of(context)!.errorAddFriend,
         );
+        
+        // 🔥 실패 후에도 친구 목록을 다시 로드하여 정상 상태 유지
+        await controller.loadAll();
       }
     } catch (e) {
+      // 🔥 네트워크 오류 등 예외 발생 시에도 모달창 유지
       _showErrorMessage(AppLocalizations.of(context)!.errorNetworkError);
+      
+      // 🔥 예외 발생 후에도 친구 목록을 다시 로드하여 정상 상태 유지
+      await controller.loadAll();
     } finally {
       if (mounted) {
         setState(() {
@@ -1380,12 +1389,12 @@ class _FriendsScreenState extends State<FriendsScreen>
           width: MediaQuery.of(context).size.width * 0.9,
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.1),
+                color: Colors.black.withOpacity(0.08),
                 blurRadius: 20,
-                offset: const Offset(0, 10),
+                offset: const Offset(0, 8),
               ),
             ],
           ),
@@ -1762,12 +1771,12 @@ class _FriendsScreenState extends State<FriendsScreen>
           width: MediaQuery.of(context).size.width * 0.9,
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.1),
+                color: Colors.black.withOpacity(0.08),
                 blurRadius: 20,
-                offset: const Offset(0, 10),
+                offset: const Offset(0, 8),
               ),
             ],
           ),

@@ -284,6 +284,75 @@ class AuthService {
       return false;
     }
   }
+
+  /// 🔥 위치 공유 설정 업데이트
+  Future<bool> updateShareLocation(String userId, bool isEnabled) async {
+    try {
+      debugPrint('=== 위치 공유 설정 업데이트 시작 ===');
+      debugPrint('사용자 ID: $userId');
+      debugPrint('위치 공유 상태: $isEnabled');
+
+      final response = await http.put(
+        Uri.parse('${ApiConfig.userBase}/update_share_location'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'id': userId,
+        }),
+      );
+
+      debugPrint('서버 응답 상태: ${response.statusCode}');
+      debugPrint('서버 응답 내용: ${response.body}');
+
+      if (response.statusCode == 200) {
+        debugPrint('✅ 위치 공유 설정 업데이트 성공');
+        return true;
+      } else {
+        debugPrint('❌ 위치 공유 설정 업데이트 실패: ${response.statusCode}');
+        return false;
+      }
+    } catch (e) {
+      debugPrint('❌ 위치 공유 설정 업데이트 오류: $e');
+      return false;
+    }
+  }
+
+  /// 🔥 사용자 존재 여부 확인
+  Future<bool> checkUserExists(String userId) async {
+    try {
+      debugPrint('=== 사용자 존재 여부 확인 시작 ===');
+      debugPrint('확인할 사용자 ID: $userId');
+
+      final response = await http.get(
+        Uri.parse('${ApiConfig.userBase}/check_user/$userId'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      );
+
+      debugPrint('서버 응답 상태: ${response.statusCode}');
+      debugPrint('서버 응답 내용: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final responseBody = response.body.toLowerCase();
+        // 서버에서 사용자가 존재한다고 응답한 경우
+        if (responseBody.contains('true') || responseBody.contains('존재') || responseBody.contains('exists')) {
+          debugPrint('✅ 사용자가 존재함');
+          return true;
+        } else {
+          debugPrint('❌ 사용자가 존재하지 않음');
+          return false;
+        }
+      } else {
+        debugPrint('❌ 사용자 확인 실패: ${response.statusCode}');
+        return false;
+      }
+    } catch (e) {
+      debugPrint('❌ 사용자 확인 오류: $e');
+      return false;
+    }
+  }
 }
 
 /// 인증 결과를 나타내는 클래스

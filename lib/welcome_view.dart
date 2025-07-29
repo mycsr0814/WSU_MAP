@@ -352,12 +352,12 @@ Future<void> _prepareLocationInBackground() async {
                               height: 80,
                               decoration: BoxDecoration(
                                 color: Colors.white,
-                                borderRadius: BorderRadius.circular(20),
+                                borderRadius: BorderRadius.circular(12),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withOpacity(0.1),
+                                    color: Colors.black.withOpacity(0.08),
                                     blurRadius: 20,
-                                    offset: const Offset(0, 10),
+                                    offset: const Offset(0, 8),
                                   ),
                                 ],
                               ),
@@ -412,7 +412,7 @@ Future<void> _prepareLocationInBackground() async {
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                           decoration: BoxDecoration(
                             color: Colors.green.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(20),
+                            borderRadius: BorderRadius.circular(12),
                             border: Border.all(color: Colors.green.withOpacity(0.3)),
                           ),
                           child: Row(
@@ -472,7 +472,7 @@ Future<void> _prepareLocationInBackground() async {
                                 foregroundColor: Colors.white,
                                 elevation: 0,
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(20),
+                                  borderRadius: BorderRadius.circular(12),
                                 ),
                                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                               ),

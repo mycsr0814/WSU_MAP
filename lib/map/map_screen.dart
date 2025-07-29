@@ -46,6 +46,9 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
 
   // 🔥 사용자 ID 추적용
   String? _lastUserId;
+  
+  // 🔥 시간표에서 전달받은 건물 정보 처리 플래그
+  bool _hasProcessedTimetableBuilding = false;
 
   @override
   void initState() {
@@ -99,15 +102,11 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     final userAuth = context.watch<UserAuth>();
     final currentUserId = userAuth.userId;
 
-    // 🔥 사용자가 변경되었거나 로그아웃 후 재로그인한 경우 맵 재초기화
-    if (_lastUserId != currentUserId) {
-      debugPrint('🔄 사용자 변경 감지: $_lastUserId -> $currentUserId');
+    // 🔥 새 사용자 로그인 감지 시 플래그 리셋
+    if (currentUserId != _lastUserId) {
       _lastUserId = currentUserId;
-
-      if (currentUserId != null && userAuth.isLoggedIn) {
-        // 재로그인 시 맵 재초기화
-        _reinitializeMapForNewUser();
-      }
+      _hasProcessedTimetableBuilding = false; // 🔥 플래그 리셋
+      debugPrint('🔄 새 사용자 감지 - 시간표 건물 정보 플래그 리셋');
     }
 
     // 🔥 시간표에서 전달받은 건물 정보 처리
@@ -257,6 +256,11 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
 
   /// 🔥 시간표에서 전달받은 건물 정보 처리
   void _handleBuildingInfoFromTimetable() {
+    // 🔥 이미 처리된 경우 스킵
+    if (_hasProcessedTimetableBuilding) {
+      return;
+    }
+    
     final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
     if (args != null && args.containsKey('showBuilding')) {
       final buildingName = args['showBuilding'] as String;
@@ -265,9 +269,28 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
       debugPrint('🏢 시간표에서 건물 정보 받음: $buildingName');
       debugPrint('🏢 건물 상세 정보: $buildingInfo');
       
+      // 🔥 처리 플래그 설정
+      _hasProcessedTimetableBuilding = true;
+      
       // 지도가 준비된 후 건물 정보 표시
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _showBuildingFromTimetable(buildingName, buildingInfo);
+      });
+      
+      // 🔥 arguments 클리어 (다음 화면 전환 시 중복 처리 방지)
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && ModalRoute.of(context) != null) {
+          final route = ModalRoute.of(context)!;
+          if (route.settings.arguments is Map<String, dynamic>) {
+            final currentArgs = route.settings.arguments as Map<String, dynamic>;
+            if (currentArgs.containsKey('showBuilding')) {
+              // arguments에서 showBuilding 제거
+              currentArgs.remove('showBuilding');
+              currentArgs.remove('buildingInfo');
+              debugPrint('🧹 시간표 건물 정보 arguments 클리어 완료');
+            }
+          }
+        }
       });
     }
   }
@@ -677,7 +700,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
 
   /// 🔥 일반 네비게이션 바 아이템 - 접근 제한 로직 제거
   Widget _buildNavItem(
-    int screenIndex, // 🔥 IndexedStack의 실제 화면 인덱스
+    int screenIndex, // �� IndexedStack의 실제 화면 인덱스
     IconData icon,
     IconData activeIcon,
     String label,
