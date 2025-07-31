@@ -143,7 +143,12 @@ Widget _buildHeader(AppLocalizations l10n) {
           ? () => Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => ProfileActionPage(userAuth: userAuth, l10n: l10n, onLogout: () => _handleLogout(userAuth), onDelete: () => _handleMenuTap(l10n.delete_account), onEdit: () => _handleMenuTap(l10n.edit_profile)),
+                  builder: (_) => ProfileActionPage(
+                    userAuth: userAuth,
+                    onLogout: () => _handleLogout(userAuth),
+                    onDelete: () => _handleMenuTap(l10n.delete_account),
+                    onEdit: () => _handleMenuTap(l10n.edit_profile),
+                  ),
                 ),
               )
           : null,
@@ -868,6 +873,7 @@ Widget _buildHeader(AppLocalizations l10n) {
 
   void _handleMenuTap(String title) {
     final l10n = AppLocalizations.of(context)!;
+    final userAuth = Provider.of<UserAuth>(context, listen: false);
 
     if (title == l10n.help) {
       Navigator.push(
@@ -889,7 +895,7 @@ Widget _buildHeader(AppLocalizations l10n) {
     } else if (title == '문의하기') {
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (_) => const InquiryPage()),
+        MaterialPageRoute(builder: (_) => InquiryPage(userAuth: userAuth)),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(

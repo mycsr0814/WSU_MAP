@@ -281,7 +281,8 @@ class PathApiService {
     }
   }
 
-  /// API 연결 테스트 함수
+  /// API 연결 테스트 함수 - 🔥 서버에 health 엔드포인트가 없으므로 주석 처리
+  /*
   static Future<bool> testConnection() async {
     try {
       final url = Uri.parse('$baseUrl/health');
@@ -293,4 +294,5 @@ class PathApiService {
       return false;
     }
   }
+  */
 }

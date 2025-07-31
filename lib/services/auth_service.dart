@@ -110,7 +110,7 @@ class AuthService {
           return LoginResult.success(
             userId: data['id'],
             userName: data['name'],
-            isLogin: data['islogin'] ?? true,
+            isLogin: data['islogin'] ?? data['isLogin'] ?? data['online'] ?? true,
           );
         case 400:
           return LoginResult.failure('아이디와 비밀번호를 입력하세요.');
@@ -285,12 +285,12 @@ class AuthService {
     }
   }
 
-  /// 🔥 위치 공유 설정 업데이트
+  /// 🔥 위치 공유 상태 업데이트
   Future<bool> updateShareLocation(String userId, bool isEnabled) async {
     try {
-      debugPrint('=== 위치 공유 설정 업데이트 시작 ===');
+      debugPrint('=== 위치 공유 상태 업데이트 시작 ===');
       debugPrint('사용자 ID: $userId');
-      debugPrint('위치 공유 상태: $isEnabled');
+      debugPrint('위치 공유 활성화: $isEnabled');
 
       final response = await http.put(
         Uri.parse('${ApiConfig.userBase}/update_share_location'),
@@ -299,6 +299,7 @@ class AuthService {
         },
         body: jsonEncode({
           'id': userId,
+          'Is_location_public': isEnabled, // 서버에서 기대하는 필드명으로 변경
         }),
       );
 
@@ -306,14 +307,15 @@ class AuthService {
       debugPrint('서버 응답 내용: ${response.body}');
 
       if (response.statusCode == 200) {
-        debugPrint('✅ 위치 공유 설정 업데이트 성공');
+        debugPrint('✅ 위치 공유 상태 업데이트 성공');
         return true;
       } else {
-        debugPrint('❌ 위치 공유 설정 업데이트 실패: ${response.statusCode}');
+        debugPrint('❌ 위치 공유 상태 업데이트 실패: ${response.statusCode}');
+        debugPrint('❌ 실패 응답 내용: ${response.body}');
         return false;
       }
     } catch (e) {
-      debugPrint('❌ 위치 공유 설정 업데이트 오류: $e');
+      debugPrint('❌ 위치 공유 상태 업데이트 오류: $e');
       return false;
     }
   }
@@ -321,21 +323,59 @@ class AuthService {
   /// 🔥 위치 공유 상태 조회
   Future<bool?> getShareLocationStatus(String userId) async {
     try {
+      debugPrint('=== 위치 공유 상태 조회 시작 ===');
+      debugPrint('사용자 ID: $userId');
+
+      // 서버에서 전체 사용자 목록을 가져와서 현재 사용자의 위치 공유 상태를 찾음
       final response = await http.get(
-        Uri.parse('${ApiConfig.userBase}/get_share_location_status/$userId'),
+        Uri.parse('${ApiConfig.userBase}/friend_request_list'),
         headers: {
           'Content-Type': 'application/json',
         },
       );
+
+      debugPrint('서버 응답 상태: ${response.statusCode}');
+      debugPrint('서버 응답 내용: ${response.body}');
+
       if (response.statusCode == 200) {
-        final body = response.body.toLowerCase();
-        if (body.contains('true') || body.contains('on') || body.contains('enabled') || body.contains('1')) {
-          return true;
-        } else if (body.contains('false') || body.contains('off') || body.contains('disabled') || body.contains('0')) {
-          return false;
+        try {
+          final List<dynamic> data = jsonDecode(response.body);
+          debugPrint('📋 파싱된 데이터 개수: ${data.length}');
+
+          // 현재 사용자를 찾아서 Is_location_public 필드 확인
+          for (final user in data) {
+            if (user is Map<String, dynamic>) {
+              final userIdFromServer = user['Id']?.toString();
+              debugPrint('📋 확인 중인 사용자: $userIdFromServer');
+              
+              if (userIdFromServer == userId) {
+                final isLocationPublic = user['Is_location_public'];
+                debugPrint('📋 찾은 사용자의 Is_location_public: $isLocationPublic');
+                
+                if (isLocationPublic is bool) {
+                  debugPrint('✅ 서버에서 받은 위치공유 상태: $isLocationPublic');
+                  return isLocationPublic;
+                } else if (isLocationPublic is String) {
+                  final boolValue = isLocationPublic.toLowerCase() == 'true';
+                  debugPrint('✅ 서버에서 받은 위치공유 상태 (문자열): $boolValue');
+                  return boolValue;
+                } else {
+                  debugPrint('❌ Is_location_public 필드가 예상과 다른 타입: ${isLocationPublic.runtimeType}');
+                }
+              }
+            }
+          }
+          
+          debugPrint('❌ 사용자를 찾을 수 없음: $userId');
+          return null;
+        } catch (e) {
+          debugPrint('❌ JSON 파싱 오류: $e');
+          return null;
         }
+      } else {
+        debugPrint('❌ 위치 공유 상태 조회 실패: ${response.statusCode}');
+        return null;
       }
-      return null;
     } catch (e) {
       debugPrint('❌ 위치 공유 상태 조회 오류: $e');
       return null;
@@ -374,6 +414,135 @@ class AuthService {
       }
     } catch (e) {
       debugPrint('❌ 사용자 확인 오류: $e');
+      return false;
+    }
+  }
+
+  /// 🔥 사용자 목록 조회 (친구 요청용)
+  Future<List<Map<String, String>>> getUserList() async {
+    try {
+      debugPrint('=== 사용자 목록 조회 시작 ===');
+      debugPrint('📡 요청 URL: ${ApiConfig.userBase}/friend_request_list');
+
+      final response = await http.get(
+        Uri.parse('${ApiConfig.userBase}/friend_request_list'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      );
+
+      debugPrint('📡 서버 응답 상태: ${response.statusCode}');
+      debugPrint('📡 서버 응답 내용 (원본): "${response.body}"');
+      debugPrint('📡 응답 길이: ${response.body.length}');
+
+      if (response.statusCode == 200) {
+        try {
+          final List<dynamic> data = jsonDecode(response.body);
+          debugPrint('📋 파싱된 데이터 타입: ${data.runtimeType}');
+          debugPrint('📋 데이터 개수: ${data.length}');
+          debugPrint('📋 전체 파싱된 데이터: $data');
+          
+          // 🔥 데이터 구조 분석
+          if (data.isNotEmpty) {
+            final firstItem = data.first;
+            debugPrint('📋 첫 번째 항목 타입: ${firstItem.runtimeType}');
+            if (firstItem is Map<String, dynamic>) {
+              debugPrint('📋 첫 번째 항목 키들: ${firstItem.keys.toList()}');
+              debugPrint('📋 첫 번째 항목 값들: ${firstItem.values.toList()}');
+            }
+          }
+          
+          final List<Map<String, String>> userList = [];
+          
+          for (int i = 0; i < data.length; i++) {
+            final user = data[i];
+            debugPrint('📋 사용자 $i (원본): $user');
+            debugPrint('📋 사용자 $i 타입: ${user.runtimeType}');
+            
+            if (user is Map<String, dynamic>) {
+              debugPrint('📋 사용자 $i 키들: ${user.keys.toList()}');
+              
+              // 🔥 다양한 필드명 시도
+              String? id = user['Id']?.toString();
+              String? name = user['Name']?.toString();
+              
+              // 🔥 대소문자 구분 없이 시도
+              if (id == null) id = user['id']?.toString();
+              if (name == null) name = user['name']?.toString();
+              
+              debugPrint('📋 사용자 $i - ID: "$id", Name: "$name"');
+              
+              if (id != null && id.isNotEmpty && name != null && name.isNotEmpty) {
+                userList.add({
+                  'id': id,
+                  'name': name,
+                });
+                debugPrint('✅ 사용자 $i 추가됨: $name ($id)');
+              } else {
+                debugPrint('❌ 사용자 $i 건너뜀 - ID 또는 Name이 비어있음');
+                debugPrint('  ID: "$id", Name: "$name"');
+                debugPrint('  ID 길이: ${id?.length ?? 0}, Name 길이: ${name?.length ?? 0}');
+              }
+            } else {
+              debugPrint('❌ 사용자 $i 건너뜀 - Map이 아님: ${user.runtimeType}');
+            }
+          }
+          
+          debugPrint('✅ 사용자 목록 조회 성공: ${userList.length}명');
+          debugPrint('📋 최종 사용자 목록:');
+          for (int i = 0; i < userList.length; i++) {
+            final user = userList[i];
+            debugPrint('  ${i + 1}. ${user['name']} (${user['id']})');
+          }
+          return userList;
+        } catch (e) {
+          debugPrint('❌ JSON 파싱 오류: $e');
+          debugPrint('❌ 파싱 시도한 원본 데이터: "${response.body}"');
+          return [];
+        }
+      } else {
+        debugPrint('❌ 사용자 목록 조회 실패: ${response.statusCode}');
+        debugPrint('❌ 실패 응답 내용: "${response.body}"');
+        return [];
+      }
+    } catch (e) {
+      debugPrint('❌ 사용자 목록 조회 오류: $e');
+      return [];
+    }
+  }
+
+  /// 🔥 서버와 동일한 방식으로 사용자 존재 여부 확인
+  Future<bool> checkUserExistsDirect(String userId) async {
+    try {
+      debugPrint('=== 직접 사용자 존재 여부 확인 시작 ===');
+      debugPrint('확인할 사용자 ID: $userId');
+
+      final response = await http.get(
+        Uri.parse('${ApiConfig.userBase}/check_user/$userId'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      );
+
+      debugPrint('서버 응답 상태: ${response.statusCode}');
+      debugPrint('서버 응답 내용: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final responseBody = response.body.toLowerCase();
+        // 서버에서 사용자가 존재한다고 응답한 경우
+        if (responseBody.contains('true') || responseBody.contains('존재') || responseBody.contains('exists')) {
+          debugPrint('✅ 사용자가 존재함 (직접 확인)');
+          return true;
+        } else {
+          debugPrint('❌ 사용자가 존재하지 않음 (직접 확인)');
+          return false;
+        }
+      } else {
+        debugPrint('❌ 사용자 확인 실패: ${response.statusCode}');
+        return false;
+      }
+    } catch (e) {
+      debugPrint('❌ 사용자 존재 여부 확인 오류: $e');
       return false;
     }
   }

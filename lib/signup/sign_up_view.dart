@@ -1,6 +1,7 @@
 // lib/signup/sign_up_view.dart - 다국어 지원이 완전히 적용된 버전
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_application_1/login/login_form_view.dart';
 import 'package:provider/provider.dart';
 import '../components/woosong_input_field.dart';
@@ -54,6 +55,9 @@ class _SignUpViewState extends State<SignUpView> with TickerProviderStateMixin {
       CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
     );
     _animationController.forward();
+    
+    // 전화번호 포맷팅 리스너 추가
+    phoneController.addListener(_formatPhoneNumber);
   }
 
   @override
@@ -67,6 +71,31 @@ class _SignUpViewState extends State<SignUpView> with TickerProviderStateMixin {
     stuNumberController.dispose();
     _animationController.dispose();
     super.dispose();
+  }
+
+  /// 전화번호 자동 포맷팅
+  void _formatPhoneNumber() {
+    final text = phoneController.text;
+    final digitsOnly = text.replaceAll(RegExp(r'[^\d]'), '');
+    
+    if (digitsOnly.length <= 3) {
+      phoneController.value = TextEditingValue(
+        text: digitsOnly,
+        selection: TextSelection.collapsed(offset: digitsOnly.length),
+      );
+    } else if (digitsOnly.length <= 7) {
+      final formatted = '${digitsOnly.substring(0, 3)}-${digitsOnly.substring(3)}';
+      phoneController.value = TextEditingValue(
+        text: formatted,
+        selection: TextSelection.collapsed(offset: formatted.length),
+      );
+    } else {
+      final formatted = '${digitsOnly.substring(0, 3)}-${digitsOnly.substring(3, 7)}-${digitsOnly.substring(7, 11)}';
+      phoneController.value = TextEditingValue(
+        text: formatted,
+        selection: TextSelection.collapsed(offset: formatted.length),
+      );
+    }
   }
 
   /// 회원가입 처리
@@ -297,6 +326,10 @@ class _SignUpViewState extends State<SignUpView> with TickerProviderStateMixin {
                               label: '${l10n.phone} *',
                               controller: phoneController,
                               hint: l10n.phone_format_hint,
+                              keyboardType: TextInputType.phone,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.digitsOnly,
+                              ],
                             ),
                             
                             // 선택 입력 필드들

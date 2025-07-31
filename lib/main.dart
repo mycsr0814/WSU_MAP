@@ -111,6 +111,17 @@ class _CampusNavigatorAppState extends State<CampusNavigatorApp>
 
   @override
   void dispose() {
+    debugPrint('📱 앱 dispose - 로그아웃 처리');
+    
+    // 🔥 앱이 dispose될 때도 로그아웃 처리 (iOS 앱 강제 종료 대응)
+    if (_userAuth.isLoggedIn &&
+        _userAuth.userRole != UserRole.external &&
+        _userAuth.userId != null &&
+        !_userAuth.userId!.startsWith('guest_')) {
+      // 비동기 처리를 동기적으로 실행
+      _handleAppDetached();
+    }
+    
     _systemUIResetTimer?.cancel(); // 👈 타이머 정리
     WidgetsBinding.instance.removeObserver(this);
     _connectivitySubscription.cancel();
@@ -198,18 +209,30 @@ class _CampusNavigatorAppState extends State<CampusNavigatorApp>
     // 🔥 모든 사용자의 위치 전송 및 웹소켓 연결 무조건 중지 (플랫폼 무관)
     try {
       _locationManager.stopPeriodicLocationSending();
-      WebSocketService().disconnect();
+      
+      // 🔥 웹소켓을 통해 서버에 로그아웃 상태 알림 (중복 방지)
+      final wsService = WebSocketService();
+      if (wsService.isConnected) {
+        debugPrint('🔥 백그라운드 이동: 웹소켓을 통한 로그아웃 상태 알림 시작');
+        await wsService.logoutAndDisconnect();
+        debugPrint('✅ 웹소켓을 통한 로그아웃 상태 알림 완료');
+      } else {
+        wsService.disconnect();
+        debugPrint('✅ 웹소켓 연결 해제 완료');
+      }
       debugPrint('✅ 위치 전송 및 웹소켓 연결 중지 완료');
     } catch (e) {
       debugPrint('❌ 위치 전송 및 웹소켓 연결 중지 오류: $e');
     }
 
-    // 🔥 일반 사용자만 서버 로그아웃 처리
+    // 🔥 일반 사용자만 서버 로그아웃 처리 (UserAuth에서 중복 처리하지 않도록 주의)
     if (_userAuth.isLoggedIn &&
         _userAuth.userRole != UserRole.external &&
         _userAuth.userId != null &&
         !_userAuth.userId!.startsWith('guest_')) {
       try {
+        // 🔥 UserAuth의 logout() 메서드 호출하지 않고 서버 로그아웃만 처리
+        debugPrint('🔥 백그라운드 이동: 서버 로그아웃 처리 시작');
         await _userAuth.logoutServerOnly();
         debugPrint('✅ 서버 로그아웃 완료');
       } catch (e) {
@@ -221,13 +244,24 @@ class _CampusNavigatorAppState extends State<CampusNavigatorApp>
   /// 🔥 앱 완전 종료 시 - 강제 중지
   Future<void> _handleAppDetached() async {
     debugPrint('📱 앱 완전 종료 - 모든 연결 강제 중지');
+    debugPrint('🔍 플랫폼: ${Platform.isIOS ? 'iOS' : 'Android'}');
 
     _systemUIResetTimer?.cancel(); // 👈 앱 종료 시 타이머 중지
 
     // 🔥 강제 위치 전송 및 웹소켓 연결 중지
     try {
       _locationManager.forceStopLocationSending();
-      WebSocketService().disconnect();
+      
+      // 🔥 웹소켓을 통해 서버에 로그아웃 상태 알림
+      final wsService = WebSocketService();
+      if (wsService.isConnected) {
+        debugPrint('🔥 앱 완전 종료: 웹소켓을 통한 로그아웃 상태 알림 시작');
+        await wsService.logoutAndDisconnect();
+        debugPrint('✅ 웹소켓을 통한 로그아웃 상태 알림 완료');
+      } else {
+        wsService.disconnect();
+        debugPrint('✅ 웹소켓 연결 해제 완료');
+      }
       debugPrint('✅ 모든 연결 강제 중지 완료');
     } catch (e) {
       debugPrint('❌ 연결 강제 중지 오류: $e');
@@ -239,6 +273,7 @@ class _CampusNavigatorAppState extends State<CampusNavigatorApp>
         _userAuth.userId != null &&
         !_userAuth.userId!.startsWith('guest_')) {
       try {
+        debugPrint('🔥 앱 완전 종료: 서버 로그아웃 처리 시작');
         await _userAuth.logoutServerOnly();
         debugPrint('✅ 서버 로그아웃 완료');
       } catch (e) {
@@ -246,6 +281,8 @@ class _CampusNavigatorAppState extends State<CampusNavigatorApp>
       }
     }
   }
+
+
 
   // ---------- 앱 초기화 ----------
   Future<void> _initializeApp() async {

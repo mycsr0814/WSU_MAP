@@ -22,27 +22,30 @@ class Friend {
 
   factory Friend.fromJson(Map<String, dynamic> json) {
     return Friend(
-      userId: _extractString(json, ['user_id', 'Id', 'id', 'userId']),
-      userName: _extractString(json, ['user_name', 'Name', 'name', 'userName']),
+      userId: _extractString(json, ['Id', 'user_id', 'id', 'userId']),
+      userName: _extractString(json, ['Name', 'user_name', 'name', 'userName']),
       profileImage: _extractString(json, [
         'profile_image',
         'profileImage',
         'Profile_Image',
       ]),
-      phone: _extractString(json, ['phone', 'Phone', 'phoneNumber']),
+      phone: _extractString(json, ['Phone', 'phone', 'phoneNumber']),
       isLogin: _extractBool(json, [
-        'is_login',
         'Is_Login',
+        'islogin',
+        'is_login',
         'isLogin',
         'online',
+        'Online',
       ]),
       lastLocation: _extractLocation(json, [
-        'last_location',
         'Last_Location',
+        'last_location',
         'lastLocation',
         'location',
       ]),
       isLocationPublic: _extractBool(json, [
+        'Is_location_public',
         'isLocationPublic',
         'locationPublic',
         'is_location_public',

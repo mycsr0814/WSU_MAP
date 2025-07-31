@@ -56,20 +56,40 @@ class FriendsController extends ChangeNotifier {
     );
 
     // 🔥 초기 연결 상태 확인 후 폴링 제어
-    if (_wsService.isConnected) {
-      isWebSocketConnected = true;
-      debugPrint('✅ 초기 웹소켓 연결됨 - 폴링 시작하지 않음');
-    } else {
-      debugPrint('❌ 초기 웹소켓 연결 실패 - 폴링 모드로 시작');
+    try {
+      // 웹소켓 연결 상태를 여러 번 확인
+      await Future.delayed(const Duration(milliseconds: 500)); // 연결 안정화 대기
+      
+      final wsConnected = _wsService.isConnected;
+      isWebSocketConnected = wsConnected;
+      debugPrint('🔍 초기 웹소켓 연결 상태: $wsConnected');
+      debugPrint('🔍 웹소켓 연결 상태 상세: ${_wsService.connectionInfo}');
+      
+      if (wsConnected) {
+        debugPrint('✅ 초기 웹소켓 연결됨 - 폴링 시작하지 않음');
+        // 웹소켓이 연결되면 폴링 타이머 정리
+        _updateTimer?.cancel();
+        _updateTimer = null;
+      } else {
+        debugPrint('❌ 초기 웹소켓 연결 실패 - 폴링 모드로 시작');
+        _startRealTimeUpdates();
+      }
+    } catch (e) {
+      debugPrint('❌ 웹소켓 연결 상태 확인 실패: $e');
+      debugPrint('🔍 웹소켓 연결 상태: ${_wsService.connectionStatus}');
       _startRealTimeUpdates();
     }
 
     debugPrint('✅ 웹소켓 서비스 초기화 완료');
+    debugPrint('🔍 웹소켓 연결 상태: ${_wsService.connectionStatus}');
   }
 
-  // 📨 웹소켓 메시지 처리
+  // 📨 웹소켓 메시지 처리 (개선)
   void _handleWebSocketMessage(Map<String, dynamic> message) {
     debugPrint('📨 친구 컨트롤러에서 웹소켓 메시지 수신: ${message['type']}');
+    debugPrint('📨 메시지 내용: $message');
+    debugPrint('📨 현재 웹소켓 연결 상태: $isWebSocketConnected');
+    debugPrint('📨 현재 온라인 사용자 수: ${onlineUsers.length}');
 
     switch (message['type']) {
       case 'new_friend_request':
@@ -94,6 +114,59 @@ class FriendsController extends ChangeNotifier {
       case 'friend_location_update':
         _handleFriendLocationUpdate(message);
         break;
+
+      // 🔥 온라인 사용자 목록 업데이트 처리
+      case 'online_users_update':
+        if (message['users'] != null) {
+          List<String> users = [];
+          if (message['users'] is List) {
+            users = (message['users'] as List).map((user) {
+              if (user is String) {
+                return user;
+              } else if (user is Map) {
+                return user['userId']?.toString() ?? user['id']?.toString() ?? '';
+              } else {
+                return user.toString();
+              }
+            }).where((id) => id.isNotEmpty).toList();
+          }
+          _handleOnlineUsersUpdate(users);
+        }
+        break;
+
+      // 🔥 등록 확인 메시지
+      case 'registered':
+        debugPrint('✅ 웹소켓 등록 확인됨 - 친구 컨트롤러');
+        break;
+
+      // 🔥 새로 추가: 사용자 로그인 처리
+      case 'user_login':
+        _handleUserLogin(message);
+        break;
+
+      // 🔥 새로 추가: 사용자 로그아웃 처리
+      case 'user_logout':
+        _handleUserLogout(message);
+        break;
+
+      // 🔥 새로 추가: 친구 로그인 처리
+      case 'friend_logged_in':
+        _handleFriendLoggedIn(message);
+        break;
+
+      // 🔥 새로 추가: 친구 로그아웃 처리
+      case 'friend_logged_out':
+        _handleFriendLoggedOut(message);
+        break;
+
+      // 🔥 하트비트 응답 처리
+      case 'heartbeat_response':
+        debugPrint('❤️ 친구 컨트롤러에서 하트비트 응답 수신');
+        // 특별한 UI 업데이트 필요 없음
+        break;
+
+      default:
+        debugPrint('⚠️ 알 수 없는 웹소켓 메시지 타입: ${message['type']}');
     }
   }
 
@@ -125,17 +198,20 @@ class FriendsController extends ChangeNotifier {
   void _handleConnectionChange(bool isConnected) {
     isWebSocketConnected = isConnected;
     debugPrint('🔌 웹소켓 연결 상태 변경: $isConnected');
+    debugPrint('🔌 현재 isRealTimeEnabled: ${_isRealTimeEnabled}');
+    debugPrint('🔌 현재 isWebSocketConnected: $isWebSocketConnected');
 
     if (isConnected) {
-      debugPrint('✅ 웹소켓 연결됨 - 폴링 완전 중지');
+      debugPrint('✅ 웹소켓 연결됨 - 실시간 모드 활성화');
       // 🔥 타이머 완전 중지 및 정리
       _updateTimer?.cancel();
       _updateTimer = null;
 
-      // 한 번만 동기화
-      quickUpdate();
+      // 🔥 웹소켓 연결 시 초기 데이터 로드 및 동기화
+      _initializeWithWebSocket();
     } else {
-      debugPrint('❌ 웹소켓 연결 끊어짐 - 폴링 재시작');
+      debugPrint('❌ 웹소켓 연결 끊어짐 - 폴링 모드로 전환');
+      debugPrint('❌ 연결 상태: isConnected=$isConnected, isWebSocketConnected=$isWebSocketConnected');
       // 🔥 웹소켓이 끊어지면 폴링 재시작
       _startRealTimeUpdates();
     }
@@ -143,14 +219,116 @@ class FriendsController extends ChangeNotifier {
     notifyListeners();
   }
 
+  // 🔥 웹소켓 연결 시 초기화 및 동기화
+  Future<void> _initializeWithWebSocket() async {
+    try {
+      debugPrint('🔄 웹소켓 연결 시 초기 데이터 로드 시작');
+      
+      // 웹소켓 연결 상태 재확인
+      if (!_wsService.isConnected) {
+        debugPrint('⚠️ 웹소켓이 연결되지 않음 - 폴링 모드로 전환');
+        _startRealTimeUpdates();
+        return;
+      }
+      
+      // 1. 친구 목록 로드
+      final newFriends = await repository.getMyFriends(myId);
+      friends = newFriends;
+      debugPrint('✅ 친구 목록 로드 완료: ${friends.length}명');
+
+      // 2. 친구 요청 목록 로드
+      final newFriendRequests = await repository.getFriendRequests(myId);
+      friendRequests = newFriendRequests;
+      debugPrint('✅ 친구 요청 목록 로드 완료: ${friendRequests.length}개');
+
+      // 3. 보낸 친구 요청 목록 로드
+      final newSentFriendRequests = await repository.getSentFriendRequests(myId);
+      sentFriendRequests = newSentFriendRequests;
+      debugPrint('✅ 보낸 친구 요청 목록 로드 완료: ${sentFriendRequests.length}개');
+
+      // 🔥 4. 서버 데이터 기반 온라인 상태 초기화
+      _initializeOnlineStatusFromServer();
+      
+      // 5. 온라인 상태 동기화
+      _updateFriendsOnlineStatus();
+      
+      debugPrint('✅ 웹소켓 초기화 완료');
+      notifyListeners();
+    } catch (e) {
+      debugPrint('❌ 웹소켓 초기화 실패: $e');
+      // 초기화 실패 시 폴링 모드로 전환
+      _startRealTimeUpdates();
+    }
+  }
+
+  // 🔥 서버 데이터 기반 온라인 상태 초기화
+  void _initializeOnlineStatusFromServer() {
+    debugPrint('🔄 서버 데이터 기반 온라인 상태 초기화 시작');
+    
+    // 온라인 사용자 목록 초기화
+    onlineUsers.clear();
+    
+    for (int i = 0; i < friends.length; i++) {
+      final friend = friends[i];
+      if (friend.isLogin) {
+        onlineUsers.add(friend.userId);
+        debugPrint('✅ ${friend.userName} (${friend.userId}) - 서버에서 온라인으로 확인');
+      } else {
+        debugPrint('❌ ${friend.userName} (${friend.userId}) - 서버에서 오프라인으로 확인');
+      }
+    }
+    
+    debugPrint('🔄 서버 데이터 기반 초기화 완료 - 온라인 사용자: $onlineUsers');
+  }
+
+
+
   // 👥 온라인 사용자 목록 업데이트
   void _handleOnlineUsersUpdate(List<String> users) {
     onlineUsers = users;
     debugPrint('👥 온라인 사용자 업데이트: ${users.length}명');
+    debugPrint('온라인 사용자 목록: $users');
 
+    // 🔥 서버 데이터와 웹소켓 데이터 동기화
+    // 서버에서 받은 친구 목록의 Is_Login 상태를 우선 반영
+    _syncWithServerData();
+    
     // 친구 목록의 온라인 상태 업데이트
     _updateFriendsOnlineStatus();
+    
+    debugPrint('🔄 UI 업데이트 트리거 - 온라인 사용자 업데이트');
     notifyListeners();
+  }
+
+  // 🔥 서버 데이터와 웹소켓 데이터 동기화
+  void _syncWithServerData() {
+    debugPrint('🔄 서버 데이터와 웹소켓 데이터 동기화 시작');
+    
+    for (int i = 0; i < friends.length; i++) {
+      final friend = friends[i];
+      final isOnlineInServer = friend.isLogin; // 서버에서 받은 Is_Login 상태
+      final isOnlineInWebSocket = onlineUsers.contains(friend.userId);
+      
+      debugPrint('🔍 ${friend.userName} (${friend.userId}): 서버=$isOnlineInServer, 웹소켓=$isOnlineInWebSocket');
+      
+      // 🔥 웹소켓이 연결되어 있으면 웹소켓 데이터를 우선, 아니면 서버 데이터를 우선
+      if (isWebSocketConnected) {
+        // 웹소켓 연결 시: 웹소켓 데이터가 실시간이므로 우선
+        if (isOnlineInWebSocket && !isOnlineInServer) {
+          debugPrint('✅ ${friend.userName} - 웹소켓에서 온라인으로 확인');
+        }
+      } else {
+        // 웹소켓 연결 안됨: 서버 데이터를 우선
+        if (isOnlineInServer && !isOnlineInWebSocket) {
+          if (!onlineUsers.contains(friend.userId)) {
+            onlineUsers.add(friend.userId);
+            debugPrint('✅ ${friend.userName}을 온라인 사용자 목록에 추가 (서버 데이터)');
+          }
+        }
+      }
+    }
+    
+    debugPrint('🔄 동기화 완료 - 최종 온라인 사용자: $onlineUsers');
   }
 
   // 📶 친구 상태 변경 처리 (기존 메서드 개선)
@@ -192,45 +370,173 @@ class FriendsController extends ChangeNotifier {
     notifyListeners();
   }
 
-  // 🔥 새로 추가: 친구 로그아웃 처리 메서드
-  void _handleFriendLoggedOut(Map<String, dynamic> message) {
-    final loggedOutUserId = message['userId'];
-
-    debugPrint('👋 친구 로그아웃 처리: $loggedOutUserId');
-
-    // 온라인 사용자 목록에서 제거
-    if (onlineUsers.contains(loggedOutUserId)) {
-      onlineUsers.remove(loggedOutUserId);
-      debugPrint('📝 온라인 사용자 목록에서 제거: $loggedOutUserId');
+  // 🔥 사용자 로그인 처리
+  void _handleUserLogin(Map<String, dynamic> message) {
+    final userId = message['userId'];
+    debugPrint('👤 사용자 로그인 감지: $userId');
+    
+    // 온라인 사용자 목록에 추가
+    if (!onlineUsers.contains(userId)) {
+      onlineUsers.add(userId);
+      debugPrint('✅ 온라인 사용자 목록에 추가: $userId');
     }
+    
+    // 친구 목록에서 해당 사용자의 상태를 온라인으로 업데이트
+    for (int i = 0; i < friends.length; i++) {
+      if (friends[i].userId == userId) {
+        if (!friends[i].isLogin) {
+          friends[i] = Friend(
+            userId: friends[i].userId,
+            userName: friends[i].userName,
+            profileImage: friends[i].profileImage,
+            phone: friends[i].phone,
+            isLogin: true,
+            lastLocation: friends[i].lastLocation,
+            isLocationPublic: friends[i].isLocationPublic,
+          );
+          debugPrint('✅ ${friends[i].userName} 상태를 온라인으로 업데이트');
+        }
+        break;
+      }
+    }
+    
+    notifyListeners();
+  }
 
+  // 🔥 사용자 로그아웃 처리
+  void _handleUserLogout(Map<String, dynamic> message) {
+    final userId = message['userId'];
+    debugPrint('👤 사용자 로그아웃 감지: $userId');
+    
+    // 온라인 사용자 목록에서 제거
+    if (onlineUsers.contains(userId)) {
+      onlineUsers.remove(userId);
+      debugPrint('✅ 온라인 사용자 목록에서 제거: $userId');
+    }
+    
     // 친구 목록에서 해당 사용자의 상태를 오프라인으로 업데이트
     for (int i = 0; i < friends.length; i++) {
-      if (friends[i].userId == loggedOutUserId) {
-        friends[i] = Friend(
-          userId: friends[i].userId,
-          userName: friends[i].userName,
-          profileImage: friends[i].profileImage,
-          phone: friends[i].phone,
-          isLogin: false, // 🔥 오프라인으로 변경
-          lastLocation: friends[i].lastLocation,
-          isLocationPublic: friends[i].isLocationPublic,
-        );
+      if (friends[i].userId == userId) {
+        if (friends[i].isLogin) {
+          friends[i] = Friend(
+            userId: friends[i].userId,
+            userName: friends[i].userName,
+            profileImage: friends[i].profileImage,
+            phone: friends[i].phone,
+            isLogin: false,
+            lastLocation: friends[i].lastLocation,
+            isLocationPublic: friends[i].isLocationPublic,
+          );
+          debugPrint('✅ ${friends[i].userName} 상태를 오프라인으로 업데이트');
+        }
+        break;
+      }
+    }
+    
+    notifyListeners();
+  }
 
-        debugPrint('✅ ${friends[i].userName}님 상태를 오프라인으로 업데이트');
+  // 🔥 새로 추가: 친구 로그인 처리 메서드
+  void _handleFriendLoggedIn(Map<String, dynamic> message) {
+    final loggedInUserId = message['userId'];
+    debugPrint('👤 친구 로그인 감지: $loggedInUserId');
+    debugPrint('👤 친구 로그인 메시지 전체: $message');
+
+    // 🔥 실시간으로 즉시 온라인 사용자 목록에 추가
+    if (!onlineUsers.contains(loggedInUserId)) {
+      onlineUsers.add(loggedInUserId);
+      debugPrint('✅ 실시간: 온라인 사용자 목록에 추가: $loggedInUserId');
+    }
+
+    // 🔥 친구 목록에서 해당 사용자의 상태를 즉시 온라인으로 업데이트
+    bool found = false;
+    for (int i = 0; i < friends.length; i++) {
+      if (friends[i].userId == loggedInUserId) {
+        found = true;
+        if (!friends[i].isLogin) {
+          friends[i] = Friend(
+            userId: friends[i].userId,
+            userName: friends[i].userName,
+            profileImage: friends[i].profileImage,
+            phone: friends[i].phone,
+            isLogin: true, // 🔥 실시간으로 온라인으로 변경
+            lastLocation: friends[i].lastLocation,
+            isLocationPublic: friends[i].isLocationPublic,
+          );
+          debugPrint('✅ 실시간: ${friends[i].userName} 상태를 온라인으로 업데이트');
+        } else {
+          debugPrint('ℹ️ ${friends[i].userName} 이미 온라인 상태');
+        }
         break;
       }
     }
 
-    // UI 업데이트
+    if (!found) {
+      debugPrint('⚠️ 친구 목록에서 해당 사용자를 찾을 수 없음: $loggedInUserId');
+    }
+
+    // 🔥 즉시 UI 업데이트
+    debugPrint('🔄 UI 업데이트 트리거 - 친구 로그인');
     notifyListeners();
   }
 
-  // 👥 친구들의 온라인 상태 업데이트
+  // 🔥 새로 추가: 친구 로그아웃 처리 메서드
+  void _handleFriendLoggedOut(Map<String, dynamic> message) {
+    final loggedOutUserId = message['userId'];
+    debugPrint('👤 친구 로그아웃 감지: $loggedOutUserId');
+    debugPrint('👤 친구 로그아웃 메시지 전체: $message');
+
+    // 온라인 사용자 목록에서 제거
+    if (onlineUsers.contains(loggedOutUserId)) {
+      onlineUsers.remove(loggedOutUserId);
+      debugPrint('✅ 온라인 사용자 목록에서 제거: $loggedOutUserId');
+    }
+
+    // 친구 목록에서 해당 사용자의 상태를 오프라인으로 업데이트
+    bool found = false;
+    for (int i = 0; i < friends.length; i++) {
+      if (friends[i].userId == loggedOutUserId) {
+        found = true;
+        if (friends[i].isLogin) {
+          friends[i] = Friend(
+            userId: friends[i].userId,
+            userName: friends[i].userName,
+            profileImage: friends[i].profileImage,
+            phone: friends[i].phone,
+            isLogin: false,
+            lastLocation: friends[i].lastLocation,
+            isLocationPublic: friends[i].isLocationPublic,
+          );
+          debugPrint('✅ ${friends[i].userName} 상태를 오프라인으로 업데이트');
+        } else {
+          debugPrint('ℹ️ ${friends[i].userName} 이미 오프라인 상태');
+        }
+        break;
+      }
+    }
+
+    if (!found) {
+      debugPrint('⚠️ 친구 목록에서 해당 사용자를 찾을 수 없음: $loggedOutUserId');
+    }
+
+    debugPrint('🔄 UI 업데이트 트리거 - 친구 로그아웃');
+    notifyListeners();
+  }
+
+  // 👥 친구들의 온라인 상태 업데이트 (개선)
   void _updateFriendsOnlineStatus() {
+    debugPrint('🔄 친구 온라인 상태 업데이트 시작');
+    debugPrint('온라인 사용자 목록: $onlineUsers');
+    
+    bool hasChanges = false;
+    
     for (int i = 0; i < friends.length; i++) {
       final isOnline = onlineUsers.contains(friends[i].userId);
-      if (friends[i].isLogin != isOnline) {
+      final currentStatus = friends[i].isLogin;
+      
+      debugPrint('친구 ${friends[i].userName} (${friends[i].userId}): 현재=$currentStatus, 서버=$isOnline');
+      
+      if (currentStatus != isOnline) {
         friends[i] = Friend(
           userId: friends[i].userId,
           userName: friends[i].userName,
@@ -240,7 +546,16 @@ class FriendsController extends ChangeNotifier {
           lastLocation: friends[i].lastLocation,
           isLocationPublic: friends[i].isLocationPublic,
         );
+        debugPrint('✅ ${friends[i].userName} 상태 변경: $currentStatus → $isOnline');
+        hasChanges = true;
       }
+    }
+    
+    if (hasChanges) {
+      debugPrint('🔄 UI 업데이트 트리거 - 친구 상태 변경');
+      notifyListeners();
+    } else {
+      debugPrint('ℹ️ 친구 상태 변경 없음');
     }
   }
 
@@ -253,6 +568,12 @@ class FriendsController extends ChangeNotifier {
     if (isWebSocketConnected) {
       debugPrint('📡 웹소켓 연결됨 - 폴링 완전 중지');
       return; // 타이머를 생성하지 않고 완전히 중지
+    }
+
+    // 🔥 이미 타이머가 실행 중이면 중복 방지
+    if (_updateTimer != null) {
+      debugPrint('⚠️ 폴링 타이머가 이미 실행 중입니다');
+      return;
     }
 
     _updateTimer = Timer.periodic(_updateInterval, (timer) {
@@ -338,9 +659,12 @@ class FriendsController extends ChangeNotifier {
         friends = newFriends;
         friendRequests = newFriendRequests;
         sentFriendRequests = newSentFriendRequests;
-        errorMessage = null;
+        // errorMessage는 유지 (에러 상황에서는 초기화하지 않음)
         _lastUpdate = now;
 
+        // 🔥 서버 데이터 기반 온라인 상태 업데이트
+        _initializeOnlineStatusFromServer();
+        
         // 온라인 상태 업데이트
         _updateFriendsOnlineStatus();
 
@@ -379,6 +703,12 @@ class FriendsController extends ChangeNotifier {
       debugPrint('👥 친구: ${friends.length}명');
       debugPrint('📥 받은 요청: ${friendRequests.length}개');
       debugPrint('📤 보낸 요청: ${sentFriendRequests.length}개');
+      debugPrint('🌐 온라인 사용자: ${onlineUsers.length}명');
+      
+      // 각 친구의 온라인 상태 로그 출력
+      for (final friend in friends) {
+        debugPrint('👤 ${friend.userName}: ${friend.isLogin ? "온라인" : "오프라인"}');
+      }
     } catch (e) {
       errorMessage = e.toString();
       debugPrint('❌ 친구 데이터 새로고침 실패: $e');
@@ -396,8 +726,22 @@ class FriendsController extends ChangeNotifier {
       errorMessage = null;
       notifyListeners();
       
+      debugPrint('🔄 repository.requestFriend 시작...');
       await repository.requestFriend(myId, addId);
-      await quickUpdate();
+      debugPrint('✅ repository.requestFriend 완료');
+      
+      // 🔥 친구 요청 성공 후 즉시 보낸 요청 목록 새로고침
+      debugPrint('🔄 보낸 요청 목록 새로고침 중...');
+      try {
+        sentFriendRequests = await repository.getSentFriendRequests(myId);
+        debugPrint('✅ 보낸 요청 목록 새로고침 완료: ${sentFriendRequests.length}개');
+        
+        // 🔥 UI 즉시 업데이트
+        notifyListeners();
+      } catch (e) {
+        debugPrint('❌ 보낸 요청 목록 새로고침 실패: $e');
+      }
+      
       debugPrint('✅ 친구 추가 요청 완료');
       
       // 🔥 성공 시 에러 메시지 확실히 초기화
@@ -405,37 +749,29 @@ class FriendsController extends ChangeNotifier {
       notifyListeners();
     } catch (e) {
       debugPrint('❌ 친구 추가 실패: $e');
-      
-      // 🔥 구체적인 에러 메시지 설정
-      String errorMsg = '친구 추가에 실패했습니다';
-      
-      if (e.toString().contains('존재하지 않는 사용자')) {
-        errorMsg = '존재하지 않는 사용자입니다';
-      } else if (e.toString().contains('이미 친구')) {
-        errorMsg = '이미 친구인 사용자입니다';
-      } else if (e.toString().contains('이미 요청')) {
-        errorMsg = '이미 친구 요청을 보낸 사용자입니다';
-      } else if (e.toString().contains('자기 자신')) {
-        errorMsg = '자기 자신을 친구로 추가할 수 없습니다';
-      } else if (e.toString().contains('잘못된')) {
-        errorMsg = '잘못된 사용자 ID입니다';
-      } else if (e.toString().contains('서버 오류')) {
-        errorMsg = '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요';
-      } else {
-        errorMsg = e.toString().replaceAll('Exception: ', '');
-      }
-      
-      errorMessage = errorMsg;
-      debugPrint('❌ 에러 메시지 설정: $errorMessage');
+      debugPrint('❌ 예외 타입: ${e.runtimeType}');
+      debugPrint('❌ 예외 스택: ${StackTrace.current}');
       
       // 🔥 실패 시에도 기존 친구 목록을 유지하기 위해 전체 데이터 다시 로드
       try {
-        await loadAll();
+        final newFriends = await repository.getMyFriends(myId);
+        final newFriendRequests = await repository.getFriendRequests(myId);
+        final newSentFriendRequests = await repository.getSentFriendRequests(myId);
+        
+        friends = newFriends;
+        friendRequests = newFriendRequests;
+        sentFriendRequests = newSentFriendRequests;
+        
+        // 온라인 상태 업데이트
+        _updateFriendsOnlineStatus();
+        
+        debugPrint('✅ 친구 목록 복구 완료');
       } catch (loadError) {
         debugPrint('❌ 친구 목록 복구 실패: $loadError');
       }
       
-      notifyListeners();
+      // 예외를 다시 던져서 UI에서 처리하도록 함
+      rethrow;
     }
   }
 
@@ -535,9 +871,24 @@ class FriendsController extends ChangeNotifier {
     }
   }
 
-  // 📶 특정 친구의 온라인 상태 확인
+  // 📶 특정 친구의 온라인 상태 확인 (서버 데이터 우선)
   bool isFriendOnline(String userId) {
-    return onlineUsers.contains(userId);
+    // 1. 친구 목록에서 해당 친구 찾기 (서버 데이터 우선)
+    final friend = friends.firstWhere(
+      (f) => f.userId == userId,
+      orElse: () => Friend(
+        userId: userId,
+        userName: '알 수 없음',
+        profileImage: '',
+        phone: '',
+        isLogin: false,
+        lastLocation: '',
+        isLocationPublic: false,
+      ),
+    );
+    
+    // 2. 서버 데이터 기반 온라인 상태 반환
+    return friend.isLogin;
   }
 
   // 📊 웹소켓 연결 상태 정보
@@ -546,6 +897,53 @@ class FriendsController extends ChangeNotifier {
       return '실시간 연결됨';
     } else {
       return '폴링 모드';
+    }
+  }
+
+  // 🔍 디버깅용 메서드
+  void debugPrintStatus() {
+    debugPrint('🔍 FriendsController 상태 디버깅');
+    debugPrint('🔍 친구 수: ${friends.length}');
+    debugPrint('🔍 온라인 사용자 수: ${onlineUsers.length}');
+    debugPrint('🔍 웹소켓 연결 상태: $isWebSocketConnected');
+    debugPrint('🔍 실시간 업데이트 활성화: $_isRealTimeEnabled');
+    
+    for (int i = 0; i < friends.length; i++) {
+      final friend = friends[i];
+      debugPrint('🔍 친구 ${i + 1}: ${friend.userName} (${friend.userId}) - 온라인: ${friend.isLogin}');
+    }
+  }
+
+  // 🔍 웹소켓 연결 테스트
+  void testWebSocketConnection() {
+    debugPrint('🔍 웹소켓 연결 테스트 시작');
+    _wsService.testConnection();
+    
+    // 3초 후 상태 확인
+    Future.delayed(const Duration(seconds: 3), () {
+      debugPrint('🔍 웹소켓 연결 테스트 결과');
+      debugPrintStatus();
+    });
+  }
+
+  // 🔍 서버 데이터 테스트
+  void testServerData() async {
+    debugPrint('🔍 서버 데이터 테스트 시작');
+    
+    try {
+      final newFriends = await repository.getMyFriends(myId);
+      debugPrint('🔍 서버에서 받은 친구 목록: ${newFriends.length}명');
+      
+      for (int i = 0; i < newFriends.length; i++) {
+        final friend = newFriends[i];
+        debugPrint('🔍 ${friend.userName} (${friend.userId}): 온라인=${friend.isLogin}');
+      }
+      
+      // 서버 데이터로 온라인 상태 초기화
+      _initializeOnlineStatusFromServer();
+      debugPrint('🔍 서버 데이터 테스트 완료');
+    } catch (e) {
+      debugPrint('❌ 서버 데이터 테스트 실패: $e');
     }
   }
 

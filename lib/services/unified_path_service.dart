@@ -451,7 +451,8 @@ static Future<UnifiedPathResponse?> getPathBetweenBuildings({
     return await requestPath(request);
   }
 
-  /// 연결 테스트
+  /// 연결 테스트 - 🔥 서버에 health 엔드포인트가 없으므로 주석 처리
+  /*
   static Future<bool> testConnection() async {
     try {
       // 🔥 수정: ApiConfig 사용하여 health check
@@ -467,4 +468,5 @@ static Future<UnifiedPathResponse?> getPathBetweenBuildings({
       return false;
     }
   }
+  */
 }

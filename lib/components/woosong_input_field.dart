@@ -1,5 +1,6 @@
 // lib/components/woosong_input_field.dart - 개선된 버전
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class WoosongInputField extends StatefulWidget {
   final IconData icon;
@@ -11,6 +12,7 @@ class WoosongInputField extends StatefulWidget {
   final bool enabled; // 활성화/비활성화 옵션 추가
   final Function(String)? onSubmitted; // Enter 키 처리 추가
   final int? maxLines;
+  final List<TextInputFormatter>? inputFormatters; // 입력 포맷터 추가
 
   const WoosongInputField({
     super.key,
@@ -23,6 +25,7 @@ class WoosongInputField extends StatefulWidget {
     this.enabled = true,
     this.onSubmitted,
     this.maxLines = 1,
+    this.inputFormatters,
   });
 
   @override
@@ -102,6 +105,7 @@ class _WoosongInputFieldState extends State<WoosongInputField> {
                         keyboardType: widget.keyboardType,
                         maxLines: widget.maxLines,
                         onSubmitted: widget.onSubmitted,
+                        inputFormatters: widget.inputFormatters,
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w500,

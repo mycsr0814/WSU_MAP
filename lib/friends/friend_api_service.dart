@@ -70,46 +70,69 @@ class FriendApiService {
       throw Exception('상대방 ID가 올바르지 않습니다.');
     }
 
-    print('[DEBUG] 친구 추가 요청 - myId: $myId, addId: $addId');
+    print('[DEBUG] ===== 친구 추가 요청 시작 =====');
+    print('[DEBUG] myId: $myId');
+    print('[DEBUG] addId: $addId');
 
-    // 🔥 친구 추가 전에 사용자 존재 여부 확인 (API가 있는 경우에만)
-    try {
-      print('[DEBUG] 사용자 존재 여부 확인 중...');
-      final userExists = await checkUserExists(addId);
-      
-      if (!userExists) {
-        print('[ERROR] 존재하지 않는 사용자: $addId');
-        throw Exception('존재하지 않는 사용자입니다');
-      }
-      
-      print('[DEBUG] 사용자 존재 확인 완료, 친구 추가 요청 진행');
-    } catch (e) {
-      print('[WARN] 사용자 확인 API를 사용할 수 없음, 서버 응답으로 판단: $e');
-      // 사용자 확인 API가 없으면 서버 응답으로 판단
-    }
-
+    // 🔥 서버에 직접 친구 요청 전송 (올바른 경로 사용)
+    print('[DEBUG] 📤 서버에 친구 요청 전송 중...');
+    print('[DEBUG] 요청 URL: $baseUrl/add');
+    print('[DEBUG] 요청 바디: ${jsonEncode({'my_id': myId, 'add_id': addId})}');
     final res = await http.post(
       Uri.parse('$baseUrl/add'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'my_id': myId, 'add_id': addId}),
     );
 
-    print('[DEBUG] 친구 추가 응답: ${res.statusCode} ${res.body}');
+    print('[DEBUG] 📥 서버 응답 수신');
+    print('[DEBUG] 응답 상태: ${res.statusCode}');
+    print('[DEBUG] 응답 내용: "${res.body}"');
     print('[DEBUG] 응답 길이: ${res.body.length}');
-    print('[DEBUG] 응답 내용 (원본): "${res.body}"');
-    print('[DEBUG] 응답 내용 (소문자): "${res.body.toLowerCase()}"');
-    print('[DEBUG] 응답 헤더: ${res.headers}');
+    print('[DEBUG] 응답 타입: ${res.body.runtimeType}');
 
-    // 🔥 응답 상태 코드 확인 (200이 아닌 모든 경우를 에러로 처리)
-    if (res.statusCode != 200) {
-      print('[ERROR] 친구 추가 실패: ${res.statusCode} ${res.body}');
+    // 🔥 서버 응답에 따른 처리
+    print('[DEBUG] 🔍 상태 코드 분석: ${res.statusCode}');
+    print('[DEBUG] 🔍 응답 내용: "${res.body}"');
+    
+    if (res.statusCode == 200) {
+      // 성공 응답
+      print('[DEBUG] ✅ 친구 추가 성공 응답');
+      
+      // 응답 내용 확인 - 서버가 200을 반환하지만 에러 메시지를 포함할 수 있음
+      final responseBody = res.body.toLowerCase();
+      print('[DEBUG] 🔍 응답 내용 분석: $responseBody');
+      
+      if (responseBody.contains('존재하지 않는') || 
+          responseBody.contains('not found') || 
+          responseBody.contains('user not found') ||
+          responseBody.contains('실패') ||
+          responseBody.contains('fail') ||
+          responseBody.contains('error') ||
+          responseBody.contains('불가능') ||
+          responseBody.contains('이미') ||
+          responseBody.contains('자기 자신')) {
+        print('[ERROR] ❌ 성공 응답이지만 실패 메시지 포함: ${res.body}');
+        throw Exception('친구 추가에 실패했습니다: ${res.body}');
+      }
+      
+      print('[DEBUG] ✅ 친구 추가 성공 완료');
+    } else {
+      // 실패 응답
+      print('[ERROR] ❌ 친구 추가 실패: ${res.statusCode} ${res.body}');
+      print('[DEBUG] 🔍 실패 응답 처리 시작 - 상태 코드: ${res.statusCode}');
       
       // 🔥 상태 코드별 에러 메시지
       String errorMessage = '친구 추가 실패';
       
+      print('[DEBUG] 🔍 switch 문 시작 - 상태 코드: ${res.statusCode}');
       switch (res.statusCode) {
         case 400:
-          errorMessage = '잘못된 요청입니다';
+          print('[DEBUG] 🔍 400 케이스 실행');
+          if (res.body.contains('자기 자신')) {
+            errorMessage = '자기 자신을 친구로 추가할 수 없습니다';
+          } else {
+            errorMessage = '잘못된 요청입니다';
+          }
           break;
         case 401:
           errorMessage = '인증이 필요합니다';
@@ -118,7 +141,10 @@ class FriendApiService {
           errorMessage = '권한이 없습니다';
           break;
         case 404:
+          print('[DEBUG] 🔍 404 상태 코드 감지됨');
+          print('[DEBUG] 🔍 404 응답 내용: "${res.body}"');
           errorMessage = '존재하지 않는 사용자입니다';
+          print('[DEBUG] 🔍 404 에러 메시지 설정: $errorMessage');
           break;
         case 409:
           errorMessage = '이미 친구이거나 요청을 보낸 사용자입니다';
@@ -127,6 +153,7 @@ class FriendApiService {
           errorMessage = '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요';
           break;
         default:
+          print('[DEBUG] 🔍 default 케이스 실행 - 상태 코드: ${res.statusCode}');
           // 🔥 서버 응답 내용에 따라 구체적인 에러 메시지 제공
           final responseBody = res.body.toLowerCase();
           
@@ -146,76 +173,13 @@ class FriendApiService {
           }
       }
       
-      print('[ERROR] 에러 메시지: $errorMessage');
-      throw Exception(errorMessage);
-    }
-    
-    // 🔥 성공 응답(200)이어도 실제 처리 결과 확인
-    final responseBody = res.body.toLowerCase();
-    print('[DEBUG] 친구 추가 성공 응답 내용: ${res.body}');
-    
-    // 🔥 성공 응답에서도 실패 메시지가 포함되어 있는지 확인
-    if (responseBody.contains('존재하지 않는') || 
-        responseBody.contains('not found') || 
-        responseBody.contains('user not found') ||
-        responseBody.contains('실패') ||
-        responseBody.contains('fail') ||
-        responseBody.contains('error') ||
-        responseBody.contains('추가되지 않았습니다') ||
-        responseBody.contains('not added') ||
-        responseBody.contains('없는') ||
-        responseBody.contains('invalid') ||
-        responseBody.contains('잘못된')) {
-      
-      String errorMessage = '친구 추가에 실패했습니다';
-      
-      if (responseBody.contains('존재하지 않는') || responseBody.contains('not found') || responseBody.contains('user not found') || responseBody.contains('없는')) {
-        errorMessage = '존재하지 않는 사용자입니다';
-      } else if (responseBody.contains('이미 친구') || responseBody.contains('already friend')) {
-        errorMessage = '이미 친구인 사용자입니다';
-      } else if (responseBody.contains('이미 요청') || responseBody.contains('already requested')) {
-        errorMessage = '이미 친구 요청을 보낸 사용자입니다';
-      } else if (responseBody.contains('자기 자신') || responseBody.contains('self')) {
-        errorMessage = '자기 자신을 친구로 추가할 수 없습니다';
-      } else {
-        errorMessage = '친구 추가에 실패했습니다: ${res.body}';
-      }
-      
-      print('[ERROR] 성공 응답이지만 실제로는 실패: $errorMessage');
-      throw Exception(errorMessage);
-    }
-    
-    // 🔥 실제 성공인지 추가 확인
-    // 서버에서 성공 메시지를 보내는 경우도 확인
-    if (responseBody.contains('성공') || 
-        responseBody.contains('success') || 
-        responseBody.contains('추가됨') ||
-        responseBody.contains('요청됨') ||
-        responseBody.contains('requested')) {
-      print('[DEBUG] 친구 추가 요청이 성공적으로 처리됨');
-    } else {
-      // 🔥 성공/실패 메시지가 명확하지 않은 경우, 응답 내용을 다시 분석
-      print('[WARN] 응답 내용이 모호함: ${res.body}');
-      
-      // 🔥 응답이 비어있거나 의미가 없는 경우 실패로 처리
-      if (res.body.trim().isEmpty || 
-          res.body.trim() == '{}' || 
-          res.body.trim() == '[]' ||
-          res.body.length < 5) {
-        print('[ERROR] 응답이 비어있거나 의미가 없음');
-        throw Exception('친구 추가에 실패했습니다: 서버 응답이 올바르지 않습니다');
-      }
-      
-      // 🔥 응답에 실패 관련 키워드가 있는지 다시 확인
-      final failureKeywords = ['실패', 'fail', 'error', '없음', 'invalid', '잘못'];
-      bool hasFailureKeyword = failureKeywords.any((keyword) => responseBody.contains(keyword));
-      
-      if (hasFailureKeyword) {
-        print('[ERROR] 응답에 실패 키워드가 포함됨');
-        throw Exception('존재하지 않는 사용자입니다');
-      }
-      
-      print('[DEBUG] 응답이 성공으로 판단됨: ${res.body}');
+      print('[ERROR] ❌ 최종 에러 메시지: $errorMessage');
+      print('[DEBUG] 🚀 Exception 던지기: $errorMessage');
+      print('[DEBUG] 🚀 Exception 타입: Exception');
+      final exception = Exception(errorMessage);
+      print('[DEBUG] 🚀 Exception 생성됨: $exception');
+      print('[DEBUG] 🚀 Exception 던지기 직전...');
+      throw exception;
     }
   }
 
@@ -243,61 +207,94 @@ class FriendApiService {
     }
   }
 
-  /// 내가 보낸 친구 요청 목록 조회 (서버 수정 완료 후 단순화)
+  /// 내가 보낸 친구 요청 목록 조회
   Future<List<SentFriendRequest>> fetchSentFriendRequests(String myId) async {
     try {
       print('[DEBUG] ===== 보낸 친구 요청 조회 시작 =====');
       print('[DEBUG] myId: $myId');
-      print('[DEBUG] 요청 URL: $baseUrl/my_request_list/$myId');
 
-      final res = await http.get(
-        Uri.parse('$baseUrl/my_request_list/$myId'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-      );
+      // 서버에서 실제 사용하는 경로를 찾기 위해 여러 URL 시도
+      final List<String> possibleUrls = [
+        '$baseUrl/my_request_list/$myId',  // 올바른 경로 (우선순위 1)
+        '${ApiConfig.baseHost}:${ApiConfig.userPort}/friend/my_request_list/$myId',  // 대체 경로
+        '${ApiConfig.baseHost}:${ApiConfig.userPort}/my_request_list/$myId',  // 대체 경로
+        '${ApiConfig.baseHost}:${ApiConfig.userPort}/sent_requests/$myId',  // 대체 경로
+        '${ApiConfig.baseHost}:${ApiConfig.userPort}/friend/sent_requests/$myId',  // 대체 경로
+        '${ApiConfig.baseHost}:${ApiConfig.userPort}/my_requests/$myId',  // 대체 경로
+        '${ApiConfig.baseHost}:${ApiConfig.userPort}/friend/my_requests/$myId',  // 대체 경로
+      ];
 
-      print('[DEBUG] 응답 상태: ${res.statusCode}');
-      print('[DEBUG] 응답 본문: ${res.body}');
+      for (int i = 0; i < possibleUrls.length; i++) {
+        final url = possibleUrls[i];
+        print('[DEBUG] 보낸 요청 URL 시도 ${i + 1}: $url');
 
-      if (res.statusCode != 200) {
-        print('[ERROR] 보낸 친구 요청 조회 실패: ${res.statusCode} ${res.body}');
-        return [];
-      }
-
-      // 빈 응답 처리
-      if (res.body.isEmpty || res.body.trim() == '[]') {
-        print('[DEBUG] 보낸 친구 요청이 없음');
-        return [];
-      }
-
-      // JSON 파싱
-      final dynamic responseData = jsonDecode(res.body);
-
-      if (responseData is List) {
-        print('[DEBUG] 보낸 친구 요청 원시 데이터: $responseData');
-
-        final requests = responseData
-            .map((e) => SentFriendRequest.fromJson(e as Map<String, dynamic>))
-            .where((req) => req.toUserId.isNotEmpty)
-            .toList();
-
-        print('[DEBUG] 파싱된 보낸 친구 요청 수: ${requests.length}');
-
-        // 각 요청의 세부 내용 로그
-        for (int i = 0; i < requests.length; i++) {
-          final req = requests[i];
-          print(
-            '[DEBUG] 요청 ${i + 1}: ID=${req.toUserId}, 이름=${req.toUserName}',
+        try {
+          final res = await http.get(
+            Uri.parse(url),
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
           );
-        }
 
-        return requests;
-      } else {
-        print('[ERROR] 응답이 배열이 아님: $responseData');
-        return [];
+          print('[DEBUG] 응답 상태: ${res.statusCode}');
+          print('[DEBUG] 응답 본문: ${res.body}');
+
+          if (res.statusCode == 200) {
+            // 빈 응답 처리
+            if (res.body.isEmpty || res.body.trim() == '[]') {
+              print('[DEBUG] 보낸 친구 요청이 없음 (URL: $url)');
+              return [];
+            }
+
+            // JSON 파싱
+            final dynamic responseData = jsonDecode(res.body);
+
+            if (responseData is List) {
+              print('[DEBUG] 보낸 친구 요청 원시 데이터: $responseData');
+
+              final requests = responseData
+                  .map((e) => SentFriendRequest.fromJson(e as Map<String, dynamic>))
+                  .where((req) => req.toUserId.isNotEmpty)
+                  .toList();
+
+              print('[DEBUG] 파싱된 보낸 친구 요청 수: ${requests.length}');
+
+              // 각 요청의 세부 내용 로그
+              for (int j = 0; j < requests.length; j++) {
+                final req = requests[j];
+                print(
+                  '[DEBUG] 요청 ${j + 1}: ID=${req.toUserId}, 이름=${req.toUserName}',
+                );
+              }
+
+              print('[DEBUG] ✅ 보낸 친구 요청 조회 성공 (URL: $url)');
+              return requests;
+            } else {
+              print('[ERROR] 응답이 배열이 아님: $responseData');
+              if (i < possibleUrls.length - 1) {
+                print('[DEBUG] 다음 URL 시도...');
+                continue;
+              }
+            }
+          } else {
+            print('[ERROR] 보낸 친구 요청 조회 실패: ${res.statusCode} ${res.body}');
+            if (i < possibleUrls.length - 1) {
+              print('[DEBUG] 다음 URL 시도...');
+              continue;
+            }
+          }
+        } catch (e) {
+          print('[ERROR] URL 시도 ${i + 1} 실패: $e');
+          if (i < possibleUrls.length - 1) {
+            print('[DEBUG] 다음 URL 시도...');
+            continue;
+          }
+        }
       }
+
+      print('[ERROR] ❌ 모든 보낸 친구 요청 URL 시도 실패');
+      return [];
     } catch (e, stack) {
       print('[ERROR] 보낸 친구 요청 조회 중 오류: $e');
       print('[ERROR] 스택 트레이스: $stack');

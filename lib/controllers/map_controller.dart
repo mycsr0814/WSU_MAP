@@ -166,10 +166,9 @@ class MapScreenController extends ChangeNotifier {
       // 🔥 BuildingRepository 데이터 변경 리스너 등록
       _buildingRepository.addDataChangeListener(_onBuildingDataChanged);
 
-      // 병렬 초기화
+      // 병렬 초기화 - 서버 연결 테스트 제거
       await Future.wait([
         _mapService!.loadMarkerIcons(),
-        _testServerConnectionAsync(),
       ], eagerError: false);
 
       debugPrint('✅ MapController 초기화 완료 (학교 중심)');
@@ -179,22 +178,6 @@ class MapScreenController extends ChangeNotifier {
       _isLoading = false;
       notifyListeners();
     }
-  }
-
-  /// 백그라운드 서버 연결 테스트
-  Future<void> _testServerConnectionAsync() async {
-    Future.microtask(() async {
-      try {
-        final isServerConnected = await PathApiService.testConnection();
-        if (isServerConnected) {
-          debugPrint('🌐 서버 연결 확인 완료');
-        } else {
-          debugPrint('⚠️ 서버 연결 실패 (정상 동작 가능)');
-        }
-      } catch (e) {
-        debugPrint('⚠️ 서버 연결 테스트 오류: $e');
-      }
-    });
   }
 
   /// 🔥 Context 설정 - 친구 위치 마커 서비스에도 Context 설정

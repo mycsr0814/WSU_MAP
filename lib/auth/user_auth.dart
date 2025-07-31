@@ -219,12 +219,30 @@ class UserAuth extends ChangeNotifier {
     }
   }
 
-  /// 🔥 서버에서만 로그아웃 (로컬 정보는 유지)
+  /// 🔥 서버에서만 로그아웃 (로컬 정보는 유지) - 웹소켓 알림 추가
   Future<bool> logoutServerOnly() async {
     try {
       if (_userId != null && _userId != 'guest' && _userId != 'admin') {
         debugPrint('🔄 서버 전용 로그아웃 시도 - 사용자: $_userId');
 
+        // 🔥 1. 먼저 웹소켓을 통해 친구들에게 로그아웃 알림 전송
+        try {
+          final wsService = WebSocketService();
+          if (wsService.isConnected) {
+            debugPrint('🔥 서버 전용 로그아웃: 웹소켓을 통한 로그아웃 알림 전송');
+            await wsService.logoutAndDisconnect();
+            debugPrint('✅ 서버 전용 로그아웃: 웹소켓 로그아웃 알림 완료');
+          } else {
+            debugPrint('ℹ️ 서버 전용 로그아웃: 웹소켓이 연결되지 않음');
+          }
+        } catch (wsError) {
+          debugPrint('❌ 서버 전용 로그아웃: 웹소켓 알림 전송 실패: $wsError');
+        }
+
+        // 🔥 2. 잠시 대기하여 서버가 친구들에게 메시지를 전송할 시간 확보
+        await Future.delayed(const Duration(milliseconds: 300));
+
+        // 3. 서버에 로그아웃 요청
         final result = await AuthService.logout(id: _userId!);
 
         if (result.isSuccess) {
@@ -424,8 +442,10 @@ class UserAuth extends ChangeNotifier {
         final wsService = WebSocketService();
         if (wsService.isConnected) {
           debugPrint('🔥 UserAuth: 웹소켓 연결 해제 중...');
-          await wsService.disconnect();
+          await wsService.logoutAndDisconnect();
           debugPrint('✅ UserAuth: 웹소켓 연결 해제 완료');
+        } else {
+          debugPrint('ℹ️ UserAuth: 웹소켓이 이미 연결되지 않음');
         }
       } catch (wsError) {
         debugPrint('❌ UserAuth: 웹소켓 해제 중 오류: $wsError');

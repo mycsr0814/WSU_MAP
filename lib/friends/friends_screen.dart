@@ -11,6 +11,7 @@ import 'package:flutter_application_1/generated/app_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_application_1/controllers/map_controller.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_application_1/services/auth_service.dart';
 
 class FriendsScreen extends StatefulWidget {
   final String userId;
@@ -31,6 +32,8 @@ class _FriendsScreenState extends State<FriendsScreen>
   late final FriendsController controller;
   final _addController = TextEditingController();
   bool _isAddingFriend = false;
+  List<Map<String, String>>? _cachedUserList;
+  Future<List<Map<String, String>>>? _userListFuture;
 
   @override
   void initState() {
@@ -81,6 +84,41 @@ class _FriendsScreenState extends State<FriendsScreen>
   String _maskUserId(String userId) {
     if (userId.length <= 4) return userId;
     return userId.substring(0, 4) + '*' * (userId.length - 4);
+  }
+
+  /// 🔥 캐시된 사용자 목록 가져오기
+  Future<List<Map<String, String>>> _getCachedUserList() async {
+    if (_cachedUserList != null) {
+      debugPrint('📋 캐시된 사용자 목록 사용: ${_cachedUserList!.length}명');
+      return _cachedUserList!;
+    }
+
+    if (_userListFuture != null) {
+      debugPrint('📋 진행 중인 사용자 목록 요청 재사용');
+      return _userListFuture!;
+    }
+
+    debugPrint('📋 새로운 사용자 목록 요청 시작');
+    _userListFuture = AuthService().getUserList();
+    _cachedUserList = await _userListFuture!;
+    _userListFuture = null;
+    
+    debugPrint('📋 사용자 목록 캐시 완료: ${_cachedUserList!.length}명');
+    return _cachedUserList!;
+  }
+
+  /// 🔥 캐시된 사용자 목록 초기화
+  void _clearCachedUserList() {
+    _cachedUserList = null;
+    _userListFuture = null;
+    debugPrint('📋 사용자 목록 캐시 초기화 완료');
+  }
+
+  /// 🔥 사용자 목록 새로고침
+  Future<void> _refreshUserList() async {
+    _clearCachedUserList();
+    await _getCachedUserList();
+    if (mounted) setState(() {});
   }
 
   /// 성공 메시지 표시
@@ -153,6 +191,22 @@ class _FriendsScreenState extends State<FriendsScreen>
       friend.userId,
     );
 
+    // 🔥 친구의 최신 온라인 상태 확인 (서버 데이터 우선)
+    final friendsController = Provider.of<FriendsController>(
+      context,
+      listen: false,
+    );
+    
+    // 현재 친구 목록에서 해당 친구의 최신 상태 가져오기
+    final currentFriend = friendsController.friends.firstWhere(
+      (f) => f.userId == friend.userId,
+      orElse: () => friend, // 찾지 못하면 원본 사용
+    );
+    
+    // 🔥 서버 데이터 기반 온라인 상태 확인
+    final isOnline = currentFriend.isLogin;
+    debugPrint('🔍 친구 상세 정보 - ${friend.userName} (${friend.userId}): 온라인=$isOnline');
+
     await showDialog(
       context: context,
       builder: (context) => Dialog(
@@ -189,12 +243,22 @@ class _FriendsScreenState extends State<FriendsScreen>
                       width: 60,
                       height: 60,
                       decoration: BoxDecoration(
-                        color: const Color(0xFF1E3A8A).withOpacity(0.2),
+                        color: isOnline
+                            ? const Color(0xFF10B981).withOpacity(0.2) // 🔥 온라인 친구는 초록색 배경
+                            : const Color(0xFF1E3A8A).withOpacity(0.2),
                         shape: BoxShape.circle,
+                        border: Border.all(
+                          color: isOnline
+                              ? const Color(0xFF10B981).withOpacity(0.5) // 🔥 온라인 친구는 초록색 테두리
+                              : const Color(0xFF1E3A8A).withOpacity(0.3),
+                          width: isOnline ? 2 : 1, // 🔥 온라인 친구는 더 두꺼운 테두리
+                        ),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.person,
-                        color: Color(0xFF1E3A8A),
+                        color: isOnline
+                            ? const Color(0xFF10B981) // 🔥 온라인 친구는 초록색 아이콘
+                            : const Color(0xFF1E3A8A),
                         size: 30,
                       ),
                     ),
@@ -205,10 +269,12 @@ class _FriendsScreenState extends State<FriendsScreen>
                         children: [
                           Text(
                             friend.userName,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.w700,
-                              color: Color(0xFF1E3A8A),
+                              color: isOnline
+                                  ? const Color(0xFF10B981) // 🔥 온라인 친구는 초록색 텍스트
+                                  : const Color(0xFF1E3A8A),
                             ),
                           ),
                           const SizedBox(height: 4),
@@ -218,21 +284,21 @@ class _FriendsScreenState extends State<FriendsScreen>
                                 width: 8,
                                 height: 8,
                                 decoration: BoxDecoration(
-                                  color: friend.isLogin
-                                      ? Colors.green
+                                  color: isOnline
+                                      ? const Color(0xFF10B981) // 🔥 초록색 온라인 표시
                                       : Colors.grey,
                                   shape: BoxShape.circle,
                                 ),
                               ),
                               const SizedBox(width: 6),
                               Text(
-                                friend.isLogin
+                                isOnline
                                     ? AppLocalizations.of(context)!.online
                                     : AppLocalizations.of(context)!.offline,
                                 style: TextStyle(
                                   fontSize: 14,
-                                  color: friend.isLogin
-                                      ? Colors.green
+                                  color: isOnline
+                                      ? const Color(0xFF10B981) // 🔥 초록색 온라인 텍스트
                                       : Colors.grey,
                                   fontWeight: FontWeight.w500,
                                 ),
@@ -282,14 +348,15 @@ class _FriendsScreenState extends State<FriendsScreen>
                     if (friend.lastLocation.isNotEmpty) ...[
                       Row(
                         children: [
-                          // 위치 표시 버튼
-                          if (!isLocationDisplayed) ...[
-                            Expanded(
+                          // 위치 표시/제거 버튼
+                          Expanded(
+                            child: SizedBox(
+                              height: 48,
                               child: ElevatedButton.icon(
                                 onPressed: () async {
                                   HapticFeedback.lightImpact();
                                   Navigator.of(context).pop(); // 항상 모달창 닫기
-                                  if (!friend.isLogin) {
+                                  if (!isOnline) {
                                     _showErrorMessage(
                                       AppLocalizations.of(
                                         context,
@@ -297,78 +364,78 @@ class _FriendsScreenState extends State<FriendsScreen>
                                     );
                                     return;
                                   }
-                                  await _showFriendLocationOnMap(friend);
+                                  if (!isLocationDisplayed) {
+                                    await _showFriendLocationOnMap(friend);
+                                  } else {
+                                    await _removeFriendLocationFromMap(friend);
+                                  }
                                 },
-                                icon: const Icon(Icons.location_on, size: 18),
+                                icon: Icon(
+                                  isLocationDisplayed ? Icons.location_off : Icons.location_on,
+                                  size: 18,
+                                ),
                                 label: Text(
-                                  AppLocalizations.of(context)!.showLocation,
+                                  isLocationDisplayed
+                                      ? AppLocalizations.of(context)!.removeLocation
+                                      : AppLocalizations.of(context)!.showLocation,
                                 ),
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF10B981),
+                                  backgroundColor: isLocationDisplayed
+                                      ? const Color(0xFFEF4444)
+                                      : const Color(0xFF10B981),
                                   foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 12,
-                                  ),
                                   shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
+                                    borderRadius: BorderRadius.circular(12),
                                   ),
-                                  elevation: 2,
+                                  elevation: 0,
                                 ),
                               ),
                             ),
-                          ],
-
-                          // 위치 제거 버튼
-                          if (isLocationDisplayed) ...[
-                            Expanded(
+                          ),
+                          
+                          const SizedBox(width: 12),
+                          
+                          // 닫기 버튼
+                          Expanded(
+                            child: SizedBox(
+                              height: 48,
                               child: ElevatedButton.icon(
-                                onPressed: () async {
-                                  HapticFeedback.lightImpact();
-                                  Navigator.of(context).pop();
-                                  await _removeFriendLocationFromMap(friend);
-                                },
-                                icon: const Icon(Icons.location_off, size: 18),
-                                label: Text(
-                                  AppLocalizations.of(context)!.removeLocation,
-                                ),
+                                onPressed: () => Navigator.of(context).pop(),
+                                icon: const Icon(Icons.close, size: 18),
+                                label: Text(AppLocalizations.of(context)!.close),
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFFEF4444),
-                                  foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 12,
-                                  ),
+                                  backgroundColor: Colors.grey[100],
+                                  foregroundColor: Colors.grey[700],
                                   shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
+                                    borderRadius: BorderRadius.circular(12),
                                   ),
-                                  elevation: 2,
+                                  elevation: 0,
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 12),
-                          ],
+                          ),
                         ],
                       ),
-                      const SizedBox(height: 12),
-                    ],
-
-                    // 닫기 버튼
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed: () => Navigator.of(context).pop(),
-                        icon: const Icon(Icons.close, size: 18),
-                        label: Text(AppLocalizations.of(context)!.close),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.grey[100],
-                          foregroundColor: Colors.grey[700],
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
+                    ] else ...[
+                      // 위치 정보가 없을 때는 닫기 버튼만
+                      SizedBox(
+                        width: double.infinity,
+                        height: 48,
+                        child: ElevatedButton.icon(
+                          onPressed: () => Navigator.of(context).pop(),
+                          icon: const Icon(Icons.close, size: 18),
+                          label: Text(AppLocalizations.of(context)!.close),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.grey[100],
+                            foregroundColor: Colors.grey[700],
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            elevation: 0,
                           ),
-                          elevation: 0,
                         ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
               ),
@@ -478,25 +545,60 @@ class _FriendsScreenState extends State<FriendsScreen>
 
   /// 친구 추가 처리 함수
   Future<void> _handleAddFriend([StateSetter? setModalState]) async {
+    // 🔥 이미 제출 중이면 중복 제출 방지
+    if (_isAddingFriend) {
+      debugPrint('이미 친구 추가 중입니다. 중복 제출 방지');
+      return;
+    }
+
     final id = _addController.text.trim();
     if (id.isEmpty) {
       _showErrorMessage('아이디를 입력하세요');
       return;
     }
+
+    debugPrint('🔍 친구 추가 시도 - 입력된 ID: $id');
+
     setState(() => _isAddingFriend = true);
+    
     try {
+      debugPrint('🔄 UI: controller.addFriend 시작...');
       await controller.addFriend(id);
-      if (controller.errorMessage == null) {
-        // 성공
-        _showSuccessMessage('친구 요청이 성공적으로 전송되었습니다');
-        _addController.clear();
-        if (mounted) Navigator.of(context).pop();
-      } else {
-        // 실패
-        _showErrorMessage(controller.errorMessage!);
-      }
+      debugPrint('📤 친구 요청 전송 완료');
+      
+      // 성공 - 예외가 발생하지 않았으면 성공
+      debugPrint('✅ UI: 친구 요청 성공으로 판단');
+      _showSuccessMessage('친구 요청이 성공적으로 전송되었습니다');
+      _addController.clear();
+      _clearCachedUserList(); // 캐시 초기화
+      if (mounted) Navigator.of(context).pop();
     } catch (e) {
-      _showErrorMessage('친구 추가 중 오류가 발생했습니다');
+      debugPrint('❌ UI: 친구 추가 중 오류: $e');
+      debugPrint('❌ UI: 예외 타입: ${e.runtimeType}');
+      debugPrint('❌ UI: 예외 스택: ${StackTrace.current}');
+      debugPrint('❌ UI: 예외 메시지: ${e.toString()}');
+      
+      // 🔥 구체적인 에러 메시지 처리
+      String errorMsg = '친구 추가 중 오류가 발생했습니다';
+      if (e.toString().contains('존재하지 않는 사용자')) {
+        errorMsg = '존재하지 않는 사용자입니다';
+      } else if (e.toString().contains('이미 친구')) {
+        errorMsg = '이미 친구인 사용자입니다';
+      } else if (e.toString().contains('이미 요청')) {
+        errorMsg = '이미 친구 요청을 보낸 사용자입니다';
+      } else if (e.toString().contains('자기 자신')) {
+        errorMsg = '자기 자신을 친구로 추가할 수 없습니다';
+      } else if (e.toString().contains('잘못된')) {
+        errorMsg = '잘못된 사용자 ID입니다';
+      } else if (e.toString().contains('서버 오류')) {
+        errorMsg = '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요';
+      } else {
+        errorMsg = e.toString().replaceAll('Exception: ', '');
+      }
+      
+      _showErrorMessage(errorMsg);
+      // 실패 시에도 모달창 닫기
+      if (mounted) Navigator.of(context).pop();
     } finally {
       setState(() => _isAddingFriend = false);
     }
@@ -744,8 +846,8 @@ class _FriendsScreenState extends State<FriendsScreen>
                         ],
                       ),
                       child: TabBar(
-                        isScrollable: true,
-                        tabAlignment: TabAlignment.start,
+                        isScrollable: false,
+                        tabAlignment: TabAlignment.fill,
                         labelColor: const Color(0xFF1E3A8A),
                         unselectedLabelColor: Colors.grey,
                         labelStyle: const TextStyle(
@@ -879,61 +981,121 @@ class _FriendsScreenState extends State<FriendsScreen>
     StateSetter setModalState,
     ScrollController scrollController,
   ) {
-    return ListView(
-      controller: scrollController,
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-      children: [
-        Text(
-          AppLocalizations.of(context)!.enterFriendIdPrompt,
-          style: const TextStyle(fontSize: 14, color: Colors.grey),
-        ),
-        const SizedBox(height: 20),
+    return FutureBuilder<List<Map<String, String>>>(
+      future: _getCachedUserList(),
+      builder: (context, snapshot) {
+        List<Map<String, String>> userList = [];
+        if (snapshot.hasData) {
+          userList = snapshot.data!;
+        }
 
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFE2E8F0)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
+        return ListView(
+          controller: scrollController,
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+          children: [
+            Text(
+              AppLocalizations.of(context)!.enterFriendIdPrompt,
+              style: const TextStyle(fontSize: 14, color: Colors.grey),
+            ),
+            const SizedBox(height: 20),
+
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
-            ],
-          ),
-          child: WoosongInputField(
-            icon: Icons.person_add_alt,
-            label: AppLocalizations.of(context)!.friendId,
-            controller: _addController,
-            hint: AppLocalizations.of(context)!.enterFriendId,
-            enabled: !_isAddingFriend,
-          ),
-        ),
+              child: WoosongInputField(
+                icon: Icons.person_add_alt,
+                label: AppLocalizations.of(context)!.friendId,
+                controller: _addController,
+                hint: AppLocalizations.of(context)!.enterFriendId,
+                enabled: !_isAddingFriend,
+              ),
+            ),
 
-        const SizedBox(height: 20),
+            const SizedBox(height: 20),
 
-        SizedBox(
-          width: double.infinity,
-          child: WoosongButton(
-            onPressed: _isAddingFriend
-                ? null
-                : () => _handleAddFriend(setModalState),
-            child: _isAddingFriend
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+            // 사용자 목록 표시
+            if (userList.isNotEmpty) ...[
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    '사용 가능한 사용자 목록:',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey,
                     ),
-                  )
-                : Text(AppLocalizations.of(context)!.sendFriendRequest),
-          ),
-        ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.refresh, size: 16),
+                    onPressed: () => _refreshUserList(),
+                    tooltip: '사용자 목록 새로고침',
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Container(
+                constraints: const BoxConstraints(maxHeight: 200),
+                decoration: BoxDecoration(
+                  color: Colors.grey[50],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey[300]!),
+                ),
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: userList.length,
+                  itemBuilder: (context, index) {
+                    final user = userList[index];
+                    return ListTile(
+                      dense: true,
+                      title: Text(
+                        '${user['name']} (${user['id']})',
+                        style: const TextStyle(fontSize: 14),
+                      ),
+                      onTap: () {
+                        _addController.text = user['id']!;
+                        setModalState(() {});
+                      },
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 20),
+            ],
 
-        const SizedBox(height: 20),
-      ],
+            SizedBox(
+              width: double.infinity,
+              child: WoosongButton(
+                onPressed: _isAddingFriend
+                    ? null
+                    : () => _handleAddFriend(setModalState),
+                child: _isAddingFriend
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      )
+                    : Text(AppLocalizations.of(context)!.sendFriendRequest),
+              ),
+            ),
+
+            const SizedBox(height: 20),
+          ],
+        );
+      },
     );
   }
 
@@ -1364,7 +1526,7 @@ class _FriendsScreenState extends State<FriendsScreen>
               Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1E3A8A).withOpacity(0.1),
+                  color: Colors.red.withOpacity(0.1),
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(20),
                     topRight: Radius.circular(20),
@@ -1376,12 +1538,12 @@ class _FriendsScreenState extends State<FriendsScreen>
                       width: 60,
                       height: 60,
                       decoration: BoxDecoration(
-                        color: const Color(0xFF1E3A8A).withOpacity(0.2),
+                        color: Colors.red.withOpacity(0.2),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(
                         Icons.cancel_outlined,
-                        color: Color(0xFF1E3A8A),
+                        color: Colors.red,
                         size: 30,
                       ),
                     ),
@@ -1395,7 +1557,7 @@ class _FriendsScreenState extends State<FriendsScreen>
                             style: const TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.w700,
-                              color: Color(0xFF1E3A8A),
+                              color: Colors.red,
                             ),
                           ),
                           const SizedBox(height: 4),
@@ -1403,7 +1565,7 @@ class _FriendsScreenState extends State<FriendsScreen>
                             '보낸 친구 요청을 취소합니다',
                             style: TextStyle(
                               fontSize: 14,
-                              color: const Color(0xFF1E3A8A).withOpacity(0.8),
+                              color: Colors.red.withOpacity(0.8),
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -1428,7 +1590,7 @@ class _FriendsScreenState extends State<FriendsScreen>
                     children: [
                       const Icon(
                         Icons.info_outline,
-                        color: Color(0xFF1E3A8A),
+                        color: Colors.red,
                         size: 20,
                       ),
                       const SizedBox(width: 12),
@@ -1579,7 +1741,11 @@ class _FriendsScreenState extends State<FriendsScreen>
               return AnimatedContainer(
                 duration: Duration(milliseconds: 300 + (index * 100)),
                 curve: Curves.easeOutBack,
-                child: _buildFriendTile(friend),
+                child: Consumer<FriendsController>(
+                  builder: (context, friendsController, child) {
+                    return _buildFriendTile(friend);
+                  },
+                ),
               );
             }),
           const SizedBox(height: 16),
@@ -1590,6 +1756,16 @@ class _FriendsScreenState extends State<FriendsScreen>
 
   // 🔥 친구 타일 - 클릭 시 상세 정보 다이얼로그 표시
   Widget _buildFriendTile(Friend friend) {
+    // 🔥 FriendsController에서 최신 상태 가져오기
+    final friendsController = Provider.of<FriendsController>(context, listen: false);
+    final currentFriend = friendsController.friends.firstWhere(
+      (f) => f.userId == friend.userId,
+      orElse: () => friend, // 찾지 못하면 원본 사용
+    );
+    
+    // 🔥 디버깅: 친구 상태 로그
+    debugPrint('🎨 ${friend.userName} (${friend.userId}) 타일 렌더링 - 원본 온라인: ${friend.isLogin}, 최신 온라인: ${currentFriend.isLogin}');
+    
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
@@ -1597,13 +1773,16 @@ class _FriendsScreenState extends State<FriendsScreen>
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: friend.isLogin
-              ? const Color(0xFF10B981).withOpacity(0.3)
+          color: currentFriend.isLogin
+              ? const Color(0xFF10B981).withOpacity(0.5) // 🔥 더 진한 초록색 테두리
               : const Color(0xFFE2E8F0),
+          width: currentFriend.isLogin ? 2 : 1, // 🔥 온라인 친구는 더 두꺼운 테두리
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: currentFriend.isLogin 
+                ? const Color(0xFF10B981).withOpacity(0.1) // 🔥 온라인 친구는 초록색 그림자
+                : Colors.black.withOpacity(0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -1622,34 +1801,70 @@ class _FriendsScreenState extends State<FriendsScreen>
                   width: 50,
                   height: 50,
                   decoration: BoxDecoration(
-                    color: friend.isLogin
-                        ? const Color(0xFF10B981).withOpacity(0.1)
+                    color: currentFriend.isLogin
+                        ? const Color(0xFF10B981).withOpacity(0.15) // 🔥 더 진한 초록색 배경
                         : const Color(0xFF1E3A8A).withOpacity(0.1),
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: friend.isLogin
-                          ? const Color(0xFF10B981).withOpacity(0.3)
+                      color: currentFriend.isLogin
+                          ? const Color(0xFF10B981).withOpacity(0.5) // 🔥 더 진한 초록색 테두리
                           : const Color(0xFF1E3A8A).withOpacity(0.3),
-                      width: 2,
+                      width: currentFriend.isLogin ? 2.5 : 2, // 🔥 온라인 친구는 더 두꺼운 테두리
                     ),
                   ),
                   child: Icon(
                     Icons.person,
-                    color: friend.isLogin
-                        ? const Color(0xFF10B981)
+                    color: currentFriend.isLogin
+                        ? const Color(0xFF10B981) // 🔥 초록색 아이콘
                         : const Color(0xFF1E3A8A),
                     size: 24,
                   ),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
-                  child: Text(
-                    friend.userName,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 16,
-                    ),
-                    overflow: TextOverflow.ellipsis,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        friend.userName,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
+                          color: currentFriend.isLogin 
+                              ? const Color(0xFF10B981) // 🔥 온라인 친구는 초록색 텍스트
+                              : const Color(0xFF1E3A8A),
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 2),
+                      Row(
+                        children: [
+                          Container(
+                            width: 6,
+                            height: 6,
+                            decoration: BoxDecoration(
+                              color: currentFriend.isLogin
+                                  ? const Color(0xFF10B981) // 🔥 초록색 온라인 표시
+                                  : Colors.grey,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            currentFriend.isLogin
+                                ? AppLocalizations.of(context)!.online
+                                : AppLocalizations.of(context)!.offline,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: currentFriend.isLogin
+                                  ? const Color(0xFF10B981) // 🔥 초록색 온라인 텍스트
+                                  : Colors.grey,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
                 IconButton(
