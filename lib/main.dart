@@ -118,8 +118,8 @@ class _CampusNavigatorAppState extends State<CampusNavigatorApp>
         _userAuth.userRole != UserRole.external &&
         _userAuth.userId != null &&
         !_userAuth.userId!.startsWith('guest_')) {
-      // 비동기 처리를 동기적으로 실행
-      _handleAppDetached();
+      // 🔥 동기적으로 즉시 처리 (Future.delayed 없이)
+      _handleAppDetachedSync();
     }
     
     _systemUIResetTimer?.cancel(); // 👈 타이머 정리
@@ -206,7 +206,14 @@ class _CampusNavigatorAppState extends State<CampusNavigatorApp>
 
     _systemUIResetTimer?.cancel(); // 👈 백그라운드 이동 시 타이머 중지
 
-    // 🔥 모든 사용자의 위치 전송 및 웹소켓 연결 무조건 중지 (플랫폼 무관)
+    // 🔥 iOS에서는 백그라운드 이동 시에도 즉시 로그아웃 처리 (앱 강제 종료 대응)
+    if (Platform.isIOS) {
+      debugPrint('🔥 iOS 백그라운드 이동: 즉시 로그아웃 처리 시작');
+      await _handleAppDetached();
+      return;
+    }
+
+    // 🔥 Android에서는 기존 방식 유지
     try {
       _locationManager.stopPeriodicLocationSending();
       
@@ -241,7 +248,7 @@ class _CampusNavigatorAppState extends State<CampusNavigatorApp>
     }
   }
 
-  /// 🔥 앱 완전 종료 시 - 강제 중지
+  /// 🔥 앱 완전 종료 시 - 강제 중지 (비동기)
   Future<void> _handleAppDetached() async {
     debugPrint('📱 앱 완전 종료 - 모든 연결 강제 중지');
     debugPrint('🔍 플랫폼: ${Platform.isIOS ? 'iOS' : 'Android'}');
@@ -275,6 +282,45 @@ class _CampusNavigatorAppState extends State<CampusNavigatorApp>
       try {
         debugPrint('🔥 앱 완전 종료: 서버 로그아웃 처리 시작');
         await _userAuth.logoutServerOnly();
+        debugPrint('✅ 서버 로그아웃 완료');
+      } catch (e) {
+        debugPrint('❌ 서버 로그아웃 오류: $e');
+      }
+    }
+  }
+
+  /// 🔥 앱 완전 종료 시 - 강제 중지 (동기)
+  void _handleAppDetachedSync() {
+    debugPrint('📱 앱 dispose 시 동기 로그아웃 처리');
+    debugPrint('🔍 플랫폼: ${Platform.isIOS ? 'iOS' : 'Android'}');
+
+    _systemUIResetTimer?.cancel(); // 👈 앱 종료 시 타이머 중지
+
+    // 🔥 강제 위치 전송 및 웹소켓 연결 중지 (동기)
+    try {
+      _locationManager.forceStopLocationSending();
+      
+      // 🔥 웹소켓 연결 해제 (동기)
+      final wsService = WebSocketService();
+      if (wsService.isConnected) {
+        debugPrint('🔥 앱 dispose: 웹소켓 연결 해제 시작');
+        wsService.disconnect();
+        debugPrint('✅ 웹소켓 연결 해제 완료');
+      }
+      debugPrint('✅ 모든 연결 강제 중지 완료');
+    } catch (e) {
+      debugPrint('❌ 연결 강제 중지 오류: $e');
+    }
+
+    // 🔥 일반 사용자만 서버 로그아웃 처리 (동기)
+    if (_userAuth.isLoggedIn &&
+        _userAuth.userRole != UserRole.external &&
+        _userAuth.userId != null &&
+        !_userAuth.userId!.startsWith('guest_')) {
+      try {
+        debugPrint('🔥 앱 dispose: 서버 로그아웃 처리 시작');
+        // 동기적으로 서버 로그아웃 처리 (간단한 HTTP 요청)
+        _userAuth.logoutServerOnly();
         debugPrint('✅ 서버 로그아웃 완료');
       } catch (e) {
         debugPrint('❌ 서버 로그아웃 오류: $e');

@@ -356,6 +356,15 @@ class _FriendsScreenState extends State<FriendsScreen>
                                 onPressed: () async {
                                   HapticFeedback.lightImpact();
                                   Navigator.of(context).pop(); // 항상 모달창 닫기
+                                  
+                                  // 🔥 위치 공유 상태 확인
+                                  if (!friend.isLocationPublic) {
+                                    _showErrorMessage(
+                                      '${friend.userName}님이 위치 공유를 허용하지 않았습니다.',
+                                    );
+                                    return;
+                                  }
+                                  
                                   if (!isOnline) {
                                     _showErrorMessage(
                                       AppLocalizations.of(
@@ -364,6 +373,7 @@ class _FriendsScreenState extends State<FriendsScreen>
                                     );
                                     return;
                                   }
+                                  
                                   if (!isLocationDisplayed) {
                                     await _showFriendLocationOnMap(friend);
                                   } else {
@@ -382,7 +392,9 @@ class _FriendsScreenState extends State<FriendsScreen>
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: isLocationDisplayed
                                       ? const Color(0xFFEF4444)
-                                      : const Color(0xFF10B981),
+                                      : friend.isLocationPublic 
+                                          ? const Color(0xFF10B981)
+                                          : Colors.grey[400]!,
                                   foregroundColor: Colors.white,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12),

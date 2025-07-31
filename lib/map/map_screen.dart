@@ -167,6 +167,46 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     try {
       debugPrint('📍 친구 위치 표시 및 지도 전환: ${friend.userName}');
 
+      // 🔥 위치 공유 상태 확인
+      if (!friend.isLocationPublic) {
+        debugPrint('❌ 위치 공유가 허용되지 않은 친구: ${friend.userName}');
+        
+        // 1. 지도 화면으로 전환
+        setState(() {
+          _currentNavIndex = 0;
+        });
+
+        // 2. 위치 공유 미허용 메시지 표시
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  const Icon(Icons.location_off, color: Colors.white, size: 20),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      '${friend.userName}님이 위치 공유를 허용하지 않았습니다.',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w500,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              backgroundColor: const Color(0xFFFF9800),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+              duration: const Duration(seconds: 4),
+            ),
+          );
+        }
+        return;
+      }
+
       // 1. 지도 화면으로 전환
       setState(() {
         _currentNavIndex = 0;

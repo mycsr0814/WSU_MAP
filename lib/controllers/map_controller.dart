@@ -424,18 +424,27 @@ class MapScreenController extends ChangeNotifier {
       int addedCount = 0;
       int onlineCount = 0;
       int offlineCount = 0;
+      int locationSharedCount = 0;
       List<String> offlineFriends = [];
+      List<String> noLocationShareFriends = [];
       
       for (final friend in friendsController.friends) {
         if (friend.isLogin) {
           onlineCount++;
           if (friend.lastLocation.isNotEmpty) {
-            try {
-              await _friendLocationMarkerService.addFriendLocationMarker(friend);
-              addedCount++;
-              debugPrint('✅ 친구 위치 마커 추가: ${friend.userName}');
-            } catch (e) {
-              debugPrint('⚠️ 친구 위치 마커 추가 실패: ${friend.userName} - $e');
+            // 🔥 위치 공유 상태 확인
+            if (friend.isLocationPublic) {
+              try {
+                await _friendLocationMarkerService.addFriendLocationMarker(friend);
+                addedCount++;
+                debugPrint('✅ 친구 위치 마커 추가: ${friend.userName}');
+              } catch (e) {
+                debugPrint('⚠️ 친구 위치 마커 추가 실패: ${friend.userName} - $e');
+              }
+            } else {
+              locationSharedCount++;
+              noLocationShareFriends.add(friend.userName);
+              debugPrint('⚠️ 위치 공유 미허용: ${friend.userName}');
             }
           } else {
             debugPrint('⚠️ 위치 정보 없음: ${friend.userName}');
@@ -465,21 +474,35 @@ class MapScreenController extends ChangeNotifier {
           message = '친구가 없습니다.\n친구를 추가한 후 다시 시도해주세요.';
           backgroundColor = const Color(0xFF6B7280); // 회색 (정보)
           icon = Icons.info;
-        } else if (offlineCount > 0) {
-          // 오프라인 친구가 있는 경우
+        } else if (offlineCount > 0 || locationSharedCount > 0) {
+          // 오프라인 친구나 위치 공유 미허용 친구가 있는 경우
           if (addedCount > 0) {
-            // 온라인 친구도 있고 오프라인 친구도 있는 경우
-            message = '친구 $addedCount명의 위치를 표시했습니다.\n오프라인 친구 $offlineCount명은 표시되지 않습니다.';
+            // 위치를 표시할 수 있는 친구가 있는 경우
+            String detailMessage = '';
+            if (offlineCount > 0 && locationSharedCount > 0) {
+              detailMessage = '\n오프라인 친구 $offlineCount명, 위치 공유 미허용 친구 $locationSharedCount명은 표시되지 않습니다.';
+            } else if (offlineCount > 0) {
+              detailMessage = '\n오프라인 친구 $offlineCount명은 표시되지 않습니다.';
+            } else if (locationSharedCount > 0) {
+              detailMessage = '\n위치 공유 미허용 친구 $locationSharedCount명은 표시되지 않습니다.';
+            }
+            message = '친구 $addedCount명의 위치를 표시했습니다.$detailMessage';
             backgroundColor = const Color(0xFFF59E0B); // 주황색 (경고)
             icon = Icons.warning;
           } else {
-            // 모든 친구가 오프라인인 경우
-            message = '모든 친구가 오프라인 상태입니다.\n친구가 온라인에 접속하면 위치를 확인할 수 있습니다.';
+            // 모든 친구가 오프라인이거나 위치 공유를 허용하지 않는 경우
+            if (offlineCount > 0 && locationSharedCount > 0) {
+              message = '모든 친구가 오프라인이거나 위치 공유를 허용하지 않습니다.\n친구가 온라인에 접속하고 위치 공유를 허용하면 위치를 확인할 수 있습니다.';
+            } else if (offlineCount > 0) {
+              message = '모든 친구가 오프라인 상태입니다.\n친구가 온라인에 접속하면 위치를 확인할 수 있습니다.';
+            } else {
+              message = '모든 친구가 위치 공유를 허용하지 않습니다.\n친구가 위치 공유를 허용하면 위치를 확인할 수 있습니다.';
+            }
             backgroundColor = const Color(0xFFEF4444); // 빨간색 (오류)
             icon = Icons.offline_bolt;
           }
         } else {
-          // 모든 친구가 온라인인 경우
+          // 모든 친구가 온라인이고 위치 공유를 허용하는 경우
           message = '친구 $addedCount명의 위치를 지도에 표시했습니다.';
           backgroundColor = const Color(0xFF10B981); // 초록색 (성공)
           icon = Icons.people;
