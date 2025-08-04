@@ -185,6 +185,30 @@ class _BuildingFloorSheetState extends State<BuildingFloorSheet> {
                     ),
                     const SizedBox(width: 12),
                     
+                    // 🔥 도면 버튼
+                    Expanded(
+                      child: SizedBox(
+                        height: 48,
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            Navigator.pop(context);
+                            // 도면 버튼 클릭 시 해당 건물 아이콘을 지도에 표시
+                            _showBuildingOnMap(context);
+                          },
+                          icon: const Icon(Icons.map, size: 18),
+                          label: const Text('도면'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF10B981),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    
                     // 🔥 길찾기 버튼
                     Expanded(
                       child: SizedBox(
@@ -388,6 +412,26 @@ class _BuildingFloorSheetState extends State<BuildingFloorSheet> {
   IconData _getCategoryIcon(String? category) {
     if (category == null) return Icons.category;
     return CategoryFallbackData.getCategoryIcon(category);
+  }
+  
+  /// 🔥 도면 버튼 클릭 시 해당 건물을 지도에 표시
+  void _showBuildingOnMap(BuildContext context) {
+    debugPrint('🗺️ 도면 버튼 클릭: ${widget.buildingName}');
+    
+    // 지도 화면으로 돌아가서 해당 건물을 선택하도록 네비게이션
+    Navigator.pushNamedAndRemoveUntil(
+      context,
+      '/map',
+      (route) => false, // 모든 이전 화면 제거
+      arguments: {
+        'showBuilding': widget.buildingName,
+        'buildingInfo': {
+          'name': widget.buildingName,
+          'category': widget.category,
+          'floors': widget.floors,
+        }
+      },
+    );
   }
   
   /// 🔥 카테고리 색상 가져오기

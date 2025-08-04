@@ -172,39 +172,80 @@ class _SignUpViewState extends State<SignUpView> with TickerProviderStateMixin {
     return emailRegex.hasMatch(email);
   }
 
-  /// 결과 다이얼로그 표시
+  /// 결과 다이얼로그 표시 (우송 네이비 테마)
   void _showDialog(String message, {bool isSuccess = false, bool isError = false}) {
     final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Icon(
-          isSuccess ? Icons.check_circle : (isError ? Icons.error : Icons.info),
-          color: isSuccess ? Colors.green : (isError ? Colors.red : Colors.blue),
-          size: 48,
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: (isSuccess ? Colors.green : (isError ? Color(0xFF1E3A8A) : Color(0xFF3B82F6))).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Icon(
+                isSuccess ? Icons.check_circle : (isError ? Icons.error_outline : Icons.info_outline),
+                color: isSuccess ? Colors.green : (isError ? Color(0xFF1E3A8A) : Color(0xFF3B82F6)),
+                size: 40,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              isSuccess ? '성공' : (isError ? '오류' : '알림'),
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: isSuccess ? Colors.green : (isError ? Color(0xFF1E3A8A) : Color(0xFF3B82F6)),
+              ),
+            ),
+          ],
         ),
-        content: Text(
-          message,
-          textAlign: TextAlign.center,
-          style: const TextStyle(fontSize: 16),
+        content: Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: Text(
+            message,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.grey[700],
+              height: 1.4,
+            ),
+          ),
         ),
         actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              if (isSuccess) {
-                Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(builder: (_) => const LoginFormView()),
-                );
-              }
-            },
-            child: Text(
-              l10n.confirm,
-              style: const TextStyle(
-                color: Color(0xFF1E3A8A),
-                fontWeight: FontWeight.w600,
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+            child: ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                if (isSuccess) {
+                  Navigator.of(context).pushReplacement(
+                    MaterialPageRoute(builder: (_) => const LoginFormView()),
+                  );
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: isSuccess ? Colors.green : Color(0xFF1E3A8A),
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+              child: Text(
+                l10n.confirm,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ),
@@ -221,19 +262,21 @@ class _SignUpViewState extends State<SignUpView> with TickerProviderStateMixin {
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
             colors: [
-              Color(0xFFF8FAFC),
-              Color(0xFFE2E8F0),
+              Color(0xFF0F172A), // 매우 진한 남색
+              Color(0xFF1E3A8A), // 우송대 남색
+              Color(0xFF3B82F6), // 밝은 남색
             ],
+            stops: [0.0, 0.5, 1.0],
           ),
         ),
         child: SafeArea(
           child: FadeTransition(
             opacity: _fadeAnimation,
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(24),
               child: Consumer<UserAuth>(
                 builder: (context, userAuth, child) {
                   return Column(
@@ -242,53 +285,62 @@ class _SignUpViewState extends State<SignUpView> with TickerProviderStateMixin {
                       // 헤더
                       Row(
                         children: [
-                          IconButton(
-                            onPressed: userAuth.isLoading ? null : () => Navigator.of(context).pop(),
-                            icon: const Icon(
-                              Icons.arrow_back_ios,
-                              color: Color(0xFF1E3A8A),
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: IconButton(
+                              onPressed: userAuth.isLoading ? null : () => Navigator.of(context).pop(),
+                              icon: const Icon(
+                                Icons.arrow_back_ios,
+                                color: Colors.white,
+                                size: 20,
+                              ),
                             ),
                           ),
-                          Text(
-                            l10n.register,
-                            style: const TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF1E3A8A),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Text(
+                              l10n.register,
+                              style: const TextStyle(
+                                fontSize: 28,
+                                fontWeight: FontWeight.w800,
+                                color: Colors.white,
+                                letterSpacing: -0.5,
+                              ),
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 8),
                       
                       // 서브타이틀
                       Padding(
                         padding: const EdgeInsets.only(left: 16),
                         child: Text(
-                          l10n.welcome_to_campus_navigator,
+                          '따라우송에 오신 것을 환영합니다',
                           style: TextStyle(
                             fontSize: 16,
-                            color: Colors.grey[600],
+                            color: Colors.white.withOpacity(0.9),
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                       ),
-                      const SizedBox(height: 30),
-
-                      // 사용자 유형 선택 UI 제거
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 40),
 
                       // 회원가입 폼
                       Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 8),
-                        padding: const EdgeInsets.all(24),
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(32),
                         decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(20),
+                          color: Colors.white.withOpacity(0.95),
+                          borderRadius: BorderRadius.circular(24),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.08),
-                              blurRadius: 20,
-                              offset: const Offset(0, 8),
+                              color: Colors.black.withOpacity(0.15),
+                              blurRadius: 30,
+                              offset: const Offset(0, 15),
                             ),
                           ],
                         ),
@@ -301,6 +353,7 @@ class _SignUpViewState extends State<SignUpView> with TickerProviderStateMixin {
                               controller: usernameController,
                               hint: l10n.enter_username,
                             ),
+                            const SizedBox(height: 16),
                             WoosongInputField(
                               icon: Icons.lock_outline,
                               label: '${l10n.password} *',
@@ -308,6 +361,7 @@ class _SignUpViewState extends State<SignUpView> with TickerProviderStateMixin {
                               isPassword: true,
                               hint: l10n.password_hint,
                             ),
+                            const SizedBox(height: 16),
                             WoosongInputField(
                               icon: Icons.lock_outline,
                               label: '${l10n.confirm_password} *',
@@ -315,12 +369,14 @@ class _SignUpViewState extends State<SignUpView> with TickerProviderStateMixin {
                               isPassword: true,
                               hint: l10n.confirm_password_hint,
                             ),
+                            const SizedBox(height: 16),
                             WoosongInputField(
                               icon: Icons.badge_outlined,
                               label: '${l10n.name} *',
                               controller: nameController,
                               hint: l10n.enter_real_name,
                             ),
+                            const SizedBox(height: 16),
                             WoosongInputField(
                               icon: Icons.phone_outlined,
                               label: '${l10n.phone} *',
@@ -331,14 +387,16 @@ class _SignUpViewState extends State<SignUpView> with TickerProviderStateMixin {
                                 FilteringTextInputFormatter.digitsOnly,
                               ],
                             ),
+                            const SizedBox(height: 16),
                             
                             // 선택 입력 필드들
-                              WoosongInputField(
-                                icon: Icons.numbers_outlined,
-                                label: '${l10n.student_number} (${l10n.optional})',
-                                controller: stuNumberController,
-                                hint: l10n.enter_student_number,
-                              ),
+                            WoosongInputField(
+                              icon: Icons.numbers_outlined,
+                              label: '${l10n.student_number} (${l10n.optional})',
+                              controller: stuNumberController,
+                              hint: l10n.enter_student_number,
+                            ),
+                            const SizedBox(height: 16),
                             WoosongInputField(
                               icon: Icons.email_outlined,
                               label: '${l10n.email} (${l10n.optional})',
@@ -346,30 +404,46 @@ class _SignUpViewState extends State<SignUpView> with TickerProviderStateMixin {
                               hint: l10n.email_hint,
                             ),
 
-                            const SizedBox(height: 8),
+                            const SizedBox(height: 24),
 
                             // 필수 항목 안내
                             Container(
-                              padding: const EdgeInsets.all(12),
+                              padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
-                                color: Colors.blue.shade50,
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: Colors.blue.shade200),
+                                gradient: LinearGradient(
+                                  colors: [
+                                    Color(0xFF1E3A8A).withOpacity(0.1),
+                                    Color(0xFF3B82F6).withOpacity(0.05),
+                                  ],
+                                ),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: Color(0xFF1E3A8A).withOpacity(0.2),
+                                  width: 1,
+                                ),
                               ),
                               child: Row(
                                 children: [
-                                  Icon(
-                                    Icons.info_outline,
-                                    color: Colors.blue.shade600,
-                                    size: 20,
+                                  Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: Color(0xFF1E3A8A).withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Icon(
+                                      Icons.info_outline,
+                                      color: Color(0xFF1E3A8A),
+                                      size: 20,
+                                    ),
                                   ),
-                                  const SizedBox(width: 8),
+                                  const SizedBox(width: 12),
                                   Expanded(
                                     child: Text(
                                       l10n.required_fields_notice,
                                       style: TextStyle(
-                                        color: Colors.blue.shade700,
+                                        color: Color(0xFF1E3A8A),
                                         fontSize: 14,
+                                        fontWeight: FontWeight.w500,
                                       ),
                                     ),
                                   ),
@@ -377,57 +451,131 @@ class _SignUpViewState extends State<SignUpView> with TickerProviderStateMixin {
                               ),
                             ),
 
-                            const SizedBox(height: 24),
+                            const SizedBox(height: 32),
 
                             // 회원가입 버튼
-                            WoosongButton(
-                              onPressed: userAuth.isLoading ? null : _handleSignUp,
-                              child: userAuth.isLoading 
-                                  ? const SizedBox(
-                                      width: 20,
-                                      height: 20,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            Container(
+                              width: double.infinity,
+                              height: 56,
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  colors: [
+                                    Color(0xFF1E3A8A),
+                                    Color(0xFF3B82F6),
+                                  ],
+                                ),
+                                borderRadius: BorderRadius.circular(16),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Color(0xFF1E3A8A).withOpacity(0.3),
+                                    blurRadius: 12,
+                                    offset: const Offset(0, 6),
+                                  ),
+                                ],
+                              ),
+                              child: ElevatedButton(
+                                onPressed: userAuth.isLoading ? null : _handleSignUp,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.transparent,
+                                  shadowColor: Colors.transparent,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                ),
+                                child: userAuth.isLoading 
+                                    ? const SizedBox(
+                                        width: 24,
+                                        height: 24,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2.5,
+                                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                        ),
+                                      )
+                                    : Text(
+                                        l10n.create_account,
+                                        style: const TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w700,
+                                          color: Colors.white,
+                                        ),
                                       ),
-                                    )
-                                  : Text(l10n.create_account),
+                              ),
                             ),
 
-                            const SizedBox(height: 12),
+                            const SizedBox(height: 16),
 
                             // 취소 버튼
-                            WoosongButton(
-                              onPressed: userAuth.isLoading ? null : () => Navigator.of(context).pop(),
-                              isPrimary: false,
-                              isOutlined: true,
-                              child: Text(l10n.cancel),
+                            Container(
+                              width: double.infinity,
+                              height: 56,
+                              decoration: BoxDecoration(
+                                color: Colors.transparent,
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: Color(0xFF1E3A8A).withOpacity(0.3),
+                                  width: 2,
+                                ),
+                              ),
+                              child: ElevatedButton(
+                                onPressed: userAuth.isLoading ? null : () => Navigator.of(context).pop(),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.transparent,
+                                  shadowColor: Colors.transparent,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                ),
+                                child: Text(
+                                  l10n.cancel,
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF1E3A8A),
+                                  ),
+                                ),
+                              ),
                             ),
 
                             // 에러 메시지 표시
                             if (userAuth.lastError != null) ...[
-                              const SizedBox(height: 16),
+                              const SizedBox(height: 20),
                               Container(
-                                padding: const EdgeInsets.all(12),
+                                padding: const EdgeInsets.all(16),
                                 decoration: BoxDecoration(
-                                  color: Colors.red.shade50,
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(color: Colors.red.shade200),
+                                  gradient: LinearGradient(
+                                    colors: [
+                                      Colors.red.shade50,
+                                      Colors.red.shade100,
+                                    ],
+                                  ),
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(
+                                    color: Colors.red.shade200,
+                                    width: 1,
+                                  ),
                                 ),
                                 child: Row(
                                   children: [
-                                    Icon(
-                                      Icons.error_outline,
-                                      color: Colors.red.shade600,
-                                      size: 20,
+                                    Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: Colors.red.shade100,
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Icon(
+                                        Icons.error_outline,
+                                        color: Colors.red.shade600,
+                                        size: 20,
+                                      ),
                                     ),
-                                    const SizedBox(width: 8),
+                                    const SizedBox(width: 12),
                                     Expanded(
                                       child: Text(
                                         userAuth.lastError!,
                                         style: TextStyle(
                                           color: Colors.red.shade700,
                                           fontSize: 14,
+                                          fontWeight: FontWeight.w500,
                                         ),
                                       ),
                                     ),

@@ -939,7 +939,7 @@ Widget _buildHeader() {
                               controller: titleController,
                               labelText: l10n?.class_name ?? 'Class Name',
                               icon: Icons.book,
-                              autofocus: true,
+                              autofocus: false,
                             ),
                             const SizedBox(height: 16),
                             _buildStyledInputField(
@@ -1771,6 +1771,47 @@ Widget _buildHeader() {
     debugPrint('🏢 네비게이션 완료');
   }
 
+  // 🔥 액션 버튼 빌더 메서드
+  Widget _buildActionButton({
+    required IconData icon,
+    required String label,
+    required VoidCallback onPressed,
+    required Color color,
+    bool isIconOnly = false,
+  }) {
+    return SizedBox(
+      height: 48,
+      child: ElevatedButton(
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: color,
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          elevation: 0,
+          padding: EdgeInsets.zero,
+        ),
+        child: isIconOnly
+            ? Icon(icon, size: 20)
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(icon, size: 18),
+                  const SizedBox(width: 8),
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+      ),
+    );
+  }
+
   void _showScheduleDetail(ScheduleItem item) {
     final l10n = AppLocalizations.of(context);
 
@@ -1902,447 +1943,74 @@ Widget _buildHeader() {
                     bottomRight: Radius.circular(20),
                   ),
                 ),
-                child: Column(
+                                child: Column(
                   children: [
-                    // 🔥 반응형 버튼 레이아웃
-                    LayoutBuilder(
-                      builder: (context, constraints) {
-                        final isSmallScreen = constraints.maxWidth < 350;
-                        
-                        if (isSmallScreen) {
-                          // 작은 화면: 세로로 배치
-                          return Column(
+                    // 🔥 간단하고 깔끔한 버튼 레이아웃
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        children: [
+                          // 첫 번째 행: 추천경로, 위치보기
+                          Row(
                             children: [
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: SizedBox(
-                                      height: 48,
-                                      child: ElevatedButton(
-                                        onPressed: () {
-                                          Navigator.pop(context);
-                                          _showRecommendRoute(item);
-                                        },
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Colors.transparent,
-                                          foregroundColor: Colors.white,
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(16),
-                                          ),
-                                          elevation: 0,
-                                          padding: EdgeInsets.zero,
-                                        ),
-                                        child: Container(
-                                          decoration: BoxDecoration(
-                                            gradient: const LinearGradient(
-                                              colors: [
-                                                Color(0xFF1E3A8A),
-                                                Color(0xFF3B82F6),
-                                              ],
-                                              begin: Alignment.topLeft,
-                                              end: Alignment.bottomRight,
-                                            ),
-                                            borderRadius: BorderRadius.circular(16),
-                                            boxShadow: [
-                                              BoxShadow(
-                                                color: const Color(0xFF1E3A8A).withOpacity(0.3),
-                                                blurRadius: 12,
-                                                offset: const Offset(0, 6),
-                                              ),
-                                            ],
-                                          ),
-                                          child: Row(
-                                            mainAxisAlignment: MainAxisAlignment.center,
-                                            children: [
-                                              const Icon(Icons.directions, size: 18),
-                                              const SizedBox(width: 8),
-                                              const Text(
-                                                '추천경로',
-                                                style: TextStyle(
-                                                  fontWeight: FontWeight.w600,
-                                                  fontSize: 14,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: SizedBox(
-                                      height: 48,
-                                      child: ElevatedButton(
-                                        onPressed: () {
-                                          debugPrint('🔘 위치 보기 버튼 클릭됨!');
-                                          Navigator.pop(context);
-                                          _showBuildingLocation(item);
-                                        },
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Colors.transparent,
-                                          foregroundColor: Colors.white,
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(16),
-                                          ),
-                                          elevation: 0,
-                                          padding: EdgeInsets.zero,
-                                        ),
-                                        child: Container(
-                                          decoration: BoxDecoration(
-                                            gradient: const LinearGradient(
-                                              colors: [
-                                                Color(0xFF3B82F6),
-                                                Color(0xFF60A5FA),
-                                              ],
-                                              begin: Alignment.topLeft,
-                                              end: Alignment.bottomRight,
-                                            ),
-                                            borderRadius: BorderRadius.circular(16),
-                                            boxShadow: [
-                                              BoxShadow(
-                                                color: const Color(0xFF3B82F6).withOpacity(0.3),
-                                                blurRadius: 12,
-                                                offset: const Offset(0, 6),
-                                              ),
-                                            ],
-                                          ),
-                                          child: Row(
-                                            mainAxisAlignment: MainAxisAlignment.center,
-                                            children: [
-                                              const Icon(Icons.location_on, size: 18),
-                                              const SizedBox(width: 8),
-                                              const Text(
-                                                '위치 보기',
-                                                style: TextStyle(
-                                                  fontWeight: FontWeight.w600,
-                                                  fontSize: 14,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ],
+                              Expanded(
+                                child: _buildActionButton(
+                                  icon: Icons.directions,
+                                  label: '추천경로',
+                                  onPressed: () {
+                                    Navigator.pop(context);
+                                    _showRecommendRoute(item);
+                                  },
+                                  color: const Color(0xFF1E3A8A),
+                                ),
                               ),
-                              const SizedBox(height: 8),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: SizedBox(
-                                      height: 48,
-                                      child: ElevatedButton(
-                                        onPressed: () {
-                                          Navigator.pop(context);
-                                          _showEditScheduleDialog(item);
-                                        },
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Colors.transparent,
-                                          foregroundColor: Colors.white,
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(16),
-                                          ),
-                                          elevation: 0,
-                                          padding: EdgeInsets.zero,
-                                        ),
-                                        child: Container(
-                                          decoration: BoxDecoration(
-                                            gradient: const LinearGradient(
-                                              colors: [
-                                                Color(0xFF64748B),
-                                                Color(0xFF475569),
-                                              ],
-                                              begin: Alignment.topLeft,
-                                              end: Alignment.bottomRight,
-                                            ),
-                                            borderRadius: BorderRadius.circular(16),
-                                            boxShadow: [
-                                              BoxShadow(
-                                                color: const Color(0xFF64748B).withOpacity(0.3),
-                                                blurRadius: 12,
-                                                offset: const Offset(0, 6),
-                                              ),
-                                            ],
-                                          ),
-                                          child: Row(
-                                            mainAxisAlignment: MainAxisAlignment.center,
-                                            children: [
-                                              const Icon(Icons.edit, size: 18),
-                                              const SizedBox(width: 8),
-                                              Text(
-                                                l10n?.edit ?? 'Edit',
-                                                style: const TextStyle(
-                                                  fontWeight: FontWeight.w600,
-                                                  fontSize: 14,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  SizedBox(
-                                    width: 48,
-                                    height: 48,
-                                    child: ElevatedButton(
-                                      onPressed: () async {
-                                        Navigator.pop(context);
-                                        await _showDeleteConfirmDialog(item);
-                                      },
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.transparent,
-                                        foregroundColor: Colors.white,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(16),
-                                        ),
-                                        elevation: 0,
-                                        padding: EdgeInsets.zero,
-                                      ),
-                                      child: Container(
-                                        decoration: BoxDecoration(
-                                          gradient: const LinearGradient(
-                                            colors: [
-                                              Color(0xFFEF4444),
-                                              Color(0xFFF87171),
-                                            ],
-                                            begin: Alignment.topLeft,
-                                            end: Alignment.bottomRight,
-                                          ),
-                                          borderRadius: BorderRadius.circular(16),
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color: const Color(0xFFEF4444).withOpacity(0.3),
-                                              blurRadius: 12,
-                                              offset: const Offset(0, 6),
-                                            ),
-                                          ],
-                                        ),
-                                        child: const Icon(Icons.delete, size: 18),
-                                      ),
-                                    ),
-                                  ),
-                                ],
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: _buildActionButton(
+                                  icon: Icons.location_on,
+                                  label: '위치보기',
+                                  onPressed: () {
+                                    Navigator.pop(context);
+                                    _showBuildingLocation(item);
+                                  },
+                                  color: const Color(0xFF3B82F6),
+                                ),
                               ),
                             ],
-                          );
-                        } else {
-                          // 큰 화면: 가로로 배치
-                          return Row(
+                          ),
+                          const SizedBox(height: 12),
+                          // 두 번째 행: 수정, 삭제
+                          Row(
                             children: [
                               Expanded(
-                                child: SizedBox(
-                                  height: 48,
-                                  child: ElevatedButton(
-                                    onPressed: () {
-                                      Navigator.pop(context);
-                                      _showRecommendRoute(item);
-                                    },
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.transparent,
-                                      foregroundColor: Colors.white,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(16),
-                                      ),
-                                      elevation: 0,
-                                      padding: EdgeInsets.zero,
-                                                                            ),
-                                      child: Container(
-                                        decoration: BoxDecoration(
-                                          gradient: const LinearGradient(
-                                            colors: [
-                                              Color(0xFF1E3A8A),
-                                              Color(0xFF3B82F6),
-                                            ],
-                                            begin: Alignment.topLeft,
-                                            end: Alignment.bottomRight,
-                                          ),
-                                          borderRadius: BorderRadius.circular(16),
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color: const Color(0xFF1E3A8A).withOpacity(0.3),
-                                              blurRadius: 12,
-                                              offset: const Offset(0, 6),
-                                            ),
-                                          ],
-                                        ),
-                                        child: Row(
-                                          mainAxisAlignment: MainAxisAlignment.center,
-                                          children: [
-                                            const Icon(Icons.directions, size: 18),
-                                            const SizedBox(width: 8),
-                                            const Text(
-                                              '추천경로',
-                                              style: TextStyle(
-                                                fontWeight: FontWeight.w600,
-                                                fontSize: 14,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                  ),
+                                child: _buildActionButton(
+                                  icon: Icons.edit,
+                                  label: l10n?.edit ?? '수정',
+                                  onPressed: () {
+                                    Navigator.pop(context);
+                                    _showEditScheduleDialog(item);
+                                  },
+                                  color: const Color(0xFF64748B),
                                 ),
                               ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: SizedBox(
-                                  height: 48,
-                                  child: ElevatedButton(
-                                    onPressed: () {
-                                      debugPrint('🔘 위치 보기 버튼 클릭됨!');
-                                      Navigator.pop(context);
-                                      _showBuildingLocation(item);
-                                    },
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.transparent,
-                                      foregroundColor: Colors.white,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(16),
-                                      ),
-                                      elevation: 0,
-                                      padding: EdgeInsets.zero,
-                                    ),
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        gradient: const LinearGradient(
-                                          colors: [
-                                            Color(0xFF3B82F6),
-                                            Color(0xFF60A5FA),
-                                          ],
-                                          begin: Alignment.topLeft,
-                                          end: Alignment.bottomRight,
-                                        ),
-                                        borderRadius: BorderRadius.circular(16),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: const Color(0xFF3B82F6).withOpacity(0.3),
-                                            blurRadius: 12,
-                                            offset: const Offset(0, 6),
-                                          ),
-                                        ],
-                                      ),
-                                      child: Row(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        children: [
-                                          const Icon(Icons.location_on, size: 18),
-                                          const SizedBox(width: 8),
-                                          const Text(
-                                            '위치 보기',
-                                            style: TextStyle(
-                                              fontWeight: FontWeight.w600,
-                                              fontSize: 14,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: SizedBox(
-                                  height: 48,
-                                  child: ElevatedButton(
-                                    onPressed: () {
-                                      Navigator.pop(context);
-                                      _showEditScheduleDialog(item);
-                                    },
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.transparent,
-                                      foregroundColor: Colors.white,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(16),
-                                      ),
-                                      elevation: 0,
-                                      padding: EdgeInsets.zero,
-                                    ),
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        gradient: const LinearGradient(
-                                          colors: [
-                                            Color(0xFF64748B),
-                                            Color(0xFF475569),
-                                          ],
-                                          begin: Alignment.topLeft,
-                                          end: Alignment.bottomRight,
-                                        ),
-                                        borderRadius: BorderRadius.circular(16),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: const Color(0xFF64748B).withOpacity(0.3),
-                                            blurRadius: 12,
-                                            offset: const Offset(0, 6),
-                                          ),
-                                        ],
-                                      ),
-                                      child: Row(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        children: [
-                                          const Icon(Icons.edit, size: 18),
-                                          const SizedBox(width: 8),
-                                          Text(
-                                            l10n?.edit ?? 'Edit',
-                                            style: const TextStyle(
-                                              fontWeight: FontWeight.w600,
-                                              fontSize: 14,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
+                              const SizedBox(width: 12),
                               SizedBox(
-                                width: 48,
-                                height: 48,
-                                child: ElevatedButton(
+                                width: 56,
+                                child: _buildActionButton(
+                                  icon: Icons.delete,
+                                  label: '',
                                   onPressed: () async {
                                     Navigator.pop(context);
                                     await _showDeleteConfirmDialog(item);
                                   },
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.transparent,
-                                    foregroundColor: Colors.white,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(16),
-                                    ),
-                                    elevation: 0,
-                                    padding: EdgeInsets.zero,
-                                  ),
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      gradient: const LinearGradient(
-                                        colors: [
-                                          Color(0xFFEF4444),
-                                          Color(0xFFF87171),
-                                        ],
-                                        begin: Alignment.topLeft,
-                                        end: Alignment.bottomRight,
-                                      ),
-                                      borderRadius: BorderRadius.circular(16),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: const Color(0xFFEF4444).withOpacity(0.3),
-                                          blurRadius: 12,
-                                          offset: const Offset(0, 6),
-                                        ),
-                                      ],
-                                    ),
-                                    child: const Icon(Icons.delete, size: 18),
-                                  ),
+                                  color: const Color(0xFFEF4444),
+                                  isIconOnly: true,
                                 ),
                               ),
                             ],
-                          );
-                        }
-                      },
+                          ),
+                        ],
+                      ),
                     ),
                     const SizedBox(height: 12),
                     SizedBox(

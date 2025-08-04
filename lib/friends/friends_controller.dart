@@ -12,7 +12,12 @@ class FriendsController extends ChangeNotifier {
   final WebSocketService _wsService = WebSocketService();
 
   FriendsController(this.repository, this.myId) {
-    _initializeWebSocket();
+    // 🔥 게스트 사용자는 웹소켓 초기화 제외
+    if (!myId.startsWith('guest_')) {
+      _initializeWebSocket();
+    } else {
+      debugPrint('⚠️ 게스트 사용자 - 웹소켓 초기화 제외');
+    }
   }
 
   List<Friend> friends = [];
@@ -37,6 +42,12 @@ class FriendsController extends ChangeNotifier {
   // 🔌 웹소켓 초기화
   Future<void> _initializeWebSocket() async {
     debugPrint('🔌 웹소켓 서비스 초기화 중...');
+
+    // 🔥 게스트 사용자는 웹소켓 초기화 제외
+    if (myId.startsWith('guest_')) {
+      debugPrint('⚠️ 게스트 사용자 - 웹소켓 초기화 제외');
+      return;
+    }
 
     // 알림 서비스 초기화
     await NotificationService.initialize();
@@ -86,6 +97,12 @@ class FriendsController extends ChangeNotifier {
 
   // 📨 웹소켓 메시지 처리 (개선)
   void _handleWebSocketMessage(Map<String, dynamic> message) {
+    // 🔥 게스트 사용자는 웹소켓 메시지 처리 제외
+    if (myId.startsWith('guest_')) {
+      debugPrint('⚠️ 게스트 사용자 - 웹소켓 메시지 처리 제외');
+      return;
+    }
+
     debugPrint('📨 친구 컨트롤러에서 웹소켓 메시지 수신: ${message['type']}');
     debugPrint('📨 메시지 내용: $message');
     debugPrint('📨 현재 웹소켓 연결 상태: $isWebSocketConnected');
@@ -103,11 +120,6 @@ class FriendsController extends ChangeNotifier {
 
       case 'friend_status_change':
         _handleFriendStatusChange(message);
-        break;
-
-      // 🔥 새로 추가: 친구 로그아웃 처리
-      case 'friend_logged_out':
-        _handleFriendLoggedOut(message);
         break;
 
       // 🔥 실시간 친구 위치 업데이트 처리
@@ -152,11 +164,6 @@ class FriendsController extends ChangeNotifier {
       // 🔥 새로 추가: 친구 로그인 처리
       case 'friend_logged_in':
         _handleFriendLoggedIn(message);
-        break;
-
-      // 🔥 새로 추가: 친구 로그아웃 처리
-      case 'friend_logged_out':
-        _handleFriendLoggedOut(message);
         break;
 
       // 🔥 하트비트 응답 처리
@@ -231,6 +238,15 @@ class FriendsController extends ChangeNotifier {
         return;
       }
       
+      // 🔥 게스트 사용자는 친구 API 호출 제외
+      if (myId.startsWith('guest_')) {
+        debugPrint('⚠️ 게스트 사용자 - 친구 API 호출 제외');
+        friends = [];
+        friendRequests = [];
+        sentFriendRequests = [];
+        return;
+      }
+
       // 1. 친구 목록 로드
       final newFriends = await repository.getMyFriends(myId);
       friends = newFriends;
@@ -598,6 +614,12 @@ class FriendsController extends ChangeNotifier {
     try {
       debugPrint('🔄 백그라운드 친구 데이터 업데이트 중...');
 
+      // 🔥 게스트 사용자는 친구 API 호출 제외
+      if (myId.startsWith('guest_')) {
+        debugPrint('⚠️ 게스트 사용자 - 백그라운드 친구 API 호출 제외');
+        return;
+      }
+
       final now = DateTime.now();
       final previousFriendsCount = friends.length;
       final previousRequestsCount = friendRequests.length;
@@ -691,6 +713,17 @@ class FriendsController extends ChangeNotifier {
     notifyListeners();
 
     try {
+      // 🔥 게스트 사용자는 친구 API 호출 제외
+      if (myId.startsWith('guest_')) {
+        debugPrint('⚠️ 게스트 사용자 - 친구 데이터 새로고침 제외');
+        friends = [];
+        friendRequests = [];
+        sentFriendRequests = [];
+        isLoading = false;
+        notifyListeners();
+        return;
+      }
+
       friends = await repository.getMyFriends(myId);
       friendRequests = await repository.getFriendRequests(myId);
       sentFriendRequests = await repository.getSentFriendRequests(myId);

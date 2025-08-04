@@ -44,11 +44,14 @@ class WebSocketService {
     final hasSubscription = _subscription != null;
     final status = _isConnected && hasChannel && hasSubscription;
     
-    debugPrint('🔍 연결 상태 확인:');
-    debugPrint('🔍 _isConnected: $_isConnected');
-    debugPrint('🔍 hasChannel: $hasChannel');
-    debugPrint('🔍 hasSubscription: $hasSubscription');
-    debugPrint('🔍 최종 상태: $status');
+    // 🔥 디버그 로그를 조건부로 출력 (너무 많은 로그 방지)
+    if (!status || _isConnecting) {
+      debugPrint('🔍 연결 상태 확인:');
+      debugPrint('🔍 _isConnected: $_isConnected');
+      debugPrint('🔍 hasChannel: $hasChannel');
+      debugPrint('🔍 hasSubscription: $hasSubscription');
+      debugPrint('🔍 최종 상태: $status');
+    }
     
     return status;
   }
@@ -117,7 +120,7 @@ class WebSocketService {
       await _cleanupConnection();
       
       // 🔥 웹소켓 URL 확인 - 서버 포트는 3002
-      final wsUrl = 'ws://16.176.179.75:3002/friend/ws';
+      final wsUrl = 'ws://13.211.31.98:3002/friend/ws';
       debugPrint('🔌 웹소켓 연결 시도: $wsUrl');
       debugPrint('🔌 서버 IP: 16.176.179.75');
       debugPrint('🔌 서버 포트: 3002');
@@ -593,22 +596,8 @@ class WebSocketService {
   Future<void> disconnect() async {
     debugPrint('🔌 웹소켓 연결 해제 중...');
 
-    // 🔥 연결 해제 전에 서버에 해제 알림 전송
-    if (_isConnected && _channel != null && _userId != null) {
-      try {
-        debugPrint('📤 서버에 웹소켓 연결 해제 알림 전송');
-        _sendMessage({
-          'type': 'disconnect',
-          'userId': _userId,
-          'timestamp': DateTime.now().toIso8601String(),
-        });
-        
-        // 서버가 메시지를 처리할 시간 확보
-        await Future.delayed(const Duration(milliseconds: 200));
-      } catch (e) {
-        debugPrint('❌ 연결 해제 알림 전송 실패: $e');
-      }
-    }
+    // 🔥 서버에서 disconnect 메시지를 처리하지 않으므로 제거
+    // 연결 해제는 웹소켓 연결 자체가 끊어지면 서버에서 자동으로 감지됨
 
     _shouldReconnect = false;
     _isConnected = false;

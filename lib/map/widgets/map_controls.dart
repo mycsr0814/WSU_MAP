@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:flutter_application_1/controllers/map_controller.dart';
 import 'package:flutter_application_1/managers/location_manager.dart';
 import 'package:flutter_application_1/friends/friends_controller.dart';
+import 'package:flutter_application_1/auth/user_auth.dart';
 
 class MapControls extends StatelessWidget {
   final MapScreenController controller;
@@ -17,8 +18,8 @@ class MapControls extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<LocationManager>(
-      builder: (context, locationManager, child) {
+    return Consumer2<LocationManager, UserAuth>(
+      builder: (context, locationManager, userAuth, child) {
         return Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -28,9 +29,11 @@ class MapControls extends StatelessWidget {
               const SizedBox(height: 12),
             ],
 
-            // 🔥 친구 모두 보기 버튼
-            _buildShowAllFriendsButton(context),
-            const SizedBox(height: 12),
+            // 🔥 친구 모두 보기 버튼 (게스트 모드가 아닐 때만 표시)
+            if (!userAuth.isGuest) ...[
+              _buildShowAllFriendsButton(context),
+              const SizedBox(height: 12),
+            ],
 
             // 기존 카테고리/건물 마커 토글 버튼
             _buildCompactControlButton(

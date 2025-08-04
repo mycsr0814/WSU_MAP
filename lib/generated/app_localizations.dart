@@ -103,7 +103,7 @@ abstract class AppLocalizations {
   /// No description provided for @appTitle.
   ///
   /// In en, this message translates to:
-  /// **'Campus Navigator'**
+  /// **'따라우송'**
   String get appTitle;
 
   /// No description provided for @subtitle.

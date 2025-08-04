@@ -129,6 +129,12 @@ class UserAuth extends ChangeNotifier {
       return;
     }
 
+    // 🔥 게스트 사용자는 웹소켓 연결 제외
+    if (_userRole == UserRole.external || _userId!.startsWith('guest_')) {
+      debugPrint('⚠️ 게스트 사용자는 웹소켓 연결 제외');
+      return;
+    }
+
     try {
       WebSocketService().connect(_userId!);
       debugPrint('✅ 웹소켓 연결 시작 - 사용자 ID: $_userId');
@@ -321,11 +327,8 @@ class UserAuth extends ChangeNotifier {
           _isLoggedIn = true;
           _isFirstLaunch = false;
 
-          if (rememberMe) {
-            await _saveLoginInfo(rememberMe: true, password: password);
-          } else {
-            await _clearLoginInfo();
-          }
+          // 로그인 성공 시 항상 비밀번호 저장 (프로필 수정 시 확인용)
+          await _saveLoginInfo(rememberMe: rememberMe, password: password);
 
           // 🔥 로그인 성공 시 위치 전송 시작 및 웹소켓 연결
           if (context != null) {
@@ -788,8 +791,10 @@ class UserAuth extends ChangeNotifier {
       await prefs.setBool('is_logged_in', _isLoggedIn);
       await prefs.setBool('remember_me', rememberMe);
 
-      if (rememberMe && password != null) {
+      // 프로필 수정 시 확인용으로 항상 비밀번호 저장
+      if (password != null) {
         await prefs.setString('user_password', password);
+        debugPrint('🔐 비밀번호 저장됨: $password');
       }
     } catch (e) {
       debugPrint('로그인 정보 저장 오류: $e');

@@ -331,7 +331,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
       final buildingName = args['showBuilding'] as String;
       final buildingInfo = args['buildingInfo'] as Map<String, dynamic>?;
       
-      debugPrint('🏢 시간표에서 건물 정보 받음: $buildingName');
+      debugPrint('🏢 외부에서 건물 정보 받음: $buildingName');
       debugPrint('🏢 건물 상세 정보: $buildingInfo');
       
       // 🔥 처리 플래그 설정
@@ -352,7 +352,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
               // arguments에서 showBuilding 제거
               currentArgs.remove('showBuilding');
               currentArgs.remove('buildingInfo');
-              debugPrint('🧹 시간표 건물 정보 arguments 클리어 완료');
+              debugPrint('🧹 외부 건물 정보 arguments 클리어 완료');
             }
           }
         }
@@ -360,7 +360,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     }
   }
 
-  /// 🔥 시간표에서 전달받은 건물 정보로 건물 선택 및 정보창 표시
+  /// 🔥 외부에서 전달받은 건물 정보로 건물 선택 및 정보창 표시
   Future<void> _showBuildingFromTimetable(String buildingName, Map<String, dynamic>? buildingInfo) async {
     try {
       debugPrint('🏢 시간표 건물 정보 표시 시작: $buildingName');
@@ -448,10 +448,19 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
       // 3. 건물 선택
       _controller.selectBuilding(targetBuilding);
       
-      // 4. 잠시 후 정보창 표시 (지도 업데이트 대기)
+      // 4. 카테고리 자동 선택 로직 제거
+      // if (buildingInfo != null && buildingInfo.containsKey('category')) {
+      //   final category = buildingInfo['category'] as String?;
+      //   if (category != null && category.isNotEmpty) {
+      //     debugPrint('🎯 카테고리 자동 선택: $category');
+      //     _selectCategoryAutomatically(category);
+      //   }
+      // }
+      
+      // 5. 잠시 후 정보창 표시 (지도 업데이트 대기)
       await Future.delayed(const Duration(milliseconds: 1500));
       
-      // 5. 정보창 표시
+      // 6. 정보창 표시
       if (mounted) {
         if (!_infoWindowController.isShowing) {
           _infoWindowController.show();
@@ -497,6 +506,76 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
       debugPrint('❌ 시간표 건물 정보 표시 실패: $e');
     }
   }
+
+  /// 🔥 카테고리 자동 선택 메서드 제거
+  // void _selectCategoryAutomatically(String category) {
+  //   try {
+  //     debugPrint('🎯 카테고리 자동 선택 시작: $category');
+  //     
+  //     // 서버 카테고리명을 카테고리 ID로 변환
+  //     final categoryId = _mapCategoryName(category);
+  //     debugPrint('🎯 매핑된 카테고리: $category → $categoryId');
+  //     
+  //     // CategoryChips 위젯에 카테고리 선택 이벤트 전달
+  //     WidgetsBinding.instance.addPostFrameCallback((_) {
+  //       if (mounted) {
+  //         // CategoryChips 위젯의 selectCategory 메서드 호출
+  //         final categoryChipsState = CategoryChips.globalKey.currentState;
+  //         if (categoryChipsState != null) {
+  //           debugPrint('🎯 CategoryChips 위젯 상태 찾음, 카테고리 선택 시도: $categoryId');
+  //           categoryChipsState.selectCategory(categoryId);
+  //           debugPrint('🎯 카테고리 자동 선택 완료: $categoryId');
+  //         } else {
+  //           debugPrint('❌ CategoryChips 위젯을 찾을 수 없음');
+  //           debugPrint('❌ CategoryChips.globalKey: ${CategoryChips.globalKey}');
+  //           debugPrint('❌ CategoryChips.globalKey.currentState: ${CategoryChips.globalKey.currentState}');
+  //         }
+  //       } else {
+  //         debugPrint('❌ 위젯이 mounted 상태가 아님');
+  //       }
+  //     });
+  //   } catch (e) {
+  //     debugPrint('❌ 카테고리 자동 선택 실패: $e');
+  //   }
+  // }
+
+  /// 카테고리명 매핑 메서드 제거
+  // String _mapCategoryName(String serverCategory) {
+  //   // 서버 카테고리명을 카테고리 ID로 매핑
+  //   switch (serverCategory.toLowerCase()) {
+  //     case 'lounge':
+  //       return 'lounge';
+  //     case 'cafe':
+  //       return 'cafe';
+  //     case 'restaurant':
+  //       return 'restaurant';
+  //     case 'convenience':
+  //       return 'convenience';
+  //     case 'vending':
+  //       return 'vending';
+  //     case 'atm':
+  //       return 'atm';
+  //     case 'bank':
+  //       return 'atm'; // bank도 atm으로 매핑
+  //     case 'library':
+  //       return 'library';
+  //     case 'fitness':
+  //     case 'gym':
+  //       return 'gym';
+  //     case 'extinguisher':
+  //     case 'fire_extinguisher':
+  //       return 'extinguisher';
+  //     case 'water':
+  //     case 'water_purifier':
+  //       return 'water';
+  //     case 'bookstore':
+  //       return 'bookstore';
+  //     case 'post':
+  //       return 'post';
+  //     default:
+  //       return serverCategory.toLowerCase(); // 매핑되지 않은 경우 소문자로 변환
+  //   }
+  // }
 
   /// 🔥 건물명에서 건물 코드 추출 헬퍼 메서드
   String _extractBuildingCode(String buildingName) {
@@ -612,16 +691,27 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                   ),
                   const SizedBox(height: 12),
                   CategoryChips(
+                    key: CategoryChips.globalKey,
                     selectedCategory: _controller.selectedCategory,
                     onCategorySelected: (category, buildingInfoList) async {
                       debugPrint('카테고리 선택: $category, 건물 정보들: $buildingInfoList');
-                      // 1. 기존 마커 모두 제거
-                      await _buildingMarkerService.clearAllMarkers();
-                      // 2. 선택 상태 및 정보창 정리
-                      _controller.clearSelectedBuilding();
-                      _controller.closeInfoWindow(_infoWindowController);
-                      // 3. 새 카테고리 마커만 추가
-                      _controller.selectCategoryByNames(category, buildingInfoList, context);
+                      
+                      if (category.isEmpty) {
+                        // 카테고리 해제 시에만 마커 제거
+                        debugPrint('🎯 카테고리 해제 처리 시작');
+                        await _buildingMarkerService.clearAllMarkers();
+                        await _controller.clearCategorySelection(); // 카테고리 마커도 제거
+                        _controller.clearSelectedBuilding();
+                        _controller.closeInfoWindow(_infoWindowController);
+                        debugPrint('✅ 카테고리 해제 처리 완료');
+                      } else {
+                        // 카테고리 선택 시에는 기존 마커 유지하고 카테고리 마커만 추가
+                        debugPrint('🎯 카테고리 선택 처리 시작: $category');
+                        _controller.clearSelectedBuilding();
+                        _controller.closeInfoWindow(_infoWindowController);
+                        _controller.selectCategoryByNames(category, buildingInfoList, context);
+                        debugPrint('✅ 카테고리 선택 처리 완료: $category');
+                      }
                     },
                   ),
                 ],

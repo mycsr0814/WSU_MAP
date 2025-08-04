@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_application_1/auth/user_auth.dart';
 import 'package:flutter_application_1/selection/auth_selection_view.dart';
+import 'package:flutter_application_1/welcome_view.dart';
 import '../generated/app_localizations.dart';
 import 'package:flutter_application_1/services/auth_service.dart';
 import 'package:flutter_application_1/services/websocket_service.dart'; // 🔥 WebSocket 추가
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'help_page.dart';
 import 'app_info_page.dart';
@@ -70,8 +72,10 @@ class _ProfileScreenState extends State<ProfileScreen>
                         children: [
                           _buildUserInfoCard(context, userAuth, l10n),
                           const SizedBox(height: 24),
-                          if (userAuth.isLoggedIn) ...[
+                          if (userAuth.isLoggedIn && !userAuth.isGuest) ...[
                             _buildMenuList(userAuth, l10n),
+                          ] else if (userAuth.isGuest) ...[
+                            _buildGuestSection(l10n),
                           ] else ...[
                             _buildGuestSection(l10n),
                           ],
@@ -117,7 +121,7 @@ Widget _buildHeader(AppLocalizations l10n) {
                 ),
               ),
               Text(
-                l10n.my_info,
+                '마이페이지',
                 style: const TextStyle(
                   fontSize: 14,
                   color: Colors.grey,
@@ -138,8 +142,8 @@ Widget _buildHeader(AppLocalizations l10n) {
     AppLocalizations l10n,
   ) {
     return InkWell(
-      borderRadius: BorderRadius.circular(20),
-      onTap: userAuth.isLoggedIn
+      borderRadius: BorderRadius.circular(24),
+      onTap: userAuth.isLoggedIn && !userAuth.isGuest
           ? () => Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -154,42 +158,45 @@ Widget _buildHeader(AppLocalizations l10n) {
           : null,
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(28),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFF1E3A8A), Color(0xFF3B82F6)],
-          ),
-          borderRadius: BorderRadius.circular(20),
+          color: const Color(0xFF1E3A8A),
+          borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
               color: const Color(0xFF1E3A8A).withOpacity(0.3),
-              blurRadius: 20,
-              offset: const Offset(0, 10),
+              blurRadius: 16,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
         child: Row(
           children: [
             Container(
-              width: 60,
-              height: 60,
+              width: 72,
+              height: 72,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(30),
+                color: Colors.white.withOpacity(0.25),
+                borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: Colors.white.withOpacity(0.3),
+                  color: Colors.white.withOpacity(0.4),
                   width: 2,
                 ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
-              child: Icon(
+                              child: Icon(
                 userAuth.currentUserIcon,
-                size: 28,
-                color: Colors.white,
+                size: 32,
+                color: const Color(0xFF1E3A8A),
               ),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 20),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -199,28 +206,33 @@ Widget _buildHeader(AppLocalizations l10n) {
                         ? userAuth.getCurrentUserDisplayName(context)
                         : l10n.guest_user,
                     style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
+                      fontSize: 24,
+                      fontWeight: FontWeight.w800,
                       color: Colors.white,
+                      letterSpacing: -0.5,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 8),
                   Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
+                      horizontal: 12,
+                      vertical: 6,
                     ),
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.4),
+                        width: 1,
+                      ),
                     ),
                     child: Text(
                       userAuth.isLoggedIn && !userAuth.isGuest
                           ? userAuth.userId ?? l10n.user
                           : (userAuth.userRole?.displayName(context) ?? l10n.guest_role),
                       style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
                         color: Colors.white,
                       ),
                     ),
@@ -236,7 +248,7 @@ Widget _buildHeader(AppLocalizations l10n) {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
-                  Icons.check_circle,
+                  Icons.arrow_forward_ios,
                   color: Colors.white,
                   size: 20,
                 ),
@@ -307,17 +319,22 @@ Widget _buildHeader(AppLocalizations l10n) {
         'icon': Icons.help_outline,
         'title': l10n.help,
         'subtitle': l10n.help_subtitle,
+        'color': const Color(0xFF3B82F6),
       },
       {
         'icon': Icons.info_outline,
         'title': l10n.app_info,
         'subtitle': l10n.app_info_subtitle,
+        'color': const Color(0xFF10B981),
       },
-      {
-        'icon': Icons.contact_support,
-        'title': '문의하기',
-        'subtitle': '버그 신고 및 기능 제안',
-      },
+      // 🔥 게스트가 아닌 경우에만 문의하기 표시
+      if (!userAuth.isGuest)
+        {
+          'icon': Icons.contact_support,
+          'title': '문의하기',
+          'subtitle': '버그 신고 및 기능 제안',
+          'color': const Color(0xFFF59E0B),
+        },
     ];
 
     return Column(
@@ -327,6 +344,7 @@ Widget _buildHeader(AppLocalizations l10n) {
             icon: item['icon'] as IconData,
             title: item['title'] as String,
             subtitle: item['subtitle'] as String,
+            color: item['color'] as Color,
             isDestructive: item['isDestructive'] as bool? ?? false,
             onTap: () => _handleMenuTap(item['title'] as String),
           ),
@@ -339,42 +357,70 @@ Widget _buildHeader(AppLocalizations l10n) {
     return Column(
       children: [
         Container(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(32),
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xFFE2E8F0)),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Colors.grey.shade50,
+                Colors.grey.shade100,
+              ],
+            ),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+              color: const Color(0xFF1E3A8A).withOpacity(0.1),
+              width: 1,
+            ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
+                color: Colors.black.withOpacity(0.08),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
               ),
             ],
           ),
           child: Column(
             children: [
-              Icon(Icons.person_add, size: 48, color: Colors.grey[400]),
-              const SizedBox(height: 16),
-              Text(
-                l10n.login_required,
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.grey[700],
+              Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1E3A8A).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(
+                    color: const Color(0xFF1E3A8A).withOpacity(0.2),
+                    width: 2,
+                  ),
+                ),
+                child: Icon(
+                  Icons.person_add,
+                  size: 40,
+                  color: const Color(0xFF1E3A8A),
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 24),
+              Text(
+                l10n.login_required,
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF1E3A8A),
+                  letterSpacing: -0.5,
+                ),
+              ),
+              const SizedBox(height: 12),
               Text(
                 l10n.login_message,
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey[600],
-                  height: 1.4,
+                  fontSize: 16,
+                  color: Colors.grey[700],
+                  height: 1.5,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 32),
               _buildLoginButton(l10n),
             ],
           ),
@@ -384,14 +430,17 @@ Widget _buildHeader(AppLocalizations l10n) {
           icon: Icons.help_outline,
           title: l10n.help,
           subtitle: l10n.help_subtitle,
+          color: const Color(0xFF3B82F6),
           onTap: () => _handleMenuTap(l10n.help),
         ),
         _buildMenuItem(
           icon: Icons.info_outline,
           title: l10n.app_info,
           subtitle: l10n.app_info_subtitle,
+          color: const Color(0xFF10B981),
           onTap: () => _handleMenuTap(l10n.app_info),
         ),
+        const SizedBox(height: 24),
       ],
     );
   }
@@ -400,51 +449,62 @@ Widget _buildHeader(AppLocalizations l10n) {
     required IconData icon,
     required String title,
     required String subtitle,
+    Color? color,
     bool isDestructive = false,
     required VoidCallback onTap,
   }) {
+    final iconColor = color ?? const Color(0xFF1E3A8A);
+    final backgroundColor = color?.withOpacity(0.1) ?? const Color(0xFF1E3A8A).withOpacity(0.1);
+    
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: 16),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(20),
           child: Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(20),
               border: Border.all(
                 color: isDestructive
                     ? Colors.red.withOpacity(0.2)
                     : const Color(0xFFE2E8F0),
+                width: 1,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, 2),
+                  color: Colors.black.withOpacity(0.08),
+                  blurRadius: 16,
+                  offset: const Offset(0, 4),
                 ),
               ],
             ),
             child: Row(
               children: [
                 Container(
-                  width: 44,
-                  height: 44,
+                  width: 52,
+                  height: 52,
                   decoration: BoxDecoration(
                     color: isDestructive
                         ? Colors.red.withOpacity(0.1)
-                        : const Color(0xFF1E3A8A).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
+                        : backgroundColor,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: isDestructive
+                          ? Colors.red.withOpacity(0.2)
+                          : iconColor.withOpacity(0.2),
+                      width: 1,
+                    ),
                   ),
                   child: Icon(
                     icon,
-                    size: 22,
+                    size: 24,
                     color: isDestructive
                         ? Colors.red[600]
-                        : const Color(0xFF1E3A8A),
+                        : iconColor,
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -455,8 +515,8 @@ Widget _buildHeader(AppLocalizations l10n) {
                       Text(
                         title,
                         style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
+                          fontSize: 17,
+                          fontWeight: FontWeight.w700,
                           color: isDestructive
                               ? Colors.red[600]
                               : const Color(0xFF1E293B),
@@ -465,15 +525,27 @@ Widget _buildHeader(AppLocalizations l10n) {
                       const SizedBox(height: 4),
                       Text(
                         subtitle,
-                        style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                        style: TextStyle(
+                          fontSize: 14, 
+                          color: Colors.grey[600],
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ],
                   ),
                 ),
-                Icon(
-                  Icons.arrow_forward_ios,
-                  size: 16,
-                  color: Colors.grey[400],
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    Icons.arrow_forward_ios,
+                    size: 16,
+                    color: Colors.grey[500],
+                  ),
                 ),
               ],
             ),
@@ -488,30 +560,43 @@ Widget _buildHeader(AppLocalizations l10n) {
       onTap: _navigateToAuth,
       child: Container(
         width: double.infinity,
-        height: 50,
+        height: 56,
         decoration: BoxDecoration(
           gradient: const LinearGradient(
             colors: [Color(0xFF1E3A8A), Color(0xFF3B82F6)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF1E3A8A).withOpacity(0.3),
-              blurRadius: 12,
-              offset: const Offset(0, 6),
+              color: const Color(0xFF1E3A8A).withOpacity(0.4),
+              blurRadius: 16,
+              offset: const Offset(0, 8),
+              spreadRadius: 1,
             ),
           ],
         ),
         child: Center(
-          child: Text(
-            l10n.login_signup,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: Colors.white,
-            ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.login,
+                color: Colors.white,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                l10n.login_signup,
+                style: const TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                  letterSpacing: 0.2,
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -886,10 +971,7 @@ Widget _buildHeader(AppLocalizations l10n) {
         MaterialPageRoute(builder: (_) => const AppInfoPage()),
       );
     } else if (title == l10n.edit_profile) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const ProfileEditPage()),
-      );
+      _showPasswordConfirmDialog();
     } else if (title == l10n.delete_account) {
       _showDeleteDialog();
     } else if (title == '문의하기') {
@@ -923,6 +1005,273 @@ Widget _buildHeader(AppLocalizations l10n) {
           duration: const Duration(seconds: 2),
         ),
       );
+    }
+  }
+
+  /// ================================
+  /// 비밀번호 확인 다이얼로그
+  /// ================================
+  void _showPasswordConfirmDialog() async {
+    final l10n = AppLocalizations.of(context)!;
+    final userAuth = Provider.of<UserAuth>(context, listen: false);
+    final passwordController = TextEditingController();
+
+    final result = await showDialog<bool>(
+      context: context,
+      barrierColor: Colors.black.withOpacity(0.5),
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: Container(
+          width: MediaQuery.of(context).size.width * 0.9,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 🔥 헤더 - 보안 스타일
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1E3A8A).withOpacity(0.1),
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(20),
+                    topRight: Radius.circular(20),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 60,
+                      height: 60,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1E3A8A).withOpacity(0.2),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.lock_outline,
+                        color: Color(0xFF1E3A8A),
+                        size: 30,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            '비밀번호 확인',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF1E3A8A),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '회원정보 수정을 위해 비밀번호를 입력해주세요',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: const Color(0xFF1E3A8A).withOpacity(0.7),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // 🔥 내용
+              Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  children: [
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: const Color(0xFFE2E8F0),
+                          width: 1,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: TextFormField(
+                        controller: passwordController,
+                        obscureText: true,
+                        decoration: const InputDecoration(
+                          labelText: '비밀번호',
+                          labelStyle: TextStyle(
+                            color: Color(0xFF64748B),
+                            fontSize: 14,
+                          ),
+                          prefixIcon: Icon(
+                            Icons.lock,
+                            color: Color(0xFF1E3A8A),
+                            size: 20,
+                          ),
+                          border: InputBorder.none,
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 16,
+                          ),
+                        ),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          color: Color(0xFF1E3A8A),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () => Navigator.pop(context, false),
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              side: const BorderSide(
+                                color: Color(0xFF1E3A8A),
+                                width: 1,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: const Text(
+                              '취소',
+                              style: TextStyle(
+                                color: Color(0xFF1E3A8A),
+                                fontWeight: FontWeight.w600,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: () async {
+                              final password = passwordController.text.trim();
+                              if (password.isEmpty) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('비밀번호를 입력해주세요'),
+                                    backgroundColor: Colors.orange,
+                                  ),
+                                );
+                                return;
+                              }
+                              
+                              // 비밀번호 확인 로직
+                              final isValid = await _verifyPassword(password);
+                              if (isValid) {
+                                Navigator.pop(context, true);
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('비밀번호가 일치하지 않습니다'),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                              }
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF1E3A8A),
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: const Text(
+                              '확인',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (result == true) {
+      // 비밀번호 확인 성공 시 회원정보 수정 페이지로 이동
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const ProfileEditPage()),
+      );
+    }
+  }
+
+  /// 비밀번호 확인
+  Future<bool> _verifyPassword(String password) async {
+    final userAuth = Provider.of<UserAuth>(context, listen: false);
+    // SharedPreferences에서 저장된 비밀번호와 비교
+    final prefs = await SharedPreferences.getInstance();
+    final savedPassword = prefs.getString('user_password');
+    
+    debugPrint('🔐 비밀번호 확인 시작');
+    debugPrint('🔐 입력된 비밀번호: $password');
+    debugPrint('🔐 저장된 비밀번호: $savedPassword');
+    debugPrint('🔐 사용자 ID: ${userAuth.userId}');
+    debugPrint('🔐 사용자 이름: ${userAuth.userName}');
+    debugPrint('🔐 로그인 상태: ${userAuth.isLoggedIn}');
+    debugPrint('🔐 일치 여부: ${savedPassword == password}');
+    
+    // 저장된 비밀번호가 없으면 서버에서 확인
+    if (savedPassword == null || savedPassword.isEmpty) {
+      debugPrint('🔐 저장된 비밀번호가 없음, 서버 확인 시도');
+      // 서버에서 비밀번호 확인 (선택적)
+      return await _verifyPasswordFromServer(password);
+    }
+    
+    return savedPassword == password;
+  }
+
+  /// 서버에서 비밀번호 확인 (선택적)
+  Future<bool> _verifyPasswordFromServer(String password) async {
+    try {
+      final userAuth = Provider.of<UserAuth>(context, listen: false);
+      final userId = userAuth.userId;
+      
+      if (userId == null) {
+        debugPrint('🔐 사용자 ID가 없음');
+        return false;
+      }
+      
+      debugPrint('🔐 서버에서 비밀번호 확인 시도: $userId');
+      
+      // 서버에서 비밀번호 확인 API 호출 (선택적)
+      // 현재는 false 반환 (서버 API가 구현되지 않은 경우)
+      return false;
+    } catch (e) {
+      debugPrint('🔐 서버 비밀번호 확인 실패: $e');
+      return false;
     }
   }
 
@@ -1237,13 +1586,17 @@ Widget _buildHeader(AppLocalizations l10n) {
   }
 
   /// ================================
-  /// 인증 화면으로 이동
+  /// 메인화면(WelcomeView)으로 이동
   /// ================================
   void _navigateToAuth() {
-    debugPrint('🔥 ProfileScreen: AuthSelectionView로 이동');
+    debugPrint('🔥 ProfileScreen: WelcomeView로 이동');
+
+    // 🔥 게스트 모드에서 WelcomeView로 이동할 때 isFirstLaunch를 true로 설정
+    final userAuth = Provider.of<UserAuth>(context, listen: false);
+    userAuth.resetToWelcome();
 
     Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const AuthSelectionView()),
+      MaterialPageRoute(builder: (_) => const WelcomeView()),
       (route) => false,
     );
   }
