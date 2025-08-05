@@ -309,7 +309,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get calculating => '계산중...';
 
   @override
-  String get calculating_route => '경로 계산 중...';
+  String get calculating_route => '경로를 계산하는 중...';
 
   @override
   String get finding_optimal_route => '서버에서 최적 경로를 찾고 있습니다';
@@ -997,7 +997,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get view_floor_plan => '내부도면보기';
 
   @override
-  String get floor_plan => '내부도면';
+  String get floor_plan => '도면';
 
   @override
   String floor_plan_title(String buildingName) {
@@ -1579,4 +1579,16 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get phone_required => '전화번호를 입력해주세요';
+
+  @override
+  String get building_info => '건물 정보';
+
+  @override
+  String get floor_detail_info => '층별 상세 정보';
+
+  @override
+  String get no_floor_info => '층 정보가 없습니다.';
+
+  @override
+  String get floor_detail_view => '상세 정보 보기';
 }

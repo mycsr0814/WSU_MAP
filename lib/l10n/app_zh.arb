@@ -729,5 +729,11 @@
       "title": {}
     }
   },
-  "phone_required": "请输入您的电话号码"
+  "phone_required": "请输入电话号码",
+  "building_info": "建筑信息",
+  "floor_plan": "平面图",
+  "directions": "路线",
+  "floor_detail_info": "楼层详细信息",
+  "no_floor_info": "没有楼层信息。",
+  "floor_detail_view": "查看详情"
 }

@@ -3033,6 +3033,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Please enter your phone number'**
   String get phone_required;
+
+  /// No description provided for @building_info.
+  ///
+  /// In en, this message translates to:
+  /// **'Building Info'**
+  String get building_info;
+
+  /// No description provided for @floor_detail_info.
+  ///
+  /// In en, this message translates to:
+  /// **'Floor Detail Info'**
+  String get floor_detail_info;
+
+  /// No description provided for @no_floor_info.
+  ///
+  /// In en, this message translates to:
+  /// **'No floor information available.'**
+  String get no_floor_info;
+
+  /// No description provided for @floor_detail_view.
+  ///
+  /// In en, this message translates to:
+  /// **'View Details'**
+  String get floor_detail_view;
 }
 
 class _AppLocalizationsDelegate

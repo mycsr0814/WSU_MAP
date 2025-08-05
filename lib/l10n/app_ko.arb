@@ -735,5 +735,32 @@
       "title": {}
     }
   },
-  "phone_required": "전화번호를 입력해주세요"
+  "phone_required": "전화번호를 입력해주세요",
+  "building_info": "건물 정보",
+  "floor_plan": "도면",
+  "directions": "길찾기",
+  "floor_detail_info": "층별 상세 정보",
+  "no_floor_info": "층 정보가 없습니다.",
+  "floor_detail_view": "상세 정보 보기",
+  "start_point": "출발지",
+  "end_point": "도착지",
+  "set_start_point": "출발지 설정",
+  "set_end_point": "도착지 설정",
+  "set_room": "방 설정하기",
+  "cancel": "취소",
+  "confirm": "확인",
+  "room_info_error": "방 정보 처리 중 오류가 발생했습니다",
+  "search_start_point_hint": "검색창에서 다른 출발지를 선택하거나 내위치를 유지할 수 있습니다",
+  "selection_error": "선택 중 오류가 발생했습니다. 다시 시도해주세요.",
+  "building_selection_error": "건물 선택 중 오류가 발생했습니다. 다시 시도해주세요.",
+  "auto_set_my_location": "내 위치가 출발지로 자동 설정되었습니다",
+  "auto_set_default_location": "기본 위치가 출발지로 설정되었습니다",
+  "set_start_and_end": "출발지와 도착지를 모두 설정해주세요",
+  "calculating_route": "경로를 계산하는 중...",
+  "navigation_start_error": "네비게이션을 시작할 수 없습니다. 경로를 다시 확인해주세요.",
+  "directions_ended": "길찾기가 종료되었습니다",
+  "item_selection_error": "항목 선택 중 오류가 발생했습니다",
+  "incomplete_room_info": "강의실 정보가 불완전합니다",
+  "show_building_info": "{buildingName} 건물 정보를 표시합니다",
+  "building_info_display_error": "건물 정보 표시 중 오류가 발생했습니다"
 }

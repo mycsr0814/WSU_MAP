@@ -1611,4 +1611,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get phone_required => 'Please enter your phone number';
+
+  @override
+  String get building_info => 'Building Info';
+
+  @override
+  String get floor_detail_info => 'Floor Detail Info';
+
+  @override
+  String get no_floor_info => 'No floor information available.';
+
+  @override
+  String get floor_detail_view => 'View Details';
 }

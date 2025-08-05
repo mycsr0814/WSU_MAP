@@ -1284,7 +1284,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get start_navigation_from_here => '从当前位置开始导航';
 
   @override
-  String get directions => '导航';
+  String get directions => '路线';
 
   @override
   String get navigateHere => '导航到这里';
@@ -1575,5 +1575,17 @@ class AppLocalizationsZh extends AppLocalizations {
   String get deleteButton => '删除';
 
   @override
-  String get phone_required => '请输入您的电话号码';
+  String get phone_required => '请输入电话号码';
+
+  @override
+  String get building_info => '建筑信息';
+
+  @override
+  String get floor_detail_info => '楼层详细信息';
+
+  @override
+  String get no_floor_info => '没有楼层信息。';
+
+  @override
+  String get floor_detail_view => '查看详情';
 }

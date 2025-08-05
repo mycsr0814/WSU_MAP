@@ -830,5 +830,11 @@
       "title": {}
     }
   },
-  "phone_required": "Please enter your phone number"
+  "phone_required": "Please enter your phone number",
+  "building_info": "Building Info",
+  "floor_plan": "Floor Plan",
+  "directions": "Directions",
+  "floor_detail_info": "Floor Detail Info",
+  "no_floor_info": "No floor information available.",
+  "floor_detail_view": "View Details"
 }
