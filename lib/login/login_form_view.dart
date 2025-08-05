@@ -95,58 +95,198 @@ class _LoginFormViewState extends State<LoginFormView> with TickerProviderStateM
 
   /// 게스트 로그인 처리
   void _handleGuestLogin() async {
-    final userAuth = Provider.of<UserAuth>(context, listen: false);
-    await userAuth.loginAsGuest(context: context);
-
-    if (mounted) {
-      Navigator.of(context).pushReplacement(
-        PageRouteBuilder(
-          pageBuilder: (context, animation, secondaryAnimation) =>
-              const MapScreen(),
-          transitionsBuilder: (context, animation, secondaryAnimation, child) {
-            return FadeTransition(opacity: animation, child: child);
-          },
-          transitionDuration: const Duration(milliseconds: 500),
+    final l10n = AppLocalizations.of(context)!;
+    
+    // 게스트 로그인 확인 다이얼로그 표시
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
         ),
-      );
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Color(0xFF3B82F6).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                Icons.person_outline,
+                color: Color(0xFF3B82F6),
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                '게스트 모드',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF1E3A8A),
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: Text(
+            '게스트 모드로 입장하시겠습니까?\n\n게스트 모드에서는 친구 기능과 위치 공유 기능을 사용할 수 없습니다.',
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.grey[700],
+              height: 1.4,
+            ),
+          ),
+        ),
+        actions: [
+          Row(
+            children: [
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.of(context).pop(false),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Color(0xFF1E3A8A),
+                      side: BorderSide(color: Color(0xFF1E3A8A)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                    child: Text(
+                      '취소',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.of(context).pop(true),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Color(0xFF1E3A8A),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                    child: Text(
+                      '확인',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      final userAuth = Provider.of<UserAuth>(context, listen: false);
+      await userAuth.loginAsGuest(context: context);
+
+      if (mounted) {
+        Navigator.of(context).pushReplacement(
+          PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) =>
+                const MapScreen(),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              return FadeTransition(opacity: animation, child: child);
+            },
+            transitionDuration: const Duration(milliseconds: 500),
+          ),
+        );
+      }
     }
   }
 
-  /// 에러 다이얼로그 표시
+  /// 에러 다이얼로그 표시 (우송 네이비 테마)
   void _showErrorDialog(String message) {
     final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
+        backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(20),
         ),
         title: Row(
           children: [
-            Icon(
-              Icons.error_outline,
-              color: Colors.red[600],
-              size: 24,
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Color(0xFF1E3A8A).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                Icons.error_outline,
+                color: Color(0xFF1E3A8A),
+                size: 24,
+              ),
             ),
-            const SizedBox(width: 8),
-            Text(
-              l10n.login_failed,
-              style: const TextStyle(fontSize: 18),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                l10n.login_failed,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF1E3A8A),
+                ),
+              ),
             ),
           ],
         ),
-        content: Text(
-          message,
-          style: const TextStyle(fontSize: 16),
+        content: Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: Text(
+            message,
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.grey[700],
+              height: 1.4,
+            ),
+          ),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(
-              l10n.confirm,
-              style: const TextStyle(
-                color: Color(0xFF1E3A8A),
-                fontWeight: FontWeight.w600,
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+            child: ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Color(0xFF1E3A8A),
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+              child: Text(
+                l10n.confirm,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ),
@@ -181,37 +321,39 @@ class _LoginFormViewState extends State<LoginFormView> with TickerProviderStateM
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // 뒤로가기 버튼
+                    IconButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: const Icon(
+                        Icons.arrow_back_ios,
+                        color: Color(0xFF1E3A8A),
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+
                     // 헤더
-                    Row(
-                      children: [
-                        IconButton(
-                          onPressed: () => Navigator.of(context).pop(),
-                          icon: const Icon(
-                            Icons.arrow_back_ios,
-                            color: Color(0xFF1E3A8A),
-                          ),
+                    Center(
+                      child: Text(
+                        l10n.login,
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1E3A8A),
                         ),
-                        Text(
-                          l10n.login,
-                          style: const TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF1E3A8A),
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
                     const SizedBox(height: 10),
 
-                    // 서브타이틀
-                    Padding(
-                      padding: const EdgeInsets.only(left: 16),
+                    // 서브타이틀 (가운데 정렬)
+                    Center(
                       child: Text(
                         l10n.start_campus_exploration,
                         style: TextStyle(
                           fontSize: 16,
                           color: Colors.grey[600],
                         ),
+                        textAlign: TextAlign.center,
                       ),
                     ),
                     const SizedBox(height: 40),
@@ -434,17 +576,7 @@ class _LoginFormViewState extends State<LoginFormView> with TickerProviderStateM
                     ),
                     const SizedBox(height: 20),
 
-                    // 뒤로가기 버튼
-                    Consumer<UserAuth>(
-                      builder: (context, userAuth, child) {
-                        return WoosongButton(
-                          onPressed: userAuth.isLoading ? null : () => Navigator.of(context).pop(),
-                          isPrimary: false,
-                          isOutlined: true,
-                          child: Text(l10n.back),
-                        );
-                      },
-                    ),
+                    // 뒤로가기 버튼 제거
                     const SizedBox(height: 40),
                   ],
                 ),
@@ -456,41 +588,75 @@ class _LoginFormViewState extends State<LoginFormView> with TickerProviderStateM
     );
   }
 
-  // 추가 기능 안내 다이얼로그
+  // 추가 기능 안내 다이얼로그 (우송 네이비 테마)
   void _showComingSoonDialog(BuildContext context, String feature) {
     final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
+        backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(20),
         ),
         title: Row(
           children: [
-            Icon(
-              Icons.construction,
-              color: Colors.orange[600],
-              size: 24,
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Color(0xFF3B82F6).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                Icons.construction,
+                color: Color(0xFF3B82F6),
+                size: 24,
+              ),
             ),
-            const SizedBox(width: 8),
-            Text(
-              feature,
-              style: const TextStyle(fontSize: 18),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                feature,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF1E3A8A),
+                ),
+              ),
             ),
           ],
         ),
-        content: Text(
-          l10n.feature_coming_soon(feature),
-          style: const TextStyle(fontSize: 16),
+        content: Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: Text(
+            l10n.feature_coming_soon(feature),
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.grey[700],
+              height: 1.4,
+            ),
+          ),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(
-              l10n.confirm,
-              style: const TextStyle(
-                color: Color(0xFF1E3A8A),
-                fontWeight: FontWeight.w600,
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+            child: ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Color(0xFF1E3A8A),
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+              child: Text(
+                l10n.confirm,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ),

@@ -2,11 +2,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter_application_1/managers/location_manager.dart';
-import 'package:flutter_application_1/map/map_screen.dart';
-import 'package:flutter_application_1/welcome_view.dart';
-import 'package:flutter_application_1/selection/auth_selection_view.dart';
-import 'package:flutter_application_1/map/widgets/directions_screen.dart';
+import 'managers/location_manager.dart';
+import 'map/map_screen.dart';
+import 'welcome_view.dart';
+import 'selection/auth_selection_view.dart';
+import 'map/widgets/directions_screen.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'services/websocket_service.dart';
 import 'auth/user_auth.dart';
@@ -98,9 +98,13 @@ class _CampusNavigatorAppState extends State<CampusNavigatorApp>
 
     // 네트워크 상태 변화 감지 및 WebSocket 재연결
     _connectivitySubscription = Connectivity().onConnectivityChanged.listen((List<ConnectivityResult> results) {
-      // 하나라도 연결된 네트워크가 있으면 재연결 시도
+      // 하나라도 연결된 네트워크가 있으면 재연결 시도 (게스트 모드 제외)
       final hasConnection = results.any((r) => r != ConnectivityResult.none);
-      if (hasConnection && _userAuth.isLoggedIn && _userAuth.userId != null) {
+      if (hasConnection && 
+          _userAuth.isLoggedIn && 
+          _userAuth.userId != null &&
+          !_userAuth.userId!.startsWith('guest_') &&
+          _userAuth.userRole != UserRole.external) {
         WebSocketService().connect(_userAuth.userId!);
         debugPrint('🌐 네트워크 변경 감지 - 웹소켓 재연결 시도');
       }
@@ -370,7 +374,7 @@ class _CampusNavigatorAppState extends State<CampusNavigatorApp>
     return Consumer<AppLanguageProvider>(
       builder: (_, langProvider, __) {
         return MaterialApp(
-          title: 'Campus Navigator',
+          title: '따라우송',
           theme: ThemeData(
             primarySwatch: createMaterialColor(const Color(0xFF1E3A8A)),
             fontFamily: 'Pretendard',

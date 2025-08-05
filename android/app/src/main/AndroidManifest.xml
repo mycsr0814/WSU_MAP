@@ -49,7 +49,7 @@
 
     <!-- =========== 애플리케이션 설정 =========== -->
     <application
-        android:label="Campus Navigator"
+        android:label="따라우송"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:usesCleartextTraffic="true"

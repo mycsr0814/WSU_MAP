@@ -1,11 +1,11 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../components/woosong_button.dart';
 import '../generated/app_localizations.dart';
 import '../auth/user_auth.dart';
 import 'providers/app_language_provider.dart';
-import 'package:flutter_application_1/managers/location_manager.dart';
+import '../managers/location_manager.dart';
+import '../selection/auth_selection_view.dart';
 
 enum AppLanguage { korean, chinese, english }
 
@@ -51,6 +51,27 @@ class WelcomeView extends StatefulWidget {
   State<WelcomeView> createState() => _WelcomeViewState();
 }
 
+// 말풍선 꼬리 그리기 클래스
+class SpeechBubbleTailPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.fill;
+
+    final path = Path();
+    path.moveTo(0, 0);
+    path.lineTo(size.width / 2, size.height);
+    path.lineTo(size.width, 0);
+    path.close();
+
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
 class _WelcomeViewState extends State<WelcomeView>
     with TickerProviderStateMixin {
   late AnimationController _fadeController;
@@ -68,7 +89,10 @@ class _WelcomeViewState extends State<WelcomeView>
   @override
   void initState() {
     super.initState();
-    final locale = Provider.of<AppLanguageProvider>(context, listen: false).locale;
+    final locale = Provider.of<AppLanguageProvider>(
+      context,
+      listen: false,
+    ).locale;
     _selectedLanguage = localeToAppLanguage(locale);
 
     _fadeController = AnimationController(
@@ -83,27 +107,32 @@ class _WelcomeViewState extends State<WelcomeView>
       duration: const Duration(milliseconds: 2000),
       vsync: this,
     );
-    
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _fadeController, curve: Curves.easeOut),
-    );
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0.0, 0.3),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _slideController,
-      curve: Curves.easeOutBack,
-    ));
+
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _fadeController, curve: Curves.easeOut));
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0.0, 0.3), end: Offset.zero).animate(
+          CurvedAnimation(parent: _slideController, curve: Curves.easeOutBack),
+        );
     _floatingAnimation = Tween<double>(begin: -8.0, end: 8.0).animate(
       CurvedAnimation(parent: _floatingController, curve: Curves.easeInOut),
     );
-    
+
     _fadeController.forward();
     _slideController.forward();
     _floatingController.repeat(reverse: true);
 
     // 🔥 Welcome 화면 진입 시 백그라운드에서 위치 미리 준비
     _prepareLocationInBackground();
+
+    // 🔥 3초 후 자동으로 AuthSelectionView로 이동
+    Timer(const Duration(seconds: 3), () {
+      if (mounted) {
+        _navigateToAuthSelection();
+      }
+    });
   }
 
   @override
@@ -114,81 +143,87 @@ class _WelcomeViewState extends State<WelcomeView>
     super.dispose();
   }
 
-/// 🔥 백그라운드에서 위치 미리 준비 (단순화 최종 버전)
-Future<void> _prepareLocationInBackground() async {
-  if (_isPreparingLocation || _locationPrepared) return;
+  /// 🔥 백그라운드에서 위치 미리 준비 (단순화 최종 버전)
+  Future<void> _prepareLocationInBackground() async {
+    if (_isPreparingLocation || _locationPrepared) return;
 
-  try {
-    _isPreparingLocation = true;
-    debugPrint('🔄 Welcome 화면에서 위치 미리 준비 시작...');
+    try {
+      _isPreparingLocation = true;
+      debugPrint('🔄 Welcome 화면에서 위치 미리 준비 시작...');
 
-    await Future.delayed(const Duration(milliseconds: 1500));
-    final locationManager = Provider.of<LocationManager>(context, listen: false);
+      await Future.delayed(const Duration(milliseconds: 1500));
+      final locationManager = Provider.of<LocationManager>(
+        context,
+        listen: false,
+      );
 
-    // LocationManager 초기화 대기
-    int retries = 0;
-    while (!locationManager.isInitialized && retries < 30) {
-      await Future.delayed(const Duration(milliseconds: 100));
-      retries++;
-    }
-
-    if (locationManager.isInitialized) {
-      debugPrint('🔍 Welcome에서 위치 권한 확인 중...');
-      await Future.delayed(const Duration(milliseconds: 300));
-      await locationManager.recheckPermissionStatus();
-
-      int permissionRetries = 0;
-      while (locationManager.permissionStatus == null && permissionRetries < 15) {
+      // LocationManager 초기화 대기
+      int retries = 0;
+      while (!locationManager.isInitialized && retries < 30) {
         await Future.delayed(const Duration(milliseconds: 100));
-        permissionRetries++;
+        retries++;
       }
 
-      debugPrint('🔍 최종 권한 상태: ${locationManager.permissionStatus}');
-      debugPrint('✅ Welcome에서 빠른 위치 요청 시작...');
+      if (locationManager.isInitialized) {
+        debugPrint('🔍 Welcome에서 위치 권한 확인 중...');
+        await Future.delayed(const Duration(milliseconds: 300));
+        await locationManager.recheckPermissionStatus();
 
-      try {
-        // 🔥 캐시 우선 위치 요청
-        await locationManager.requestLocationQuickly().timeout(
-          const Duration(seconds: 3),
-          onTimeout: () {
-            debugPrint('⏰ Welcome 위치 요청 타임아웃 (3초) - 정상 진행');
-            throw TimeoutException('Welcome 위치 타임아웃', const Duration(seconds: 3));
-          },
-        );
-
-        if (locationManager.hasValidLocation && mounted) {
-          debugPrint('✅ Welcome 화면에서 위치 준비 완료!');
-          debugPrint('   위도: ${locationManager.currentLocation?.latitude}');
-          debugPrint('   경도: ${locationManager.currentLocation?.longitude}');
-          setState(() {
-            _locationPrepared = true;
-          });
-        } else {
-          debugPrint('⚠️ Welcome 화면에서 위치 준비 실패 - Map에서 재시도');
+        int permissionRetries = 0;
+        while (locationManager.permissionStatus == null &&
+            permissionRetries < 15) {
+          await Future.delayed(const Duration(milliseconds: 100));
+          permissionRetries++;
         }
-      } catch (e) {
-        debugPrint('⚠️ Welcome 위치 요청 실패: $e - Map에서 재시도');
-      }
-    } else {
-      debugPrint('❌ Welcome 화면에서 LocationManager 초기화 실패');
-    }
-  } catch (e) {
-    debugPrint('⚠️ Welcome 화면 위치 준비 오류: $e');
-  } finally {
-    _isPreparingLocation = false;
-  }
-}
 
+        debugPrint('🔍 최종 권한 상태: ${locationManager.permissionStatus}');
+        debugPrint('✅ Welcome에서 빠른 위치 요청 시작...');
+
+        try {
+          // 🔥 캐시 우선 위치 요청
+          await locationManager.requestLocationQuickly().timeout(
+            const Duration(seconds: 3),
+            onTimeout: () {
+              debugPrint('⏰ Welcome 위치 요청 타임아웃 (3초) - 정상 진행');
+              throw TimeoutException(
+                'Welcome 위치 타임아웃',
+                const Duration(seconds: 3),
+              );
+            },
+          );
+
+          if (locationManager.hasValidLocation && mounted) {
+            debugPrint('✅ Welcome 화면에서 위치 준비 완료!');
+            debugPrint('   위도: ${locationManager.currentLocation?.latitude}');
+            debugPrint('   경도: ${locationManager.currentLocation?.longitude}');
+            setState(() {
+              _locationPrepared = true;
+            });
+          } else {
+            debugPrint('⚠️ Welcome 화면에서 위치 준비 실패 - Map에서 재시도');
+          }
+        } catch (e) {
+          debugPrint('⚠️ Welcome 위치 요청 실패: $e - Map에서 재시도');
+        }
+      } else {
+        debugPrint('❌ Welcome 화면에서 LocationManager 초기화 실패');
+      }
+    } catch (e) {
+      debugPrint('⚠️ Welcome 화면 위치 준비 오류: $e');
+    } finally {
+      _isPreparingLocation = false;
+    }
+  }
 
   // 기본 텍스트 반환 함수들 (localization이 없을 때 사용)
   String _getAppTitle() {
     switch (_selectedLanguage) {
       case AppLanguage.korean:
-        return 'Campus Navigator';
+        return '따라우송';
       case AppLanguage.chinese:
-        return 'Campus\nNavigator';
+        return '따라우송';
       case AppLanguage.english:
-        return 'Campus Navigator';
+        return '따라우송';
     }
   }
 
@@ -228,11 +263,28 @@ Future<void> _prepareLocationInBackground() async {
   String _getWoosongText() {
     switch (_selectedLanguage) {
       case AppLanguage.korean:
-        return '우송대학교';
+        return '따라우송';
       case AppLanguage.chinese:
-        return '又松大学';
+        return '따라우송';
       case AppLanguage.english:
-        return 'Woosong University';
+        return '따라우송';
+    }
+  }
+
+  /// 🔥 AuthSelectionView로 자동 이동
+  void _navigateToAuthSelection() {
+    final userAuth = Provider.of<UserAuth>(context, listen: false);
+
+    // 🔥 게스트 모드에서 WelcomeView로 온 경우 AuthSelectionView로 직접 이동
+    if (userAuth.isGuest) {
+      debugPrint('🔥 게스트 모드: AuthSelectionView로 직접 이동');
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const AuthSelectionView()),
+      );
+    } else {
+      // 🔥 일반 사용자: 첫 실행 완료 표시 - Consumer가 자동으로 AuthSelectionView로 전환
+      debugPrint('🔥 일반 사용자: completeFirstLaunch 호출');
+      userAuth.completeFirstLaunch();
     }
   }
 
@@ -255,82 +307,105 @@ Future<void> _prepareLocationInBackground() async {
                 ),
               ],
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
+            child: Stack(
               children: [
-                // 상단 아이콘+타이틀
-                Padding(
-                  padding: const EdgeInsets.only(top: 32, bottom: 12),
-                  child: Column(
-                    children: [
-                      const Icon(Icons.language, color: Color(0xFF1E3A8A), size: 36),
-                      const SizedBox(height: 12),
-                      Text(
-                        _getLanguageText(),
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF1E3A8A),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                // 언어 선택 버튼들
-                ...AppLanguage.values.map((lang) {
-                  final selected = lang == _selectedLanguage;
-                  return GestureDetector(
-                    onTap: () => Navigator.of(context).pop(lang),
-                    child: Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 6),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                      decoration: BoxDecoration(
-                        color: selected ? const Color(0xFF1E3A8A).withOpacity(0.08) : Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: selected ? const Color(0xFF1E3A8A) : Colors.grey[300]!,
-                          width: selected ? 2 : 1,
-                        ),
-                      ),
-                      child: Row(
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // 상단 아이콘+타이틀
+                    Padding(
+                      padding: const EdgeInsets.only(top: 32, bottom: 12),
+                      child: Column(
                         children: [
-                          Icon(
-                            selected ? Icons.radio_button_checked : Icons.radio_button_off,
-                            color: selected ? const Color(0xFF1E3A8A) : Colors.grey[400],
+                          const Icon(
+                            Icons.language,
+                            color: Color(0xFF1E3A8A),
+                            size: 36,
                           ),
-                          const SizedBox(width: 16),
+                          const SizedBox(height: 12),
                           Text(
-                            languageToString(lang),
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 16,
-                              color: selected ? const Color(0xFF1E3A8A) : Colors.grey[800],
+                            _getLanguageText(),
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF1E3A8A),
                             ),
                           ),
                         ],
                       ),
                     ),
-                  );
-                }),
-                const SizedBox(height: 16),
-                // 취소 버튼
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                  child: OutlinedButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      side: BorderSide(color: Colors.grey[300]!),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                    // 언어 선택 버튼들
+                    ...AppLanguage.values.map((lang) {
+                      final selected = lang == _selectedLanguage;
+                      return GestureDetector(
+                        onTap: () => Navigator.of(context).pop(lang),
+                        child: Container(
+                          margin: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 6,
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 16,
+                          ),
+                          decoration: BoxDecoration(
+                            color: selected
+                                ? const Color(0xFF1E3A8A).withOpacity(0.08)
+                                : Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: selected
+                                  ? const Color(0xFF1E3A8A)
+                                  : Colors.grey[300]!,
+                              width: selected ? 2 : 1,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                selected
+                                    ? Icons.radio_button_checked
+                                    : Icons.radio_button_off,
+                                color: selected
+                                    ? const Color(0xFF1E3A8A)
+                                    : Colors.grey[400],
+                              ),
+                              const SizedBox(width: 16),
+                              Text(
+                                languageToString(lang),
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 16,
+                                  color: selected
+                                      ? const Color(0xFF1E3A8A)
+                                      : Colors.grey[800],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }),
+                    const SizedBox(height: 16),
+                  ],
+                ),
+                // 🔥 오른쪽 상단 X 버튼
+                Positioned(
+                  top: 16,
+                  right: 16,
+                  child: GestureDetector(
+                    onTap: () => Navigator.of(context).pop(),
+                    child: Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[100],
+                        borderRadius: BorderRadius.circular(16),
                       ),
-                    ),
-                    child: const Text(
-                      '취소',
-                      style: TextStyle(
+                      child: const Icon(
+                        Icons.close,
+                        size: 20,
                         color: Color(0xFF64748B),
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
@@ -346,8 +421,10 @@ Future<void> _prepareLocationInBackground() async {
       setState(() {
         _selectedLanguage = result;
       });
-      Provider.of<AppLanguageProvider>(context, listen: false)
-          .setLocale(appLanguageToLocale(result));
+      Provider.of<AppLanguageProvider>(
+        context,
+        listen: false,
+      ).setLocale(appLanguageToLocale(result));
     }
   }
 
@@ -355,238 +432,154 @@ Future<void> _prepareLocationInBackground() async {
   Widget build(BuildContext context) {
     // AppLocalizations를 안전하게 가져오기 (null일 수 있음)
     final localizations = AppLocalizations.of(context);
-    
+
     return Scaffold(
       body: Container(
+        width: double.infinity,
+        height: double.infinity,
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
             colors: [
-              Color(0xFF0F172A),
-              Color(0xFF1E3A8A),
-              Color(0xFF3B82F6),
+              Color(0xFF1E3A8A), // 우송 네이비 (진한)
+              Color(0xFF3B82F6), // 우송 네이비 (중간)
+              Color(0xFF60A5FA), // 우송 네이비 (연한)
             ],
-            stops: [0.0, 0.6, 1.0],
+            stops: [0.0, 0.5, 1.0],
           ),
         ),
-        child: Stack(
-          children: [
-            // 배경 애니메이션 원들
-            Positioned(
-              top: 100,
-              right: -50,
-              child: AnimatedBuilder(
-                animation: _floatingAnimation,
-                builder: (context, child) {
-                  return Transform.translate(
-                    offset: Offset(0, _floatingAnimation.value),
-                    child: Container(
-                      width: 200,
-                      height: 200,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.white.withOpacity(0.05),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-            Positioned(
-              bottom: 150,
-              left: -100,
-              child: AnimatedBuilder(
-                animation: _floatingAnimation,
-                builder: (context, child) {
-                  return Transform.translate(
-                    offset: Offset(0, -_floatingAnimation.value * 0.5),
-                    child: Container(
-                      width: 300,
-                      height: 300,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.white.withOpacity(0.03),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-            
-            // 메인 컨텐츠
-            SafeArea(
-              child: FadeTransition(
-                opacity: _fadeAnimation,
-                child: SlideTransition(
-                  position: _slideAnimation,
-                  child: Column(
-                    children: [
-                      const Spacer(flex: 2),
-                      
-                      // 로고 및 타이틀 섹션
-                      Container(
-                        padding: const EdgeInsets.all(20),
-                        child: Column(
-                          children: [
-                            // 로고
-                            Container(
-                              width: 80,
-                              height: 80,
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(12),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.08),
-                                    blurRadius: 20,
-                                    offset: const Offset(0, 8),
-                                  ),
-                                ],
-                              ),
-                              child: const Icon(
-                                Icons.school,
-                                size: 40,
-                                color: Color(0xFF1E3A8A),
-                              ),
-                            ),
-                            const SizedBox(height: 30),
-                            
-                            // 앱 타이틀
-                            ShaderMask(
-                              shaderCallback: (bounds) => const LinearGradient(
-                                colors: [Colors.white, Color(0xFFE2E8F0)],
-                              ).createShader(bounds),
-                              child: Text(
-                                localizations?.appTitle ?? _getAppTitle(),
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(
-                                  fontSize: 48,
-                                  fontWeight: FontWeight.w900,
-                                  color: Colors.white,
-                                  height: 1.1,
-                                  letterSpacing: -1,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            
-                            // 서브타이틀
-                            Text(
-                              localizations?.subtitle ?? _getSubtitle(),
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w500,
-                                color: Colors.white.withOpacity(0.8),
-                                height: 1.4,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      
-                      const Spacer(flex: 3),
+        child: SafeArea(
+          child: Column(
+            children: [
+              const Spacer(flex: 1),
 
-                      // 🔥 위치 준비 상태 표시 (선택적)
-                      if (_locationPrepared)
-                        Container(
-                          margin: const EdgeInsets.only(bottom: 16),
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                          decoration: BoxDecoration(
-                            color: Colors.green.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.green.withOpacity(0.3)),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(Icons.location_on, color: Colors.green, size: 16),
-                              const SizedBox(width: 6),
-                              Text(
-                                _selectedLanguage == AppLanguage.korean 
-                                  ? '위치 서비스 준비 완료'
-                                  : _selectedLanguage == AppLanguage.chinese
-                                    ? '位置服务已准备就绪'
-                                    : 'Location service ready',
-                                style: const TextStyle(
-                                  color: Colors.green,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      
-                      // 시작 버튼
-                      AnimatedBuilder(
-                        animation: _floatingAnimation,
-                        builder: (context, child) {
-                          return Transform.translate(
-                            offset: Offset(0, _floatingAnimation.value * 0.3),
-                            child: WoosongButton(
-                              onPressed: () {
-                                // 첫 실행 완료 표시 - Consumer가 자동으로 AuthSelectionView로 전환
-                                Provider.of<UserAuth>(context, listen: false).completeFirstLaunch();
-                              },
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(localizations?.start ?? _getStartText()),
-                                  const SizedBox(width: 8),
-                                  const Icon(Icons.arrow_forward, size: 20),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
+              // 말풍선 컨테이너
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: 30),
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.15),
+                      blurRadius: 15,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      '내 손 안의 따라우송,',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF1E3A8A),
                       ),
-                      
-                      // 언어 선택 버튼
-                      Padding(
-                        padding: const EdgeInsets.only(right: 24, top: 8),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            ElevatedButton.icon(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.white.withOpacity(0.12),
-                                foregroundColor: Colors.white,
-                                elevation: 0,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                              ),
-                              icon: const Icon(Icons.language, size: 18),
-                              label: Text(languageToString(_selectedLanguage)),
-                              onPressed: _showLanguageDialog,
-                            ),
-                          ],
-                        ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      '건물 정보가 다 여기에!',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF1E3A8A),
                       ),
-                      
-                      const Spacer(flex: 1),
-                      
-                      // 하단 대학교 이름
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 30),
-                        child: Text(
-                          localizations?.woosong ?? _getWoosongText(),
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w400,
-                            color: Colors.white.withOpacity(0.6),
-                          ),
-                        ),
-                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // 말풍선 꼬리
+              Container(
+                margin: const EdgeInsets.only(top: 0),
+                child: CustomPaint(
+                  size: const Size(24, 24),
+                  painter: SpeechBubbleTailPainter(),
+                ),
+              ),
+
+              const SizedBox(height: 50),
+
+              // 지도 핀 아이콘
+              Container(
+                width: 140,
+                height: 140,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Color(0xFF1E3A8A), // 우송 네이비
+                      Color(0xFF3B82F6), // 우송 네이비 (밝은)
                     ],
+                  ),
+                  borderRadius: BorderRadius.circular(70),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Color(0xFF1E3A8A).withOpacity(0.4),
+                      blurRadius: 20,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.location_on,
+                  size: 70,
+                  color: Colors.white,
+                ),
+              ),
+
+              // 지도 핀 그림자
+              Container(
+                margin: const EdgeInsets.only(top: 0),
+                width: 100,
+                height: 25,
+                decoration: BoxDecoration(
+                  color: Color(0xFF1E3A8A).withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+
+              const SizedBox(height: 40),
+
+              // 앱 이름
+              Text(
+                '따라우송',
+                style: TextStyle(
+                  fontSize: 42,
+                  fontWeight: FontWeight.w900,
+                  color: Colors.white,
+                  letterSpacing: -1,
+                  shadows: [
+                    Shadow(
+                      color: Colors.black.withOpacity(0.3),
+                      offset: const Offset(0, 2),
+                      blurRadius: 4,
+                    ),
+                  ],
+                ),
+              ),
+
+              const Spacer(flex: 1),
+
+              // 개발자 정보
+              Padding(
+                padding: const EdgeInsets.only(bottom: 40),
+                child: Text(
+                  '@YJB',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white.withOpacity(0.8),
+                    letterSpacing: 1,
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

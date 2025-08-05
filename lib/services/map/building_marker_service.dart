@@ -1,4 +1,5 @@
 // lib/services/map/building_marker_service.dart - mapController getter 추가 완전 버전
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 import '../../models/building.dart';
@@ -464,6 +465,64 @@ class BuildingMarkerService {
 
   /// 마커 개수 반환
   int get markerCount => _buildingMarkers.length;
+
+  /// 특정 건물의 마커 찾기
+  NMarker? findMarkerForBuilding(Building building) {
+    debugPrint('🔍 건물 마커 찾기 시작: ${building.name} (hashCode: ${building.hashCode})');
+    debugPrint('🔍 전체 마커 수: ${_buildingMarkers.length}');
+    
+    // 1차: hashCode로 정확한 매칭
+    for (int i = 0; i < _buildingMarkers.length; i++) {
+      final marker = _buildingMarkers[i];
+      final markerId = marker.info.id;
+      final searchPattern = 'building_${building.hashCode}';
+      
+      debugPrint('🔍 마커 $i: $markerId');
+      debugPrint('🔍 검색 패턴: $searchPattern');
+      
+      if (markerId.contains(searchPattern)) {
+        debugPrint('✅ hashCode로 마커 찾음: $markerId');
+        return marker;
+      }
+    }
+    
+    // 2차: 좌표 기반 가장 가까운 마커 찾기
+    debugPrint('🔍 좌표 기반 마커 찾기 시작: (${building.lat}, ${building.lng})');
+    NMarker? closestMarker;
+    double closestDistance = double.infinity;
+    
+    for (int i = 0; i < _buildingMarkers.length; i++) {
+      final marker = _buildingMarkers[i];
+      final markerPosition = marker.position;
+      
+      final distance = _calculateDistance(
+        building.lat, building.lng,
+        markerPosition.latitude, markerPosition.longitude,
+      );
+      
+      debugPrint('🔍 마커 $i: (${markerPosition.latitude}, ${markerPosition.longitude}) - 거리: ${distance.toStringAsFixed(6)}');
+      
+      if (distance < closestDistance) {
+        closestDistance = distance;
+        closestMarker = marker;
+      }
+    }
+    
+    if (closestMarker != null && closestDistance < 0.000001) { // 약 1미터 이내 (제곱 거리)
+      debugPrint('✅ 좌표 기반으로 마커 찾음: 거리 ${closestDistance.toStringAsFixed(6)}');
+      return closestMarker;
+    }
+    
+    debugPrint('❌ 마커를 찾을 수 없음: ${building.name}');
+    return null;
+  }
+  
+  /// 두 좌표 간의 거리 계산 (간단한 유클리드 거리)
+  double _calculateDistance(double lat1, double lng1, double lat2, double lng2) {
+    final dLat = lat1 - lat2;
+    final dLng = lng1 - lng2;
+    return dLat * dLat + dLng * dLng; // 제곱근 없이 제곱 거리 사용
+  }
 
   /// API 연결 상태 확인
   Future<bool> checkApiConnection() async {

@@ -872,15 +872,14 @@ class MapScreenController extends ChangeNotifier {
     debugPrint('=== 카테고리 선택 요청: $category ===');
     debugPrint('🔍 받은 건물 정보들: $buildingInfoList');
 
-    if (category.isEmpty || buildingInfoList.isEmpty) {
+    if (category.isEmpty) {
       debugPrint('⚠️ 카테고리가 비어있음 - 해제 처리');
       await clearCategorySelection();
       return;
     }
 
     if (_selectedCategory == category) {
-      debugPrint('같은 카테고리 재선택 → 해제');
-      await clearCategorySelection();
+      debugPrint('같은 카테고리 재선택 → 유지');
       return;
     }
 
@@ -1107,7 +1106,7 @@ class MapScreenController extends ChangeNotifier {
     debugPrint('모든 건물 마커 다시 표시 시작...');
     _showAllBuildingMarkers(); // 해제 시에만 빌딩 마커 다시 보이기
     debugPrint('✅ 카테고리 선택 해제 완료');
-    notifyListeners();
+    notifyListeners(); // UI 업데이트를 위해 다시 추가
   }
 
   /// 🔥 모든 건물 마커 다시 표시
@@ -1146,9 +1145,22 @@ class MapScreenController extends ChangeNotifier {
     await _mapService?.moveCamera(marker.position, zoom: 17);
   }
 
-  void selectBuilding(Building building) {
+  void selectBuilding(Building building) async {
     _selectedBuilding = building;
     notifyListeners();
+    
+    // 🔥 해당 건물의 마커를 찾아서 하이라이트
+    try {
+      final marker = _mapService?.findMarkerForBuilding(building);
+      if (marker != null) {
+        await _mapService?.highlightBuildingMarker(marker);
+        debugPrint('✅ 건물 마커 하이라이트 완료: ${building.name}');
+      } else {
+        debugPrint('⚠️ 건물 마커를 찾을 수 없음: ${building.name}');
+      }
+    } catch (e) {
+      debugPrint('❌ 건물 마커 하이라이트 실패: $e');
+    }
   }
 
   void clearSelectedBuilding() {

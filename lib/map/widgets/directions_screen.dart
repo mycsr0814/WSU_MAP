@@ -848,7 +848,14 @@ void _onSearchResultSelected(SearchResult result) {
 
     // 🔥 안전한 경로 미리보기 계산
     if (_startBuilding != null && _endBuilding != null) {
+      debugPrint('🎯 출발지와 도착지가 모두 설정됨, 미리보기 계산 시작');
+      debugPrint('   출발지: ${_startBuilding!.name}');
+      debugPrint('   도착지: ${_endBuilding!.name}');
       Future.microtask(() => _calculateRoutePreview());
+    } else {
+      debugPrint('⚠️ 출발지 또는 도착지가 설정되지 않음');
+      debugPrint('   출발지: ${_startBuilding?.name ?? 'null'}');
+      debugPrint('   도착지: ${_endBuilding?.name ?? 'null'}');
     }
     
   } catch (e) {
@@ -928,7 +935,14 @@ void _onSearchResultSelected(SearchResult result) {
 
     // 🔥 안전한 경로 미리보기 계산
     if (_startBuilding != null && _endBuilding != null) {
+      debugPrint('🎯 출발지와 도착지가 모두 설정됨, 미리보기 계산 시작 (검색 결과 선택)');
+      debugPrint('   출발지: ${_startBuilding!.name}');
+      debugPrint('   도착지: ${_endBuilding!.name}');
       Future.microtask(() => _calculateRoutePreview());
+    } else {
+      debugPrint('⚠️ 출발지 또는 도착지가 설정되지 않음 (검색 결과 선택)');
+      debugPrint('   출발지: ${_startBuilding?.name ?? 'null'}');
+      debugPrint('   도착지: ${_endBuilding?.name ?? 'null'}');
     }
     
   } catch (e) {

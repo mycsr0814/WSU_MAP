@@ -553,6 +553,12 @@ class LocationManager extends ChangeNotifier {
     debugPrint('🚀 개선된 주기적 위치 전송 시작 (5초 간격)');
     debugPrint('👤 사용자 ID: $userId');
 
+    // 🔥 게스트 사용자는 위치 전송 제외
+    if (userId.startsWith('guest_')) {
+      debugPrint('⚠️ 게스트 사용자는 위치 전송 제외');
+      return;
+    }
+
     // 이미 시작된 경우 중복 시작 방지
     if (_isLocationSendingEnabled && _currentUserId == userId) {
       debugPrint('⚠️ 이미 동일한 사용자로 위치 전송 중');

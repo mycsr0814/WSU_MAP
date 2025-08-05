@@ -13,6 +13,9 @@ class CategoryChips extends StatefulWidget {
     this.selectedCategory,
   });
 
+  // 외부에서 카테고리 선택을 위한 GlobalKey
+  static final GlobalKey<_CategoryChipsState> globalKey = GlobalKey<_CategoryChipsState>();
+
   @override
   State<CategoryChips> createState() => _CategoryChipsState();
 }
@@ -25,6 +28,25 @@ class _CategoryChipsState extends State<CategoryChips> {
   bool _useServerData = true; // 🔥 서버 데이터 사용 여부
   final ScrollController _scrollController = ScrollController();
   double _lastScrollPosition = 0.0;
+
+  // 외부에서 카테고리 선택을 위한 메서드
+  void selectCategory(String category) {
+    debugPrint('🎯 selectCategory 호출됨: $category');
+    debugPrint('🎯 현재 사용 가능한 카테고리: $_categories');
+    
+    if (_categories.contains(category)) {
+      debugPrint('✅ 카테고리 찾음, 선택 처리 중: $category');
+      setState(() {
+        _selectedCategory = category;
+      });
+      debugPrint('✅ setState 완료, _selectedCategory: $_selectedCategory');
+      _onCategoryTap(category);
+      debugPrint('✅ _onCategoryTap 호출 완료: $category');
+    } else {
+      debugPrint('❌ 카테고리를 찾을 수 없음: $category');
+      debugPrint('❌ 사용 가능한 카테고리 목록: $_categories');
+    }
+  }
 
   @override
   void initState() {
@@ -76,6 +98,13 @@ class _CategoryChipsState extends State<CategoryChips> {
 
       if (!mounted) return;
 
+      // 카테고리가 비어있으면 fallback 데이터 사용
+      if (categoryNames.isEmpty) {
+        debugPrint('⚠️ 카테고리 목록이 비어있음, fallback 데이터 사용');
+        categoryNames = CategoryFallbackData.getCategories();
+        _useServerData = false;
+      }
+
       setState(() {
         _categories = categoryNames;
         _isLoading = false;
@@ -83,14 +112,14 @@ class _CategoryChipsState extends State<CategoryChips> {
 
       debugPrint('카테고리 로딩 완료: $_categories (서버 데이터: $_useServerData)');
     } catch (e) {
-      if (!mounted) return;
-
-      setState(() {
-        _isLoading = false;
-        _categories = CategoryFallbackData.getCategories();
-        _useServerData = false;
-      });
-      debugPrint('❌ 카테고리 로딩 완전 실패, 최후 fallback 사용: $e');
+      debugPrint('❌ 카테고리 로딩 중 오류: $e');
+      if (mounted) {
+        setState(() {
+          _categories = CategoryFallbackData.getCategories();
+          _isLoading = false;
+          _useServerData = false;
+        });
+      }
     }
   }
 
@@ -142,22 +171,12 @@ class _CategoryChipsState extends State<CategoryChips> {
     }
 
     if (_selectedCategory == category) {
-      // 같은 카테고리를 다시 누르면 선택 해제하고 맨 앞으로 스크롤
+      // 같은 카테고리를 다시 누르면 선택 해제
+      debugPrint('🎯 같은 카테고리 재선택 → 해제: $category');
       setState(() {
         _selectedCategory = null;
       });
       widget.onCategorySelected('', []);
-      
-      // 맨 앞으로 스크롤
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted && _scrollController.hasClients) {
-          _scrollController.animateTo(
-            0.0,
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeInOut,
-          );
-        }
-      });
       return;
     }
 
@@ -165,7 +184,7 @@ class _CategoryChipsState extends State<CategoryChips> {
 
     setState(() {
       _selectedCategory = category;
-      _isLoading = true;
+      // _isLoading = true; // 로딩 상태 설정 제거하여 깜빡임 방지
     });
 
     try {
@@ -176,9 +195,9 @@ class _CategoryChipsState extends State<CategoryChips> {
       debugPrint('📡 API 호출 완료: $category, 건물 수: ${buildingInfoList.length}');
       debugPrint('📍 건물+층 목록: $buildingInfoList');
 
-      setState(() {
-        _isLoading = false;
-      });
+      // setState(() {
+      //   _isLoading = false;
+      // });
 
       widget.onCategorySelected(category, buildingInfoList);
       
@@ -214,47 +233,120 @@ class _CategoryChipsState extends State<CategoryChips> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
+    // 로딩 중이어도 카테고리가 있으면 표시
+    if (_isLoading && _categories.isNotEmpty) {
       return Container(
         height: 50,
         margin: const EdgeInsets.symmetric(horizontal: 16),
-        child: const Center(
-          child: SizedBox(
-            width: 20,
-            height: 20,
-            child: CircularProgressIndicator(
-              strokeWidth: 2,
-              color: Color(0xFF1E3A8A),
+        child: Column(
+          children: [
+            // 로딩 인디케이터
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              margin: const EdgeInsets.only(bottom: 6),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    const Color(0xFF1E3A8A).withOpacity(0.1),
+                    const Color(0xFF3B82F6).withOpacity(0.05),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: const Color(0xFF1E3A8A).withOpacity(0.2),
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF1E3A8A)),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '카테고리 업데이트 중...',
+                    style: TextStyle(
+                      color: const Color(0xFF1E3A8A),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
+            // 기존 카테고리 버튼들 표시
+            Expanded(
+              child: ListView.separated(
+                controller: _scrollController,
+                scrollDirection: Axis.horizontal,
+                itemCount: _categories.length,
+                separatorBuilder: (context, index) => const SizedBox(width: 8),
+                itemBuilder: (context, index) {
+                  final category = _categories[index];
+                  return _buildCategoryChip(category);
+                },
+              ),
+            ),
+          ],
         ),
       );
     }
 
+    // 카테고리가 비어있으면 fallback 데이터 사용
     if (_categories.isEmpty) {
       return Container(
         height: 50,
         margin: const EdgeInsets.symmetric(horizontal: 16),
         child: Center(
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.error_outline,
-                color: Colors.grey[400],
-                size: 20,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Colors.orange.shade50,
+                  Colors.orange.shade100,
+                ],
               ),
-              const SizedBox(width: 8),
-              Text(
-                '카테고리를 불러올 수 없습니다',
-                style: TextStyle(
-                  color: Colors.grey[500],
-                  fontSize: 12,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: Colors.orange.shade200,
+                width: 1,
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.shade100,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    Icons.warning_amber_rounded,
+                    color: Colors.orange.shade600,
+                    size: 18,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              _buildRetryButton(),
-            ],
+                const SizedBox(width: 12),
+                Text(
+                  '카테고리 로딩 중...',
+                  style: TextStyle(
+                    color: Colors.orange.shade700,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                _buildRetryButton(),
+              ],
+            ),
           ),
         ),
       );
@@ -267,30 +359,60 @@ class _CategoryChipsState extends State<CategoryChips> {
         children: [
           if (!_useServerData)
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              margin: const EdgeInsets.only(bottom: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              margin: const EdgeInsets.only(bottom: 6),
               decoration: BoxDecoration(
-                color: Colors.orange.shade50,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.orange.shade200),
+                gradient: LinearGradient(
+                  colors: [
+                    Colors.orange.shade50,
+                    Colors.orange.shade100,
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: Colors.orange.shade200,
+                  width: 1,
+                ),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.offline_bolt, size: 12, color: Colors.orange.shade600),
-                  const SizedBox(width: 4),
+                  Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.shade100,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Icon(
+                      Icons.wifi_off,
+                      color: Colors.orange.shade600,
+                      size: 14,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
                   Text(
                     'Offline 모드',
                     style: TextStyle(
-                      fontSize: 10,
-                      color: Colors.orange.shade600,
-                      fontWeight: FontWeight.w500,
+                      fontSize: 12,
+                      color: Colors.orange.shade700,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
-                  const SizedBox(width: 4),
+                  const SizedBox(width: 6),
                   GestureDetector(
                     onTap: refresh,
-                    child: Icon(Icons.refresh, size: 12, color: Colors.orange.shade600),
+                    child: Container(
+                      padding: const EdgeInsets.all(2),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.shade100,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Icon(
+                        Icons.refresh, 
+                        size: 14, 
+                        color: Colors.orange.shade600
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -298,7 +420,7 @@ class _CategoryChipsState extends State<CategoryChips> {
 
           Expanded(
             child: ListView.separated(
-              controller: _scrollController, // 스크롤 컨트롤러 연결
+              controller: _scrollController,
               scrollDirection: Axis.horizontal,
               itemCount: _categories.length,
               separatorBuilder: (context, index) => const SizedBox(width: 8),
@@ -318,27 +440,35 @@ class _CategoryChipsState extends State<CategoryChips> {
       onTap: refresh,
       borderRadius: BorderRadius.circular(12),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: Colors.blue.shade50,
+          gradient: LinearGradient(
+            colors: [
+              const Color(0xFF1E3A8A).withOpacity(0.1),
+              const Color(0xFF3B82F6).withOpacity(0.05),
+            ],
+          ),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.blue.shade200),
+          border: Border.all(
+            color: const Color(0xFF1E3A8A).withOpacity(0.3),
+            width: 1,
+          ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               Icons.refresh,
-              size: 14,
-              color: Colors.blue.shade600,
+              size: 16,
+              color: const Color(0xFF1E3A8A),
             ),
-            const SizedBox(width: 2),
+            const SizedBox(width: 4),
             Text(
               '재시도',
               style: TextStyle(
-                fontSize: 10,
-                color: Colors.blue.shade600,
-                fontWeight: FontWeight.w500,
+                fontSize: 12,
+                color: const Color(0xFF1E3A8A),
+                fontWeight: FontWeight.w600,
               ),
             ),
           ],
@@ -357,40 +487,90 @@ class _CategoryChipsState extends State<CategoryChips> {
           _onCategoryTap(category);
         }
       },
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(16),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF1E3A8A) : Colors.white,
-          borderRadius: BorderRadius.circular(12),
+          gradient: isSelected 
+            ? const LinearGradient(
+                colors: [
+                  Color(0xFF1E3A8A),
+                  Color(0xFF3B82F6),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              )
+            : LinearGradient(
+                colors: [
+                  Colors.white,
+                  Colors.grey.shade50,
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isSelected ? const Color(0xFF1E3A8A) : Colors.grey[300]!,
-            width: isSelected ? 1.5 : 1.0,
+            color: isSelected 
+              ? const Color(0xFF1E3A8A) 
+              : Colors.grey.shade300,
+            width: isSelected ? 2.0 : 1.5,
           ),
-          boxShadow: isSelected ? [
-            BoxShadow(
-              color: const Color(0xFF1E3A8A).withOpacity(0.2),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ] : null,
+          boxShadow: isSelected 
+            ? [
+                BoxShadow(
+                  color: const Color(0xFF1E3A8A).withOpacity(0.3),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                  spreadRadius: 1,
+                ),
+                BoxShadow(
+                  color: const Color(0xFF1E3A8A).withOpacity(0.1),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
+                ),
+              ]
+            : [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              icon,
-              size: 18,
-              color: isSelected ? Colors.white : Colors.indigo.shade400,
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              padding: EdgeInsets.all(isSelected ? 5 : 3),
+              decoration: BoxDecoration(
+                color: isSelected 
+                  ? Colors.white.withOpacity(0.2)
+                  : const Color(0xFF1E3A8A).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Icon(
+                icon,
+                size: isSelected ? 18 : 16,
+                color: isSelected 
+                  ? Colors.white 
+                  : const Color(0xFF1E3A8A),
+              ),
             ),
-            const SizedBox(width: 6),
+            const SizedBox(width: 8),
             Text(
               CategoryLocalization.getLabel(context, category),
               style: TextStyle(
-                fontSize: 14,
-                color: isSelected ? Colors.white : Colors.grey.shade700,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                fontSize: isSelected ? 13 : 12,
+                color: isSelected 
+                  ? Colors.white 
+                  : Colors.grey.shade700,
+                fontWeight: isSelected 
+                  ? FontWeight.w700 
+                  : FontWeight.w600,
+                letterSpacing: isSelected ? 0.2 : 0.0,
               ),
             ),
           ],

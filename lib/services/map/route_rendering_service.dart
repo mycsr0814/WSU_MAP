@@ -45,17 +45,70 @@ class RouteRenderingService {
     }
   }
 
-  /// 간단한 경로 마커 추가
+  /// 예쁜 경로 마커 추가
   Future<void> _addSimpleRouteMarkers(List<NLatLng> path) async {
     if (path.length < 2) return;
     
     try {
       final timestamp = DateTime.now().millisecondsSinceEpoch;
       
+      // 🔥 출발점 마커 (초록색 원형)
       final startMarkerId = 'route_start_$timestamp';
       final startMarker = NMarker(
         id: startMarkerId,
         position: path.first,
+        icon: NOverlayImage.fromAssetImage('lib/asset/building_marker_blue.png'),
+        size: const Size(56, 56),
+        caption: NOverlayCaption(
+          text: '출발',
+          color: Colors.white,
+          haloColor: const Color(0xFF10B981),
+          textSize: 13,
+        ),
+      );
+      
+      // 🔥 도착점 마커 (빨간색 원형)
+      final endMarkerId = 'route_end_$timestamp';
+      final endMarker = NMarker(
+        id: endMarkerId,
+        position: path.last,
+        icon: NOverlayImage.fromAssetImage('lib/asset/building_marker_blue.png'),
+        size: const Size(56, 56),
+        caption: NOverlayCaption(
+          text: '도착',
+          color: Colors.white,
+          haloColor: const Color(0xFFEF4444),
+          textSize: 13,
+        ),
+      );
+      
+      await _mapController!.addOverlay(startMarker);
+      await _mapController!.addOverlay(endMarker);
+      
+      _routeMarkerIds.add(startMarkerId);
+      _routeMarkerIds.add(endMarkerId);
+      
+      debugPrint('✅ 경로 마커 추가 완료 (색상으로 구분)');
+      
+    } catch (e) {
+      debugPrint('❌ 경로 마커 추가 오류: $e');
+      // 🔥 폴백: 기본 마커로 대체
+      await _addFallbackRouteMarkers(path);
+    }
+  }
+  
+  /// 🔥 폴백: 기본 마커 (아이콘 로드 실패 시)
+  Future<void> _addFallbackRouteMarkers(List<NLatLng> path) async {
+    try {
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      
+      // 출발점 마커 (초록색 원)
+      final startMarkerId = 'route_start_$timestamp';
+      final startMarker = NMarker(
+        id: startMarkerId,
+        position: path.first,
+        icon: NOverlayImage.fromAssetImage('lib/asset/building_marker_blue.png'),
+        size: const Size(48, 48),
         caption: NOverlayCaption(
           text: '출발',
           color: Colors.white,
@@ -64,10 +117,13 @@ class RouteRenderingService {
         ),
       );
       
+      // 도착점 마커 (빨간색 원)
       final endMarkerId = 'route_end_$timestamp';
       final endMarker = NMarker(
         id: endMarkerId,
         position: path.last,
+        icon: NOverlayImage.fromAssetImage('lib/asset/building_marker_blue.png'),
+        size: const Size(48, 48),
         caption: NOverlayCaption(
           text: '도착',
           color: Colors.white,
@@ -82,8 +138,10 @@ class RouteRenderingService {
       _routeMarkerIds.add(startMarkerId);
       _routeMarkerIds.add(endMarkerId);
       
+      debugPrint('✅ 폴백 경로 마커 추가 완료 (색상으로 구분)');
+      
     } catch (e) {
-      debugPrint('경로 마커 추가 오류: $e');
+      debugPrint('❌ 폴백 마커 추가도 실패: $e');
     }
   }
 

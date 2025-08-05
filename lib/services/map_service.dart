@@ -54,6 +54,8 @@ class MapService {
   BuildContext? get context => _context;
   bool get buildingMarkersVisible =>
       _buildingMarkerService.buildingMarkersVisible;
+  List<NMarker> get buildingMarkers => _buildingMarkerService.buildingMarkers;
+  NMarker? findMarkerForBuilding(Building building) => _buildingMarkerService.findMarkerForBuilding(building);
 
   // 🔥 4. 메서드들
 

@@ -8,6 +8,7 @@ import '../login/login_form_view.dart';
 import '../auth/user_auth.dart';
 import '../generated/app_localizations.dart';
 import 'package:flutter_application_1/welcome_view.dart';
+import '../providers/app_language_provider.dart';
 
 class AuthSelectionView extends StatefulWidget {
   const AuthSelectionView({super.key});
@@ -74,20 +75,228 @@ class _AuthSelectionViewState extends State<AuthSelectionView>
     super.dispose();
   }
 
+  /// 현재 언어 텍스트 반환
+  String _getCurrentLanguageText() {
+    final locale = Localizations.localeOf(context);
+    switch (locale.languageCode) {
+      case 'ko':
+        return '한국어';
+      case 'zh':
+        return '中文';
+      case 'en':
+        return 'English';
+      default:
+        return '한국어';
+    }
+  }
+
+  /// 언어 선택 다이얼로그 표시
+  void _showLanguageDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Text(
+            '언어 선택',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF1E3A8A),
+            ),
+            textAlign: TextAlign.center,
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildLanguageOption('한국어', 'ko'),
+              const SizedBox(height: 12),
+              _buildLanguageOption('中文', 'zh'),
+              const SizedBox(height: 12),
+              _buildLanguageOption('English', 'en'),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  /// 언어 옵션 위젯
+  Widget _buildLanguageOption(String text, String languageCode) {
+    return InkWell(
+             onTap: () {
+         final languageProvider = Provider.of<AppLanguageProvider>(context, listen: false);
+         switch (languageCode) {
+           case 'ko':
+             languageProvider.setLocale(const Locale('ko'));
+             break;
+           case 'zh':
+             languageProvider.setLocale(const Locale('zh'));
+             break;
+           case 'en':
+             languageProvider.setLocale(const Locale('en'));
+             break;
+         }
+         Navigator.of(context).pop();
+       },
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+        decoration: BoxDecoration(
+          color: Colors.grey[100],
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Text(
+          text,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF1E3A8A),
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ),
+    );
+  }
+
   /// 게스트 로그인 처리 - MainNavigationScreen으로 이동하도록 수정
   Future<void> _handleGuestLogin() async {
-    final userAuth = Provider.of<UserAuth>(context, listen: false);
+    final l10n = AppLocalizations.of(context)!;
     
-    await userAuth.loginAsGuest(context: context);
+    // 게스트 로그인 확인 다이얼로그 표시
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Color(0xFF3B82F6).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                Icons.person_outline,
+                color: Color(0xFF3B82F6),
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                '게스트 모드',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF1E3A8A),
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: Text(
+            '게스트 모드로 입장하시겠습니까?\n\n게스트 모드에서는 친구 기능과 위치 공유 기능을 사용할 수 없습니다.',
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.grey[700],
+              height: 1.4,
+            ),
+          ),
+        ),
+        actions: [
+          Row(
+            children: [
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.of(context).pop(false),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Color(0xFF1E3A8A),
+                      side: BorderSide(color: Color(0xFF1E3A8A)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                    child: Text(
+                      '취소',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.of(context).pop(true),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Color(0xFF1E3A8A),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                    child: Text(
+                      '확인',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
 
+    if (confirmed == true && mounted) {
+      final userAuth = Provider.of<UserAuth>(context, listen: false);
+      
+      await userAuth.loginAsGuest(context: context);
+
+      if (mounted) {
+        Navigator.of(context).pushReplacement(
+          PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) =>
+                const MapScreen(), // MapScreen에서 MainNavigationScreen으로 변경
+            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              return FadeTransition(opacity: animation, child: child);
+            },
+            transitionDuration: const Duration(milliseconds: 500),
+          ),
+        );
+      }
+    }
+  }
+
+  /// 게스트 로그인 실제 수행 (다이얼로그 없이)
+  Future<void> _performGuestLogin() async {
+    final userAuth = Provider.of<UserAuth>(context, listen: false);
+    await userAuth.loginAsGuest(context: context);
     if (mounted) {
       Navigator.of(context).pushReplacement(
         PageRouteBuilder(
-          pageBuilder: (context, animation, secondaryAnimation) =>
-              const MapScreen(), // MapScreen에서 MainNavigationScreen으로 변경
-          transitionsBuilder: (context, animation, secondaryAnimation, child) {
-            return FadeTransition(opacity: animation, child: child);
-          },
+          pageBuilder: (context, animation, secondaryAnimation) => const MapScreen(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) => FadeTransition(opacity: animation, child: child),
           transitionDuration: const Duration(milliseconds: 500),
         ),
       );
@@ -254,13 +463,36 @@ Navigator.of(context).pushAndRemoveUntil(
           size: 24,
         ),
       ),
-      Text(
-        l10n.select_auth_method,
-        style: const TextStyle(
-          fontSize: 20,
-          fontWeight: FontWeight.w600,
-          color: Colors.white,
+      Expanded(
+        child: Text(
+          l10n.select_auth_method,
+          style: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
         ),
+      ),
+      // 언어 선택 버튼
+      ElevatedButton.icon(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.white.withOpacity(0.2),
+          foregroundColor: Colors.white,
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        ),
+        icon: const Icon(Icons.language, size: 18),
+        label: Text(
+          _getCurrentLanguageText(),
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        onPressed: _showLanguageDialog,
       ),
     ],
   );
@@ -310,7 +542,7 @@ Navigator.of(context).pushAndRemoveUntil(
                   ],
                 ),
                 child: const Icon(
-                  Icons.school,
+                  Icons.location_on,
                   size: 32,
                   color: Colors.white,
                 ),
@@ -320,7 +552,7 @@ Navigator.of(context).pushAndRemoveUntil(
               
               // 타이틀
               Text(
-                l10n.campus_navigator,
+                '따라우송',
                 style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.w800,
@@ -576,49 +808,102 @@ Navigator.of(context).pushAndRemoveUntil(
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
+        backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(20),
         ),
         title: Row(
           children: [
-            Icon(
-              Icons.info_outline,
-              color: Colors.orange[600],
-              size: 24,
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Color(0xFF3B82F6).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                Icons.info_outline,
+                color: Color(0xFF3B82F6),
+                size: 24,
+              ),
             ),
-            const SizedBox(width: 8),
-            Text(
-              l10n.guest_mode,
-              style: const TextStyle(fontSize: 18),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                '게스트 모드',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF1E3A8A),
+                ),
+              ),
             ),
           ],
         ),
-        content: Text(
-          l10n.guest_mode_description,
-          style: const TextStyle(fontSize: 16),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(
-              l10n.cancel,
-              style: const TextStyle(
-                color: Color(0xFF64748B),
-              ),
+        content: Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: Text(
+            '게스트 모드로 입장하시겠습니까?\n\n게스트 모드에서는 친구 기능과 위치 공유 기능을 사용할 수 없습니다.',
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.grey[700],
+              height: 1.4,
             ),
           ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              _handleGuestLogin();
-            },
-            child: Text(
-              l10n.continue_as_guest,
-              style: const TextStyle(
-                color: Color(0xFF1E3A8A),
-                fontWeight: FontWeight.w600,
+        ),
+        actions: [
+          Row(
+            children: [
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Color(0xFF1E3A8A),
+                      side: BorderSide(color: Color(0xFF1E3A8A)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                    child: Text(
+                      '취소',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
               ),
-            ),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      Navigator.of(context).pop();
+                      await _performGuestLogin();
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Color(0xFF1E3A8A),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                    child: Text(
+                      '확인',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
