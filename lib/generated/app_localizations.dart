@@ -652,6 +652,12 @@ abstract class AppLocalizations {
   /// **'MY'**
   String get my_page;
 
+  /// No description provided for @my_page_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'My Page'**
+  String get my_page_subtitle;
+
   /// No description provided for @cafe.
   ///
   /// In en, this message translates to:
@@ -1405,19 +1411,19 @@ abstract class AppLocalizations {
   /// No description provided for @developer_name.
   ///
   /// In en, this message translates to:
-  /// **'Name: Hong Gil-dong'**
+  /// **'Developer Name'**
   String get developer_name;
 
   /// No description provided for @developer_email.
   ///
   /// In en, this message translates to:
-  /// **'Email: example@email.com'**
+  /// **'Developer Email'**
   String get developer_email;
 
   /// No description provided for @developer_github.
   ///
   /// In en, this message translates to:
-  /// **'GitHub: github.com/yourid'**
+  /// **'GitHub'**
   String get developer_github;
 
   /// No description provided for @help.
@@ -1435,7 +1441,7 @@ abstract class AppLocalizations {
   /// No description provided for @image_load_error.
   ///
   /// In en, this message translates to:
-  /// **'Unable to load image'**
+  /// **'Image Load Error'**
   String get image_load_error;
 
   /// No description provided for @description_hint.
@@ -2647,7 +2653,7 @@ abstract class AppLocalizations {
   /// No description provided for @friendManagementAndRequests.
   ///
   /// In en, this message translates to:
-  /// **'Friend Management and Requests'**
+  /// **'Friends & Requests'**
   String get friendManagementAndRequests;
 
   /// No description provided for @showLocation.
@@ -3057,6 +3063,306 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'View Details'**
   String get floor_detail_view;
+
+  /// No description provided for @inquiry.
+  ///
+  /// In en, this message translates to:
+  /// **'Inquiry'**
+  String get inquiry;
+
+  /// No description provided for @my_inquiry.
+  ///
+  /// In en, this message translates to:
+  /// **'My Inquiries'**
+  String get my_inquiry;
+
+  /// No description provided for @inquiry_type.
+  ///
+  /// In en, this message translates to:
+  /// **'Inquiry Type'**
+  String get inquiry_type;
+
+  /// No description provided for @inquiry_type_required.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select an inquiry type'**
+  String get inquiry_type_required;
+
+  /// No description provided for @inquiry_type_select_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select an inquiry type'**
+  String get inquiry_type_select_hint;
+
+  /// No description provided for @inquiry_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Title'**
+  String get inquiry_title;
+
+  /// No description provided for @inquiry_content.
+  ///
+  /// In en, this message translates to:
+  /// **'Inquiry Content'**
+  String get inquiry_content;
+
+  /// No description provided for @inquiry_content_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter your inquiry details'**
+  String get inquiry_content_hint;
+
+  /// No description provided for @inquiry_submit.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit Inquiry'**
+  String get inquiry_submit;
+
+  /// No description provided for @inquiry_submit_success.
+  ///
+  /// In en, this message translates to:
+  /// **'Inquiry has been successfully submitted'**
+  String get inquiry_submit_success;
+
+  /// No description provided for @inquiry_submit_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to submit inquiry. Please try again'**
+  String get inquiry_submit_failed;
+
+  /// No description provided for @inquiry_list_load_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load inquiry list: {error}'**
+  String inquiry_list_load_failed(String error);
+
+  /// No description provided for @no_inquiry_history.
+  ///
+  /// In en, this message translates to:
+  /// **'No inquiry history yet'**
+  String get no_inquiry_history;
+
+  /// No description provided for @no_inquiry_history_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a new inquiry in the Inquiry tab'**
+  String get no_inquiry_history_hint;
+
+  /// No description provided for @inquiry_delete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Inquiry'**
+  String get inquiry_delete;
+
+  /// No description provided for @inquiry_delete_confirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete this inquiry?'**
+  String get inquiry_delete_confirm;
+
+  /// No description provided for @inquiry_delete_success.
+  ///
+  /// In en, this message translates to:
+  /// **'Inquiry has been deleted'**
+  String get inquiry_delete_success;
+
+  /// No description provided for @inquiry_delete_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to delete inquiry'**
+  String get inquiry_delete_failed;
+
+  /// No description provided for @inquiry_detail.
+  ///
+  /// In en, this message translates to:
+  /// **'Inquiry Detail'**
+  String get inquiry_detail;
+
+  /// No description provided for @inquiry_category.
+  ///
+  /// In en, this message translates to:
+  /// **'Category'**
+  String get inquiry_category;
+
+  /// No description provided for @inquiry_status.
+  ///
+  /// In en, this message translates to:
+  /// **'Status'**
+  String get inquiry_status;
+
+  /// No description provided for @inquiry_created_at.
+  ///
+  /// In en, this message translates to:
+  /// **'Created At'**
+  String get inquiry_created_at;
+
+  /// No description provided for @inquiry_title_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Title: {title}'**
+  String inquiry_title_label(String title);
+
+  /// No description provided for @inquiry_type_bug.
+  ///
+  /// In en, this message translates to:
+  /// **'Bug Report'**
+  String get inquiry_type_bug;
+
+  /// No description provided for @inquiry_type_feature.
+  ///
+  /// In en, this message translates to:
+  /// **'Feature Request'**
+  String get inquiry_type_feature;
+
+  /// No description provided for @inquiry_type_improvement.
+  ///
+  /// In en, this message translates to:
+  /// **'Improvement'**
+  String get inquiry_type_improvement;
+
+  /// No description provided for @inquiry_type_other.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get inquiry_type_other;
+
+  /// No description provided for @inquiry_status_pending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get inquiry_status_pending;
+
+  /// No description provided for @inquiry_status_in_progress.
+  ///
+  /// In en, this message translates to:
+  /// **'In Progress'**
+  String get inquiry_status_in_progress;
+
+  /// No description provided for @inquiry_status_completed.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed'**
+  String get inquiry_status_completed;
+
+  /// No description provided for @inquiry_status_rejected.
+  ///
+  /// In en, this message translates to:
+  /// **'Rejected'**
+  String get inquiry_status_rejected;
+
+  /// No description provided for @required.
+  ///
+  /// In en, this message translates to:
+  /// **'Required'**
+  String get required;
+
+  /// No description provided for @enter_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a title'**
+  String get enter_title;
+
+  /// No description provided for @content.
+  ///
+  /// In en, this message translates to:
+  /// **'Content'**
+  String get content;
+
+  /// No description provided for @enter_content.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter content'**
+  String get enter_content;
+
+  /// No description provided for @image_attachment.
+  ///
+  /// In en, this message translates to:
+  /// **'Image Attachment'**
+  String get image_attachment;
+
+  /// No description provided for @max_one_image.
+  ///
+  /// In en, this message translates to:
+  /// **'Max 1 image'**
+  String get max_one_image;
+
+  /// No description provided for @photo_attachment.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo Attachment (Max 1)'**
+  String get photo_attachment;
+
+  /// No description provided for @photo_attachment_complete.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo Attachment Complete'**
+  String get photo_attachment_complete;
+
+  /// No description provided for @image_selection.
+  ///
+  /// In en, this message translates to:
+  /// **'Image Selection'**
+  String get image_selection;
+
+  /// No description provided for @select_image_method.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select a method to choose an image'**
+  String get select_image_method;
+
+  /// No description provided for @select_from_gallery.
+  ///
+  /// In en, this message translates to:
+  /// **'Select from Gallery'**
+  String get select_from_gallery;
+
+  /// No description provided for @select_from_gallery_desc.
+  ///
+  /// In en, this message translates to:
+  /// **'Select an image from your device\'s photo gallery'**
+  String get select_from_gallery_desc;
+
+  /// No description provided for @select_from_file.
+  ///
+  /// In en, this message translates to:
+  /// **'Select from File'**
+  String get select_from_file;
+
+  /// No description provided for @select_from_file_desc.
+  ///
+  /// In en, this message translates to:
+  /// **'Select an image from your device\'s files'**
+  String get select_from_file_desc;
+
+  /// No description provided for @max_one_image_error.
+  ///
+  /// In en, this message translates to:
+  /// **'You can only attach up to 1 image'**
+  String get max_one_image_error;
+
+  /// No description provided for @image_selection_error.
+  ///
+  /// In en, this message translates to:
+  /// **'An error occurred while selecting an image: {error}'**
+  String image_selection_error(String error);
+
+  /// No description provided for @attached_image.
+  ///
+  /// In en, this message translates to:
+  /// **'Attached Image'**
+  String get attached_image;
+
+  /// No description provided for @excel_file.
+  ///
+  /// In en, this message translates to:
+  /// **'Excel File'**
+  String get excel_file;
+
+  /// No description provided for @excel_file_tutorial.
+  ///
+  /// In en, this message translates to:
+  /// **'Excel File Tutorial'**
+  String get excel_file_tutorial;
 }
 
 class _AppLocalizationsDelegate

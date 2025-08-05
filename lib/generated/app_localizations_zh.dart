@@ -284,7 +284,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get friends => '朋友';
 
   @override
-  String get my_page => '我的';
+  String get my_page => 'MY';
+
+  @override
+  String get my_page_subtitle => '我的页面';
 
   @override
   String get cafe => '咖啡厅';
@@ -686,13 +689,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get developer => '开发者';
 
   @override
-  String get developer_name => '姓名: 홍길동';
+  String get developer_name => '开发者姓名';
 
   @override
-  String get developer_email => '邮箱: example@email.com';
+  String get developer_email => '开发者邮箱';
 
   @override
-  String get developer_github => 'GitHub: github.com/yourid';
+  String get developer_github => 'GitHub';
 
   @override
   String get help => '帮助';
@@ -701,7 +704,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get no_help_images => '没有帮助图片';
 
   @override
-  String get image_load_error => '无法加载图片';
+  String get image_load_error => '图片加载错误';
 
   @override
   String get description_hint => '输入描述';
@@ -1588,4 +1591,160 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get floor_detail_view => '查看详情';
+
+  @override
+  String get inquiry => '咨询';
+
+  @override
+  String get my_inquiry => '我的咨询';
+
+  @override
+  String get inquiry_type => '咨询类型';
+
+  @override
+  String get inquiry_type_required => '请选择咨询类型';
+
+  @override
+  String get inquiry_type_select_hint => '请选择咨询类型';
+
+  @override
+  String get inquiry_title => '标题';
+
+  @override
+  String get inquiry_content => '咨询内容';
+
+  @override
+  String get inquiry_content_hint => '请详细输入您的咨询内容';
+
+  @override
+  String get inquiry_submit => '提交咨询';
+
+  @override
+  String get inquiry_submit_success => '咨询已成功提交';
+
+  @override
+  String get inquiry_submit_failed => '提交咨询失败，请重试';
+
+  @override
+  String inquiry_list_load_failed(String error) {
+    return '加载咨询列表失败：$error';
+  }
+
+  @override
+  String get no_inquiry_history => '暂无咨询记录';
+
+  @override
+  String get no_inquiry_history_hint => '在咨询标签页中创建新的咨询';
+
+  @override
+  String get inquiry_delete => '删除咨询';
+
+  @override
+  String get inquiry_delete_confirm => '您确定要删除此咨询吗？';
+
+  @override
+  String get inquiry_delete_success => '咨询已删除';
+
+  @override
+  String get inquiry_delete_failed => '删除咨询失败';
+
+  @override
+  String get inquiry_detail => '咨询详情';
+
+  @override
+  String get inquiry_category => '类别';
+
+  @override
+  String get inquiry_status => '状态';
+
+  @override
+  String get inquiry_created_at => '创建时间';
+
+  @override
+  String inquiry_title_label(String title) {
+    return '标题：$title';
+  }
+
+  @override
+  String get inquiry_type_bug => '错误报告';
+
+  @override
+  String get inquiry_type_feature => '功能请求';
+
+  @override
+  String get inquiry_type_improvement => '改进建议';
+
+  @override
+  String get inquiry_type_other => '其他咨询';
+
+  @override
+  String get inquiry_status_pending => '待处理';
+
+  @override
+  String get inquiry_status_in_progress => '处理中';
+
+  @override
+  String get inquiry_status_completed => '已完成';
+
+  @override
+  String get inquiry_status_rejected => '已拒绝';
+
+  @override
+  String get required => '必填';
+
+  @override
+  String get enter_title => '请输入标题';
+
+  @override
+  String get content => '内容';
+
+  @override
+  String get enter_content => '请输入内容';
+
+  @override
+  String get image_attachment => '图片附件';
+
+  @override
+  String get max_one_image => '最多1张';
+
+  @override
+  String get photo_attachment => '照片附件（最多1张）';
+
+  @override
+  String get photo_attachment_complete => '照片附件完成';
+
+  @override
+  String get image_selection => '图片选择';
+
+  @override
+  String get select_image_method => '请选择选择图片的方法';
+
+  @override
+  String get select_from_gallery => '从相册选择';
+
+  @override
+  String get select_from_gallery_desc => '从设备的照片相册中选择图片';
+
+  @override
+  String get select_from_file => '从文件选择';
+
+  @override
+  String get select_from_file_desc => '从设备的文件中选择图片';
+
+  @override
+  String get max_one_image_error => '最多只能附加1张图片';
+
+  @override
+  String image_selection_error(String error) {
+    return '选择图片时发生错误：$error';
+  }
+
+  @override
+  String get attached_image => '附件图片';
+
+  @override
+  String get excel_file => 'Excel文件';
+
+  @override
+  String get excel_file_tutorial => 'Excel文件教程';
 }

@@ -99,6 +99,7 @@
   "timetable": "시간표",
   "friends": "친구",
   "my_page": "MY",
+  "my_page_subtitle": "마이페이지",
   "cafe": "카페",
   "restaurant": "식당",
   "library": "도서관",
@@ -268,7 +269,7 @@
   "title": "회원정보 수정",
   "email_required": "이메일을 입력하세요",
   "name_required": "이름을 입력하세요",
- "schedule": "시간표",
+  "schedule": "시간표",
   "winter_semester": "겨울학기",
   "spring_semester": "1학기",
   "summer_semester": "여름학기",
@@ -375,7 +376,7 @@
       }
     }
   },
-"add": "추가",
+  "add": "추가",
   "close": "닫기",
   "edit": "편집",
   "delete": "삭제",
@@ -439,8 +440,8 @@
   "instructionMoveToDestinationBuilding": "{building} 건물까지 이동하세요",
   "instructionMoveToRoom": "목적지 호실까지 이동하세요",
   "instructionArrived": "목적지에 도착했습니다!",
-    "search_hint": "학교 건물을 검색해주세요",
-      "searchHint": "건물명 또는 호실을 검색해주세요",
+  "search_hint": "학교 건물을 검색해주세요",
+  "searchHint": "건물명 또는 호실을 검색해주세요",
   "searchInitialGuide": "건물명 또는 호실을 검색해보세요",
   "searchHintExample": "예: W19, 공학관, 401호",
   "searchLoading": "검색 중...",
@@ -448,16 +449,16 @@
   "searchTryAgain": "다른 검색어로 시도해보세요",
   "lectureRoom": "강의실",
   "status_open": "운영중",
-"status_closed": "운영종료",
-"status_next_open": "오전 9시에 운영 시작",
-"status_next_close": "오후 6시에 운영 종료",
-"status_next_open_tomorrow": "내일 오전 9시에 운영 시작",
-"office_hours": "09:00 - 18:00",
+  "status_closed": "운영종료",
+  "status_next_open": "오전 9시에 운영 시작",
+  "status_next_close": "오후 6시에 운영 종료",
+  "status_next_open_tomorrow": "내일 오전 9시에 운영 시작",
+  "office_hours": "09:00 - 18:00",
   "status_24hours": "24시간",
   "status_temp_closed": "임시휴무",
   "status_closed_permanently": "휴무",
   "label_basic_info": "기본 정보",
-    "label_category_type": "분류",
+  "label_category_type": "분류",
   "label_status": "상태",
   "label_hours": "운영시간",
   "label_phone": "전화번호",
@@ -505,7 +506,7 @@
   "available": "사용가능",
   "current_location": "현재위치",
   "start_navigation_from_here": "현재 위치에서 길찾기를 시작합니다",
-   "directions": "길찾기",
+  "directions": "길찾기",
   "navigateHere": "여기까지",
   "startLocation": "출발지",
   "endLocation": "도착지",
@@ -534,7 +535,6 @@
   "lastLocation": "마지막 위치",
   "noLocationInfo": "위치 정보 없음",
   "noContactInfo": "정보 없음",
-  
   "friendRequestSent": "{name}님에게 친구 요청을 전송했습니다!",
   "@friendRequestSent": {
     "placeholders": {
@@ -543,7 +543,6 @@
       }
     }
   },
-  
   "friendRequestAccepted": "{name}님의 친구 요청을 수락했습니다.",
   "@friendRequestAccepted": {
     "placeholders": {
@@ -552,7 +551,6 @@
       }
     }
   },
-  
   "friendRequestRejected": "{name}님의 친구 요청을 거절했습니다.",
   "@friendRequestRejected": {
     "placeholders": {
@@ -561,7 +559,6 @@
       }
     }
   },
-  
   "friendRequestCanceled": "{name}님에게 보낸 친구 요청을 취소했습니다.",
   "@friendRequestCanceled": {
     "placeholders": {
@@ -570,7 +567,6 @@
       }
     }
   },
-  
   "friendDeleted": "{name}님을 친구 목록에서 삭제했습니다.",
   "@friendDeleted": {
     "placeholders": {
@@ -579,7 +575,6 @@
       }
     }
   },
-  
   "friendLocationShown": "{name}님의 위치를 지도에 표시했습니다.",
   "@friendLocationShown": {
     "placeholders": {
@@ -588,7 +583,6 @@
       }
     }
   },
-  
   "friendLocationRemoved": "{name}님의 위치를 지도에서 제거했습니다.",
   "@friendLocationRemoved": {
     "placeholders": {
@@ -597,7 +591,6 @@
       }
     }
   },
-  
   "friendCount": "내 친구 ({count})",
   "@friendCount": {
     "placeholders": {
@@ -606,7 +599,6 @@
       }
     }
   },
-  
   "sentRequestsCount": "보낸 ({count})",
   "@sentRequestsCount": {
     "placeholders": {
@@ -615,7 +607,6 @@
       }
     }
   },
-  
   "receivedRequestsCount": "받은 ({count})",
   "@receivedRequestsCount": {
     "placeholders": {
@@ -624,7 +615,6 @@
       }
     }
   },
-  
   "newFriendRequests": "새로운 친구 요청 {count}개",
   "@newFriendRequests": {
     "placeholders": {
@@ -633,7 +623,6 @@
       }
     }
   },
-  
   "addFriend": "추가",
   "sent": "보낸",
   "received": "받은",
@@ -641,14 +630,12 @@
   "friendId": "친구 ID",
   "enterFriendId": "상대방 ID를 입력하세요",
   "enterFriendIdPrompt": "추가할 친구의 ID를 입력해주세요",
-  
   "errorEnterFriendId": "친구 ID를 입력해주세요.",
   "errorCannotAddSelf": "자기 자신은 친구로 추가할 수 없습니다.",
   "errorAddFriend": "친구 추가 중 오류가 발생했습니다.",
   "errorNetworkError": "네트워크 오류가 발생했습니다. 다시 시도해주세요.",
   "errorCannotShowLocation": "친구 위치를 표시할 수 없습니다.",
   "errorCannotRemoveLocation": "친구 위치를 제거할 수 없습니다.",
-  
   "realTimeSyncActive": "실시간 동기화 중 • 자동으로 업데이트됩니다",
   "realTimeSyncStatus": "실시간 동기화 활성 • {time}",
   "@realTimeSyncStatus": {
@@ -658,11 +645,9 @@
       }
     }
   },
-  
   "noSentRequests": "보낸 친구 요청이 없습니다.",
   "noReceivedRequests": "받은 친구 요청이 없습니다.",
   "noFriends": "아직 친구가 없습니다.\n상단의 + 버튼으로 친구를 추가해보세요!",
-  
   "cancelFriendRequest": "친구 요청 취소",
   "cancelFriendRequestConfirm": "{name}님에게 보낸 친구 요청을 취소하시겠습니까?",
   "@cancelFriendRequestConfirm": {
@@ -672,7 +657,6 @@
       }
     }
   },
-  
   "deleteFriend": "친구 삭제",
   "deleteFriendConfirm": "{name}님을 친구 목록에서 삭제하시겠습니까?",
   "@deleteFriendConfirm": {
@@ -682,7 +666,6 @@
       }
     }
   },
-  
   "cancelRequest": "취소하기",
   "requestDate": "요청일: {date}",
   "@requestDate": {
@@ -692,16 +675,15 @@
       }
     }
   },
-  
   "newBadge": "NEW",
-    "friend_delete_title": "친구 삭제",
+  "friend_delete_title": "친구 삭제",
   "friend_delete_warning": "신중하게 결정해주세요",
   "friendDeleteQuestion": "{userName}님을 친구 목록에서 삭제하시겠습니까?\n삭제된 친구는 다시 추가할 수 있습니다.",
   "@friendDeleteQuestion": {
     "description": "사용자 이름이 포함된 친구 삭제 확인 메시지"
   },
   "empty_friend_list_message": "친구가 없습니다.",
-    "friendDeleteTitle": "친구 삭제",
+  "friendDeleteTitle": "친구 삭제",
   "friendDeleteWarning": "신중하게 결정해주세요",
   "friendDeleteHeader": "삭제할 친구",
   "friendDeleteToConfirm": "{userName}님을 친구 목록에서 삭제하시겠습니까?\n삭제된 친구는 다시 추가할 수 있습니다.",
@@ -720,11 +702,11 @@
       "userName": {}
     }
   },
-    "friendOfflineError": "현재 오프라인입니다.",
+  "friendOfflineError": "현재 오프라인입니다.",
   "@friendOfflineError": {
     "description": "Error message shown when trying to view the location of an offline friend."
   },
-    "scheduleDeleteTitle": "시간표 삭제",
+  "scheduleDeleteTitle": "시간표 삭제",
   "scheduleDeleteSubtitle": "신중하게 결정해주세요",
   "scheduleDeleteLabel": "삭제할 시간표",
   "scheduleDeleteDescription": "\"{title}\" 수업을 시간표에서 삭제하시겠습니까?\n삭제된 시간표는 복구할 수 없습니다.",
@@ -762,5 +744,84 @@
   "item_selection_error": "항목 선택 중 오류가 발생했습니다",
   "incomplete_room_info": "강의실 정보가 불완전합니다",
   "show_building_info": "{buildingName} 건물 정보를 표시합니다",
-  "building_info_display_error": "건물 정보 표시 중 오류가 발생했습니다"
+  "building_info_display_error": "건물 정보 표시 중 오류가 발생했습니다",
+  "inquiry": "문의하기",
+  "my_inquiry": "내 문의",
+  "inquiry_type": "문의 유형",
+  "inquiry_type_required": "문의 유형을 선택해주세요",
+  "inquiry_type_select_hint": "문의 유형을 선택해주세요",
+  "inquiry_title": "제목",
+  "inquiry_content": "문의 내용",
+  "inquiry_content_hint": "문의 내용을 자세히 입력해주세요",
+  "inquiry_submit": "문의하기",
+  "inquiry_submit_success": "문의가 성공적으로 등록되었습니다",
+  "inquiry_submit_failed": "문의 등록에 실패했습니다. 다시 시도해주세요",
+  "inquiry_list_load_failed": "문의 목록을 불러오는데 실패했습니다: {error}",
+  "@inquiry_list_load_failed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "no_inquiry_history": "아직 문의 내역이 없습니다",
+  "no_inquiry_history_hint": "문의하기 탭에서 새로운 문의를 작성해보세요",
+  "inquiry_delete": "문의 삭제",
+  "inquiry_delete_confirm": "이 문의를 삭제하시겠습니까?",
+  "inquiry_delete_success": "문의가 삭제되었습니다",
+  "inquiry_delete_failed": "문의 삭제에 실패했습니다",
+  "inquiry_detail": "문의 상세",
+  "inquiry_category": "카테고리",
+  "inquiry_status": "상태",
+  "inquiry_created_at": "작성일",
+  "inquiry_title_label": "제목: {title}",
+  "@inquiry_title_label": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "inquiry_type_bug": "버그 신고",
+  "inquiry_type_feature": "기능 요청",
+  "inquiry_type_improvement": "개선 사항",
+  "inquiry_type_other": "기타 문의",
+  "inquiry_status_pending": "대기 중",
+  "inquiry_status_in_progress": "처리 중",
+  "inquiry_status_completed": "완료",
+  "inquiry_status_rejected": "거부됨",
+  "required": "필수",
+  "enter_title": "제목을 입력해주세요",
+  "content": "내용",
+  "enter_content": "내용을 입력해주세요",
+  "image_attachment": "이미지 첨부",
+  "max_one_image": "최대 1장",
+  "photo_attachment": "사진 첨부 (최대 1장)",
+  "photo_attachment_complete": "사진 첨부 완료",
+  "image_selection": "이미지 선택",
+  "select_image_method": "이미지를 선택하는 방법을 선택해주세요",
+  "select_from_gallery": "갤러리에서 선택",
+  "select_from_gallery_desc": "기기의 사진 갤러리에서 이미지를 선택합니다",
+  "select_from_file": "파일에서 선택",
+  "select_from_file_desc": "기기의 파일에서 이미지를 선택합니다",
+  "max_one_image_error": "이미지는 최대 1장만 첨부할 수 있습니다",
+  "image_selection_error": "이미지 선택 중 오류가 발생했습니다: {error}",
+  "@image_selection_error": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "inquiry_content": "문의 내용",
+  "attached_image": "첨부 이미지",
+  "app_version": "앱 버전",
+  "developer": "개발자",
+  "developer_name": "개발자 이름",
+  "developer_email": "개발자 이메일",
+  "developer_github": "GitHub",
+  "image_load_error": "이미지 로드 오류",
+  "description_hint": "설명을 입력하세요",
+  "excel_file": "엑셀파일",
+  "excel_file_tutorial": "엑셀파일 튜토리얼"
 }

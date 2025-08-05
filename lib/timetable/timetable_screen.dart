@@ -340,9 +340,9 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                       size: 28,
                     ),
                     const SizedBox(height: 4),
-                    const Text(
-                      '엑셀파일',
-                      style: TextStyle(
+                    Text(
+                      AppLocalizations.of(context)!.excel_file,
+                      style: const TextStyle(
                         fontSize: 12,
                         color: Color(0xFF1E3A8A),
                         fontWeight: FontWeight.w500,
@@ -2899,7 +2899,7 @@ void _showExcelUploadChoiceDialog(BuildContext context, String userId) {
                 Navigator.pop(context);
                 _showExcelTutorialDialog(context, userId);
               },
-              child: const Text('엑셀파일 튜토리얼'),
+              child: Text(AppLocalizations.of(context)!.excel_file_tutorial),
             ),
             const SizedBox(height: 12),
             ElevatedButton(

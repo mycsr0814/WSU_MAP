@@ -192,14 +192,17 @@ class _FriendsScreenState extends State<FriendsScreen>
                     ),
                     Row(
                       children: [
-                        Text(
-                          AppLocalizations.of(
-                            context,
-                          )!.friendManagementAndRequests,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey,
-                            fontWeight: FontWeight.w500,
+                        Expanded(
+                          child: Text(
+                            AppLocalizations.of(
+                              context,
+                            )!.friendManagementAndRequests,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                         const SizedBox(width: 8),
