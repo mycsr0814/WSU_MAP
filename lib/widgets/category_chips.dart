@@ -465,27 +465,6 @@ class _CategoryChipsState extends State<CategoryChips> {
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
-          boxShadow: isSelected 
-            ? [
-                BoxShadow(
-                  color: const Color(0xFF667eea).withValues(alpha: 0.4), // 보라색 그림자
-                  blurRadius: 8, // 12에서 8로 축소
-                  offset: const Offset(0, 2), // 4에서 2로 축소
-                  spreadRadius: 1,
-                ),
-                BoxShadow(
-                  color: const Color(0xFF764ba2).withValues(alpha: 0.2), // 진한 보라색 그림자
-                  blurRadius: 12, // 20에서 12로 축소
-                  offset: const Offset(0, 4), // 8에서 4로 축소
-                ),
-              ]
-            : [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
-                  blurRadius: 4, // 8에서 4로 축소
-                  offset: const Offset(0, 1), // 2에서 1로 축소
-                ),
-              ],
         ),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 300),

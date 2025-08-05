@@ -1735,19 +1735,7 @@ List<String>? _parseStringListNullable(dynamic value) {
             color: isSelected ? const Color(0xFF1E3A8A) : Colors.grey.shade300,
             width: isSelected ? 1.5 : 1.0,
           ),
-          boxShadow: isSelected ? [
-            BoxShadow(
-              color: const Color(0xFF1E3A8A).withOpacity(0.2),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ] : [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
-            ),
-          ],
+
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
