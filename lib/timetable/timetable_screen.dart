@@ -4,6 +4,12 @@ import '../generated/app_localizations.dart';
 import 'timetable_item.dart';
 import 'timetable_api_service.dart';
 import '../map/widgets/directions_screen.dart'; // 폴더 구조에 맞게 경로 수정!
+import 'package:url_launcher/url_launcher.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:http/http.dart' as http;
+import '../config/api_config.dart';
+import 'dart:io';
+import 'excel_import_service.dart';
 
 class ScheduleScreen extends StatefulWidget {
   final String userId;
@@ -210,13 +216,40 @@ Widget _buildHeader() {
             ],
           ),
         ),
-        IconButton(
-          onPressed: _showAddScheduleDialog,
-          icon: const Icon(
-            Icons.add_circle_outline,
-            color: Color(0xFF1E3A8A),
-            size: 28,
-          ),
+        Row(
+          children: [
+            GestureDetector(
+              onTap: _showExcelImportDialog,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.file_upload_outlined,
+                    color: Color(0xFF1E3A8A),
+                    size: 28,
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    '엑셀파일',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFF1E3A8A),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 16),
+            IconButton(
+              onPressed: _showAddScheduleDialog,
+              icon: const Icon(
+                Icons.add_circle_outline,
+                color: Color(0xFF1E3A8A),
+                size: 28,
+              ),
+            ),
+          ],
         ),
       ],
     ),
@@ -1723,6 +1756,10 @@ Widget _buildHeader() {
     );
   }
 
+  void _showExcelImportDialog() {
+    _showExcelUploadChoiceDialog(context, widget.userId);
+  }
+
   void _showEditScheduleDialog(ScheduleItem item) {
     _showScheduleFormDialog(
       initialItem: item,
@@ -1917,6 +1954,7 @@ Widget _buildHeader() {
                                 children: [
                                   Expanded(
                                     child: SizedBox(
+                                      width: double.infinity,
                                       height: 48,
                                       child: ElevatedButton(
                                         onPressed: () {
@@ -1972,6 +2010,7 @@ Widget _buildHeader() {
                                   const SizedBox(width: 8),
                                   Expanded(
                                     child: SizedBox(
+                                      width: double.infinity,
                                       height: 48,
                                       child: ElevatedButton(
                                         onPressed: () {
@@ -2032,6 +2071,7 @@ Widget _buildHeader() {
                                 children: [
                                   Expanded(
                                     child: SizedBox(
+                                      width: double.infinity,
                                       height: 48,
                                       child: ElevatedButton(
                                         onPressed: () {
@@ -2149,41 +2189,41 @@ Widget _buildHeader() {
                                       ),
                                       elevation: 0,
                                       padding: EdgeInsets.zero,
-                                                                            ),
-                                      child: Container(
-                                        decoration: BoxDecoration(
-                                          gradient: const LinearGradient(
-                                            colors: [
-                                              Color(0xFF1E3A8A),
-                                              Color(0xFF3B82F6),
-                                            ],
-                                            begin: Alignment.topLeft,
-                                            end: Alignment.bottomRight,
+                                    ),
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        gradient: const LinearGradient(
+                                          colors: [
+                                            Color(0xFF1E3A8A),
+                                            Color(0xFF3B82F6),
+                                          ],
+                                          begin: Alignment.topLeft,
+                                          end: Alignment.bottomRight,
+                                        ),
+                                        borderRadius: BorderRadius.circular(16),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: const Color(0xFF1E3A8A).withOpacity(0.3),
+                                            blurRadius: 12,
+                                            offset: const Offset(0, 6),
                                           ),
-                                          borderRadius: BorderRadius.circular(16),
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color: const Color(0xFF1E3A8A).withOpacity(0.3),
-                                              blurRadius: 12,
-                                              offset: const Offset(0, 6),
-                                            ),
-                                          ],
-                                        ),
-                                        child: Row(
-                                          mainAxisAlignment: MainAxisAlignment.center,
-                                          children: [
-                                            const Icon(Icons.directions, size: 18),
-                                            const SizedBox(width: 8),
-                                            const Text(
-                                              '추천경로',
-                                              style: TextStyle(
-                                                fontWeight: FontWeight.w600,
-                                                fontSize: 14,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
+                                        ],
                                       ),
+                                      child: Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          const Icon(Icons.directions, size: 18),
+                                          const SizedBox(width: 8),
+                                          const Text(
+                                            '추천경로',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 14,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ),
@@ -2375,3 +2415,226 @@ Widget _buildHeader() {
     );
   }
 }
+
+// 튜토리얼 다이얼로그 호출 함수
+void _showExcelTutorialDialog(BuildContext context, String userId) {
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (context) => _ExcelTutorialDialog(userId: userId),
+  );
+}
+
+// 튜토리얼 다이얼로그 위젯 개선
+class _ExcelTutorialDialog extends StatefulWidget {
+  final String userId;
+  const _ExcelTutorialDialog({required this.userId});
+  @override
+  State<_ExcelTutorialDialog> createState() => _ExcelTutorialDialogState();
+}
+
+class _ExcelTutorialDialogState extends State<_ExcelTutorialDialog> {
+  int _page = 0;
+
+  List<Widget> get _pages => [
+        // 안내 텍스트 페이지
+        Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text(
+                '우송대학교 대학정보시스템에 로그인 해주세요',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              GestureDetector(
+                onTap: () => launchUrl(Uri.parse('https://wsinfo.wsu.ac.kr')),
+                child: const Text(
+                  'https://wsinfo.wsu.ac.kr',
+                  style: TextStyle(
+                    color: Colors.blue,
+                    decoration: TextDecoration.underline,
+                    fontSize: 15,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        // 이미지 페이지들
+        ...List.generate(5, (i) => _buildImagePage('assets/timetable/tutorial/${i + 1}.png')),
+      ];
+
+  static Widget _buildImagePage(String assetPath) {
+    return Expanded(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
+        child: Image.asset(
+          assetPath,
+          fit: BoxFit.contain,
+          width: double.infinity,
+          height: double.infinity,
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      child: Container(
+        width: MediaQuery.of(context).size.width * 0.98,
+        height: MediaQuery.of(context).size.height * 0.8,
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Column(
+          children: [
+            // 페이지 내용
+            Expanded(
+              child: _pages[_page],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                if (_page > 0)
+                  TextButton(
+                    onPressed: () => setState(() => _page--),
+                    child: const Text('이전'),
+                  )
+                else
+                  const SizedBox(width: 60),
+                if (_page < _pages.length - 1)
+                  TextButton(
+                    onPressed: () => setState(() => _page++),
+                    child: const Text('다음'),
+                  )
+                else
+                  ElevatedButton(
+                    onPressed: () async {
+                      Navigator.pop(context);
+                      try {
+                        final success = await ExcelImportService.uploadExcelToServer(widget.userId);
+                        if (context.mounted) {
+                          if (success) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('엑셀 파일 업로드 성공'),
+                                backgroundColor: Colors.green,
+                              ),
+                            );
+                            // 업로드 성공 후 시간표 새로고침
+                            // _loadScheduleItems()는 이 컨텍스트에서 접근할 수 없으므로 제거
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('파일 선택이 취소되었습니다.'),
+                                backgroundColor: Colors.orange,
+                              ),
+                            );
+                          }
+                        }
+                      } catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('엑셀 파일 업로드 실패: $e'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      }
+                    },
+                    child: const Text('엑셀 파일 선택'),
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// 엑셀 업로드 버튼을 누르면 아래 다이얼로그를 띄우도록 변경
+void _showExcelUploadChoiceDialog(BuildContext context, String userId) {
+  showDialog(
+    context: context,
+    builder: (context) => Dialog(
+      backgroundColor: Colors.transparent,
+      child: Container(
+        width: MediaQuery.of(context).size.width * 0.8,
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                minimumSize: const Size.fromHeight(48),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              onPressed: () {
+                Navigator.pop(context);
+                _showExcelTutorialDialog(context, userId);
+              },
+              child: const Text('엑셀파일 튜토리얼'),
+            ),
+            const SizedBox(height: 12),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                minimumSize: const Size.fromHeight(48),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              onPressed: () async {
+                Navigator.pop(context);
+                try {
+                  final success = await ExcelImportService.uploadExcelToServer(userId);
+                  if (context.mounted) {
+                    if (success) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('엑셀 파일 업로드 성공'),
+                          backgroundColor: Colors.green,
+                        ),
+                      );
+                      // 업로드 성공 후 시간표 새로고침
+                      // _loadScheduleItems()는 이 컨텍스트에서 접근할 수 없으므로 제거
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('파일 선택이 취소되었습니다.'),
+                          backgroundColor: Colors.orange,
+                        ),
+                      );
+                    }
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('엑셀 파일 업로드 실패: $e'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                }
+              },
+              child: const Text('엑셀 파일 선택'),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
+
