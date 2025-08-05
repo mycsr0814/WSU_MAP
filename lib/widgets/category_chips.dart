@@ -79,10 +79,10 @@ class _CategoryChipsState extends State<CategoryChips> {
         });
       }
 
-      // 🔥 백그라운드에서 서버 데이터 시도
-      setState(() {
-        _isLoading = true;
-      });
+      // 🔥 백그라운드에서 서버 데이터 시도 (기존 카테고리는 유지)
+      // setState(() {
+      //   _isLoading = true; // 이 부분을 제거하여 기존 카테고리가 사라지지 않도록 함
+      // });
 
       List<String> categoryNames = [];
 
@@ -244,72 +244,7 @@ class _CategoryChipsState extends State<CategoryChips> {
 
   @override
   Widget build(BuildContext context) {
-    // 로딩 중이어도 카테고리가 있으면 표시
-    if (_isLoading && _categories.isNotEmpty) {
-      return Container(
-        height: 40, // 50에서 40으로 축소
-        margin: const EdgeInsets.symmetric(horizontal: 16),
-        child: Column(
-          children: [
-            // 로딩 인디케이터
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), // 12,6에서 10,4로 축소
-              margin: const EdgeInsets.only(bottom: 4), // 6에서 4로 축소
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    const Color(0xFF1E3A8A).withValues(alpha: 0.1),
-                    const Color(0xFF3B82F6).withValues(alpha: 0.05),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(10), // 12에서 10으로 축소
-                border: Border.all(
-                  color: const Color(0xFF1E3A8A).withValues(alpha: 0.2),
-                  width: 1,
-                ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const SizedBox(
-                    width: 14, // 16에서 14로 축소
-                    height: 14, // 16에서 14로 축소
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF1E3A8A)),
-                    ),
-                  ),
-                  const SizedBox(width: 6), // 8에서 6으로 축소
-                  Text(
-                    '카테고리 업데이트 중...',
-                    style: TextStyle(
-                      color: const Color(0xFF1E3A8A),
-                      fontSize: 11, // 12에서 11로 축소
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            // 기존 카테고리 버튼들 표시
-            Expanded(
-              child: ListView.separated(
-                controller: _scrollController,
-                scrollDirection: Axis.horizontal,
-                itemCount: _categories.length,
-                separatorBuilder: (context, index) => const SizedBox(width: 6), // 8에서 6으로 축소
-                itemBuilder: (context, index) {
-                  final category = _categories[index];
-                  return _buildCategoryChip(category);
-                },
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    // 카테고리가 비어있으면 fallback 데이터 사용
+    // 카테고리가 비어있으면 로딩 표시
     if (_categories.isEmpty) {
       return Container(
         height: 40, // 50에서 40으로 축소
@@ -368,6 +303,48 @@ class _CategoryChipsState extends State<CategoryChips> {
       margin: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
         children: [
+          // 🔥 로딩 중일 때만 상단에 인디케이터 표시 (카테고리는 계속 보이도록)
+          if (_isLoading)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), // 12,6에서 10,4로 축소
+              margin: const EdgeInsets.only(bottom: 4), // 6에서 4로 축소
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    const Color(0xFF1E3A8A).withValues(alpha: 0.1),
+                    const Color(0xFF3B82F6).withValues(alpha: 0.05),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(10), // 12에서 10으로 축소
+                border: Border.all(
+                  color: const Color(0xFF1E3A8A).withValues(alpha: 0.2),
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SizedBox(
+                    width: 14, // 16에서 14로 축소
+                    height: 14, // 16에서 14로 축소
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF1E3A8A)),
+                    ),
+                  ),
+                  const SizedBox(width: 6), // 8에서 6으로 축소
+                  Text(
+                    '카테고리 업데이트 중...',
+                    style: TextStyle(
+                      color: const Color(0xFF1E3A8A),
+                      fontSize: 11, // 12에서 11로 축소
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          // 🔥 서버 데이터를 사용하지 않을 때 경고 표시
           if (!_useServerData)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), // 12,6에서 10,4로 축소
@@ -400,41 +377,27 @@ class _CategoryChipsState extends State<CategoryChips> {
                       size: 12, // 14에서 12로 축소
                     ),
                   ),
-                  const SizedBox(width: 4), // 6에서 4로 축소
+                  const SizedBox(width: 6), // 8에서 6으로 축소
                   Text(
-                    'Offline 모드',
+                    '오프라인 모드',
                     style: TextStyle(
-                      fontSize: 11, // 12에서 11로 축소
                       color: Colors.orange.shade700,
+                      fontSize: 11, // 12에서 11로 축소
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  const SizedBox(width: 6),
-                  GestureDetector(
-                    onTap: refresh,
-                    child: Container(
-                      padding: const EdgeInsets.all(2),
-                      decoration: BoxDecoration(
-                        color: Colors.orange.shade100,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Icon(
-                        Icons.refresh, 
-                        size: 14, 
-                        color: Colors.orange.shade600
-                      ),
-                    ),
-                  ),
+                  const SizedBox(width: 6), // 8에서 6으로 축소
+                  _buildRetryButton(),
                 ],
               ),
             ),
-
+          // 🔥 카테고리 버튼들은 항상 표시
           Expanded(
             child: ListView.separated(
               controller: _scrollController,
               scrollDirection: Axis.horizontal,
               itemCount: _categories.length,
-              separatorBuilder: (context, index) => const SizedBox(width: 8),
+              separatorBuilder: (context, index) => const SizedBox(width: 6), // 8에서 6으로 축소
               itemBuilder: (context, index) {
                 final category = _categories[index];
                 return _buildCategoryChip(category);
