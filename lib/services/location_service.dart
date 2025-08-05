@@ -290,18 +290,28 @@ class LocationService {
     try {
       debugPrint('🚀 LocationService 초기화...');
 
-      // 플랫폼별 설정
+      // 플랫폼별 설정 (타임아웃 추가)
       if (Platform.isIOS) {
         // iOS는 기본 설정 사용
         debugPrint('📱 iOS 플랫폼 감지 - 기본 설정 사용');
       } else {
-        // Android 설정
-        await _location.changeSettings(
-          accuracy: loc.LocationAccuracy.balanced,
-          interval: 5000, // 5초
-          distanceFilter: 10, // 10m
-        );
-        debugPrint('🤖 Android 설정 완료');
+        // Android 설정 (더 빠른 설정)
+        try {
+          await _location.changeSettings(
+            accuracy: loc.LocationAccuracy.balanced,
+            interval: 3000, // 5000에서 3000으로 단축
+            distanceFilter: 5, // 10에서 5로 단축
+          ).timeout(
+            const Duration(seconds: 1), // 1초 타임아웃
+            onTimeout: () {
+              debugPrint('⏰ Android 설정 타임아웃 - 기본값 사용');
+              throw TimeoutException('Android 설정 타임아웃', const Duration(seconds: 1));
+            },
+          );
+          debugPrint('🤖 Android 설정 완료');
+        } catch (e) {
+          debugPrint('⚠️ Android 설정 실패, 기본값 사용: $e');
+        }
       }
 
       debugPrint('✅ LocationService 초기화 완료');

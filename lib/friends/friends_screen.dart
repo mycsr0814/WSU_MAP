@@ -214,7 +214,6 @@ class _FriendsScreenState extends State<FriendsScreen>
         child: Container(
           width: MediaQuery.of(context).size.width * 0.9,
           decoration: BoxDecoration(
-            color: Colors.white,
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
@@ -224,234 +223,240 @@ class _FriendsScreenState extends State<FriendsScreen>
               ),
             ],
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // 헤더
-              Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1E3A8A).withOpacity(0.1),
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(20),
-                    topRight: Radius.circular(20),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // 헤더
+                Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1E3A8A).withOpacity(0.1),
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(20),
+                      topRight: Radius.circular(20),
+                    ),
                   ),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 60,
-                      height: 60,
-                      decoration: BoxDecoration(
-                        color: isOnline
-                            ? const Color(0xFF10B981).withOpacity(0.2) // 🔥 온라인 친구는 초록색 배경
-                            : const Color(0xFF1E3A8A).withOpacity(0.2),
-                        shape: BoxShape.circle,
-                        border: Border.all(
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 60,
+                        height: 60,
+                        decoration: BoxDecoration(
                           color: isOnline
-                              ? const Color(0xFF10B981).withOpacity(0.5) // 🔥 온라인 친구는 초록색 테두리
-                              : const Color(0xFF1E3A8A).withOpacity(0.3),
-                          width: isOnline ? 2 : 1, // 🔥 온라인 친구는 더 두꺼운 테두리
+                              ? const Color(0xFF10B981).withOpacity(0.2) // 🔥 온라인 친구는 초록색 배경
+                              : const Color(0xFF1E3A8A).withOpacity(0.2),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: isOnline
+                                ? const Color(0xFF10B981).withOpacity(0.5) // 🔥 온라인 친구는 초록색 테두리
+                                : const Color(0xFF1E3A8A).withOpacity(0.3),
+                            width: isOnline ? 2 : 1, // 🔥 온라인 친구는 더 두꺼운 테두리
+                          ),
+                        ),
+                        child: Icon(
+                          Icons.person,
+                          color: isOnline
+                              ? const Color(0xFF10B981) // 🔥 온라인 친구는 초록색 아이콘
+                              : const Color(0xFF1E3A8A),
+                          size: 30,
                         ),
                       ),
-                      child: Icon(
-                        Icons.person,
-                        color: isOnline
-                            ? const Color(0xFF10B981) // 🔥 온라인 친구는 초록색 아이콘
-                            : const Color(0xFF1E3A8A),
-                        size: 30,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            friend.userName,
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w700,
-                              color: isOnline
-                                  ? const Color(0xFF10B981) // 🔥 온라인 친구는 초록색 텍스트
-                                  : const Color(0xFF1E3A8A),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              friend.userName,
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w700,
+                                color: isOnline
+                                    ? const Color(0xFF10B981) // 🔥 온라인 친구는 초록색 텍스트
+                                    : const Color(0xFF1E3A8A),
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 4),
-                          Row(
-                            children: [
-                              Container(
-                                width: 8,
-                                height: 8,
-                                decoration: BoxDecoration(
-                                  color: isOnline
-                                      ? const Color(0xFF10B981) // 🔥 초록색 온라인 표시
-                                      : Colors.grey,
-                                  shape: BoxShape.circle,
-                                ),
-                              ),
-                              const SizedBox(width: 6),
-                              Text(
-                                isOnline
-                                    ? AppLocalizations.of(context)!.online
-                                    : AppLocalizations.of(context)!.offline,
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: isOnline
-                                      ? const Color(0xFF10B981) // 🔥 초록색 온라인 텍스트
-                                      : Colors.grey,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // 내용
-              Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildDetailRow(
-                      Icons.badge,
-                      AppLocalizations.of(context)!.id,
-                      friend.userId,
-                    ),
-                    const SizedBox(height: 16),
-                    _buildDetailRow(
-                      Icons.phone,
-                      AppLocalizations.of(context)!.contact,
-                      friend.phone.isEmpty
-                          ? AppLocalizations.of(context)!.noContactInfo
-                          : friend.phone,
-                      isClickable: friend.phone.isNotEmpty,
-                      onTap: friend.phone.isNotEmpty
-                          ? () => _handlePhone(context, friend.phone)
-                          : null,
-                    ),
-                  ],
-                ),
-              ),
-
-              // 버튼 영역
-              Padding(
-                padding: const EdgeInsets.only(left: 24, right: 24, bottom: 24),
-                child: Column(
-                  children: [
-                    // 위치 관련 버튼들
-                    if (friend.lastLocation.isNotEmpty) ...[
-                      Row(
-                        children: [
-                          // 위치 표시/제거 버튼
-                          Expanded(
-                            child: SizedBox(
-                              height: 48,
-                              child: ElevatedButton.icon(
-                                onPressed: () async {
-                                  HapticFeedback.lightImpact();
-                                  Navigator.of(context).pop(); // 항상 모달창 닫기
-                                  
-                                  // 🔥 위치 공유 상태 확인
-                                  if (!friend.isLocationPublic) {
-                                    _showErrorMessage(
-                                      '${friend.userName}님이 위치 공유를 허용하지 않았습니다.',
-                                    );
-                                    return;
-                                  }
-                                  
-                                  if (!isOnline) {
-                                    _showErrorMessage(
-                                      AppLocalizations.of(
-                                        context,
-                                      )!.friendOfflineError,
-                                    );
-                                    return;
-                                  }
-                                  
-                                  if (!isLocationDisplayed) {
-                                    await _showFriendLocationOnMap(friend);
-                                  } else {
-                                    await _removeFriendLocationFromMap(friend);
-                                  }
-                                },
-                                icon: Icon(
-                                  isLocationDisplayed ? Icons.location_off : Icons.location_on,
-                                  size: 18,
-                                ),
-                                label: Text(
-                                  isLocationDisplayed
-                                      ? AppLocalizations.of(context)!.removeLocation
-                                      : AppLocalizations.of(context)!.showLocation,
-                                ),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: isLocationDisplayed
-                                      ? const Color(0xFFEF4444)
-                                      : friend.isLocationPublic 
-                                          ? const Color(0xFF10B981)
-                                          : Colors.grey[400]!,
-                                  foregroundColor: Colors.white,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                Container(
+                                  width: 8,
+                                  height: 8,
+                                  decoration: BoxDecoration(
+                                    color: isOnline
+                                        ? const Color(0xFF10B981) // 🔥 초록색 온라인 표시
+                                        : Colors.grey,
+                                    shape: BoxShape.circle,
                                   ),
-                                  elevation: 0,
                                 ),
-                              ),
-                            ),
-                          ),
-                          
-                          const SizedBox(width: 12),
-                          
-                          // 닫기 버튼
-                          Expanded(
-                            child: SizedBox(
-                              height: 48,
-                              child: ElevatedButton.icon(
-                                onPressed: () => Navigator.of(context).pop(),
-                                icon: const Icon(Icons.close, size: 18),
-                                label: Text(AppLocalizations.of(context)!.close),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.grey[100],
-                                  foregroundColor: Colors.grey[700],
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
+                                const SizedBox(width: 6),
+                                Text(
+                                  isOnline
+                                      ? AppLocalizations.of(context)!.online
+                                      : AppLocalizations.of(context)!.offline,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: isOnline
+                                        ? const Color(0xFF10B981) // 🔥 초록색 온라인 텍스트
+                                        : Colors.grey,
+                                    fontWeight: FontWeight.w500,
                                   ),
-                                  elevation: 0,
                                 ),
-                              ),
+                              ],
                             ),
-                          ),
-                        ],
-                      ),
-                    ] else ...[
-                      // 위치 정보가 없을 때는 닫기 버튼만
-                      SizedBox(
-                        width: double.infinity,
-                        height: 48,
-                        child: ElevatedButton.icon(
-                          onPressed: () => Navigator.of(context).pop(),
-                          icon: const Icon(Icons.close, size: 18),
-                          label: Text(AppLocalizations.of(context)!.close),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.grey[100],
-                            foregroundColor: Colors.grey[700],
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            elevation: 0,
-                          ),
+                          ],
                         ),
                       ),
                     ],
-                  ],
+                  ),
                 ),
-              ),
-            ],
+
+                // 내용
+                Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildDetailRow(
+                        Icons.badge,
+                        AppLocalizations.of(context)!.id,
+                        friend.userId,
+                      ),
+                      const SizedBox(height: 16),
+                      _buildDetailRow(
+                        Icons.phone,
+                        AppLocalizations.of(context)!.contact,
+                        friend.phone.isEmpty
+                            ? AppLocalizations.of(context)!.noContactInfo
+                            : friend.phone,
+                        isClickable: friend.phone.isNotEmpty,
+                        onTap: friend.phone.isNotEmpty
+                            ? () => _handlePhone(context, friend.phone)
+                            : null,
+                      ),
+                    ],
+                  ),
+                ),
+
+                // 버튼 영역
+                Padding(
+                  padding: const EdgeInsets.only(left: 24, right: 24, bottom: 24),
+                  child: Column(
+                    children: [
+                      // 위치 관련 버튼들
+                      if (friend.lastLocation.isNotEmpty) ...[
+                        Row(
+                          children: [
+                            // 위치 표시/제거 버튼
+                            Expanded(
+                              child: SizedBox(
+                                height: 48,
+                                child: ElevatedButton.icon(
+                                  onPressed: () async {
+                                    HapticFeedback.lightImpact();
+                                    Navigator.of(context).pop(); // 항상 모달창 닫기
+                                    
+                                    // 🔥 위치 공유 상태 확인
+                                    if (!friend.isLocationPublic) {
+                                      _showErrorMessage(
+                                        '${friend.userName}님이 위치 공유를 허용하지 않았습니다.',
+                                      );
+                                      return;
+                                    }
+                                    
+                                    if (!isOnline) {
+                                      _showErrorMessage(
+                                        AppLocalizations.of(
+                                          context,
+                                        )!.friendOfflineError,
+                                      );
+                                      return;
+                                    }
+                                    
+                                    if (!isLocationDisplayed) {
+                                      await _showFriendLocationOnMap(friend);
+                                    } else {
+                                      await _removeFriendLocationFromMap(friend);
+                                    }
+                                  },
+                                  icon: Icon(
+                                    isLocationDisplayed ? Icons.location_off : Icons.location_on,
+                                    size: 18,
+                                  ),
+                                  label: Text(
+                                    isLocationDisplayed
+                                        ? AppLocalizations.of(context)!.removeLocation
+                                        : AppLocalizations.of(context)!.showLocation,
+                                  ),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: isLocationDisplayed
+                                        ? const Color(0xFFEF4444)
+                                        : friend.isLocationPublic 
+                                            ? const Color(0xFF10B981)
+                                            : Colors.grey[400]!,
+                                    foregroundColor: Colors.white,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    elevation: 0,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            
+                            const SizedBox(width: 12),
+                            
+                            // 닫기 버튼
+                            Expanded(
+                              child: SizedBox(
+                                height: 48,
+                                child: ElevatedButton.icon(
+                                  onPressed: () => Navigator.of(context).pop(),
+                                  icon: const Icon(Icons.close, size: 18),
+                                  label: Text(AppLocalizations.of(context)!.close),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.grey[100],
+                                    foregroundColor: Colors.grey[700],
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    elevation: 0,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ] else ...[
+                        // 위치 정보가 없을 때는 닫기 버튼만
+                        SizedBox(
+                          width: double.infinity,
+                          height: 48,
+                          child: ElevatedButton.icon(
+                            onPressed: () => Navigator.of(context).pop(),
+                            icon: const Icon(Icons.close, size: 18),
+                            label: Text(AppLocalizations.of(context)!.close),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.grey[100],
+                              foregroundColor: Colors.grey[700],
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              elevation: 0,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

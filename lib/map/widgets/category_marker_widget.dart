@@ -103,9 +103,7 @@ class CategoryMarkerWidget {
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: backgroundColor,
         shape: BoxShape.circle,
-        border: Border.all(color: Colors.white, width: 2),
         boxShadow: [
           BoxShadow(
             color: backgroundColor.withOpacity(0.3),
@@ -114,10 +112,19 @@ class CategoryMarkerWidget {
           ),
         ],
       ),
-      child: Icon(
-        iconData,
-        color: iconColor,
-        size: size * 0.5,
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          color: backgroundColor,
+          shape: BoxShape.circle,
+          border: Border.all(color: Colors.white, width: 2),
+        ),
+        child: Icon(
+          iconData,
+          color: iconColor,
+          size: size * 0.5,
+        ),
       ),
     );
   }

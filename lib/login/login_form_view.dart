@@ -361,9 +361,7 @@ class _LoginFormViewState extends State<LoginFormView> with TickerProviderStateM
                     // 로그인 폼 카드
                     Container(
                       margin: const EdgeInsets.symmetric(horizontal: 8),
-                      padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
-                        color: Colors.white,
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
@@ -373,205 +371,212 @@ class _LoginFormViewState extends State<LoginFormView> with TickerProviderStateM
                           ),
                         ],
                       ),
-                      child: Consumer<UserAuth>(
-                        builder: (context, userAuth, child) {
-                          return Column(
-                            children: [
-                              // 로고
-                              Container(
-                                width: 60,
-                                height: 60,
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF1E3A8A).withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                child: const Icon(
-                                  Icons.school,
-                                  size: 30,
-                                  color: Color(0xFF1E3A8A),
-                                ),
-                              ),
-                              const SizedBox(height: 24),
-
-                              // 입력 필드들
-                              WoosongInputField(
-                                icon: Icons.person_outline,
-                                label: l10n.username,
-                                controller: usernameController,
-                                hint: l10n.enter_username,
-                              ),
-                              const SizedBox(height: 4),
-                              WoosongInputField(
-                                icon: Icons.lock_outline,
-                                label: l10n.password,
-                                controller: passwordController,
-                                isPassword: true,
-                                hint: l10n.enter_password,
-                              ),
-                              const SizedBox(height: 16),
-
-                              // 기억하기 체크박스
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-                                decoration: BoxDecoration(
-                                  color: Colors.grey[50],
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: Colors.grey[200]!),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Checkbox(
-                                      value: _rememberMe,
-                                      onChanged: userAuth.isLoading ? null : (value) {
-                                        setState(() {
-                                          _rememberMe = value ?? false;
-                                        });
-                                      },
-                                      activeColor: const Color(0xFF1E3A8A),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
-                                    ),
-                                    Expanded(
-                                      child: GestureDetector(
-                                        onTap: userAuth.isLoading ? null : () {
-                                          setState(() {
-                                            _rememberMe = !_rememberMe;
-                                          });
-                                        },
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              l10n.remember_me,
-                                              style: TextStyle(
-                                                fontSize: 14,
-                                                fontWeight: FontWeight.w600,
-                                                color: Colors.grey[700],
-                                              ),
-                                            ),
-                                            Text(
-                                              l10n.remember_me_description,
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                color: Colors.grey[500],
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                    if (_rememberMe)
-                                      const Icon(
-                                        Icons.verified,
-                                        size: 16,
-                                        color: Color(0xFF1E3A8A),
-                                      ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(height: 24),
-
-                              // 로그인 버튼
-                              WoosongButton(
-                                onPressed: userAuth.isLoading ? null : _handleLogin,
-                                child: userAuth.isLoading
-                                    ? const SizedBox(
-                                        width: 20,
-                                        height: 20,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                        ),
-                                      )
-                                    : Text(l10n.login),
-                              ),
-                              const SizedBox(height: 12),
-
-                              // 게스트 로그인 버튼
-                              WoosongButton(
-                                onPressed: userAuth.isLoading ? null : _handleGuestLogin,
-                                isPrimary: false,
-                                isOutlined: true,
-                                child: Text(l10n.login_as_guest),
-                              ),
-                              const SizedBox(height: 16),
-
-                              // 추가 옵션들
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Flexible(
-                                    child: TextButton(
-                                      onPressed: userAuth.isLoading ? null : () {
-                                        _showComingSoonDialog(context, l10n.find_password);
-                                      },
-                                      child: Text(
-                                        l10n.find_password,
-                                        style: const TextStyle(
-                                          color: Color(0xFF64748B),
-                                          fontSize: 14,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  Container(
-                                    width: 1,
-                                    height: 12,
-                                    color: const Color(0xFFE2E8F0),
-                                    margin: const EdgeInsets.symmetric(horizontal: 8),
-                                  ),
-                                  Flexible(
-                                    child: TextButton(
-                                      onPressed: userAuth.isLoading ? null : () {
-                                        _showComingSoonDialog(context, l10n.find_username);
-                                      },
-                                      child: Text(
-                                        l10n.find_username,
-                                        style: const TextStyle(
-                                          color: Color(0xFF64748B),
-                                          fontSize: 14,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-
-                              // 에러 메시지 표시
-                              if (userAuth.lastError != null) ...[
-                                const SizedBox(height: 16),
+                      child: Container(
+                        padding: const EdgeInsets.all(24),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Consumer<UserAuth>(
+                          builder: (context, userAuth, child) {
+                            return Column(
+                              children: [
+                                // 로고
                                 Container(
-                                  padding: const EdgeInsets.all(12),
+                                  width: 60,
+                                  height: 60,
                                   decoration: BoxDecoration(
-                                    color: Colors.red.shade50,
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(color: Colors.red.shade200),
+                                    color: const Color(0xFF1E3A8A).withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  child: const Icon(
+                                    Icons.school,
+                                    size: 30,
+                                    color: Color(0xFF1E3A8A),
+                                  ),
+                                ),
+                                const SizedBox(height: 24),
+
+                                // 입력 필드들
+                                WoosongInputField(
+                                  icon: Icons.person_outline,
+                                  label: l10n.username,
+                                  controller: usernameController,
+                                  hint: l10n.enter_username,
+                                ),
+                                const SizedBox(height: 4),
+                                WoosongInputField(
+                                  icon: Icons.lock_outline,
+                                  label: l10n.password,
+                                  controller: passwordController,
+                                  isPassword: true,
+                                  hint: l10n.enter_password,
+                                ),
+                                const SizedBox(height: 16),
+
+                                // 기억하기 체크박스
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[50],
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(color: Colors.grey[200]!),
                                   ),
                                   child: Row(
                                     children: [
-                                      Icon(
-                                        Icons.error_outline,
-                                        color: Colors.red.shade600,
-                                        size: 20,
+                                      Checkbox(
+                                        value: _rememberMe,
+                                        onChanged: userAuth.isLoading ? null : (value) {
+                                          setState(() {
+                                            _rememberMe = value ?? false;
+                                          });
+                                        },
+                                        activeColor: const Color(0xFF1E3A8A),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(4),
+                                        ),
                                       ),
-                                      const SizedBox(width: 8),
                                       Expanded(
+                                        child: GestureDetector(
+                                          onTap: userAuth.isLoading ? null : () {
+                                            setState(() {
+                                              _rememberMe = !_rememberMe;
+                                            });
+                                          },
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                l10n.remember_me,
+                                                style: TextStyle(
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: Colors.grey[700],
+                                                ),
+                                              ),
+                                              Text(
+                                                l10n.remember_me_description,
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  color: Colors.grey[500],
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                      if (_rememberMe)
+                                        const Icon(
+                                          Icons.verified,
+                                          size: 16,
+                                          color: Color(0xFF1E3A8A),
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(height: 24),
+
+                                // 로그인 버튼
+                                WoosongButton(
+                                  onPressed: userAuth.isLoading ? null : _handleLogin,
+                                  child: userAuth.isLoading
+                                      ? const SizedBox(
+                                          width: 20,
+                                          height: 20,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                          ),
+                                        )
+                                      : Text(l10n.login),
+                                ),
+                                const SizedBox(height: 12),
+
+                                // 게스트 로그인 버튼
+                                WoosongButton(
+                                  onPressed: userAuth.isLoading ? null : _handleGuestLogin,
+                                  isPrimary: false,
+                                  isOutlined: true,
+                                  child: Text(l10n.login_as_guest),
+                                ),
+                                const SizedBox(height: 16),
+
+                                // 추가 옵션들
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Flexible(
+                                      child: TextButton(
+                                        onPressed: userAuth.isLoading ? null : () {
+                                          _showComingSoonDialog(context, l10n.find_password);
+                                        },
                                         child: Text(
-                                          userAuth.lastError!,
-                                          style: TextStyle(
-                                            color: Colors.red.shade700,
+                                          l10n.find_password,
+                                          style: const TextStyle(
+                                            color: Color(0xFF64748B),
                                             fontSize: 14,
                                           ),
                                         ),
                                       ),
-                                    ],
-                                  ),
+                                    ),
+                                    Container(
+                                      width: 1,
+                                      height: 12,
+                                      color: const Color(0xFFE2E8F0),
+                                      margin: const EdgeInsets.symmetric(horizontal: 8),
+                                    ),
+                                    Flexible(
+                                      child: TextButton(
+                                        onPressed: userAuth.isLoading ? null : () {
+                                          _showComingSoonDialog(context, l10n.find_username);
+                                        },
+                                        child: Text(
+                                          l10n.find_username,
+                                          style: const TextStyle(
+                                            color: Color(0xFF64748B),
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
+
+                                // 에러 메시지 표시
+                                if (userAuth.lastError != null) ...[
+                                  const SizedBox(height: 16),
+                                  Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: Colors.red.shade50,
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(color: Colors.red.shade200),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.error_outline,
+                                          color: Colors.red.shade600,
+                                          size: 20,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Text(
+                                            userAuth.lastError!,
+                                            style: TextStyle(
+                                              color: Colors.red.shade700,
+                                              fontSize: 14,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
                               ],
-                            ],
-                          );
-                        },
+                            );
+                          },
+                        ),
                       ),
                     ),
                     const SizedBox(height: 20),

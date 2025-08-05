@@ -69,6 +69,17 @@ class _CategoryChipsState extends State<CategoryChips> {
     try {
       if (!mounted) return;
 
+      // 🔥 초기 상태에서 fallback 데이터를 먼저 로드 (버튼이 사라지지 않도록)
+      if (_categories.isEmpty) {
+        debugPrint('🔄 초기 fallback 데이터 로드...');
+        setState(() {
+          _categories = CategoryFallbackData.getCategories();
+          _isLoading = false;
+          _useServerData = false;
+        });
+      }
+
+      // 🔥 백그라운드에서 서버 데이터 시도
       setState(() {
         _isLoading = true;
       });
@@ -488,45 +499,19 @@ class _CategoryChipsState extends State<CategoryChips> {
         }
       },
       borderRadius: BorderRadius.circular(12), // 16에서 12로 축소
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6), // 16,10에서 12,6으로 축소
+      child: Container(
         decoration: BoxDecoration(
-          gradient: isSelected 
-            ? const LinearGradient(
-                colors: [
-                  Color(0xFF1E3A8A),
-                  Color(0xFF3B82F6),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              )
-            : LinearGradient(
-                colors: [
-                  Colors.white,
-                  Colors.grey.shade50,
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-          borderRadius: BorderRadius.circular(12), // 16에서 12로 축소
-          border: Border.all(
-            color: isSelected 
-              ? const Color(0xFF1E3A8A) 
-              : Colors.grey.shade300,
-            width: isSelected ? 1.5 : 1.0, // 2.0,1.5에서 1.5,1.0으로 축소
-          ),
+          borderRadius: BorderRadius.circular(12),
           boxShadow: isSelected 
             ? [
                 BoxShadow(
-                  color: const Color(0xFF1E3A8A).withOpacity(0.3),
+                  color: const Color(0xFF667eea).withOpacity(0.4), // 보라색 그림자
                   blurRadius: 8, // 12에서 8로 축소
                   offset: const Offset(0, 2), // 4에서 2로 축소
                   spreadRadius: 1,
                 ),
                 BoxShadow(
-                  color: const Color(0xFF1E3A8A).withOpacity(0.1),
+                  color: const Color(0xFF764ba2).withOpacity(0.2), // 진한 보라색 그림자
                   blurRadius: 12, // 20에서 12로 축소
                   offset: const Offset(0, 4), // 8에서 4로 축소
                 ),
@@ -539,41 +524,72 @@ class _CategoryChipsState extends State<CategoryChips> {
                 ),
               ],
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              padding: EdgeInsets.all(isSelected ? 3 : 2), // 5,3에서 3,2로 축소
-              decoration: BoxDecoration(
-                color: isSelected 
-                  ? Colors.white.withOpacity(0.2)
-                  : const Color(0xFF1E3A8A).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(4), // 6에서 4로 축소
-              ),
-              child: Icon(
-                icon,
-                size: isSelected ? 14 : 12, // 18,16에서 14,12로 축소
-                color: isSelected 
-                  ? Colors.white 
-                  : const Color(0xFF1E3A8A),
-              ),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6), // 16,10에서 12,6으로 축소
+          decoration: BoxDecoration(
+            gradient: isSelected 
+              ? const LinearGradient(
+                  colors: [
+                    Color(0xFF667eea), // 보라색 계열
+                    Color(0xFF764ba2), // 진한 보라색
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                )
+              : LinearGradient(
+                  colors: [
+                    Colors.white,
+                    Colors.grey.shade50,
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+            borderRadius: BorderRadius.circular(12), // 16에서 12로 축소
+            border: Border.all(
+              color: isSelected 
+                ? const Color(0xFF667eea) // 보라색 테두리
+                : Colors.grey.shade300,
+              width: isSelected ? 1.5 : 1.0, // 2.0,1.5에서 1.5,1.0으로 축소
             ),
-            const SizedBox(width: 6), // 8에서 6으로 축소
-            Text(
-              CategoryLocalization.getLabel(context, category),
-              style: TextStyle(
-                fontSize: isSelected ? 11 : 10, // 13,12에서 11,10으로 축소
-                color: isSelected 
-                  ? Colors.white 
-                  : Colors.grey.shade700,
-                fontWeight: isSelected 
-                  ? FontWeight.w700 
-                  : FontWeight.w600,
-                letterSpacing: isSelected ? 0.1 : 0.0, // 0.2에서 0.1로 축소
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                padding: EdgeInsets.all(isSelected ? 3 : 2), // 5,3에서 3,2로 축소
+                decoration: BoxDecoration(
+                  color: isSelected 
+                    ? Colors.white.withOpacity(0.25) // 더 밝은 흰색 배경
+                    : const Color(0xFF667eea).withOpacity(0.1), // 보라색 배경
+                  borderRadius: BorderRadius.circular(4), // 6에서 4로 축소
+                ),
+                child: Icon(
+                  icon,
+                  size: isSelected ? 14 : 12, // 18,16에서 14,12로 축소
+                  color: isSelected 
+                    ? Colors.white 
+                    : const Color(0xFF667eea), // 보라색 아이콘
+                ),
               ),
-            ),
-          ],
+              const SizedBox(width: 6), // 8에서 6으로 축소
+              Text(
+                CategoryLocalization.getLabel(context, category),
+                style: TextStyle(
+                  fontSize: isSelected ? 11 : 10, // 13,12에서 11,10으로 축소
+                  color: isSelected 
+                    ? Colors.white 
+                    : const Color(0xFF667eea), // 보라색 텍스트
+                  fontWeight: isSelected 
+                    ? FontWeight.w700 
+                    : FontWeight.w600,
+                  letterSpacing: isSelected ? 0.1 : 0.0, // 0.2에서 0.1로 축소
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

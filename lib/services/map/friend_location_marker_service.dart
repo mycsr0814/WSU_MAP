@@ -90,9 +90,7 @@ class FriendLocationMarkerService {
         width: 40,
         height: 40,
         decoration: BoxDecoration(
-          color: color,
           shape: BoxShape.circle,
-          border: Border.all(color: Colors.white, width: 3),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.3),
@@ -101,7 +99,16 @@ class FriendLocationMarkerService {
             ),
           ],
         ),
-        child: const Icon(Icons.person, color: Colors.white, size: 20),
+        child: Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: color,
+            shape: BoxShape.circle,
+            border: Border.all(color: Colors.white, width: 3),
+          ),
+          child: const Icon(Icons.person, color: Colors.white, size: 20),
+        ),
       ),
       size: const Size(40, 40),
     );

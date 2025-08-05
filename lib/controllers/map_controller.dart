@@ -959,6 +959,7 @@ class MapScreenController extends ChangeNotifier {
           ),
         );
         debugPrint('✅ 카테고리 마커 추가: ${building.name} - $category 아이콘, floors: $floors');
+        debugPrint('🔍 CategoryMarkerData 생성 - category: $category, buildingName: ${building.name}');
       }
     }
 
