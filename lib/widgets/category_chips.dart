@@ -258,13 +258,13 @@ class _CategoryChipsState extends State<CategoryChips> {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    const Color(0xFF1E3A8A).withOpacity(0.1),
-                    const Color(0xFF3B82F6).withOpacity(0.05),
+                    const Color(0xFF1E3A8A).withValues(alpha: 0.1),
+                    const Color(0xFF3B82F6).withValues(alpha: 0.05),
                   ],
                 ),
                 borderRadius: BorderRadius.circular(10), // 12에서 10으로 축소
                 border: Border.all(
-                  color: const Color(0xFF1E3A8A).withOpacity(0.2),
+                  color: const Color(0xFF1E3A8A).withValues(alpha: 0.2),
                   width: 1,
                 ),
               ),
@@ -455,13 +455,13 @@ class _CategoryChipsState extends State<CategoryChips> {
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              const Color(0xFF1E3A8A).withOpacity(0.1),
-              const Color(0xFF3B82F6).withOpacity(0.05),
+              const Color(0xFF1E3A8A).withValues(alpha: 0.1),
+              const Color(0xFF3B82F6).withValues(alpha: 0.05),
             ],
           ),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: const Color(0xFF1E3A8A).withOpacity(0.3),
+            color: const Color(0xFF1E3A8A).withValues(alpha: 0.3),
             width: 1,
           ),
         ),
@@ -505,20 +505,20 @@ class _CategoryChipsState extends State<CategoryChips> {
           boxShadow: isSelected 
             ? [
                 BoxShadow(
-                  color: const Color(0xFF667eea).withOpacity(0.4), // 보라색 그림자
+                  color: const Color(0xFF667eea).withValues(alpha: 0.4), // 보라색 그림자
                   blurRadius: 8, // 12에서 8로 축소
                   offset: const Offset(0, 2), // 4에서 2로 축소
                   spreadRadius: 1,
                 ),
                 BoxShadow(
-                  color: const Color(0xFF764ba2).withOpacity(0.2), // 진한 보라색 그림자
+                  color: const Color(0xFF764ba2).withValues(alpha: 0.2), // 진한 보라색 그림자
                   blurRadius: 12, // 20에서 12로 축소
                   offset: const Offset(0, 4), // 8에서 4로 축소
                 ),
               ]
             : [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 4, // 8에서 4로 축소
                   offset: const Offset(0, 1), // 2에서 1로 축소
                 ),
@@ -562,8 +562,8 @@ class _CategoryChipsState extends State<CategoryChips> {
                 padding: EdgeInsets.all(isSelected ? 3 : 2), // 5,3에서 3,2로 축소
                 decoration: BoxDecoration(
                   color: isSelected 
-                    ? Colors.white.withOpacity(0.25) // 더 밝은 흰색 배경
-                    : const Color(0xFF667eea).withOpacity(0.1), // 보라색 배경
+                    ? Colors.white.withValues(alpha: 0.25) // 더 밝은 흰색 배경
+                    : const Color(0xFF667eea).withValues(alpha: 0.1), // 보라색 배경
                   borderRadius: BorderRadius.circular(4), // 6에서 4로 축소
                 ),
                 child: Icon(

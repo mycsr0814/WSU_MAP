@@ -354,7 +354,7 @@ Future<void> _prepareLocationInBackground() async {
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.08),
+                  color: Colors.black.withValues(alpha: 0.08),
                   blurRadius: 24,
                   offset: const Offset(0, 8),
                 ),
@@ -392,7 +392,7 @@ Future<void> _prepareLocationInBackground() async {
                       margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 6),
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                       decoration: BoxDecoration(
-                        color: selected ? const Color(0xFF1E3A8A).withOpacity(0.08) : Colors.white,
+                        color: selected ? const Color(0xFF1E3A8A).withValues(alpha: 0.08) : Colors.white,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
                           color: selected ? const Color(0xFF1E3A8A) : Colors.grey[300]!,
@@ -494,7 +494,7 @@ Future<void> _prepareLocationInBackground() async {
                   borderRadius: BorderRadius.circular(24),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.15),
+                      color: Colors.black.withValues(alpha: 0.15),
                       blurRadius: 15,
                       offset: const Offset(0, 8),
                     ),
@@ -550,7 +550,7 @@ Future<void> _prepareLocationInBackground() async {
                   borderRadius: BorderRadius.circular(70),
                   boxShadow: [
                     BoxShadow(
-                      color: Color(0xFF1E3A8A).withOpacity(0.4),
+                      color: Color(0xFF1E3A8A).withValues(alpha: 0.4),
                       blurRadius: 20,
                       offset: const Offset(0, 10),
                     ),
@@ -569,7 +569,7 @@ Future<void> _prepareLocationInBackground() async {
                 width: 100,
                 height: 25,
                 decoration: BoxDecoration(
-                  color: Color(0xFF1E3A8A).withOpacity(0.3),
+                  color: Color(0xFF1E3A8A).withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
@@ -586,7 +586,7 @@ Future<void> _prepareLocationInBackground() async {
                   letterSpacing: -1,
                   shadows: [
                     Shadow(
-                      color: Colors.black.withOpacity(0.3),
+                      color: Colors.black.withValues(alpha: 0.3),
                       offset: const Offset(0, 2),
                       blurRadius: 4,
                     ),
@@ -604,7 +604,7 @@ Future<void> _prepareLocationInBackground() async {
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
-                    color: Colors.white.withOpacity(0.8),
+                    color: Colors.white.withValues(alpha: 0.8),
                     letterSpacing: 1,
                   ),
                 ),

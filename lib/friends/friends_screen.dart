@@ -217,7 +217,7 @@ class _FriendsScreenState extends State<FriendsScreen>
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.08),
+                color: Colors.black.withValues(alpha: 0.08),
                 blurRadius: 20,
                 offset: const Offset(0, 8),
               ),
@@ -235,7 +235,7 @@ class _FriendsScreenState extends State<FriendsScreen>
                 Container(
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1E3A8A).withOpacity(0.1),
+                    color: const Color(0xFF1E3A8A).withValues(alpha: 0.1),
                     borderRadius: const BorderRadius.only(
                       topLeft: Radius.circular(20),
                       topRight: Radius.circular(20),
@@ -248,13 +248,13 @@ class _FriendsScreenState extends State<FriendsScreen>
                         height: 60,
                         decoration: BoxDecoration(
                           color: isOnline
-                              ? const Color(0xFF10B981).withOpacity(0.2) // 🔥 온라인 친구는 초록색 배경
-                              : const Color(0xFF1E3A8A).withOpacity(0.2),
+                              ? const Color(0xFF10B981).withValues(alpha: 0.2) // 🔥 온라인 친구는 초록색 배경
+                              : const Color(0xFF1E3A8A).withValues(alpha: 0.2),
                           shape: BoxShape.circle,
                           border: Border.all(
                             color: isOnline
-                                ? const Color(0xFF10B981).withOpacity(0.5) // 🔥 온라인 친구는 초록색 테두리
-                                : const Color(0xFF1E3A8A).withOpacity(0.3),
+                                ? const Color(0xFF10B981).withValues(alpha: 0.5) // 🔥 온라인 친구는 초록색 테두리
+                                : const Color(0xFF1E3A8A).withValues(alpha: 0.3),
                             width: isOnline ? 2 : 1, // 🔥 온라인 친구는 더 두꺼운 테두리
                           ),
                         ),
@@ -474,7 +474,7 @@ class _FriendsScreenState extends State<FriendsScreen>
           width: 40,
           height: 40,
           decoration: BoxDecoration(
-            color: const Color(0xFF1E3A8A).withOpacity(0.1),
+            color: const Color(0xFF1E3A8A).withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(icon, color: const Color(0xFF1E3A8A), size: 20),
@@ -753,9 +753,9 @@ class _FriendsScreenState extends State<FriendsScreen>
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: Colors.green.withOpacity(0.1),
+                color: Colors.green.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Colors.green.withOpacity(0.3)),
+                border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -856,7 +856,7 @@ class _FriendsScreenState extends State<FriendsScreen>
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
+                            color: Colors.black.withValues(alpha: 0.05),
                             blurRadius: 8,
                             offset: const Offset(0, 2),
                           ),
@@ -876,7 +876,7 @@ class _FriendsScreenState extends State<FriendsScreen>
                           fontWeight: FontWeight.w500,
                         ),
                         indicator: BoxDecoration(
-                          color: const Color(0xFF1E3A8A).withOpacity(0.1),
+                          color: const Color(0xFF1E3A8A).withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         tabs: [
@@ -1023,7 +1023,7 @@ class _FriendsScreenState extends State<FriendsScreen>
                 border: Border.all(color: const Color(0xFFE2E8F0)),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha: 0.05),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -1129,9 +1129,9 @@ class _FriendsScreenState extends State<FriendsScreen>
           padding: const EdgeInsets.all(12),
           margin: const EdgeInsets.only(bottom: 16),
           decoration: BoxDecoration(
-            color: Colors.blue.withOpacity(0.1),
+            color: Colors.blue.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: Colors.blue.withOpacity(0.3)),
+            border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
           ),
           child: Row(
             children: [
@@ -1162,7 +1162,7 @@ class _FriendsScreenState extends State<FriendsScreen>
                     width: 80,
                     height: 80,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF1E3A8A).withOpacity(0.1),
+                      color: const Color(0xFF1E3A8A).withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
@@ -1206,9 +1206,9 @@ class _FriendsScreenState extends State<FriendsScreen>
             padding: const EdgeInsets.all(12),
             margin: const EdgeInsets.only(bottom: 16),
             decoration: BoxDecoration(
-              color: Colors.red.withOpacity(0.1),
+              color: Colors.red.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: Colors.red.withOpacity(0.3)),
+              border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
             ),
             child: Row(
               children: [
@@ -1246,7 +1246,7 @@ class _FriendsScreenState extends State<FriendsScreen>
                     width: 80,
                     height: 80,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF1E3A8A).withOpacity(0.1),
+                      color: const Color(0xFF1E3A8A).withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
@@ -1291,7 +1291,7 @@ class _FriendsScreenState extends State<FriendsScreen>
         border: Border.all(color: const Color(0xFFE2E8F0)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -1303,7 +1303,7 @@ class _FriendsScreenState extends State<FriendsScreen>
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: const Color(0xFF1E3A8A).withOpacity(0.1),
+              color: const Color(0xFF1E3A8A).withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: const Icon(
@@ -1352,7 +1352,7 @@ class _FriendsScreenState extends State<FriendsScreen>
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: const Color(0xFFEF4444).withOpacity(0.1),
+              color: const Color(0xFFEF4444).withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: IconButton(
@@ -1381,10 +1381,10 @@ class _FriendsScreenState extends State<FriendsScreen>
       decoration: BoxDecoration(
         color: const Color(0xFFFFFBEB),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFF59E0B).withOpacity(0.3)),
+        border: Border.all(color: const Color(0xFFF59E0B).withValues(alpha: 0.3)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -1396,7 +1396,7 @@ class _FriendsScreenState extends State<FriendsScreen>
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: const Color(0xFFF59E0B).withOpacity(0.1),
+              color: const Color(0xFFF59E0B).withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: const Icon(
@@ -1459,7 +1459,7 @@ class _FriendsScreenState extends State<FriendsScreen>
                 width: 36,
                 height: 36,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF10B981).withOpacity(0.1),
+                  color: const Color(0xFF10B981).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: IconButton(
@@ -1485,7 +1485,7 @@ class _FriendsScreenState extends State<FriendsScreen>
                 width: 36,
                 height: 36,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFEF4444).withOpacity(0.1),
+                  color: const Color(0xFFEF4444).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: IconButton(
@@ -1520,7 +1520,7 @@ class _FriendsScreenState extends State<FriendsScreen>
   ]) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      barrierColor: Colors.black.withOpacity(0.5),
+      barrierColor: Colors.black.withValues(alpha: 0.5),
       builder: (context) => Dialog(
         backgroundColor: Colors.transparent,
         child: Container(
@@ -1530,7 +1530,7 @@ class _FriendsScreenState extends State<FriendsScreen>
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.08),
+                color: Colors.black.withValues(alpha: 0.08),
                 blurRadius: 20,
                 offset: const Offset(0, 8),
               ),
@@ -1543,7 +1543,7 @@ class _FriendsScreenState extends State<FriendsScreen>
               Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: Colors.red.withOpacity(0.1),
+                  color: Colors.red.withValues(alpha: 0.1),
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(20),
                     topRight: Radius.circular(20),
@@ -1555,7 +1555,7 @@ class _FriendsScreenState extends State<FriendsScreen>
                       width: 60,
                       height: 60,
                       decoration: BoxDecoration(
-                        color: Colors.red.withOpacity(0.2),
+                        color: Colors.red.withValues(alpha: 0.2),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(
@@ -1582,7 +1582,7 @@ class _FriendsScreenState extends State<FriendsScreen>
                             '보낸 친구 요청을 취소합니다',
                             style: TextStyle(
                               fontSize: 14,
-                              color: Colors.red.withOpacity(0.8),
+                              color: Colors.red.withValues(alpha: 0.8),
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -1735,7 +1735,7 @@ class _FriendsScreenState extends State<FriendsScreen>
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -1791,15 +1791,15 @@ class _FriendsScreenState extends State<FriendsScreen>
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: currentFriend.isLogin
-              ? const Color(0xFF10B981).withOpacity(0.5) // 🔥 더 진한 초록색 테두리
+              ? const Color(0xFF10B981).withValues(alpha: 0.5) // 🔥 더 진한 초록색 테두리
               : const Color(0xFFE2E8F0),
           width: currentFriend.isLogin ? 2 : 1, // 🔥 온라인 친구는 더 두꺼운 테두리
         ),
         boxShadow: [
           BoxShadow(
             color: currentFriend.isLogin 
-                ? const Color(0xFF10B981).withOpacity(0.1) // 🔥 온라인 친구는 초록색 그림자
-                : Colors.black.withOpacity(0.05),
+                ? const Color(0xFF10B981).withValues(alpha: 0.1) // 🔥 온라인 친구는 초록색 그림자
+                : Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -1819,13 +1819,13 @@ class _FriendsScreenState extends State<FriendsScreen>
                   height: 50,
                   decoration: BoxDecoration(
                     color: currentFriend.isLogin
-                        ? const Color(0xFF10B981).withOpacity(0.15) // 🔥 더 진한 초록색 배경
-                        : const Color(0xFF1E3A8A).withOpacity(0.1),
+                        ? const Color(0xFF10B981).withValues(alpha: 0.15) // 🔥 더 진한 초록색 배경
+                        : const Color(0xFF1E3A8A).withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                     border: Border.all(
                       color: currentFriend.isLogin
-                          ? const Color(0xFF10B981).withOpacity(0.5) // 🔥 더 진한 초록색 테두리
-                          : const Color(0xFF1E3A8A).withOpacity(0.3),
+                          ? const Color(0xFF10B981).withValues(alpha: 0.5) // 🔥 더 진한 초록색 테두리
+                          : const Color(0xFF1E3A8A).withValues(alpha: 0.3),
                       width: currentFriend.isLogin ? 2.5 : 2, // 🔥 온라인 친구는 더 두꺼운 테두리
                     ),
                   ),
@@ -1903,7 +1903,7 @@ class _FriendsScreenState extends State<FriendsScreen>
 
     final confirmed = await showDialog<bool>(
       context: context,
-      barrierColor: Colors.black.withOpacity(0.5),
+      barrierColor: Colors.black.withValues(alpha: 0.5),
       builder: (context) => Dialog(
         backgroundColor: Colors.transparent,
         child: Container(
@@ -1913,7 +1913,7 @@ class _FriendsScreenState extends State<FriendsScreen>
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.08),
+                color: Colors.black.withValues(alpha: 0.08),
                 blurRadius: 20,
                 offset: const Offset(0, 8),
               ),
@@ -1926,7 +1926,7 @@ class _FriendsScreenState extends State<FriendsScreen>
               Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: Colors.red.withOpacity(0.1),
+                  color: Colors.red.withValues(alpha: 0.1),
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(20),
                     topRight: Radius.circular(20),
@@ -1938,7 +1938,7 @@ class _FriendsScreenState extends State<FriendsScreen>
                       width: 60,
                       height: 60,
                       decoration: BoxDecoration(
-                        color: Colors.red.withOpacity(0.2),
+                        color: Colors.red.withValues(alpha: 0.2),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(
@@ -1965,7 +1965,7 @@ class _FriendsScreenState extends State<FriendsScreen>
                             l10n.friendDeleteWarning,
                             style: TextStyle(
                               fontSize: 14,
-                              color: Colors.red.withOpacity(0.8),
+                              color: Colors.red.withValues(alpha: 0.8),
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -1984,7 +1984,7 @@ class _FriendsScreenState extends State<FriendsScreen>
                   decoration: BoxDecoration(
                     color: const Color(0xFFFEF2F2),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.red.withOpacity(0.2)),
+                    border: Border.all(color: Colors.red.withValues(alpha: 0.2)),
                   ),
                   child: Column(
                     children: [
@@ -2103,7 +2103,7 @@ class _FriendsScreenState extends State<FriendsScreen>
             width: 80,
             height: 80,
             decoration: BoxDecoration(
-              color: const Color(0xFF1E3A8A).withOpacity(0.1),
+              color: const Color(0xFF1E3A8A).withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: const Icon(

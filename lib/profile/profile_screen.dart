@@ -259,60 +259,6 @@ Widget _buildHeader(AppLocalizations l10n) {
     );
   }
 
-  void _showProfileActionSheet(BuildContext context, UserAuth userAuth, AppLocalizations l10n) {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (context) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 40,
-                  height: 4,
-                  margin: const EdgeInsets.only(bottom: 24),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                ListTile(
-                  leading: const Icon(Icons.edit_outlined, color: Color(0xFF1E3A8A)),
-                  title: Text(l10n.edit_profile, style: const TextStyle(fontWeight: FontWeight.w600)),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _handleMenuTap(l10n.edit_profile);
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.delete_outline, color: Colors.red),
-                  title: Text(l10n.delete_account, style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.red)),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _handleMenuTap(l10n.delete_account);
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.logout, color: Color(0xFF1E3A8A)),
-                  title: Text(l10n.logout, style: const TextStyle(fontWeight: FontWeight.w600)),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _handleLogout(userAuth);
-                  },
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
   Widget _buildMenuList(UserAuth userAuth, AppLocalizations l10n) {
     final menuItems = [
       {
@@ -600,43 +546,6 @@ Widget _buildHeader(AppLocalizations l10n) {
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildLogoutButton() {
-    return Consumer<UserAuth>(
-      builder: (context, userAuth, child) {
-        final l10n = AppLocalizations.of(context)!;
-        return GestureDetector(
-          onTap: () => _handleLogout(userAuth),
-          child: Container(
-            width: double.infinity,
-            height: 50,
-            decoration: BoxDecoration(
-              color: Colors.transparent,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFF1E3A8A), width: 2),
-            ),
-            child: Center(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.logout, size: 18, color: Color(0xFF1E3A8A)),
-                  const SizedBox(width: 8),
-                  Text(
-                    userAuth.isGuest ? l10n.login : l10n.logout,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF1E3A8A),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
     );
   }
 

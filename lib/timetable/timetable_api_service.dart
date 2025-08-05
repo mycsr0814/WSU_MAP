@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'timetable_item.dart';
 import 'package:flutter_application_1/config/api_config.dart';
 import 'package:uuid/uuid.dart'; // 👈 추가
+import 'package:flutter/foundation.dart'; // 👈 추가
 
 class TimetableApiService {
   static String get timetableBase => ApiConfig.timetableBase;
@@ -87,10 +88,10 @@ class TimetableApiService {
     final res = await http.get(
       Uri.parse('${ApiConfig.floorBase}/names/$building'),
     );
-    print('층수 응답 status: ${res.statusCode}, body: ${res.body}');
+    debugPrint('층수 응답 status: ${res.statusCode}, body: ${res.body}');
     if (res.statusCode != 200) throw Exception('층수 조회 실패');
     final arr = jsonDecode(res.body) as List;
-    print('층수 파싱 결과: $arr');
+    debugPrint('층수 파싱 결과: $arr');
     return arr.map((e) => e['Floor_Number'].toString()).toList();
   }
 
