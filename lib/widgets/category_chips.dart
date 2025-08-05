@@ -236,14 +236,14 @@ class _CategoryChipsState extends State<CategoryChips> {
     // 로딩 중이어도 카테고리가 있으면 표시
     if (_isLoading && _categories.isNotEmpty) {
       return Container(
-        height: 50,
+        height: 40, // 50에서 40으로 축소
         margin: const EdgeInsets.symmetric(horizontal: 16),
         child: Column(
           children: [
             // 로딩 인디케이터
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              margin: const EdgeInsets.only(bottom: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), // 12,6에서 10,4로 축소
+              margin: const EdgeInsets.only(bottom: 4), // 6에서 4로 축소
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
@@ -251,7 +251,7 @@ class _CategoryChipsState extends State<CategoryChips> {
                     const Color(0xFF3B82F6).withOpacity(0.05),
                   ],
                 ),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(10), // 12에서 10으로 축소
                 border: Border.all(
                   color: const Color(0xFF1E3A8A).withOpacity(0.2),
                   width: 1,
@@ -261,19 +261,19 @@ class _CategoryChipsState extends State<CategoryChips> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   const SizedBox(
-                    width: 16,
-                    height: 16,
+                    width: 14, // 16에서 14로 축소
+                    height: 14, // 16에서 14로 축소
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
                       valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF1E3A8A)),
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 6), // 8에서 6으로 축소
                   Text(
                     '카테고리 업데이트 중...',
                     style: TextStyle(
                       color: const Color(0xFF1E3A8A),
-                      fontSize: 12,
+                      fontSize: 11, // 12에서 11로 축소
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -286,7 +286,7 @@ class _CategoryChipsState extends State<CategoryChips> {
                 controller: _scrollController,
                 scrollDirection: Axis.horizontal,
                 itemCount: _categories.length,
-                separatorBuilder: (context, index) => const SizedBox(width: 8),
+                separatorBuilder: (context, index) => const SizedBox(width: 6), // 8에서 6으로 축소
                 itemBuilder: (context, index) {
                   final category = _categories[index];
                   return _buildCategoryChip(category);
@@ -301,11 +301,11 @@ class _CategoryChipsState extends State<CategoryChips> {
     // 카테고리가 비어있으면 fallback 데이터 사용
     if (_categories.isEmpty) {
       return Container(
-        height: 50,
+        height: 40, // 50에서 40으로 축소
         margin: const EdgeInsets.symmetric(horizontal: 16),
         child: Center(
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), // 20,12에서 16,8로 축소
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
@@ -313,7 +313,7 @@ class _CategoryChipsState extends State<CategoryChips> {
                   Colors.orange.shade100,
                 ],
               ),
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(12), // 16에서 12로 축소
               border: Border.all(
                 color: Colors.orange.shade200,
                 width: 1,
@@ -323,27 +323,27 @@ class _CategoryChipsState extends State<CategoryChips> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Container(
-                  padding: const EdgeInsets.all(6),
+                  padding: const EdgeInsets.all(4), // 6에서 4로 축소
                   decoration: BoxDecoration(
                     color: Colors.orange.shade100,
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(6), // 8에서 6으로 축소
                   ),
                   child: Icon(
                     Icons.warning_amber_rounded,
                     color: Colors.orange.shade600,
-                    size: 18,
+                    size: 14, // 18에서 14로 축소
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 8), // 12에서 8로 축소
                 Text(
                   '카테고리 로딩 중...',
                   style: TextStyle(
                     color: Colors.orange.shade700,
-                    fontSize: 14,
+                    fontSize: 12, // 14에서 12로 축소
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 8), // 12에서 8로 축소
                 _buildRetryButton(),
               ],
             ),
@@ -353,14 +353,14 @@ class _CategoryChipsState extends State<CategoryChips> {
     }
 
     return Container(
-      height: 50,
+      height: 40, // 50에서 40으로 축소
       margin: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
         children: [
           if (!_useServerData)
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              margin: const EdgeInsets.only(bottom: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), // 12,6에서 10,4로 축소
+              margin: const EdgeInsets.only(bottom: 4), // 6에서 4로 축소
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
@@ -368,7 +368,7 @@ class _CategoryChipsState extends State<CategoryChips> {
                     Colors.orange.shade100,
                   ],
                 ),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(10), // 12에서 10으로 축소
                 border: Border.all(
                   color: Colors.orange.shade200,
                   width: 1,
@@ -378,22 +378,22 @@ class _CategoryChipsState extends State<CategoryChips> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(4),
+                    padding: const EdgeInsets.all(3), // 4에서 3으로 축소
                     decoration: BoxDecoration(
                       color: Colors.orange.shade100,
-                      borderRadius: BorderRadius.circular(6),
+                      borderRadius: BorderRadius.circular(4), // 6에서 4로 축소
                     ),
                     child: Icon(
                       Icons.wifi_off,
                       color: Colors.orange.shade600,
-                      size: 14,
+                      size: 12, // 14에서 12로 축소
                     ),
                   ),
-                  const SizedBox(width: 6),
+                  const SizedBox(width: 4), // 6에서 4로 축소
                   Text(
                     'Offline 모드',
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: 11, // 12에서 11로 축소
                       color: Colors.orange.shade700,
                       fontWeight: FontWeight.w600,
                     ),
@@ -487,11 +487,11 @@ class _CategoryChipsState extends State<CategoryChips> {
           _onCategoryTap(category);
         }
       },
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(12), // 16에서 12로 축소
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6), // 16,10에서 12,6으로 축소
         decoration: BoxDecoration(
           gradient: isSelected 
             ? const LinearGradient(
@@ -510,32 +510,32 @@ class _CategoryChipsState extends State<CategoryChips> {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(12), // 16에서 12로 축소
           border: Border.all(
             color: isSelected 
               ? const Color(0xFF1E3A8A) 
               : Colors.grey.shade300,
-            width: isSelected ? 2.0 : 1.5,
+            width: isSelected ? 1.5 : 1.0, // 2.0,1.5에서 1.5,1.0으로 축소
           ),
           boxShadow: isSelected 
             ? [
                 BoxShadow(
                   color: const Color(0xFF1E3A8A).withOpacity(0.3),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
+                  blurRadius: 8, // 12에서 8로 축소
+                  offset: const Offset(0, 2), // 4에서 2로 축소
                   spreadRadius: 1,
                 ),
                 BoxShadow(
                   color: const Color(0xFF1E3A8A).withOpacity(0.1),
-                  blurRadius: 20,
-                  offset: const Offset(0, 8),
+                  blurRadius: 12, // 20에서 12로 축소
+                  offset: const Offset(0, 4), // 8에서 4로 축소
                 ),
               ]
             : [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.05),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
+                  blurRadius: 4, // 8에서 4로 축소
+                  offset: const Offset(0, 1), // 2에서 1로 축소
                 ),
               ],
         ),
@@ -544,33 +544,33 @@ class _CategoryChipsState extends State<CategoryChips> {
           children: [
             AnimatedContainer(
               duration: const Duration(milliseconds: 300),
-              padding: EdgeInsets.all(isSelected ? 5 : 3),
+              padding: EdgeInsets.all(isSelected ? 3 : 2), // 5,3에서 3,2로 축소
               decoration: BoxDecoration(
                 color: isSelected 
                   ? Colors.white.withOpacity(0.2)
                   : const Color(0xFF1E3A8A).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(6),
+                borderRadius: BorderRadius.circular(4), // 6에서 4로 축소
               ),
               child: Icon(
                 icon,
-                size: isSelected ? 18 : 16,
+                size: isSelected ? 14 : 12, // 18,16에서 14,12로 축소
                 color: isSelected 
                   ? Colors.white 
                   : const Color(0xFF1E3A8A),
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 6), // 8에서 6으로 축소
             Text(
               CategoryLocalization.getLabel(context, category),
               style: TextStyle(
-                fontSize: isSelected ? 13 : 12,
+                fontSize: isSelected ? 11 : 10, // 13,12에서 11,10으로 축소
                 color: isSelected 
                   ? Colors.white 
                   : Colors.grey.shade700,
                 fontWeight: isSelected 
                   ? FontWeight.w700 
                   : FontWeight.w600,
-                letterSpacing: isSelected ? 0.2 : 0.0,
+                letterSpacing: isSelected ? 0.1 : 0.0, // 0.2에서 0.1로 축소
               ),
             ),
           ],

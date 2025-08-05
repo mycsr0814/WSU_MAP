@@ -143,7 +143,7 @@ class _WelcomeViewState extends State<WelcomeView>
     super.dispose();
   }
 
-/// 🔥 백그라운드에서 위치 미리 준비 (단순화 최종 버전)
+/// �� 백그라운드에서 위치 미리 준비 (최적화된 버전)
 Future<void> _prepareLocationInBackground() async {
   if (_isPreparingLocation || _locationPrepared) return;
 
@@ -151,23 +151,25 @@ Future<void> _prepareLocationInBackground() async {
     _isPreparingLocation = true;
     debugPrint('🔄 Welcome 화면에서 위치 미리 준비 시작...');
 
-    await Future.delayed(const Duration(milliseconds: 1500));
+    // 대기 시간 단축 (1.5초에서 0.5초로)
+    await Future.delayed(const Duration(milliseconds: 500));
     final locationManager = Provider.of<LocationManager>(context, listen: false);
 
-    // LocationManager 초기화 대기
+    // LocationManager 초기화 대기 (최대 1초)
     int retries = 0;
-    while (!locationManager.isInitialized && retries < 30) {
+    while (!locationManager.isInitialized && retries < 10) {
       await Future.delayed(const Duration(milliseconds: 100));
       retries++;
     }
 
     if (locationManager.isInitialized) {
       debugPrint('🔍 Welcome에서 위치 권한 확인 중...');
-      await Future.delayed(const Duration(milliseconds: 300));
+      await Future.delayed(const Duration(milliseconds: 200)); // 300ms에서 200ms로 단축
       await locationManager.recheckPermissionStatus();
 
+      // 권한 상태 확인 (최대 0.5초 대기)
       int permissionRetries = 0;
-      while (locationManager.permissionStatus == null && permissionRetries < 15) {
+      while (locationManager.permissionStatus == null && permissionRetries < 5) {
         await Future.delayed(const Duration(milliseconds: 100));
         permissionRetries++;
       }
@@ -176,12 +178,12 @@ Future<void> _prepareLocationInBackground() async {
       debugPrint('✅ Welcome에서 빠른 위치 요청 시작...');
 
       try {
-        // 🔥 캐시 우선 위치 요청
+        // 🔥 빠른 위치 요청 (1초 타임아웃)
         await locationManager.requestLocationQuickly().timeout(
-          const Duration(seconds: 3),
+          const Duration(seconds: 1), // 3초에서 1초로 단축
           onTimeout: () {
-            debugPrint('⏰ Welcome 위치 요청 타임아웃 (3초) - 정상 진행');
-            throw TimeoutException('Welcome 위치 타임아웃', const Duration(seconds: 3));
+            debugPrint('⏰ Welcome 위치 요청 타임아웃 (1초) - 정상 진행');
+            throw TimeoutException('Welcome 위치 타임아웃', const Duration(seconds: 1));
           },
         );
 
@@ -207,6 +209,61 @@ Future<void> _prepareLocationInBackground() async {
     _isPreparingLocation = false;
   }
 }
+
+  /// 🔥 위치 준비 (개선된 버전) - 제거됨
+  // Future<void> _prepareLocation() async {
+  //   if (_isPreparingLocation) return;
+  //   _isPreparingLocation = true;
+
+  //   try {
+  //     debugPrint('📍 Welcome 화면에서 위치 준비 시작...');
+
+  //     final locationManager = Provider.of<LocationManager>(context, listen: false);
+  //     if (locationManager != null) {
+  //       debugPrint('✅ LocationManager 초기화 확인됨');
+
+  //       // 권한 상태 확인 (최대 0.5초 대기)
+  //       int permissionRetries = 0;
+  //       while (locationManager.permissionStatus == null && permissionRetries < 5) {
+  //         await Future.delayed(const Duration(milliseconds: 100));
+  //         permissionRetries++;
+  //       }
+
+  //       debugPrint('🔍 최종 권한 상태: ${locationManager.permissionStatus}');
+  //       debugPrint('✅ Welcome에서 빠른 위치 요청 시작...');
+
+  //       try {
+  //         // 🔥 빠른 위치 요청 (1초 타임아웃)
+  //         await locationManager.requestLocationQuickly().timeout(
+  //           const Duration(seconds: 1), // 1초로 단축
+  //           onTimeout: () {
+  //             debugPrint('⏰ Welcome 위치 요청 타임아웃 (1초) - 정상 진행');
+  //             throw TimeoutException('Welcome 위치 타임아웃', const Duration(seconds: 1));
+  //           },
+  //         );
+
+  //         if (locationManager.hasValidLocation && mounted) {
+  //           debugPrint('✅ Welcome 화면에서 위치 준비 완료!');
+  //           debugPrint('   위도: ${locationManager.currentLocation?.latitude}');
+  //           debugPrint('   경도: ${locationManager.currentLocation?.longitude}');
+  //           setState(() {
+  //             _locationPrepared = true;
+  //           });
+  //         } else {
+  //           debugPrint('⚠️ Welcome 화면에서 위치 준비 실패 - Map에서 재시도');
+  //         }
+  //       } catch (e) {
+  //         debugPrint('⚠️ Welcome 위치 요청 실패: $e - Map에서 재시도');
+  //       }
+  //     } else {
+  //       debugPrint('❌ Welcome 화면에서 LocationManager 초기화 실패');
+  //     }
+  //   } catch (e) {
+  //     debugPrint('⚠️ Welcome 화면 위치 준비 오류: $e');
+  //   } finally {
+  //     _isPreparingLocation = false;
+  //   }
+  // }
 
 
   // 기본 텍스트 반환 함수들 (localization이 없을 때 사용)

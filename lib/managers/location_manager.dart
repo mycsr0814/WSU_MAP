@@ -124,12 +124,12 @@ class LocationManager extends ChangeNotifier {
       return currentLocation;
     }
 
-    // 🔥 매우 빠른 위치 요청 (Welcome 화면용)
-    return await _requestLocationVeryQuickly();
+    // 🔥 단순화된 빠른 위치 요청
+    return await _requestLocationSimple();
   }
 
-  /// 🔥 매우 빠른 위치 요청 (Welcome 화면 전용)
-  Future<LocationData?> _requestLocationVeryQuickly() async {
+  /// 🔥 단순화된 위치 요청 (빠른 응답)
+  Future<LocationData?> _requestLocationSimple() async {
     if (_currentLocationRequest != null) {
       return await _currentLocationRequest!.future;
     }
@@ -138,59 +138,34 @@ class LocationManager extends ChangeNotifier {
     _currentLocationRequest = completer;
 
     try {
-      debugPrint('🚀 매우 빠른 위치 요청 시작...');
+      debugPrint('🚀 단순화된 위치 요청 시작...');
 
-      // 1. 직접 위치 요청 (가장 빠름)
-      try {
-        final locationData = await _location.getLocation().timeout(
-          const Duration(seconds: 2), // 매우 짧은 타임아웃
-          onTimeout: () {
-            debugPrint('⏰ 직접 위치 요청 타임아웃 (2초)');
-            throw TimeoutException('직접 위치 요청 타임아웃', const Duration(seconds: 2));
-          },
-        );
+      // 직접 위치 요청 (1.5초 타임아웃)
+      final locationData = await _location.getLocation().timeout(
+        const Duration(milliseconds: 1500), // 1.5초로 단축
+        onTimeout: () {
+          debugPrint('⏰ 위치 요청 타임아웃 (1.5초)');
+          throw TimeoutException('위치 요청 타임아웃', const Duration(milliseconds: 1500));
+        },
+      );
 
+      if (locationData.latitude != null && locationData.longitude != null) {
         currentLocation = locationData;
         _lastLocationTime = DateTime.now();
         _hasLocationPermissionError = false;
         notifyListeners();
 
-        debugPrint('✅ 매우 빠른 위치 요청 성공!');
+        debugPrint('✅ 단순화된 위치 요청 성공!');
         completer.complete(locationData);
         return locationData;
-
-      } catch (directError) {
-        debugPrint('⚠️ 직접 위치 요청 실패: $directError');
-        
-        // 2. LocationService를 통한 요청 (백업)
-        try {
-          final locationResult = await _locationService.getCurrentLocation(
-            forceRefresh: true,
-            timeout: const Duration(seconds: 3), // 짧은 타임아웃
-          );
-
-          if (locationResult.isSuccess && locationResult.locationData != null) {
-            currentLocation = locationResult.locationData!;
-            _lastLocationTime = DateTime.now();
-            _hasLocationPermissionError = false;
-            notifyListeners();
-
-            debugPrint('✅ LocationService를 통한 빠른 위치 요청 성공!');
-            completer.complete(locationResult.locationData);
-            return locationResult.locationData;
-          } else {
-            throw Exception('LocationService 위치 요청 실패');
-          }
-
-        } catch (serviceError) {
-          debugPrint('❌ LocationService 위치 요청도 실패: $serviceError');
-          completer.complete(null);
-          return null;
-        }
+      } else {
+        debugPrint('❌ 유효하지 않은 위치 데이터');
+        completer.complete(null);
+        return null;
       }
 
     } catch (e) {
-      debugPrint('❌ 매우 빠른 위치 요청 실패: $e');
+      debugPrint('❌ 단순화된 위치 요청 실패: $e');
       completer.complete(null);
       return null;
     } finally {
