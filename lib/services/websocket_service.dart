@@ -21,7 +21,9 @@ class WebSocketService {
   bool _shouldReconnect = true;
   int _reconnectAttempts = 0;
   static const int _maxReconnectAttempts = 5;
-  static const Duration _heartbeatInterval = Duration(seconds: 60); // 🔥 30초에서 60초로 변경하여 요청 빈도 감소
+  static const Duration _heartbeatInterval = Duration(
+    seconds: 60,
+  ); // 🔥 30초에서 60초로 변경하여 요청 빈도 감소
   static const Duration _reconnectDelay = Duration(seconds: 5);
 
   // 이벤트 스트림 컨트롤러들
@@ -42,7 +44,7 @@ class WebSocketService {
     final hasChannel = _channel != null;
     final hasSubscription = _subscription != null;
     final status = _isConnected && hasChannel && hasSubscription;
-    
+
     // 🔥 디버그 로그를 조건부로 출력 (너무 많은 로그 방지)
     if (!status || _isConnecting) {
       debugPrint('🔍 연결 상태 확인:');
@@ -51,7 +53,7 @@ class WebSocketService {
       debugPrint('🔍 hasSubscription: $hasSubscription');
       debugPrint('🔍 최종 상태: $status');
     }
-    
+
     return status;
   }
 
@@ -73,12 +75,18 @@ class WebSocketService {
 
   // 🔌 웹소켓 연결
   Future<void> connect(String userId) async {
+    // 🔥 게스트 사용자는 웹소켓 연결 차단
+    if (userId.startsWith('guest_')) {
+      debugPrint('🚫 게스트 사용자는 웹소켓 연결이 차단됩니다: $userId');
+      return;
+    }
+
     // 🔥 이미 연결 중이거나 같은 사용자로 연결된 경우 중복 연결 방지
     if (_isConnecting) {
       debugPrint('⚠️ 이미 연결 중입니다: $userId');
       return;
     }
-    
+
     if (_isConnected && _userId == userId) {
       debugPrint('⚠️ 이미 연결되어 있습니다: $userId');
       return;
@@ -104,20 +112,20 @@ class WebSocketService {
       debugPrint('⚠️ 이미 연결 중입니다. 중복 연결 시도 무시');
       return;
     }
-    
+
     _isConnecting = true;
-    
+
     // 🔥 연결 시도 전 서버 상태 확인
     debugPrint('🔍 웹소켓 서버 상태 확인 중...');
     debugPrint('🔍 서버 URL: ws://16.176.179.75:3002/friend/ws');
     debugPrint('🔍 사용자 ID: $_userId');
-    
+
     try {
       debugPrint('🔄 웹소켓 연결 시작 - 사용자 ID: $_userId');
-      
+
       // 기존 연결 완전 정리
       await _cleanupConnection();
-      
+
       // 🔥 웹소켓 URL 확인 - 서버 포트는 3002
       final wsUrl = 'ws://13.211.31.98:3002/friend/ws';
       debugPrint('🔌 웹소켓 연결 시도: $wsUrl');
@@ -180,7 +188,7 @@ class WebSocketService {
       debugPrint('❌ 웹소켓 연결 실패: $e');
       debugPrint('❌ 오류 타입: ${e.runtimeType}');
       debugPrint('❌ 오류 상세: ${e.toString()}');
-      
+
       // 연결 실패 시 더 자세한 정보 출력
       if (e is TimeoutException) {
         debugPrint('⏰ 타임아웃 오류 - 서버 응답 없음');
@@ -189,7 +197,7 @@ class WebSocketService {
       } else if (e.toString().contains('WebSocketException')) {
         debugPrint('🔌 웹소켓 오류 - 프로토콜 또는 핸드셰이크 실패');
       }
-      
+
       _isConnected = false;
       _connectionController.add(false);
 
@@ -206,7 +214,7 @@ class WebSocketService {
   // 🔥 기존 연결 완전 정리
   Future<void> _cleanupConnection() async {
     debugPrint('🧹 기존 연결 정리 시작');
-    
+
     // 기존 리스너 취소
     if (_subscription != null) {
       try {
@@ -249,7 +257,7 @@ class WebSocketService {
       _subscription = null;
       debugPrint('🔄 기존 리스너 취소 완료');
     }
-    
+
     _subscription = _channel!.stream.listen(
       _handleMessage,
       onError: _handleError,
@@ -318,8 +326,6 @@ class WebSocketService {
     }
   }
 
-
-
   // 🔥 새로 추가: 친구 로그아웃 처리 메서드
   void _handleFriendLoggedOut(Map<String, dynamic> data) {
     final loggedOutUserId = data['userId'];
@@ -328,7 +334,7 @@ class WebSocketService {
 
     // 메시지를 스트림으로 전달하여 FriendsController에서 처리
     _messageController.add(data);
-    
+
     // 🔥 추가 디버깅: 온라인 사용자 목록에서 제거
     debugPrint('🔥 친구 로그아웃으로 인한 온라인 사용자 목록 업데이트');
     debugPrint('🔥 메시지 스트림으로 전달됨 - FriendsController에서 처리 예정');
@@ -342,7 +348,7 @@ class WebSocketService {
 
     // 메시지를 스트림으로 전달하여 FriendsController에서 처리
     _messageController.add(data);
-    
+
     // 🔥 추가 디버깅: 온라인 사용자 목록에 추가
     debugPrint('🔥 친구 로그인으로 인한 온라인 사용자 목록 업데이트');
     debugPrint('🔥 메시지 스트림으로 전달됨 - FriendsController에서 처리 예정');
@@ -375,7 +381,7 @@ class WebSocketService {
   // 🔥 등록 확인 메시지 처리
   void _handleRegistered(Map<String, dynamic> data) {
     debugPrint('✅ 웹소켓 등록 확인됨');
-    
+
     // 등록 후 온라인 사용자 목록 다시 요청
     _sendMessage({
       'type': 'get_online_users',
@@ -388,55 +394,58 @@ class WebSocketService {
   void _handleUserLogin(Map<String, dynamic> data) {
     final userId = data['userId'];
     debugPrint('👤 사용자 로그인: $userId');
-    
+
     // 로그인 이벤트를 스트림으로 전달
-    _messageController.add({
-      'type': 'user_login',
-      'userId': userId,
-    });
+    _messageController.add({'type': 'user_login', 'userId': userId});
   }
-
-
 
   // 🔥 온라인 사용자 목록 업데이트 처리 (개선)
   void _handleOnlineUsersUpdate(Map<String, dynamic> data) {
     List<String> onlineUsers = [];
-    
+
     // 다양한 데이터 형식 처리
     if (data['users'] != null) {
       if (data['users'] is List) {
-        onlineUsers = (data['users'] as List).map((user) {
-          if (user is String) {
-            return user;
-          } else if (user is Map) {
-            return user['userId']?.toString() ?? user['id']?.toString() ?? '';
-          } else {
-            return user.toString();
-          }
-        }).where((id) => id.isNotEmpty).toList();
+        onlineUsers = (data['users'] as List)
+            .map((user) {
+              if (user is String) {
+                return user;
+              } else if (user is Map) {
+                return user['userId']?.toString() ??
+                    user['id']?.toString() ??
+                    '';
+              } else {
+                return user.toString();
+              }
+            })
+            .where((id) => id.isNotEmpty)
+            .toList();
       }
     } else if (data['onlineUsers'] != null) {
       if (data['onlineUsers'] is List) {
-        onlineUsers = (data['onlineUsers'] as List).map((user) {
-          if (user is String) {
-            return user;
-          } else if (user is Map) {
-            return user['userId']?.toString() ?? user['id']?.toString() ?? '';
-          } else {
-            return user.toString();
-          }
-        }).where((id) => id.isNotEmpty).toList();
+        onlineUsers = (data['onlineUsers'] as List)
+            .map((user) {
+              if (user is String) {
+                return user;
+              } else if (user is Map) {
+                return user['userId']?.toString() ??
+                    user['id']?.toString() ??
+                    '';
+              } else {
+                return user.toString();
+              }
+            })
+            .where((id) => id.isNotEmpty)
+            .toList();
       }
     }
-    
+
     debugPrint('👥 온라인 사용자 목록 업데이트: ${onlineUsers.length}명');
     debugPrint('온라인 사용자: $onlineUsers');
-    
+
     // 온라인 사용자 스트림으로 전달
     _onlineUsersController.add(onlineUsers);
   }
-
-
 
   // 🚪 로그아웃 전용 메서드 - 서버에 로그아웃 알리고 연결 해제
   // lib/services/websocket_service.dart의 logoutAndDisconnect 메서드
@@ -453,7 +462,7 @@ class WebSocketService {
     try {
       // 🔥 서버에서 처리하는 메시지가 없으므로 연결 해제만 수행
       debugPrint('📤 웹소켓 연결 해제 시작');
-      
+
       // 서버가 메시지를 처리할 시간 확보
       await Future.delayed(const Duration(milliseconds: 200));
     } catch (e) {
@@ -476,13 +485,13 @@ class WebSocketService {
     debugPrint('📤 채널 상태: ${_channel != null}');
     debugPrint('📤 채널 준비 상태: ${_channel?.ready}');
     debugPrint('📤 메시지 내용: $message');
-    
+
     if (_isConnected && _channel != null) {
       try {
         final jsonMessage = jsonEncode(message);
         debugPrint('📤 JSON 메시지: $jsonMessage');
         debugPrint('📤 채널 sink 상태: ${_channel!.sink}');
-        
+
         _channel!.sink.add(jsonMessage);
         debugPrint('✅ 메시지 전송 성공: ${message['type']}');
       } catch (e) {
@@ -503,13 +512,13 @@ class WebSocketService {
     debugPrint('📤 메시지 직접 전송 시도: ${message['type']}');
     debugPrint('📤 채널 상태: ${_channel != null}');
     debugPrint('📤 메시지 내용: $message');
-    
+
     if (_channel != null) {
       try {
         final jsonMessage = jsonEncode(message);
         debugPrint('📤 JSON 메시지: $jsonMessage');
         debugPrint('📤 채널 sink 상태: ${_channel!.sink}');
-        
+
         _channel!.sink.add(jsonMessage);
         debugPrint('✅ 메시지 직접 전송 성공: ${message['type']}');
       } catch (e) {
@@ -566,7 +575,7 @@ class WebSocketService {
       debugPrint('⚠️ 재연결 타이머가 이미 실행 중입니다');
       return;
     }
-    
+
     if (_reconnectAttempts >= _maxReconnectAttempts) {
       debugPrint('🛑 최대 재연결 시도 횟수 초과');
       return;
@@ -584,7 +593,7 @@ class WebSocketService {
     _reconnectTimer = Timer(delay, () {
       // 🔥 타이머 실행 후 즉시 null로 설정하여 중복 방지
       _reconnectTimer = null;
-      
+
       if (_shouldReconnect && !_isConnected && !_isConnecting) {
         _doConnect();
       }
@@ -631,7 +640,7 @@ class WebSocketService {
     debugPrint('🔍 hasSubscription: ${_subscription != null}');
     debugPrint('🔍 userId: $_userId');
     debugPrint('🔍 connectionInfo: $connectionInfo');
-    
+
     if (_isConnected && _channel != null) {
       debugPrint('✅ 웹소켓 연결됨 - 테스트 메시지 전송');
       _sendMessage({

@@ -129,12 +129,6 @@ class UserAuth extends ChangeNotifier {
       return;
     }
 
-    // 🔥 게스트 사용자는 웹소켓 연결 제외
-    if (_userRole == UserRole.external || _userId!.startsWith('guest_')) {
-      debugPrint('⚠️ 게스트 사용자는 웹소켓 연결 제외');
-      return;
-    }
-
     try {
       WebSocketService().connect(_userId!);
       debugPrint('✅ 웹소켓 연결 시작 - 사용자 ID: $_userId');

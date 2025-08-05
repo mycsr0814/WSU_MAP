@@ -29,7 +29,8 @@ dependencies:
   path_drawing: ^1.0.1
   connectivity_plus: ^6.0.3
   image_picker: ^1.0.7
-
+  excel: ^2.1.0
+  file_picker: ^8.0.0+1
 
   # http 패키지는 최신 버전인 ^1.2.1로 통합했습니다.
   # 중요: 0.13.6 버전과 큰 차이가 있으므로, http 통신 관련 코드를 수정해야 할 수 있습니다.
@@ -55,6 +56,10 @@ flutter:
   uses-material-design: true
   generate: true
 
-  # 서버에서 이미지를 받아오므로 로컬 asset 이미지들은 제거
   assets:
     - lib/asset/building_marker_blue.png
+    - assets/timetable/tutorial/1.png
+    - assets/timetable/tutorial/2.png
+    - assets/timetable/tutorial/3.png
+    - assets/timetable/tutorial/4.png
+    - assets/timetable/tutorial/5.png
