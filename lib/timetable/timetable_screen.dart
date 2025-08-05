@@ -55,6 +55,40 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   Future<void> _loadScheduleItems() async {
     setState(() => _isLoading = true);
     try {
+      // 🔥 게스트 사용자 체크
+      if (widget.userId.startsWith('guest_')) {
+        debugPrint('🚫 게스트 사용자는 시간표를 사용할 수 없습니다: ${widget.userId}');
+        if (mounted) {
+          setState(() => _scheduleItems = []);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Row(
+                children: [
+                  Icon(Icons.info_outline, color: Colors.white, size: 20),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      '게스트 사용자는 시간표 기능을 사용할 수 없습니다.',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w500,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              backgroundColor: const Color(0xFF3B82F6),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+              duration: const Duration(seconds: 4),
+            ),
+          );
+        }
+        return;
+      }
+
       final items = await _apiService.fetchScheduleItems(widget.userId);
       if (mounted) setState(() => _scheduleItems = items);
     } catch (e) {
@@ -88,6 +122,33 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   }
 
   Future<void> _addScheduleItem(ScheduleItem item) async {
+    // 🔥 게스트 사용자 체크
+    if (widget.userId.startsWith('guest_')) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Row(
+            children: [
+              Icon(Icons.info_outline, color: Colors.white, size: 20),
+              SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  '게스트 사용자는 시간표를 추가할 수 없습니다.',
+                  style: TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: const Color(0xFF3B82F6),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          duration: const Duration(seconds: 4),
+        ),
+      );
+      return;
+    }
+
     await _apiService.addScheduleItem(item, widget.userId);
     await _loadScheduleItems();
   }
@@ -96,6 +157,33 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     ScheduleItem originItem,
     ScheduleItem newItem,
   ) async {
+    // 🔥 게스트 사용자 체크
+    if (widget.userId.startsWith('guest_')) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Row(
+            children: [
+              Icon(Icons.info_outline, color: Colors.white, size: 20),
+              SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  '게스트 사용자는 시간표를 수정할 수 없습니다.',
+                  style: TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: const Color(0xFF3B82F6),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          duration: const Duration(seconds: 4),
+        ),
+      );
+      return;
+    }
+
     await _apiService.updateScheduleItem(
       userId: widget.userId,
       originTitle: originItem.title,
@@ -106,6 +194,33 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   }
 
   Future<void> _deleteScheduleItem(ScheduleItem item) async {
+    // 🔥 게스트 사용자 체크
+    if (widget.userId.startsWith('guest_')) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Row(
+            children: [
+              Icon(Icons.info_outline, color: Colors.white, size: 20),
+              SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  '게스트 사용자는 시간표를 삭제할 수 없습니다.',
+                  style: TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: const Color(0xFF3B82F6),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          duration: const Duration(seconds: 4),
+        ),
+      );
+      return;
+    }
+
     await _apiService.deleteScheduleItem(
       userId: widget.userId,
       title: item.title,
@@ -155,73 +270,73 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     );
   }
 
-Widget _buildHeader() {
-  final l10n = AppLocalizations.of(context);
+  Widget _buildHeader() {
+    final l10n = AppLocalizations.of(context);
 
-  return Container(
-    padding: const EdgeInsets.all(20),
-    decoration: const BoxDecoration(
-      color: Colors.white,
-      boxShadow: [
-        BoxShadow(
-          color: Color(0x0F000000),
-          blurRadius: 10,
-          offset: Offset(0, 2),
-        ),
-      ],
-    ),
-    child: Row(
-      children: [
-        // 시간표(시계) 아이콘 부분 삭제됨
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                l10n?.timetable ?? 'Timetable',
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF1E3A8A),
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Color(0x0F000000),
+            blurRadius: 10,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          // 시간표(시계) 아이콘 부분 삭제됨
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  l10n?.timetable ?? 'Timetable',
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF1E3A8A),
+                  ),
                 ),
-              ),
-              Row(
-                children: [
-                  Text(
-                    l10n?.current_year(_getCurrentYear()) ??
-                        '${_getCurrentYear()}',
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey,
-                      fontWeight: FontWeight.w500,
+                Row(
+                  children: [
+                    Text(
+                      l10n?.current_year(_getCurrentYear()) ??
+                          '${_getCurrentYear()}',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    _currentSemester,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: Color(0xFF1E3A8A),
-                      fontWeight: FontWeight.w600,
+                    const SizedBox(width: 8),
+                    Text(
+                      _currentSemester,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Color(0xFF1E3A8A),
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            ],
+                  ],
+                ),
+              ],
+            ),
           ),
-        ),
-        IconButton(
-          onPressed: _showAddScheduleDialog,
-          icon: const Icon(
-            Icons.add_circle_outline,
-            color: Color(0xFF1E3A8A),
-            size: 28,
+          IconButton(
+            onPressed: _showAddScheduleDialog,
+            icon: const Icon(
+              Icons.add_circle_outline,
+              color: Color(0xFF1E3A8A),
+              size: 28,
+            ),
           ),
-        ),
-      ],
-    ),
-  );
-}
+        ],
+      ),
+    );
+  }
 
   Widget _buildScheduleView() {
     return Container(
@@ -588,196 +703,196 @@ Widget _buildHeader() {
   }
 
   Future<void> _showDeleteConfirmDialog(ScheduleItem item) async {
-  final l10n = AppLocalizations.of(context)!; // null 체크 위해 '!' 추가
+    final l10n = AppLocalizations.of(context)!; // null 체크 위해 '!' 추가
 
-  final result = await showDialog<bool>(
-    context: context,
-    barrierColor: Colors.black.withOpacity(0.5),
-    builder: (context) => Dialog(
-      backgroundColor: Colors.transparent,
-      child: Container(
-        width: MediaQuery.of(context).size.width * 0.9,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.08),
-              blurRadius: 20,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: Colors.red.withOpacity(0.1),
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(20),
-                  topRight: Radius.circular(20),
+    final result = await showDialog<bool>(
+      context: context,
+      barrierColor: Colors.black.withOpacity(0.5),
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: Container(
+          width: MediaQuery.of(context).size.width * 0.9,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.08),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.1),
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(20),
+                    topRight: Radius.circular(20),
+                  ),
                 ),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 60,
-                    height: 60,
-                    decoration: BoxDecoration(
-                      color: Colors.red.withOpacity(0.2),
-                      shape: BoxShape.circle,
+                child: Row(
+                  children: [
+                    Container(
+                      width: 60,
+                      height: 60,
+                      decoration: BoxDecoration(
+                        color: Colors.red.withOpacity(0.2),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.warning_outlined,
+                        color: Colors.red,
+                        size: 30,
+                      ),
                     ),
-                    child: const Icon(
-                      Icons.warning_outlined,
-                      color: Colors.red,
-                      size: 30,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          l10n.scheduleDeleteTitle,
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.red,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          l10n.scheduleDeleteSubtitle,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.red.withOpacity(0.8),
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFEF2F2),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.red.withOpacity(0.2)),
-                    ),
-                    child: Column(
-                      children: [
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.info_outline,
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            l10n.scheduleDeleteTitle,
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w700,
                               color: Colors.red,
-                              size: 20,
                             ),
-                            const SizedBox(width: 8),
-                            Text(
-                              l10n.scheduleDeleteLabel,
-                              style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.red,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          l10n.scheduleDeleteDescription(item.title),
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: Color(0xFF64748B),
-                            height: 1.5,
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: 4),
+                          Text(
+                            l10n.scheduleDeleteSubtitle,
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.red.withOpacity(0.8),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            ),
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF8FAFC),
-                borderRadius: const BorderRadius.only(
-                  bottomLeft: Radius.circular(20),
-                  bottomRight: Radius.circular(20),
+                  ],
                 ),
               ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: SizedBox(
-                      height: 48,
-                      child: OutlinedButton(
-                        onPressed: () => Navigator.pop(context, false),
-                        style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: Color(0xFFE2E8F0)),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+              Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFEF2F2),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.red.withOpacity(0.2)),
+                      ),
+                      child: Column(
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(
+                                Icons.info_outline,
+                                color: Colors.red,
+                                size: 20,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                l10n.scheduleDeleteLabel,
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.red,
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
-                        child: Text(
-                          l10n.cancelButton,
-                          style: const TextStyle(
-                            color: Color(0xFF64748B),
-                            fontWeight: FontWeight.w600,
+                          const SizedBox(height: 8),
+                          Text(
+                            l10n.scheduleDeleteDescription(item.title),
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Color(0xFF64748B),
+                              height: 1.5,
+                            ),
                           ),
-                        ),
+                        ],
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: SizedBox(
-                      height: 48,
-                      child: ElevatedButton(
-                        onPressed: () => Navigator.pop(context, true),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          elevation: 2,
-                        ),
-                        child: Text(
-                          l10n.deleteButton,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 16,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: const BorderRadius.only(
+                    bottomLeft: Radius.circular(20),
+                    bottomRight: Radius.circular(20),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: SizedBox(
+                        height: 48,
+                        child: OutlinedButton(
+                          onPressed: () => Navigator.pop(context, false),
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: Color(0xFFE2E8F0)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: Text(
+                            l10n.cancelButton,
+                            style: const TextStyle(
+                              color: Color(0xFF64748B),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: SizedBox(
+                        height: 48,
+                        child: ElevatedButton(
+                          onPressed: () => Navigator.pop(context, true),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            elevation: 2,
+                          ),
+                          child: Text(
+                            l10n.deleteButton,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
-    ),
-  );
+    );
 
-  if (result == true) {
-    await _deleteScheduleItem(item);
+    if (result == true) {
+      await _deleteScheduleItem(item);
+    }
   }
-}
 
   Future<void> _showScheduleFormDialog({
     ScheduleItem? initialItem,
@@ -1270,7 +1385,7 @@ Widget _buildHeader() {
                           LayoutBuilder(
                             builder: (context, constraints) {
                               final isSmallScreen = constraints.maxWidth < 400;
-                              
+
                               if (isSmallScreen) {
                                 // 작은 화면: 세로로 배치
                                 return Column(
@@ -1281,13 +1396,17 @@ Widget _buildHeader() {
                                       child: ElevatedButton(
                                         onPressed: () async {
                                           if (titleController.text.isNotEmpty &&
-                                              selectedBuilding?.isNotEmpty == true &&
-                                              selectedFloor?.isNotEmpty == true &&
-                                              selectedRoom?.isNotEmpty == true) {
+                                              selectedBuilding?.isNotEmpty ==
+                                                  true &&
+                                              selectedFloor?.isNotEmpty ==
+                                                  true &&
+                                              selectedRoom?.isNotEmpty ==
+                                                  true) {
                                             final newItem = ScheduleItem(
                                               id: initialItem?.id,
                                               title: titleController.text,
-                                              professor: professorController.text,
+                                              professor:
+                                                  professorController.text,
                                               buildingName: selectedBuilding!,
                                               floorNumber: selectedFloor!,
                                               roomName: selectedRoom!,
@@ -1313,11 +1432,13 @@ Widget _buildHeader() {
                                                   backgroundColor: const Color(
                                                     0xFFEF4444,
                                                   ),
-                                                  behavior: SnackBarBehavior.floating,
+                                                  behavior:
+                                                      SnackBarBehavior.floating,
                                                   shape: RoundedRectangleBorder(
-                                                    borderRadius: BorderRadius.circular(
-                                                      10,
-                                                    ),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          10,
+                                                        ),
                                                   ),
                                                 ),
                                               );
@@ -1328,10 +1449,14 @@ Widget _buildHeader() {
                                           }
                                         },
                                         style: ElevatedButton.styleFrom(
-                                          backgroundColor: const Color(0xFF1E3A8A),
+                                          backgroundColor: const Color(
+                                            0xFF1E3A8A,
+                                          ),
                                           foregroundColor: Colors.white,
                                           shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(12),
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
                                           ),
                                           elevation: 2,
                                         ),
@@ -1357,7 +1482,9 @@ Widget _buildHeader() {
                                             color: Color(0xFFE2E8F0),
                                           ),
                                           shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(12),
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
                                           ),
                                         ),
                                         child: Text(
@@ -1379,13 +1506,15 @@ Widget _buildHeader() {
                                       child: SizedBox(
                                         height: 48,
                                         child: OutlinedButton(
-                                          onPressed: () => Navigator.pop(context),
+                                          onPressed: () =>
+                                              Navigator.pop(context),
                                           style: OutlinedButton.styleFrom(
                                             side: const BorderSide(
                                               color: Color(0xFFE2E8F0),
                                             ),
                                             shape: RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.circular(12),
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
                                             ),
                                           ),
                                           child: Text(
@@ -1405,14 +1534,20 @@ Widget _buildHeader() {
                                         height: 48,
                                         child: ElevatedButton(
                                           onPressed: () async {
-                                            if (titleController.text.isNotEmpty &&
-                                                selectedBuilding?.isNotEmpty == true &&
-                                                selectedFloor?.isNotEmpty == true &&
-                                                selectedRoom?.isNotEmpty == true) {
+                                            if (titleController
+                                                    .text
+                                                    .isNotEmpty &&
+                                                selectedBuilding?.isNotEmpty ==
+                                                    true &&
+                                                selectedFloor?.isNotEmpty ==
+                                                    true &&
+                                                selectedRoom?.isNotEmpty ==
+                                                    true) {
                                               final newItem = ScheduleItem(
                                                 id: initialItem?.id,
                                                 title: titleController.text,
-                                                professor: professorController.text,
+                                                professor:
+                                                    professorController.text,
                                                 buildingName: selectedBuilding!,
                                                 floorNumber: selectedFloor!,
                                                 roomName: selectedRoom!,
@@ -1435,14 +1570,15 @@ Widget _buildHeader() {
                                                       l10n?.overlap_message ??
                                                           '이미 같은 시간에 등록된 수업이 있습니다.',
                                                     ),
-                                                    backgroundColor: const Color(
-                                                      0xFFEF4444,
-                                                    ),
-                                                    behavior: SnackBarBehavior.floating,
+                                                    backgroundColor:
+                                                        const Color(0xFFEF4444),
+                                                    behavior: SnackBarBehavior
+                                                        .floating,
                                                     shape: RoundedRectangleBorder(
-                                                      borderRadius: BorderRadius.circular(
-                                                        10,
-                                                      ),
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            10,
+                                                          ),
                                                     ),
                                                   ),
                                                 );
@@ -1453,10 +1589,13 @@ Widget _buildHeader() {
                                             }
                                           },
                                           style: ElevatedButton.styleFrom(
-                                            backgroundColor: const Color(0xFF1E3A8A),
+                                            backgroundColor: const Color(
+                                              0xFF1E3A8A,
+                                            ),
                                             foregroundColor: Colors.white,
                                             shape: RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.circular(12),
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
                                             ),
                                             elevation: 2,
                                           ),
@@ -1752,7 +1891,7 @@ Widget _buildHeader() {
     debugPrint('🏢 층수: ${item.floorNumber}');
     debugPrint('🏢 호실: ${item.roomName}');
     debugPrint('🏢 전체 아이템 정보: $item');
-    
+
     // 메인 지도 화면으로 이동하면서 건물 정보를 전달
     Navigator.pushNamedAndRemoveUntil(
       context,
@@ -1764,10 +1903,10 @@ Widget _buildHeader() {
           'name': item.buildingName,
           'floorNumber': item.floorNumber,
           'roomName': item.roomName,
-        }
+        },
       },
     );
-    
+
     debugPrint('🏢 네비게이션 완료');
   }
 
@@ -1943,7 +2082,7 @@ Widget _buildHeader() {
                     bottomRight: Radius.circular(20),
                   ),
                 ),
-                                child: Column(
+                child: Column(
                   children: [
                     // 🔥 간단하고 깔끔한 버튼 레이아웃
                     Padding(

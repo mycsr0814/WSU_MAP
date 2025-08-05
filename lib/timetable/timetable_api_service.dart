@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:flutter/foundation.dart';
 import 'timetable_item.dart';
 import 'package:flutter_application_1/config/api_config.dart';
 import 'package:uuid/uuid.dart'; // 👈 추가
@@ -11,6 +12,12 @@ class TimetableApiService {
 
   /// 시간표 전체 조회
   Future<List<ScheduleItem>> fetchScheduleItems(String userId) async {
+    // 🔥 게스트 사용자는 시간표 요청 차단
+    if (userId.startsWith('guest_')) {
+      debugPrint('🚫 게스트 사용자는 시간표 요청이 차단됩니다: $userId');
+      return [];
+    }
+
     final res = await http.get(Uri.parse('$timetableBase/$userId'));
     if (res.statusCode != 200) throw Exception('시간표 조회 실패');
     final List data = jsonDecode(res.body);
@@ -28,6 +35,12 @@ class TimetableApiService {
 
   /// 시간표 항목 추가
   Future<void> addScheduleItem(ScheduleItem item, String userId) async {
+    // 🔥 게스트 사용자는 시간표 추가 차단
+    if (userId.startsWith('guest_')) {
+      debugPrint('🚫 게스트 사용자는 시간표 추가가 차단됩니다: $userId');
+      return;
+    }
+
     final res = await http.post(
       Uri.parse('$timetableBase/$userId'),
       headers: {'Content-Type': 'application/json'},
@@ -43,6 +56,12 @@ class TimetableApiService {
     required String originDayOfWeek,
     required ScheduleItem newItem,
   }) async {
+    // 🔥 게스트 사용자는 시간표 수정 차단
+    if (userId.startsWith('guest_')) {
+      debugPrint('🚫 게스트 사용자는 시간표 수정이 차단됩니다: $userId');
+      return;
+    }
+
     final res = await http.put(
       Uri.parse('$timetableBase/$userId'),
       headers: {'Content-Type': 'application/json'},
@@ -72,6 +91,12 @@ class TimetableApiService {
     required String title,
     required String dayOfWeek,
   }) async {
+    // 🔥 게스트 사용자는 시간표 삭제 차단
+    if (userId.startsWith('guest_')) {
+      debugPrint('🚫 게스트 사용자는 시간표 삭제가 차단됩니다: $userId');
+      return;
+    }
+
     final res = await http.delete(
       Uri.parse('$timetableBase/$userId'),
       headers: {'Content-Type': 'application/json'},
