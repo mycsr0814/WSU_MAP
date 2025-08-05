@@ -2708,8 +2708,15 @@ class _ExcelTutorialDialogState extends State<_ExcelTutorialDialog> {
                                 backgroundColor: Colors.green,
                               ),
                             );
-                            // 업로드 성공 후 시간표 새로고침
-                            // _loadScheduleItems()는 이 컨텍스트에서 접근할 수 없으므로 제거
+                                                  // 업로드 성공 후 시간표 새로고침
+                      // 화면을 다시 빌드하여 시간표가 새로고침되도록 함
+                      if (context.mounted) {
+                        Navigator.of(context).pushReplacement(
+                          MaterialPageRoute(
+                            builder: (context) => ScheduleScreen(userId: widget.userId),
+                          ),
+                        );
+                      }
                           } else {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
@@ -2787,7 +2794,14 @@ void _showExcelUploadChoiceDialog(BuildContext context, String userId) {
                         ),
                       );
                       // 업로드 성공 후 시간표 새로고침
-                      // _loadScheduleItems()는 이 컨텍스트에서 접근할 수 없으므로 제거
+                      // 화면을 다시 빌드하여 시간표가 새로고침되도록 함
+                      if (context.mounted) {
+                        Navigator.of(context).pushReplacement(
+                          MaterialPageRoute(
+                            builder: (context) => ScheduleScreen(userId: userId),
+                          ),
+                        );
+                      }
                     } else {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(

@@ -18,19 +18,50 @@ class TimetableApiService {
       return [];
     }
 
-    final res = await http.get(Uri.parse('$timetableBase/$userId'));
-    if (res.statusCode != 200) throw Exception('시간표 조회 실패');
-    final List data = jsonDecode(res.body);
-
-    // 👇👈 요 부분만 고쳤습니다!
-    final uuid = Uuid();
-    return data.map((e) {
-      // id가 없으면 uuid 추가
-      if (e['id'] == null) {
-        e['id'] = uuid.v4();
+    final url = '$timetableBase/$userId';
+    debugPrint('🔄 시간표 조회 요청 URL: $url');
+    
+    try {
+      final res = await http.get(Uri.parse(url));
+      debugPrint('📡 서버 응답 상태 코드: ${res.statusCode}');
+      debugPrint('📡 서버 응답 본문: ${res.body}');
+      
+      if (res.statusCode != 200) {
+        debugPrint('❌ 시간표 조회 실패: ${res.statusCode}');
+        throw Exception('시간표 조회 실패 (${res.statusCode})');
       }
-      return ScheduleItem.fromJson(e);
-    }).toList();
+      
+      final List data = jsonDecode(res.body);
+      debugPrint('📊 파싱된 데이터 개수: ${data.length}');
+
+      // 서버에서 오는 데이터 구조에 맞게 파싱
+      final uuid = Uuid();
+      final items = data.map((e) {
+        // 서버에서 오는 데이터 필드명에 맞게 매핑
+        final mappedData = {
+          'id': e['id'] ?? uuid.v4(),
+          'title': e['title'] ?? e['subject'] ?? '',
+          'professor': e['professor'] ?? e['teacher'] ?? '',
+          'building_name': e['building_name'] ?? e['building'] ?? '',
+          'floor_number': e['floor_number'] ?? e['floor'] ?? '',
+          'room_name': e['room_name'] ?? e['room'] ?? '',
+          'day_of_week': e['day_of_week'] ?? e['day'] ?? '',
+          'start_time': e['start_time'] ?? e['start'] ?? '',
+          'end_time': e['end_time'] ?? e['end'] ?? '',
+          'color': e['color'] ?? 'FF3B82F6', // 기본 파란색
+          'memo': e['memo'] ?? e['note'] ?? '',
+        };
+        
+        debugPrint('📝 매핑된 데이터: $mappedData');
+        return ScheduleItem.fromJson(mappedData);
+      }).toList();
+      
+      debugPrint('✅ 시간표 항목 변환 완료: ${items.length}개');
+      return items;
+    } catch (e) {
+      debugPrint('❌ 시간표 조회 중 오류 발생: $e');
+      rethrow;
+    }
   }
 
   /// 시간표 항목 추가
