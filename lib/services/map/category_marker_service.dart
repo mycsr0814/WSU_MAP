@@ -63,6 +63,7 @@ class CategoryMarkerService {
         );
         marker.setOnTapListener((marker) {
           debugPrint('카테고리 마커 클릭: ${data.buildingName} (${data.category})');
+          debugPrint('🔍 마커 클릭 데이터 - buildingName: ${data.buildingName}, category: ${data.category}, floors: ${data.floors}');
           // 층 정보 바텀시트 띄우기 - 고정된 높이로 설정
           showModalBottomSheet(
             context: context,

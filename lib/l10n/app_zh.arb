@@ -98,7 +98,8 @@
   "home": "主页",
   "timetable": "时间表",
   "friends": "朋友",
-  "my_page": "我的",
+  "my_page": "MY",
+  "my_page_subtitle": "我的页面",
   "cafe": "咖啡厅",
   "restaurant": "餐厅",
   "library": "图书馆",
@@ -260,7 +261,7 @@
   "feature_in_progress": "功能正在开发中",
   "delete_feature_in_progress": "账户删除功能正在开发中",
   "title": "编辑个人资料",
-    "email_required": "请输入邮箱",
+  "email_required": "请输入邮箱",
   "name_required": "请输入姓名",
   "schedule": "课程表",
   "winter_semester": "冬季学期",
@@ -369,7 +370,7 @@
       }
     }
   },
-"add": "添加",
+  "add": "添加",
   "close": "关闭",
   "edit": "编辑",
   "delete": "删除",
@@ -433,25 +434,25 @@
   "instructionMoveToDestinationBuilding": "前往 {building} 建筑",
   "instructionMoveToRoom": "前往目标房间",
   "instructionArrived": "您已到达目的地！",
-    "search_hint": "请搜索校区建筑",
-      "searchHint": "请输入建筑名称或房间号进行搜索",
+  "search_hint": "请搜索校区建筑",
+  "searchHint": "请输入建筑名称或房间号进行搜索",
   "searchInitialGuide": "搜索大楼或教室",
   "searchHintExample": "例如：W19，工程馆，401室",
   "searchLoading": "搜索中...",
   "searchNoResult": "未找到搜索结果",
   "searchTryAgain": "请尝试使用其他关键词",
   "lectureRoom": "教室",
-    "status_open": "营业中",
+  "status_open": "营业中",
   "status_closed": "已关闭",
   "status_next_open": "上午 9 点开始营业",
   "status_next_close": "下午 6 点结束营业",
   "status_next_open_tomorrow": "明天上午 9 点开始营业",
   "office_hours": "09:00 - 18:00",
-    "status_24hours": "24小时",
+  "status_24hours": "24小时",
   "status_temp_closed": "临时休业",
   "status_closed_permanently": "休业",
-    "label_category_type": "分类",
-    "label_basic_info": "基本信息",
+  "label_category_type": "分类",
+  "label_basic_info": "基本信息",
   "label_status": "状态",
   "label_hours": "营业时间",
   "label_phone": "电话号码",
@@ -528,7 +529,6 @@
   "lastLocation": "最后位置",
   "noLocationInfo": "无位置信息",
   "noContactInfo": "无信息",
-  
   "friendRequestSent": "已向{name}发送好友请求！",
   "@friendRequestSent": {
     "placeholders": {
@@ -537,7 +537,6 @@
       }
     }
   },
-  
   "friendRequestAccepted": "已接受{name}的好友请求。",
   "@friendRequestAccepted": {
     "placeholders": {
@@ -546,7 +545,6 @@
       }
     }
   },
-  
   "friendRequestRejected": "已拒绝{name}的好友请求。",
   "@friendRequestRejected": {
     "placeholders": {
@@ -555,7 +553,6 @@
       }
     }
   },
-  
   "friendRequestCanceled": "已取消向{name}发送的好友请求。",
   "@friendRequestCanceled": {
     "placeholders": {
@@ -564,7 +561,6 @@
       }
     }
   },
-  
   "friendDeleted": "已从好友列表中删除{name}。",
   "@friendDeleted": {
     "placeholders": {
@@ -573,7 +569,6 @@
       }
     }
   },
-  
   "friendLocationShown": "{name}的位置已在地图上显示。",
   "@friendLocationShown": {
     "placeholders": {
@@ -582,7 +577,6 @@
       }
     }
   },
-  
   "friendLocationRemoved": "{name}的位置已从地图上移除。",
   "@friendLocationRemoved": {
     "placeholders": {
@@ -591,7 +585,6 @@
       }
     }
   },
-  
   "friendCount": "我的朋友 ({count})",
   "@friendCount": {
     "placeholders": {
@@ -600,7 +593,6 @@
       }
     }
   },
-  
   "sentRequestsCount": "已发送 ({count})",
   "@sentRequestsCount": {
     "placeholders": {
@@ -609,7 +601,6 @@
       }
     }
   },
-  
   "receivedRequestsCount": "已接收 ({count})",
   "@receivedRequestsCount": {
     "placeholders": {
@@ -618,7 +609,6 @@
       }
     }
   },
-  
   "newFriendRequests": "{count}个新的好友请求",
   "@newFriendRequests": {
     "placeholders": {
@@ -627,7 +617,6 @@
       }
     }
   },
-  
   "addFriend": "添加",
   "sent": "已发送",
   "received": "已接收",
@@ -635,14 +624,12 @@
   "friendId": "朋友ID",
   "enterFriendId": "请输入对方ID",
   "enterFriendIdPrompt": "请输入要添加的朋友的ID",
-  
   "errorEnterFriendId": "请输入朋友ID。",
   "errorCannotAddSelf": "不能添加自己为好友。",
   "errorAddFriend": "添加好友时发生错误。",
   "errorNetworkError": "网络错误，请重试。",
   "errorCannotShowLocation": "无法显示朋友位置。",
   "errorCannotRemoveLocation": "无法移除朋友位置。",
-  
   "realTimeSyncActive": "实时同步中 • 自动更新",
   "realTimeSyncStatus": "实时同步激活 • {time}",
   "@realTimeSyncStatus": {
@@ -652,11 +639,9 @@
       }
     }
   },
-  
   "noSentRequests": "没有已发送的好友请求。",
   "noReceivedRequests": "没有收到的好友请求。",
   "noFriends": "还没有朋友。\n点击上方的+按钮添加朋友吧！",
-  
   "cancelFriendRequest": "取消好友请求",
   "cancelFriendRequestConfirm": "确定要取消向{name}发送的好友请求吗？",
   "@cancelFriendRequestConfirm": {
@@ -666,7 +651,6 @@
       }
     }
   },
-  
   "deleteFriend": "删除好友",
   "deleteFriendConfirm": "确定要从好友列表中删除{name}吗？",
   "@deleteFriendConfirm": {
@@ -676,7 +660,6 @@
       }
     }
   },
-  
   "cancelRequest": "取消",
   "requestDate": "请求日期：{date}",
   "@requestDate": {
@@ -686,16 +669,15 @@
       }
     }
   },
-  
   "newBadge": "新",
-    "friend_delete_title": "删除好友",
+  "friend_delete_title": "删除好友",
   "friend_delete_warning": "请慎重决定",
   "friendDeleteQuestion": "您确定要将{userName}从好友列表中删除吗？\n删除的好友可以再次添加。",
   "@friendDeleteQuestion": {
     "description": "包含用户名的好友删除确认消息"
   },
   "empty_friend_list_message": "没有好友。",
-    "friendDeleteTitle": "删除好友",
+  "friendDeleteTitle": "删除好友",
   "friendDeleteWarning": "请慎重决定",
   "friendDeleteHeader": "待删除好友",
   "friendDeleteToConfirm": "您确定要将{userName}从好友列表中删除吗？\n删除的好友可以再次添加。",
@@ -707,7 +689,7 @@
   },
   "friendDeleteCancel": "取消",
   "friendDeleteButton": "删除",
-    "friendDeleteSuccessMessage": "已从好友列表中删除{userName}。",
+  "friendDeleteSuccessMessage": "已从好友列表中删除{userName}。",
   "@friendDeleteSuccessMessage": {
     "description": "好友删除成功消息，带有用户名参数",
     "placeholders": {
@@ -718,7 +700,7 @@
   "@friendOfflineError": {
     "description": "Error message shown when trying to view the location of an offline friend."
   },
-    "scheduleDeleteTitle": "删除时间表",
+  "scheduleDeleteTitle": "删除时间表",
   "scheduleDeleteSubtitle": "请慎重决定",
   "scheduleDeleteLabel": "要删除的时间表",
   "scheduleDeleteDescription": "您确定要从时间表中删除“{title}”课程吗？\n已删除的时间表无法恢复。",
@@ -729,5 +711,90 @@
       "title": {}
     }
   },
-  "phone_required": "请输入您的电话号码"
+  "phone_required": "请输入电话号码",
+  "building_info": "建筑信息",
+  "floor_plan": "平面图",
+  "directions": "路线",
+  "floor_detail_info": "楼层详细信息",
+  "no_floor_info": "没有楼层信息。",
+  "floor_detail_view": "查看详情",
+  "inquiry": "咨询",
+  "my_inquiry": "我的咨询",
+  "inquiry_type": "咨询类型",
+  "inquiry_type_required": "请选择咨询类型",
+  "inquiry_type_select_hint": "请选择咨询类型",
+  "inquiry_title": "标题",
+  "inquiry_content": "咨询内容",
+  "inquiry_content_hint": "请详细输入您的咨询内容",
+  "inquiry_submit": "提交咨询",
+  "inquiry_submit_success": "咨询已成功提交",
+  "inquiry_submit_failed": "提交咨询失败，请重试",
+  "inquiry_list_load_failed": "加载咨询列表失败：{error}",
+  "@inquiry_list_load_failed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "no_inquiry_history": "暂无咨询记录",
+  "no_inquiry_history_hint": "在咨询标签页中创建新的咨询",
+  "inquiry_delete": "删除咨询",
+  "inquiry_delete_confirm": "您确定要删除此咨询吗？",
+  "inquiry_delete_success": "咨询已删除",
+  "inquiry_delete_failed": "删除咨询失败",
+  "inquiry_detail": "咨询详情",
+  "inquiry_category": "类别",
+  "inquiry_status": "状态",
+  "inquiry_created_at": "创建时间",
+  "inquiry_title_label": "标题：{title}",
+  "@inquiry_title_label": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "inquiry_type_bug": "错误报告",
+  "inquiry_type_feature": "功能请求",
+  "inquiry_type_improvement": "改进建议",
+  "inquiry_type_other": "其他咨询",
+  "inquiry_status_pending": "待处理",
+  "inquiry_status_in_progress": "处理中",
+  "inquiry_status_completed": "已完成",
+  "inquiry_status_rejected": "已拒绝",
+  "required": "必填",
+  "enter_title": "请输入标题",
+  "content": "内容",
+  "enter_content": "请输入内容",
+  "image_attachment": "图片附件",
+  "max_one_image": "最多1张",
+  "photo_attachment": "照片附件（最多1张）",
+  "photo_attachment_complete": "照片附件完成",
+  "image_selection": "图片选择",
+  "select_image_method": "请选择选择图片的方法",
+  "select_from_gallery": "从相册选择",
+  "select_from_gallery_desc": "从设备的照片相册中选择图片",
+  "select_from_file": "从文件选择",
+  "select_from_file_desc": "从设备的文件中选择图片",
+  "max_one_image_error": "最多只能附加1张图片",
+  "image_selection_error": "选择图片时发生错误：{error}",
+  "@image_selection_error": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "inquiry_content": "咨询内容",
+  "attached_image": "附件图片",
+  "app_version": "应用版本",
+  "developer": "开发者",
+  "developer_name": "开发者姓名",
+  "developer_email": "开发者邮箱",
+  "developer_github": "GitHub",
+  "image_load_error": "图片加载错误",
+  "description_hint": "输入描述",
+  "excel_file": "Excel文件",
+  "excel_file_tutorial": "Excel文件教程"
 }

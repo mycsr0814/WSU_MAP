@@ -288,6 +288,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get my_page => 'MY';
 
   @override
+  String get my_page_subtitle => '마이페이지';
+
+  @override
   String get cafe => '카페';
 
   @override
@@ -309,7 +312,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get calculating => '계산중...';
 
   @override
-  String get calculating_route => '경로 계산 중...';
+  String get calculating_route => '경로를 계산하는 중...';
 
   @override
   String get finding_optimal_route => '서버에서 최적 경로를 찾고 있습니다';
@@ -688,13 +691,13 @@ class AppLocalizationsKo extends AppLocalizations {
   String get developer => '개발자';
 
   @override
-  String get developer_name => '이름: 홍길동';
+  String get developer_name => '개발자 이름';
 
   @override
-  String get developer_email => '이메일: example@email.com';
+  String get developer_email => '개발자 이메일';
 
   @override
-  String get developer_github => 'GitHub: github.com/yourid';
+  String get developer_github => 'GitHub';
 
   @override
   String get help => '도움말';
@@ -703,10 +706,10 @@ class AppLocalizationsKo extends AppLocalizations {
   String get no_help_images => '도움말 이미지가 없습니다';
 
   @override
-  String get image_load_error => '이미지를 불러올 수 없습니다';
+  String get image_load_error => '이미지 로드 오류';
 
   @override
-  String get description_hint => '설명 입력';
+  String get description_hint => '설명을 입력하세요';
 
   @override
   String get email_required => '이메일을 입력하세요';
@@ -997,7 +1000,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get view_floor_plan => '내부도면보기';
 
   @override
-  String get floor_plan => '내부도면';
+  String get floor_plan => '도면';
 
   @override
   String floor_plan_title(String buildingName) {
@@ -1579,4 +1582,172 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get phone_required => '전화번호를 입력해주세요';
+
+  @override
+  String get building_info => '건물 정보';
+
+  @override
+  String get floor_detail_info => '층별 상세 정보';
+
+  @override
+  String get no_floor_info => '층 정보가 없습니다.';
+
+  @override
+  String get floor_detail_view => '상세 정보 보기';
+
+  @override
+  String get inquiry => '문의하기';
+
+  @override
+  String get my_inquiry => '내 문의';
+
+  @override
+  String get inquiry_type => '문의 유형';
+
+  @override
+  String get inquiry_type_required => '문의 유형을 선택해주세요';
+
+  @override
+  String get inquiry_type_select_hint => '문의 유형을 선택해주세요';
+
+  @override
+  String get inquiry_title => '제목';
+
+  @override
+  String get inquiry_content => '문의 내용';
+
+  @override
+  String get inquiry_content_hint => '문의 내용을 자세히 입력해주세요';
+
+  @override
+  String get inquiry_submit => '문의하기';
+
+  @override
+  String get inquiry_submit_success => '문의가 성공적으로 등록되었습니다';
+
+  @override
+  String get inquiry_submit_failed => '문의 등록에 실패했습니다. 다시 시도해주세요';
+
+  @override
+  String inquiry_list_load_failed(String error) {
+    return '문의 목록을 불러오는데 실패했습니다: $error';
+  }
+
+  @override
+  String get no_inquiry_history => '아직 문의 내역이 없습니다';
+
+  @override
+  String get no_inquiry_history_hint => '문의하기 탭에서 새로운 문의를 작성해보세요';
+
+  @override
+  String get inquiry_delete => '문의 삭제';
+
+  @override
+  String get inquiry_delete_confirm => '이 문의를 삭제하시겠습니까?';
+
+  @override
+  String get inquiry_delete_success => '문의가 삭제되었습니다';
+
+  @override
+  String get inquiry_delete_failed => '문의 삭제에 실패했습니다';
+
+  @override
+  String get inquiry_detail => '문의 상세';
+
+  @override
+  String get inquiry_category => '카테고리';
+
+  @override
+  String get inquiry_status => '상태';
+
+  @override
+  String get inquiry_created_at => '작성일';
+
+  @override
+  String inquiry_title_label(String title) {
+    return '제목: $title';
+  }
+
+  @override
+  String get inquiry_type_bug => '버그 신고';
+
+  @override
+  String get inquiry_type_feature => '기능 요청';
+
+  @override
+  String get inquiry_type_improvement => '개선 사항';
+
+  @override
+  String get inquiry_type_other => '기타 문의';
+
+  @override
+  String get inquiry_status_pending => '대기 중';
+
+  @override
+  String get inquiry_status_in_progress => '처리 중';
+
+  @override
+  String get inquiry_status_completed => '완료';
+
+  @override
+  String get inquiry_status_rejected => '거부됨';
+
+  @override
+  String get required => '필수';
+
+  @override
+  String get enter_title => '제목을 입력해주세요';
+
+  @override
+  String get content => '내용';
+
+  @override
+  String get enter_content => '내용을 입력해주세요';
+
+  @override
+  String get image_attachment => '이미지 첨부';
+
+  @override
+  String get max_one_image => '최대 1장';
+
+  @override
+  String get photo_attachment => '사진 첨부 (최대 1장)';
+
+  @override
+  String get photo_attachment_complete => '사진 첨부 완료';
+
+  @override
+  String get image_selection => '이미지 선택';
+
+  @override
+  String get select_image_method => '이미지를 선택하는 방법을 선택해주세요';
+
+  @override
+  String get select_from_gallery => '갤러리에서 선택';
+
+  @override
+  String get select_from_gallery_desc => '기기의 사진 갤러리에서 이미지를 선택합니다';
+
+  @override
+  String get select_from_file => '파일에서 선택';
+
+  @override
+  String get select_from_file_desc => '기기의 파일에서 이미지를 선택합니다';
+
+  @override
+  String get max_one_image_error => '이미지는 최대 1장만 첨부할 수 있습니다';
+
+  @override
+  String image_selection_error(String error) {
+    return '이미지 선택 중 오류가 발생했습니다: $error';
+  }
+
+  @override
+  String get attached_image => '첨부 이미지';
+
+  @override
+  String get excel_file => '엑셀파일';
+
+  @override
+  String get excel_file_tutorial => '엑셀파일 튜토리얼';
 }

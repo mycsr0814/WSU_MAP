@@ -496,49 +496,6 @@ class FriendsController extends ChangeNotifier {
     notifyListeners();
   }
 
-  // 🔥 새로 추가: 친구 로그아웃 처리 메서드
-  void _handleFriendLoggedOut(Map<String, dynamic> message) {
-    final loggedOutUserId = message['userId'];
-    debugPrint('👤 친구 로그아웃 감지: $loggedOutUserId');
-    debugPrint('👤 친구 로그아웃 메시지 전체: $message');
-
-    // 온라인 사용자 목록에서 제거
-    if (onlineUsers.contains(loggedOutUserId)) {
-      onlineUsers.remove(loggedOutUserId);
-      debugPrint('✅ 온라인 사용자 목록에서 제거: $loggedOutUserId');
-    }
-
-    // 친구 목록에서 해당 사용자의 상태를 오프라인으로 업데이트
-    bool found = false;
-    for (int i = 0; i < friends.length; i++) {
-      if (friends[i].userId == loggedOutUserId) {
-        found = true;
-        if (friends[i].isLogin) {
-          friends[i] = Friend(
-            userId: friends[i].userId,
-            userName: friends[i].userName,
-            profileImage: friends[i].profileImage,
-            phone: friends[i].phone,
-            isLogin: false,
-            lastLocation: friends[i].lastLocation,
-            isLocationPublic: friends[i].isLocationPublic,
-          );
-          debugPrint('✅ ${friends[i].userName} 상태를 오프라인으로 업데이트');
-        } else {
-          debugPrint('ℹ️ ${friends[i].userName} 이미 오프라인 상태');
-        }
-        break;
-      }
-    }
-
-    if (!found) {
-      debugPrint('⚠️ 친구 목록에서 해당 사용자를 찾을 수 없음: $loggedOutUserId');
-    }
-
-    debugPrint('🔄 UI 업데이트 트리거 - 친구 로그아웃');
-    notifyListeners();
-  }
-
   // 👥 친구들의 온라인 상태 업데이트 (개선)
   void _updateFriendsOnlineStatus() {
     debugPrint('🔄 친구 온라인 상태 업데이트 시작');

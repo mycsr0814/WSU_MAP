@@ -301,6 +301,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get my_page => 'MY';
 
   @override
+  String get my_page_subtitle => 'My Page';
+
+  @override
   String get cafe => 'Cafe';
 
   @override
@@ -714,13 +717,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get developer => 'Developer';
 
   @override
-  String get developer_name => 'Name: Hong Gil-dong';
+  String get developer_name => 'Developer Name';
 
   @override
-  String get developer_email => 'Email: example@email.com';
+  String get developer_email => 'Developer Email';
 
   @override
-  String get developer_github => 'GitHub: github.com/yourid';
+  String get developer_github => 'GitHub';
 
   @override
   String get help => 'Help';
@@ -729,7 +732,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get no_help_images => 'No help images available';
 
   @override
-  String get image_load_error => 'Unable to load image';
+  String get image_load_error => 'Image Load Error';
 
   @override
   String get description_hint => 'Enter description';
@@ -1377,7 +1380,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get friendManagement => 'Friend Management';
 
   @override
-  String get friendManagementAndRequests => 'Friend Management and Requests';
+  String get friendManagementAndRequests => 'Friends & Requests';
 
   @override
   String get showLocation => 'Show Location';
@@ -1611,4 +1614,178 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get phone_required => 'Please enter your phone number';
+
+  @override
+  String get building_info => 'Building Info';
+
+  @override
+  String get floor_detail_info => 'Floor Detail Info';
+
+  @override
+  String get no_floor_info => 'No floor information available.';
+
+  @override
+  String get floor_detail_view => 'View Details';
+
+  @override
+  String get inquiry => 'Inquiry';
+
+  @override
+  String get my_inquiry => 'My Inquiries';
+
+  @override
+  String get inquiry_type => 'Inquiry Type';
+
+  @override
+  String get inquiry_type_required => 'Please select an inquiry type';
+
+  @override
+  String get inquiry_type_select_hint => 'Please select an inquiry type';
+
+  @override
+  String get inquiry_title => 'Title';
+
+  @override
+  String get inquiry_content => 'Inquiry Content';
+
+  @override
+  String get inquiry_content_hint => 'Please enter your inquiry details';
+
+  @override
+  String get inquiry_submit => 'Submit Inquiry';
+
+  @override
+  String get inquiry_submit_success =>
+      'Inquiry has been successfully submitted';
+
+  @override
+  String get inquiry_submit_failed =>
+      'Failed to submit inquiry. Please try again';
+
+  @override
+  String inquiry_list_load_failed(String error) {
+    return 'Failed to load inquiry list: $error';
+  }
+
+  @override
+  String get no_inquiry_history => 'No inquiry history yet';
+
+  @override
+  String get no_inquiry_history_hint =>
+      'Create a new inquiry in the Inquiry tab';
+
+  @override
+  String get inquiry_delete => 'Delete Inquiry';
+
+  @override
+  String get inquiry_delete_confirm =>
+      'Are you sure you want to delete this inquiry?';
+
+  @override
+  String get inquiry_delete_success => 'Inquiry has been deleted';
+
+  @override
+  String get inquiry_delete_failed => 'Failed to delete inquiry';
+
+  @override
+  String get inquiry_detail => 'Inquiry Detail';
+
+  @override
+  String get inquiry_category => 'Category';
+
+  @override
+  String get inquiry_status => 'Status';
+
+  @override
+  String get inquiry_created_at => 'Created At';
+
+  @override
+  String inquiry_title_label(String title) {
+    return 'Title: $title';
+  }
+
+  @override
+  String get inquiry_type_bug => 'Bug Report';
+
+  @override
+  String get inquiry_type_feature => 'Feature Request';
+
+  @override
+  String get inquiry_type_improvement => 'Improvement';
+
+  @override
+  String get inquiry_type_other => 'Other';
+
+  @override
+  String get inquiry_status_pending => 'Pending';
+
+  @override
+  String get inquiry_status_in_progress => 'In Progress';
+
+  @override
+  String get inquiry_status_completed => 'Completed';
+
+  @override
+  String get inquiry_status_rejected => 'Rejected';
+
+  @override
+  String get required => 'Required';
+
+  @override
+  String get enter_title => 'Please enter a title';
+
+  @override
+  String get content => 'Content';
+
+  @override
+  String get enter_content => 'Please enter content';
+
+  @override
+  String get image_attachment => 'Image Attachment';
+
+  @override
+  String get max_one_image => 'Max 1 image';
+
+  @override
+  String get photo_attachment => 'Photo Attachment (Max 1)';
+
+  @override
+  String get photo_attachment_complete => 'Photo Attachment Complete';
+
+  @override
+  String get image_selection => 'Image Selection';
+
+  @override
+  String get select_image_method => 'Please select a method to choose an image';
+
+  @override
+  String get select_from_gallery => 'Select from Gallery';
+
+  @override
+  String get select_from_gallery_desc =>
+      'Select an image from your device\'s photo gallery';
+
+  @override
+  String get select_from_file => 'Select from File';
+
+  @override
+  String get select_from_file_desc =>
+      'Select an image from your device\'s files';
+
+  @override
+  String get max_one_image_error => 'You can only attach up to 1 image';
+
+  @override
+  String image_selection_error(String error) {
+    return 'An error occurred while selecting an image: $error';
+  }
+
+  @override
+  String get attached_image => 'Attached Image';
+
+  @override
+  String get excel_file => 'Excel File';
+
+  @override
+  String get excel_file_tutorial => 'Excel File Tutorial';
 }

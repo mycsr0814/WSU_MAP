@@ -124,12 +124,12 @@ class LocationManager extends ChangeNotifier {
       return currentLocation;
     }
 
-    // 🔥 매우 빠른 위치 요청 (Welcome 화면용)
-    return await _requestLocationVeryQuickly();
+    // 🔥 단순화된 빠른 위치 요청
+    return await _requestLocationSimple();
   }
 
-  /// 🔥 매우 빠른 위치 요청 (Welcome 화면 전용)
-  Future<LocationData?> _requestLocationVeryQuickly() async {
+  /// 🔥 단순화된 위치 요청 (빠른 응답)
+  Future<LocationData?> _requestLocationSimple() async {
     if (_currentLocationRequest != null) {
       return await _currentLocationRequest!.future;
     }
@@ -138,59 +138,34 @@ class LocationManager extends ChangeNotifier {
     _currentLocationRequest = completer;
 
     try {
-      debugPrint('🚀 매우 빠른 위치 요청 시작...');
+      debugPrint('🚀 단순화된 위치 요청 시작...');
 
-      // 1. 직접 위치 요청 (가장 빠름)
-      try {
-        final locationData = await _location.getLocation().timeout(
-          const Duration(seconds: 2), // 매우 짧은 타임아웃
-          onTimeout: () {
-            debugPrint('⏰ 직접 위치 요청 타임아웃 (2초)');
-            throw TimeoutException('직접 위치 요청 타임아웃', const Duration(seconds: 2));
-          },
-        );
+      // 직접 위치 요청 (1.5초 타임아웃)
+      final locationData = await _location.getLocation().timeout(
+        const Duration(milliseconds: 1500), // 1.5초로 단축
+        onTimeout: () {
+          debugPrint('⏰ 위치 요청 타임아웃 (1.5초)');
+          throw TimeoutException('위치 요청 타임아웃', const Duration(milliseconds: 1500));
+        },
+      );
 
+      if (locationData.latitude != null && locationData.longitude != null) {
         currentLocation = locationData;
         _lastLocationTime = DateTime.now();
         _hasLocationPermissionError = false;
         notifyListeners();
 
-        debugPrint('✅ 매우 빠른 위치 요청 성공!');
+        debugPrint('✅ 단순화된 위치 요청 성공!');
         completer.complete(locationData);
         return locationData;
-
-      } catch (directError) {
-        debugPrint('⚠️ 직접 위치 요청 실패: $directError');
-        
-        // 2. LocationService를 통한 요청 (백업)
-        try {
-          final locationResult = await _locationService.getCurrentLocation(
-            forceRefresh: true,
-            timeout: const Duration(seconds: 3), // 짧은 타임아웃
-          );
-
-          if (locationResult.isSuccess && locationResult.locationData != null) {
-            currentLocation = locationResult.locationData!;
-            _lastLocationTime = DateTime.now();
-            _hasLocationPermissionError = false;
-            notifyListeners();
-
-            debugPrint('✅ LocationService를 통한 빠른 위치 요청 성공!');
-            completer.complete(locationResult.locationData);
-            return locationResult.locationData;
-          } else {
-            throw Exception('LocationService 위치 요청 실패');
-          }
-
-        } catch (serviceError) {
-          debugPrint('❌ LocationService 위치 요청도 실패: $serviceError');
-          completer.complete(null);
-          return null;
-        }
+      } else {
+        debugPrint('❌ 유효하지 않은 위치 데이터');
+        completer.complete(null);
+        return null;
       }
 
     } catch (e) {
-      debugPrint('❌ 매우 빠른 위치 요청 실패: $e');
+      debugPrint('❌ 단순화된 위치 요청 실패: $e');
       completer.complete(null);
       return null;
     } finally {
@@ -203,7 +178,7 @@ class LocationManager extends ChangeNotifier {
     debugPrint('🚀 LocationManager 개선된 초기화...');
 
     try {
-      // 🔥 1. 먼저 권한 확인 및 요청
+      // 🔥 1. 권한과 서비스를 병렬로 확인 (더 빠른 초기화)
       final hasPermission = await _requestLocationPermissionSafely();
       if (!hasPermission) {
         debugPrint('❌ 위치 권한 없음 - 초기화 제한적으로 완료');
@@ -213,20 +188,36 @@ class LocationManager extends ChangeNotifier {
         return;
       }
 
-      // 🔥 2. 권한이 있을 때만 LocationService 초기화
-      await _locationService.initialize();
+      // 🔥 2. 권한이 있을 때만 LocationService 초기화 (타임아웃 단축)
+      await _locationService.initialize().timeout(
+        const Duration(seconds: 2), // 2초 타임아웃
+        onTimeout: () {
+          debugPrint('⏰ LocationService 초기화 타임아웃 - 계속 진행');
+          throw TimeoutException('LocationService 초기화 타임아웃', const Duration(seconds: 2));
+        },
+      );
 
-      // 🔥 3. 플랫폼별 최적화된 설정
+      // 🔥 3. 플랫폼별 최적화된 설정 (더 빠른 설정)
       if (Platform.isIOS) {
         debugPrint('📱 iOS 최적화 설정');
-        await _location.changeSettings(accuracy: loc.LocationAccuracy.balanced);
+        try {
+          await _location.changeSettings(
+            accuracy: loc.LocationAccuracy.balanced,
+          ).timeout(const Duration(seconds: 1));
+        } catch (e) {
+          debugPrint('⏰ iOS 설정 타임아웃 - 기본값 사용: $e');
+        }
       } else {
         debugPrint('🤖 Android 최적화 설정');
-        await _location.changeSettings(
-          accuracy: loc.LocationAccuracy.balanced,
-          interval: 5000,
-          distanceFilter: 10,
-        );
+        try {
+          await _location.changeSettings(
+            accuracy: loc.LocationAccuracy.balanced,
+            interval: 3000, // 5000에서 3000으로 단축
+            distanceFilter: 5, // 10에서 5로 단축
+          ).timeout(const Duration(seconds: 1));
+        } catch (e) {
+          debugPrint('⏰ Android 설정 타임아웃 - 기본값 사용: $e');
+        }
       }
 
       _isInitialized = true;
@@ -247,28 +238,52 @@ class LocationManager extends ChangeNotifier {
     try {
       debugPrint('🔐 위치 권한 요청 시작...');
 
-      // 1. 현재 권한 상태 확인
-      var permissionStatus = await _location.hasPermission();
+      // 1. 현재 권한 상태 확인 (타임아웃 단축)
+      var permissionStatus = await _location.hasPermission().timeout(
+        const Duration(seconds: 1), // 1초 타임아웃
+        onTimeout: () {
+          debugPrint('⏰ 권한 확인 타임아웃');
+          return loc.PermissionStatus.denied;
+        },
+      );
       debugPrint('📋 현재 권한 상태: $permissionStatus');
 
-      // 2. 권한이 없으면 요청
+      // 2. 권한이 없으면 요청 (타임아웃 단축)
       if (permissionStatus == loc.PermissionStatus.denied) {
         debugPrint('🔐 권한 요청 중...');
-        permissionStatus = await _location.requestPermission();
+        permissionStatus = await _location.requestPermission().timeout(
+          const Duration(seconds: 2), // 2초 타임아웃
+          onTimeout: () {
+            debugPrint('⏰ 권한 요청 타임아웃');
+            return loc.PermissionStatus.denied;
+          },
+        );
         debugPrint('📋 권한 요청 결과: $permissionStatus');
       }
 
-      // 3. 권한이 있으면 서비스 상태 확인
+      // 3. 권한이 있으면 서비스 상태 확인 (타임아웃 단축)
       if (permissionStatus == loc.PermissionStatus.granted) {
         debugPrint('✅ 위치 권한 허용됨');
 
-        // 4. 위치 서비스 활성화 확인
-        bool serviceEnabled = await _location.serviceEnabled();
+        // 4. 위치 서비스 활성화 확인 (타임아웃 단축)
+        bool serviceEnabled = await _location.serviceEnabled().timeout(
+          const Duration(seconds: 1), // 1초 타임아웃
+          onTimeout: () {
+            debugPrint('⏰ 서비스 확인 타임아웃');
+            return true; // 기본값으로 true 반환
+          },
+        );
         debugPrint('📋 위치 서비스 상태: $serviceEnabled');
 
         if (!serviceEnabled) {
           debugPrint('🔧 위치 서비스 활성화 요청...');
-          serviceEnabled = await _location.requestService();
+          serviceEnabled = await _location.requestService().timeout(
+            const Duration(seconds: 2), // 2초 타임아웃
+            onTimeout: () {
+              debugPrint('⏰ 서비스 요청 타임아웃');
+              return true; // 기본값으로 true 반환
+            },
+          );
           debugPrint('📋 위치 서비스 요청 결과: $serviceEnabled');
         }
 

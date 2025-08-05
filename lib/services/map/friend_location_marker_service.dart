@@ -86,22 +86,22 @@ class FriendLocationMarkerService {
     // 원형 마커를 위한 커스텀 위젯 생성 (context 추가)
     return NOverlayImage.fromWidget(
       context: _context!, // 🔥 필수 context 매개변수 추가
-      widget: Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          color: color,
-          shape: BoxShape.circle,
-          border: Border.all(color: Colors.white, width: 3),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.3),
-              blurRadius: 6,
-              offset: const Offset(0, 2),
-            ),
-          ],
+                    widget: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                ),
+                child: Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: color,
+            shape: BoxShape.circle,
+            border: Border.all(color: Colors.white, width: 3),
+          ),
+          child: const Icon(Icons.person, color: Colors.white, size: 20),
         ),
-        child: const Icon(Icons.person, color: Colors.white, size: 20),
       ),
       size: const Size(40, 40),
     );

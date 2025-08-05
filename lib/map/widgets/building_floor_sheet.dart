@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/inside/building_map_page.dart';
-import 'package:flutter_application_1/data/category_fallback_data.dart';
 import 'package:flutter_application_1/utils/CategoryLocalization.dart';
 import 'package:flutter_application_1/map/widgets/building_info_sheet.dart';
 import 'package:flutter_application_1/map/widgets/directions_screen.dart';
 import 'package:flutter_application_1/models/building.dart';
+import 'package:flutter_application_1/generated/app_localizations.dart';
 
 class BuildingFloorSheet extends StatefulWidget {
   final String buildingName;
@@ -48,7 +48,7 @@ class _BuildingFloorSheetState extends State<BuildingFloorSheet> {
 
   @override
   Widget build(BuildContext context) {
-    debugPrint('BuildingFloorSheet floors: ${widget.floors}, category: ${widget.category}');
+    debugPrint('🏢 BuildingFloorSheet - 건물: ${widget.buildingName}, 카테고리: ${widget.category}, 층: ${widget.floors}');
     
     return DraggableScrollableSheet(
       initialChildSize: 0.6, // 높이를 0.4에서 0.6으로 증가
@@ -101,7 +101,7 @@ class _BuildingFloorSheetState extends State<BuildingFloorSheet> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(
-                        _getCategoryIcon(widget.category),
+                        Icons.category,
                         color: _getCategoryColor(widget.category),
                         size: 28,
                       ),
@@ -150,102 +150,107 @@ class _BuildingFloorSheetState extends State<BuildingFloorSheet> {
               // 🔥 액션 버튼들 (고정)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                child: Row(
+                child: Column(
                   children: [
-                    // 🔥 건물 정보 보기 버튼
-                    Expanded(
-                      child: SizedBox(
-                        height: 48,
-                        child: OutlinedButton.icon(
-                          onPressed: () {
-                            Navigator.pop(context);
-                            // 건물 정보 바텀시트 표시
-                            showModalBottomSheet(
-                              context: context,
-                              isScrollControlled: true,
-                              backgroundColor: Colors.transparent,
-                              builder: (context) => BuildingInfoSheet(
-                                buildingName: widget.buildingName,
-                                category: widget.category,
-                                floors: widget.floors,
-                              ),
-                            );
-                          },
-                          icon: const Icon(Icons.info_outline, size: 18),
-                          label: const Text('건물 정보'),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: const Color(0xFF1E3A8A),
-                            side: const BorderSide(color: Color(0xFF1E3A8A)),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    
-                    // 🔥 도면 버튼
-                    Expanded(
-                      child: SizedBox(
-                        height: 48,
-                        child: ElevatedButton.icon(
-                          onPressed: () {
-                            Navigator.pop(context);
-                            // 도면 버튼 클릭 시 해당 건물 아이콘을 지도에 표시
-                            _showBuildingOnMap(context);
-                          },
-                          icon: const Icon(Icons.map, size: 18),
-                          label: const Text('도면'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF10B981),
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    
-                    // 🔥 길찾기 버튼
-                    Expanded(
-                      child: SizedBox(
-                        height: 48,
-                        child: ElevatedButton.icon(
-                          onPressed: () {
-                            Navigator.pop(context);
-                            // 길찾기 화면으로 이동 (도착지에 건물 설정)
-                            final building = Building(
-                              name: widget.buildingName,
-                              info: '',
-                              lat: 0.0,
-                              lng: 0.0,
-                              category: widget.category ?? '',
-                              baseStatus: '',
-                              hours: '',
-                              phone: '',
-                              imageUrl: '',
-                              description: '',
-                            );
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => DirectionsScreen(
-                                  presetEnd: building,
+                    // 🔥 첫 번째 행: 건물 정보, 도면
+                    Row(
+                      children: [
+                        // 🔥 건물 정보 보기 버튼
+                        Expanded(
+                          child: SizedBox(
+                            height: 48,
+                            child: OutlinedButton.icon(
+                              onPressed: () {
+                                Navigator.pop(context);
+                                // 건물 정보 바텀시트 표시
+                                showModalBottomSheet(
+                                  context: context,
+                                  isScrollControlled: true,
+                                  backgroundColor: Colors.transparent,
+                                  builder: (context) => BuildingInfoSheet(
+                                    buildingName: widget.buildingName,
+                                    category: widget.category,
+                                    floors: widget.floors,
+                                  ),
+                                );
+                              },
+                              icon: const Icon(Icons.info_outline, size: 18),
+                              label: Text(AppLocalizations.of(context)!.building_info),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: const Color(0xFF1E3A8A),
+                                side: const BorderSide(color: Color(0xFF1E3A8A)),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
                                 ),
                               ),
-                            );
-                          },
-                          icon: const Icon(Icons.directions, size: 18),
-                          label: const Text('길찾기'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF1E3A8A),
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
                             ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        
+                        // 🔥 도면 버튼
+                        Expanded(
+                          child: SizedBox(
+                            height: 48,
+                            child: ElevatedButton.icon(
+                              onPressed: () {
+                                Navigator.pop(context);
+                                // 도면 버튼 클릭 시 해당 건물 아이콘을 지도에 표시
+                                _showBuildingOnMap(context);
+                              },
+                              icon: const Icon(Icons.map, size: 18),
+                              label: Text(AppLocalizations.of(context)!.floor_plan),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF10B981),
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    
+                    const SizedBox(height: 12),
+                    
+                    // 🔥 두 번째 행: 길찾기 버튼
+                    SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          // 길찾기 화면으로 이동 (도착지에 건물 설정)
+                          final building = Building(
+                            name: widget.buildingName,
+                            info: '',
+                            lat: 0.0,
+                            lng: 0.0,
+                            category: widget.category ?? '',
+                            baseStatus: '',
+                            hours: '',
+                            phone: '',
+                            imageUrl: '',
+                            description: '',
+                          );
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => DirectionsScreen(
+                                presetEnd: building,
+                              ),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.directions, size: 18),
+                        label: Text(AppLocalizations.of(context)!.directions),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF1E3A8A),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
                           ),
                         ),
                       ),
@@ -265,14 +270,13 @@ class _BuildingFloorSheetState extends State<BuildingFloorSheet> {
                       size: 20,
                     ),
                     const SizedBox(width: 8),
-                    Text(
-                      '층별 상세 정보',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.grey.shade800,
-                      ),
-                    ),
+                                          Text(
+                                            AppLocalizations.of(context)!.floor_detail_view,
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.grey.shade600,
+                                            ),
+                                          ),
                   ],
                 ),
               ),
@@ -297,7 +301,7 @@ class _BuildingFloorSheetState extends State<BuildingFloorSheet> {
                         ),
                         const SizedBox(width: 12),
                         Text(
-                          '층 정보가 없습니다.',
+                          AppLocalizations.of(context)!.no_floor_info,
                           style: TextStyle(
                             fontSize: 14,
                             color: Colors.grey.shade600,
@@ -322,7 +326,7 @@ class _BuildingFloorSheetState extends State<BuildingFloorSheet> {
                           color: Colors.transparent,
                           child: InkWell(
                             onTap: () {
-                              debugPrint('🏢 층 선택: ${widget.buildingName} ${floor}층');
+                              debugPrint('🏢 층 선택: ${widget.buildingName} ${floor}층 (카테고리: ${widget.category})');
                               Navigator.pop(context);
                               Navigator.push(
                                 context,
@@ -330,6 +334,7 @@ class _BuildingFloorSheetState extends State<BuildingFloorSheet> {
                                   builder: (_) => BuildingMapPage(
                                     buildingName: widget.buildingName,
                                     targetFloorNumber: int.tryParse(floor),
+                                    initialCategory: widget.category, // 🔥 카테고리 정보 전달
                                   ),
                                 ),
                               );
@@ -378,10 +383,11 @@ class _BuildingFloorSheetState extends State<BuildingFloorSheet> {
                                         ),
                                         const SizedBox(height: 2),
                                         Text(
-                                          '상세 정보 보기',
+                                          AppLocalizations.of(context)!.floor_detail_info,
                                           style: TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.grey.shade600,
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w600,
+                                            color: Colors.grey.shade800,
                                           ),
                                         ),
                                       ],
@@ -406,12 +412,6 @@ class _BuildingFloorSheetState extends State<BuildingFloorSheet> {
         );
       },
     );
-  }
-  
-  /// 🔥 카테고리 아이콘 가져오기
-  IconData _getCategoryIcon(String? category) {
-    if (category == null) return Icons.category;
-    return CategoryFallbackData.getCategoryIcon(category);
   }
   
   /// 🔥 도면 버튼 클릭 시 해당 건물을 지도에 표시

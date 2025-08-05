@@ -8,20 +8,19 @@ import 'inquiry_detail_page.dart';
 
 class InquiryPage extends StatefulWidget {
   final UserAuth userAuth;
-  
-  const InquiryPage({
-    required this.userAuth,
-    super.key,
-  });
+
+  const InquiryPage({required this.userAuth, super.key});
 
   @override
   State<InquiryPage> createState() => _InquiryPageState();
 }
 
-class _InquiryPageState extends State<InquiryPage> with SingleTickerProviderStateMixin {
+class _InquiryPageState extends State<InquiryPage>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  final GlobalKey<_MyInquiriesTabState> _myInquiriesTabKey = GlobalKey<_MyInquiriesTabState>();
-  
+  final GlobalKey<_MyInquiriesTabState> _myInquiriesTabKey =
+      GlobalKey<_MyInquiriesTabState>();
+
   @override
   void initState() {
     super.initState();
@@ -36,11 +35,12 @@ class _InquiryPageState extends State<InquiryPage> with SingleTickerProviderStat
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
         title: Text(
-          '문의하기',
+          l10n.inquiry,
           style: TextStyle(
             color: Colors.grey[800],
             fontWeight: FontWeight.w600,
@@ -66,9 +66,9 @@ class _InquiryPageState extends State<InquiryPage> with SingleTickerProviderStat
             fontWeight: FontWeight.w500,
             fontSize: 16,
           ),
-          tabs: const [
-            Tab(text: '문의하기'),
-            Tab(text: '내 문의'),
+          tabs: [
+            Tab(text: l10n.inquiry),
+            Tab(text: l10n.my_inquiry),
           ],
         ),
       ),
@@ -84,10 +84,7 @@ class _InquiryPageState extends State<InquiryPage> with SingleTickerProviderStat
             },
           ),
           // 내 문의 탭
-          MyInquiriesTab(
-            key: _myInquiriesTabKey,
-            userAuth: widget.userAuth,
-          ),
+          MyInquiriesTab(key: _myInquiriesTabKey, userAuth: widget.userAuth),
         ],
       ),
     );
@@ -98,7 +95,7 @@ class _InquiryPageState extends State<InquiryPage> with SingleTickerProviderStat
 class CreateInquiryTab extends StatefulWidget {
   final UserAuth userAuth;
   final VoidCallback? onInquirySubmitted;
-  
+
   const CreateInquiryTab({
     required this.userAuth,
     this.onInquirySubmitted,
@@ -113,22 +110,16 @@ class _CreateInquiryTabState extends State<CreateInquiryTab> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _contentController = TextEditingController();
-  
+
   String? _selectedInquiryType;
   List<File> _selectedImages = [];
   final ImagePicker _picker = ImagePicker();
-  
+
   // 🔥 제출 상태 관리 추가
   bool _isSubmitting = false;
-  
-  // 문의 유형 목록
-  final List<String> _inquiryTypes = [
-    '경로 안내 오류',
-    '장소/정보 오류',
-    '버그 신고',
-    '기능 제안',
-    '기타 문의',
-  ];
+
+  // 문의 유형 목록 - 다국어 지원을 위해 빌드 시점에 설정
+  late List<String> _inquiryTypes;
 
   @override
   void initState() {
@@ -137,6 +128,18 @@ class _CreateInquiryTabState extends State<CreateInquiryTab> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _testServerRoutes();
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final l10n = AppLocalizations.of(context)!;
+    _inquiryTypes = [
+      l10n.inquiry_type_bug,
+      l10n.inquiry_type_feature,
+      l10n.inquiry_type_improvement,
+      l10n.inquiry_type_other,
+    ];
   }
 
   /// 서버 경로 테스트
@@ -156,7 +159,7 @@ class _CreateInquiryTabState extends State<CreateInquiryTab> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    
+
     return SafeArea(
       child: Form(
         key: _formKey,
@@ -168,19 +171,19 @@ class _CreateInquiryTabState extends State<CreateInquiryTab> {
               // 문의 유형 선택
               _buildInquiryTypeSection(),
               const SizedBox(height: 24),
-              
+
               // 제목 입력
               _buildTitleSection(),
               const SizedBox(height: 24),
-              
+
               // 내용 입력
               _buildContentSection(),
               const SizedBox(height: 24),
-              
+
               // 이미지 첨부
               _buildImageAttachmentSection(),
               const SizedBox(height: 32),
-              
+
               // 제출 버튼
               SizedBox(
                 width: double.infinity,
@@ -201,11 +204,13 @@ class _CreateInquiryTabState extends State<CreateInquiryTab> {
                           height: 24,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
                           ),
                         )
-                      : const Text(
-                          '문의하기',
+                      : Text(
+                          l10n.inquiry_submit,
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w600,
@@ -221,13 +226,14 @@ class _CreateInquiryTabState extends State<CreateInquiryTab> {
   }
 
   Widget _buildInquiryTypeSection() {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
             Text(
-              '문의 유형',
+              l10n.inquiry_type,
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
@@ -242,7 +248,7 @@ class _CreateInquiryTabState extends State<CreateInquiryTab> {
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Text(
-                '필수',
+                l10n.required,
                 style: TextStyle(
                   fontSize: 10,
                   color: Colors.red,
@@ -258,7 +264,9 @@ class _CreateInquiryTabState extends State<CreateInquiryTab> {
             color: Colors.white,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: _selectedInquiryType == null ? Colors.red : Colors.grey[300]!,
+              color: _selectedInquiryType == null
+                  ? Colors.red
+                  : Colors.grey[300]!,
               width: 1.5,
             ),
             boxShadow: [
@@ -273,10 +281,13 @@ class _CreateInquiryTabState extends State<CreateInquiryTab> {
             value: _selectedInquiryType,
             decoration: const InputDecoration(
               border: InputBorder.none,
-              contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 16,
+              ),
             ),
             hint: Text(
-              '문의 유형을 선택해주세요',
+              l10n.inquiry_type_select_hint,
               style: TextStyle(
                 color: Colors.grey[500],
                 fontSize: 14,
@@ -315,7 +326,7 @@ class _CreateInquiryTabState extends State<CreateInquiryTab> {
             },
             validator: (value) {
               if (value == null || value.isEmpty) {
-                return '⚠️ 문의 유형을 선택해주세요';
+                return '⚠️ ${l10n.inquiry_type_required}';
               }
               return null;
             },
@@ -330,13 +341,14 @@ class _CreateInquiryTabState extends State<CreateInquiryTab> {
   }
 
   Widget _buildTitleSection() {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
             Text(
-              '제목',
+              l10n.inquiry_title,
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
@@ -351,7 +363,7 @@ class _CreateInquiryTabState extends State<CreateInquiryTab> {
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Text(
-                '필수',
+                l10n.required,
                 style: TextStyle(
                   fontSize: 10,
                   color: Colors.red,
@@ -370,14 +382,17 @@ class _CreateInquiryTabState extends State<CreateInquiryTab> {
           ),
           child: TextFormField(
             controller: _titleController,
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               border: InputBorder.none,
-              contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              hintText: '제목을 입력해주세요',
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 12,
+              ),
+              hintText: l10n.enter_title,
             ),
             validator: (value) {
               if (value == null || value.trim().isEmpty) {
-                return '⚠️ 제목을 입력해주세요';
+                return '⚠️ ${l10n.enter_title}';
               }
               return null;
             },
@@ -388,13 +403,14 @@ class _CreateInquiryTabState extends State<CreateInquiryTab> {
   }
 
   Widget _buildContentSection() {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
             Text(
-              '내용',
+              l10n.content,
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
@@ -409,7 +425,7 @@ class _CreateInquiryTabState extends State<CreateInquiryTab> {
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Text(
-                '필수',
+                l10n.required,
                 style: TextStyle(
                   fontSize: 10,
                   color: Colors.red,
@@ -429,15 +445,18 @@ class _CreateInquiryTabState extends State<CreateInquiryTab> {
           child: TextFormField(
             controller: _contentController,
             maxLines: 8,
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               border: InputBorder.none,
-              contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              hintText: '문의 내용을 자세히 입력해주세요',
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 12,
+              ),
+              hintText: l10n.inquiry_content_hint,
               alignLabelWithHint: true,
             ),
             validator: (value) {
               if (value == null || value.trim().isEmpty) {
-                return '⚠️ 내용을 입력해주세요';
+                return '⚠️ ${l10n.enter_content}';
               }
               return null;
             },
@@ -448,13 +467,14 @@ class _CreateInquiryTabState extends State<CreateInquiryTab> {
   }
 
   Widget _buildImageAttachmentSection() {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
             Text(
-              '이미지 첨부',
+              l10n.image_attachment,
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
@@ -463,7 +483,7 @@ class _CreateInquiryTabState extends State<CreateInquiryTab> {
             ),
             const SizedBox(width: 8),
             Text(
-              '최대 1장',
+              l10n.max_one_image,
               style: TextStyle(
                 fontSize: 12,
                 color: Colors.orange[800],
@@ -478,10 +498,14 @@ class _CreateInquiryTabState extends State<CreateInquiryTab> {
           child: Container(
             height: 120,
             decoration: BoxDecoration(
-              color: _selectedImages.isNotEmpty ? Colors.grey[100] : Colors.white,
+              color: _selectedImages.isNotEmpty
+                  ? Colors.grey[100]
+                  : Colors.white,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: _selectedImages.isNotEmpty ? Colors.grey[200]! : Colors.grey[300]!,
+                color: _selectedImages.isNotEmpty
+                    ? Colors.grey[200]!
+                    : Colors.grey[300]!,
               ),
             ),
             child: _selectedImages.isNotEmpty
@@ -525,17 +549,27 @@ class _CreateInquiryTabState extends State<CreateInquiryTab> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(
-                        _selectedImages.isNotEmpty ? Icons.check_circle : Icons.add_photo_alternate,
-                        color: _selectedImages.isNotEmpty ? Colors.green[600] : Colors.grey[600],
+                        _selectedImages.isNotEmpty
+                            ? Icons.check_circle
+                            : Icons.add_photo_alternate,
+                        color: _selectedImages.isNotEmpty
+                            ? Colors.green[600]
+                            : Colors.grey[600],
                         size: 32,
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        _selectedImages.isEmpty ? '사진 첨부 (최대 1장)' : '사진 첨부 완료',
+                        _selectedImages.isEmpty
+                            ? l10n.photo_attachment
+                            : l10n.photo_attachment_complete,
                         style: TextStyle(
-                          color: _selectedImages.isNotEmpty ? Colors.green[600] : Colors.grey[600],
+                          color: _selectedImages.isNotEmpty
+                              ? Colors.green[600]
+                              : Colors.grey[600],
                           fontSize: 16,
-                          fontWeight: _selectedImages.isNotEmpty ? FontWeight.w600 : FontWeight.normal,
+                          fontWeight: _selectedImages.isNotEmpty
+                              ? FontWeight.w600
+                              : FontWeight.normal,
                         ),
                       ),
                     ],
@@ -547,6 +581,7 @@ class _CreateInquiryTabState extends State<CreateInquiryTab> {
   }
 
   void _showImagePickerDialog() {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       barrierColor: Colors.black.withOpacity(0.5),
@@ -595,10 +630,10 @@ class _CreateInquiryTabState extends State<CreateInquiryTab> {
                       ),
                     ),
                     const SizedBox(width: 12),
-                    const Expanded(
+                    Expanded(
                       child: Text(
-                        '이미지 선택',
-                        style: TextStyle(
+                        l10n.image_selection,
+                        style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w700,
                           color: Colors.white,
@@ -621,9 +656,9 @@ class _CreateInquiryTabState extends State<CreateInquiryTab> {
                 padding: const EdgeInsets.all(24),
                 child: Column(
                   children: [
-                    const Text(
-                      '이미지를 선택하는 방법을 선택해주세요',
-                      style: TextStyle(
+                    Text(
+                      l10n.select_image_method,
+                      style: const TextStyle(
                         fontSize: 16,
                         color: Color(0xFF64748B),
                       ),
@@ -632,8 +667,8 @@ class _CreateInquiryTabState extends State<CreateInquiryTab> {
                     // 갤러리 버튼
                     _buildImageOptionButton(
                       icon: Icons.photo_library,
-                      title: '갤러리에서 선택',
-                      subtitle: '기기의 사진 갤러리에서 이미지를 선택합니다',
+                      title: l10n.select_from_gallery,
+                      subtitle: l10n.select_from_gallery_desc,
                       onPressed: () {
                         Navigator.pop(context);
                         _pickImage(ImageSource.gallery);
@@ -643,8 +678,8 @@ class _CreateInquiryTabState extends State<CreateInquiryTab> {
                     // 파일 선택 버튼
                     _buildImageOptionButton(
                       icon: Icons.folder_open,
-                      title: '파일에서 선택',
-                      subtitle: '기기의 파일에서 이미지를 선택합니다',
+                      title: l10n.select_from_file,
+                      subtitle: l10n.select_from_file_desc,
                       onPressed: () {
                         Navigator.pop(context);
                         _pickImage(ImageSource.gallery);
@@ -666,7 +701,7 @@ class _CreateInquiryTabState extends State<CreateInquiryTab> {
     required String subtitle,
     required VoidCallback onPressed,
   }) {
-    return Container(
+    return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
         onPressed: onPressed,
@@ -677,10 +712,7 @@ class _CreateInquiryTabState extends State<CreateInquiryTab> {
           padding: const EdgeInsets.all(16),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
-            side: BorderSide(
-              color: const Color(0xFFE2E8F0),
-              width: 1,
-            ),
+            side: BorderSide(color: const Color(0xFFE2E8F0), width: 1),
           ),
         ),
         child: Row(
@@ -692,11 +724,7 @@ class _CreateInquiryTabState extends State<CreateInquiryTab> {
                 color: const Color(0xFF1E3A8A).withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Icon(
-                icon,
-                color: const Color(0xFF1E3A8A),
-                size: 20,
-              ),
+              child: Icon(icon, color: const Color(0xFF1E3A8A), size: 20),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -734,10 +762,11 @@ class _CreateInquiryTabState extends State<CreateInquiryTab> {
   }
 
   Future<void> _pickImage(ImageSource source) async {
+    final l10n = AppLocalizations.of(context)!;
     if (_selectedImages.isNotEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('이미지는 최대 1장만 첨부할 수 있습니다'),
+        SnackBar(
+          content: Text(l10n.max_one_image_error),
           backgroundColor: Colors.orange,
         ),
       );
@@ -760,7 +789,7 @@ class _CreateInquiryTabState extends State<CreateInquiryTab> {
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('이미지 선택 중 오류가 발생했습니다: $e'),
+          content: Text(l10n.image_selection_error(e.toString())),
           backgroundColor: Colors.red,
         ),
       );
@@ -768,6 +797,7 @@ class _CreateInquiryTabState extends State<CreateInquiryTab> {
   }
 
   Future<void> _submitInquiry() async {
+    final l10n = AppLocalizations.of(context)!;
     if (!_formKey.currentState!.validate()) {
       return;
     }
@@ -782,9 +812,7 @@ class _CreateInquiryTabState extends State<CreateInquiryTab> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => const Center(
-        child: CircularProgressIndicator(),
-      ),
+      builder: (context) => const Center(child: CircularProgressIndicator()),
     );
 
     try {
@@ -801,25 +829,25 @@ class _CreateInquiryTabState extends State<CreateInquiryTab> {
 
         if (success) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('문의가 성공적으로 등록되었습니다'),
+            SnackBar(
+              content: Text(l10n.inquiry_submit_success),
               backgroundColor: Colors.green,
             ),
           );
-          
+
           // 폼 초기화
           _formKey.currentState!.reset();
           setState(() {
             _selectedInquiryType = null;
             _selectedImages.clear();
           });
-          
+
           // "내 문의" 탭 새로고침
           widget.onInquirySubmitted?.call();
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('문의 등록에 실패했습니다. 다시 시도해주세요'),
+            SnackBar(
+              content: Text(l10n.inquiry_submit_failed),
               backgroundColor: Colors.red,
             ),
           );
@@ -848,11 +876,8 @@ class _CreateInquiryTabState extends State<CreateInquiryTab> {
 // 내 문의 탭
 class MyInquiriesTab extends StatefulWidget {
   final UserAuth userAuth;
-  
-  const MyInquiriesTab({
-    required this.userAuth,
-    super.key,
-  });
+
+  const MyInquiriesTab({required this.userAuth, super.key});
 
   @override
   State<MyInquiriesTab> createState() => _MyInquiriesTabState();
@@ -877,12 +902,16 @@ class _MyInquiriesTabState extends State<MyInquiriesTab> {
       debugPrint('=== 내 문의 탭에서 문의 목록 로드 시작 ===');
       debugPrint('현재 사용자 ID: ${widget.userAuth.userId}');
       debugPrint('현재 사용자 정보: ${widget.userAuth.toString()}');
-      
-      final inquiries = await InquiryService.getInquiries(widget.userAuth.userId!);
-      
+
+      final inquiries = await InquiryService.getInquiries(
+        widget.userAuth.userId!,
+      );
+
       debugPrint('받아온 문의 개수: ${inquiries.length}');
-      debugPrint('받아온 문의 목록: ${inquiries.map((e) => '${e.title} (${e.status})').toList()}');
-      
+      debugPrint(
+        '받아온 문의 목록: ${inquiries.map((e) => '${e.title} (${e.status})').toList()}',
+      );
+
       setState(() {
         _inquiries = inquiries;
         debugPrint('setState 후 _inquiries 길이: ${_inquiries.length}');
@@ -915,31 +944,26 @@ class _MyInquiriesTabState extends State<MyInquiriesTab> {
         child: _isLoading
             ? const Center(child: CircularProgressIndicator())
             : _inquiries.isEmpty
-                ? _buildEmptyState()
-                : _buildInquiryList(),
+            ? _buildEmptyState()
+            : _buildInquiryList(),
       ),
     );
   }
 
   Widget _buildEmptyState() {
+    final l10n = AppLocalizations.of(context)!;
     return ListView(
       children: [
-        SizedBox(
-          height: MediaQuery.of(context).size.height * 0.3,
-        ),
+        SizedBox(height: MediaQuery.of(context).size.height * 0.3),
         Padding(
           padding: const EdgeInsets.all(40),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                Icons.inbox_outlined,
-                size: 64,
-                color: Colors.grey[400],
-              ),
+              Icon(Icons.inbox_outlined, size: 64, color: Colors.grey[400]),
               const SizedBox(height: 16),
               Text(
-                '아직 문의 내역이 없습니다',
+                l10n.no_inquiry_history,
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
@@ -948,20 +972,14 @@ class _MyInquiriesTabState extends State<MyInquiriesTab> {
               ),
               const SizedBox(height: 8),
               Text(
-                '문의하기 탭에서 새로운 문의를 작성해보세요',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey[500],
-                ),
+                l10n.no_inquiry_history_hint,
+                style: TextStyle(fontSize: 14, color: Colors.grey[500]),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
               Text(
                 '아래로 당겨서 새로고침하세요',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey[400],
-                ),
+                style: TextStyle(fontSize: 12, color: Colors.grey[400]),
                 textAlign: TextAlign.center,
               ),
             ],
@@ -983,6 +1001,7 @@ class _MyInquiriesTabState extends State<MyInquiriesTab> {
   }
 
   Widget _buildInquiryCard(InquiryItem inquiry) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       child: Material(
@@ -1011,9 +1030,14 @@ class _MyInquiriesTabState extends State<MyInquiriesTab> {
                   Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
-                          color: _getStatusColor(inquiry.status).withOpacity(0.1),
+                          color: _getStatusColor(
+                            inquiry.status,
+                          ).withOpacity(0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
@@ -1027,9 +1051,14 @@ class _MyInquiriesTabState extends State<MyInquiriesTab> {
                       ),
                       const Spacer(),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
-                          color: _getStatusColor(inquiry.status).withOpacity(0.1),
+                          color: _getStatusColor(
+                            inquiry.status,
+                          ).withOpacity(0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
@@ -1083,21 +1112,14 @@ class _MyInquiriesTabState extends State<MyInquiriesTab> {
                       const SizedBox(width: 4),
                       Text(
                         inquiry.createdAt,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[500],
-                        ),
+                        style: TextStyle(fontSize: 12, color: Colors.grey[500]),
                       ),
                       if (inquiry.hasImage) ...[
                         const SizedBox(width: 16),
-                        Icon(
-                          Icons.image,
-                          size: 14,
-                          color: Colors.grey[500],
-                        ),
+                        Icon(Icons.image, size: 14, color: Colors.grey[500]),
                         const SizedBox(width: 4),
                         Text(
-                          '이미지 첨부',
+                          l10n.image_attachment,
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.grey[500],
@@ -1122,6 +1144,7 @@ class _MyInquiriesTabState extends State<MyInquiriesTab> {
   }
 
   Future<void> _showDeleteInquiryDialog(InquiryItem inquiry) async {
+    final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
       barrierColor: Colors.black.withOpacity(0.5),
@@ -1173,8 +1196,8 @@ class _MyInquiriesTabState extends State<MyInquiriesTab> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            '문의 삭제',
+                          Text(
+                            l10n.inquiry_delete,
                             style: TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.w700,
@@ -1183,7 +1206,7 @@ class _MyInquiriesTabState extends State<MyInquiriesTab> {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            '이 문의를 삭제하시겠습니까?',
+                            l10n.inquiry_delete_confirm,
                             style: TextStyle(
                               fontSize: 14,
                               color: Colors.red.withOpacity(0.8),
@@ -1229,7 +1252,7 @@ class _MyInquiriesTabState extends State<MyInquiriesTab> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        '제목: ${inquiry.title}',
+                        l10n.inquiry_title_label(inquiry.title),
                         style: const TextStyle(
                           fontSize: 14,
                           color: Color(0xFF64748B),
@@ -1313,6 +1336,7 @@ class _MyInquiriesTabState extends State<MyInquiriesTab> {
   }
 
   Future<void> _deleteInquiry(InquiryItem inquiry) async {
+    final l10n = AppLocalizations.of(context)!;
     try {
       final success = await InquiryService.deleteInquiry(
         widget.userAuth.userId!,
@@ -1321,28 +1345,25 @@ class _MyInquiriesTabState extends State<MyInquiriesTab> {
 
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('문의가 삭제되었습니다'),
+          SnackBar(
+            content: Text(l10n.inquiry_delete_success),
             backgroundColor: Colors.green,
           ),
         );
-        
+
         // 목록 새로고침
         _loadInquiries();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('문의 삭제에 실패했습니다'),
+          SnackBar(
+            content: Text(l10n.inquiry_delete_failed),
             backgroundColor: Colors.red,
           ),
         );
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('오류가 발생했습니다: $e'),
-          backgroundColor: Colors.red,
-        ),
+        SnackBar(content: Text('오류가 발생했습니다: $e'), backgroundColor: Colors.red),
       );
     }
   }
@@ -1369,5 +1390,3 @@ class _MyInquiriesTabState extends State<MyInquiriesTab> {
     }
   }
 }
-
- 

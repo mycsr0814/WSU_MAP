@@ -28,6 +28,7 @@ class BuildingMapPage extends StatefulWidget {
   final String? targetRoomId;
   final int? targetFloorNumber;
   final String? locationType; // 출발지/도착지 설정용
+  final String? initialCategory; // 🔥 초기 카테고리 정보 추가
 
   const BuildingMapPage({
     super.key,
@@ -38,6 +39,7 @@ class BuildingMapPage extends StatefulWidget {
     this.targetRoomId,
     this.targetFloorNumber,
     this.locationType, // 출발지/도착지 설정용
+    this.initialCategory, // 🔥 초기 카테고리 정보 추가
   });
 
   @override
@@ -94,6 +96,28 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
   void initState() {
     super.initState();
     _isNavigationMode = widget.navigationNodeIds != null;
+
+    // 🔥 초기 카테고리 설정
+    if (widget.initialCategory != null) {
+      debugPrint('🎯 BuildingMapPage 초기 카테고리 설정: ${widget.initialCategory}');
+      
+      // 🔥 카테고리 데이터가 로드된 후 매핑 및 필터링 적용
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _categoryData.isNotEmpty) {
+          final mappedCategory = _mapExternalCategoryToIndoor(widget.initialCategory!);
+          if (mappedCategory != null) {
+            debugPrint('✅ 카테고리 매핑 성공: ${widget.initialCategory} -> $mappedCategory');
+            _selectedCategories.add(mappedCategory);
+            _isCategoryFiltering = true;
+            _updateCategoryFiltering();
+          } else {
+            debugPrint('❌ 카테고리 매핑 실패: ${widget.initialCategory}');
+          }
+        }
+      });
+    } else {
+      debugPrint('⚠️ BuildingMapPage 초기 카테고리 없음');
+    }
 
     // 검색 결과에서 온 경우 자동 선택 준비
     _shouldAutoSelectRoom = widget.targetRoomId != null;
@@ -653,6 +677,20 @@ List<String> _findSimilarNodes(String targetId, Map<String, Offset> nodeMap) {
         // 🔥 카테고리 추출 및 필터링 초기화
         _extractCategoriesFromCategoryData();
 
+        // 🔥 초기 카테고리가 설정되어 있으면 필터링 적용
+        if (widget.initialCategory != null) {
+          final mappedCategory = _mapExternalCategoryToIndoor(widget.initialCategory!);
+          if (mappedCategory != null) {
+            debugPrint('✅ _loadMapData에서 카테고리 매핑 성공: ${widget.initialCategory} -> $mappedCategory');
+            _selectedCategories.clear();
+            _selectedCategories.add(mappedCategory);
+            _isCategoryFiltering = true;
+            _updateCategoryFiltering();
+          } else {
+            debugPrint('❌ _loadMapData에서 카테고리 매핑 실패: ${widget.initialCategory}');
+          }
+        }
+
         if (_shouldAutoSelectRoom) {
           _handleAutoRoomSelection();
         }
@@ -682,6 +720,64 @@ List<String> _findSimilarNodes(String targetId, Map<String, Offset> nodeMap) {
     debugPrint('🎯 사용 가능한 카테고리: $_availableCategories');
   }
 
+  /// 🔥 외부 카테고리 ID를 실내 카테고리 ID로 매핑
+  String? _mapExternalCategoryToIndoor(String externalCategory) {
+    debugPrint('🔍 카테고리 매핑 시도: $externalCategory');
+    
+    // 사용 가능한 카테고리들 중에서 매칭되는 것 찾기
+    for (final availableCategory in _availableCategories) {
+      // 정확히 일치하는 경우
+      if (availableCategory == externalCategory) {
+        debugPrint('✅ 정확한 매칭: $externalCategory -> $availableCategory');
+        return availableCategory;
+      }
+      
+      // 숫자 제거 후 매칭 (예: lounge-1 -> lounge)
+      final cleanAvailable = _cleanCategoryId(availableCategory);
+      if (cleanAvailable == externalCategory) {
+        debugPrint('✅ 정리 후 매칭: $externalCategory -> $availableCategory');
+        return availableCategory;
+      }
+      
+      // 부분 매칭 (예: fire_extinguisher -> extinguisher)
+      if (availableCategory.contains(externalCategory) || 
+          externalCategory.contains(availableCategory)) {
+        debugPrint('✅ 부분 매칭: $externalCategory -> $availableCategory');
+        return availableCategory;
+      }
+    }
+    
+    debugPrint('❌ 매칭 실패: $externalCategory');
+    return null;
+  }
+
+  /// 🔥 카테고리 ID 정리 (숫자 부분 제거)
+  String _cleanCategoryId(String id) {
+    // "-숫자" 패턴 제거
+    final regex = RegExp(r'^(.+?)-\d+$');
+    final match = regex.firstMatch(id);
+    if (match != null) {
+      return match.group(1) ?? id;
+    }
+    return id;
+  }
+
+  /// 🔥 카테고리 필터링 상태 업데이트
+  void _updateCategoryFiltering() {
+    if (_selectedCategories.isEmpty) {
+      _showAllCategories = true;
+      _isCategoryFiltering = false;
+      _filteredCategoryData = _categoryData;
+    } else {
+      _showAllCategories = false;
+      _isCategoryFiltering = true;
+      _filteredCategoryData = _categoryData.where((cat) {
+        final catName = cat['category']?.toString() ?? '';
+        return _selectedCategories.contains(catName);
+      }).toList();
+    }
+    debugPrint('🎯 카테고리 필터링 상태 업데이트: $_selectedCategories -> ${_filteredCategoryData.length}개 카테고리');
+  }
 
 
   Future<void> _loadNodesForFloor(
@@ -1639,19 +1735,7 @@ List<String>? _parseStringListNullable(dynamic value) {
             color: isSelected ? const Color(0xFF1E3A8A) : Colors.grey.shade300,
             width: isSelected ? 1.5 : 1.0,
           ),
-          boxShadow: isSelected ? [
-            BoxShadow(
-              color: const Color(0xFF1E3A8A).withOpacity(0.2),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ] : [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
-            ),
-          ],
+
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
