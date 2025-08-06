@@ -315,10 +315,10 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
   // 3. 경로 미리보기 계산 시 (건물 코드/층번호 일치 보장)
 Future<void> _calculateRoutePreview() async {
   try {
-    // 내위치가 설정되지 않았으면 자동으로 설정
+    // 내위치가 설정되지 않았으면 자동으로 설정하고 완료될 때까지 대기
     if (_startBuilding == null) {
       debugPrint('📍 내위치가 설정되지 않음. 자동으로 내위치 설정');
-      _setMyLocationAsStart();
+      await _setMyLocationAsStartAsync();
     }
     
     if (_startBuilding == null || _endBuilding == null) {
@@ -326,7 +326,7 @@ Future<void> _calculateRoutePreview() async {
       return;
     }
 
-    setState(() => _isCalculatingPreview = true);
+    // 🔥 setState 중복 호출 제거
     setState(() => _isCalculatingPreview = true);
 
     debugPrint('🔍 경로 미리보기 계산 시작');
@@ -335,7 +335,7 @@ Future<void> _calculateRoutePreview() async {
     debugPrint('   출발 호실: ${_startRoomInfo?['roomName'] ?? 'None'}');
     debugPrint('   도착 호실: ${_endRoomInfo?['roomName'] ?? 'None'}');
 
-      UnifiedPathResponse? response;
+    UnifiedPathResponse? response;
 
     // 🔥 1. 호실-호실 경로
     if (_startRoomInfo != null && _endRoomInfo != null) {
@@ -361,6 +361,7 @@ Future<void> _calculateRoutePreview() async {
     debugPrint('❌ 경로 미리보기 계산 전체 오류: $e');
     await _handleRouteCalculationError(e);
   } finally {
+    // 🔥 로딩 상태 해제
     if (mounted) {
       setState(() => _isCalculatingPreview = false);
     }
@@ -532,9 +533,10 @@ Future<void> _processRouteResponse(UnifiedPathResponse? response) async {
       return;
     }
     
-    // 🔥 성공적으로 응답 처리
+    // 🔥 성공적으로 응답 처리 - 즉시 UI 업데이트
     setState(() {
       _previewResponse = response;
+      _isCalculatingPreview = false; // 로딩 상태도 함께 해제
     });
     
     // 🔥 거리/시간 계산
@@ -556,11 +558,12 @@ Future<void> _handleRouteCalculationError(dynamic error) async {
   try {
     if (!mounted) return;
     
-    // 🔥 오류 상태 초기화
+    // 🔥 오류 상태 초기화 및 로딩 상태 해제
     setState(() {
       _previewResponse = null;
       _estimatedDistance = '';
       _estimatedTime = '';
+      _isCalculatingPreview = false; // 로딩 상태 해제
     });
     
     final errorMessage = error.toString();
@@ -841,6 +844,15 @@ void _onSearchResultSelected(SearchResult result) {
         _searchController.clear();
       });
       debugPrint('✅ 도착지 설정: ${building.name}');
+      
+      // 🔥 도착지 설정 시 출발지가 비어있으면 내 위치 자동 설정
+      if (_startBuilding == null) {
+        debugPrint('📍 출발지가 비어있어서 내 위치 자동 설정');
+        debugPrint('📍 도착지: ${building.name}');
+        _setMyLocationAsStart();
+      } else {
+        debugPrint('📍 출발지가 이미 설정되어 있음: ${_startBuilding!.name}');
+      }
     }
 
     _focusNode.unfocus();
@@ -848,12 +860,15 @@ void _onSearchResultSelected(SearchResult result) {
 
     // 🔥 안전한 경로 미리보기 계산
     if (_startBuilding != null && _endBuilding != null) {
-      debugPrint('🎯 출발지와 도착지가 모두 설정됨, 미리보기 계산 시작');
-      debugPrint('   출발지: ${_startBuilding!.name}');
-      debugPrint('   도착지: ${_endBuilding!.name}');
-      Future.microtask(() => _calculateRoutePreview());
+      debugPrint('🎯 출발지와 도착지가 모두 설정됨, 미리보기 계산 시작 (검색 결과 선택)');
+      debugPrint('   출발지: ${_startBuilding!.name} (${_startBuilding!.lat}, ${_startBuilding!.lng})');
+      debugPrint('   도착지: ${_endBuilding!.name} (${_endBuilding!.lat}, ${_endBuilding!.lng})');
+      debugPrint('   출발 호실: ${_startRoomInfo?['roomName'] ?? 'None'}');
+      debugPrint('   도착 호실: ${_endRoomInfo?['roomName'] ?? 'None'}');
+      // 🔥 즉시 미리보기 계산 (Future.microtask 제거)
+      _calculateRoutePreview();
     } else {
-      debugPrint('⚠️ 출발지 또는 도착지가 설정되지 않음');
+      debugPrint('⚠️ 출발지 또는 도착지가 설정되지 않음 (검색 결과 선택)');
       debugPrint('   출발지: ${_startBuilding?.name ?? 'null'}');
       debugPrint('   도착지: ${_endBuilding?.name ?? 'null'}');
     }
@@ -927,7 +942,11 @@ void _onSearchResultSelected(SearchResult result) {
       
       // 🔥 도착지 설정 시 출발지가 비어있으면 내 위치 자동 설정
       if (_startBuilding == null) {
+        debugPrint('📍 출발지가 비어있어서 내 위치 자동 설정');
+        debugPrint('📍 도착지: ${cleanBuilding.name}');
         _setMyLocationAsStart();
+      } else {
+        debugPrint('📍 출발지가 이미 설정되어 있음: ${_startBuilding!.name}');
       }
     }
     
@@ -936,9 +955,12 @@ void _onSearchResultSelected(SearchResult result) {
     // 🔥 안전한 경로 미리보기 계산
     if (_startBuilding != null && _endBuilding != null) {
       debugPrint('🎯 출발지와 도착지가 모두 설정됨, 미리보기 계산 시작 (검색 결과 선택)');
-      debugPrint('   출발지: ${_startBuilding!.name}');
-      debugPrint('   도착지: ${_endBuilding!.name}');
-      Future.microtask(() => _calculateRoutePreview());
+      debugPrint('   출발지: ${_startBuilding!.name} (${_startBuilding!.lat}, ${_startBuilding!.lng})');
+      debugPrint('   도착지: ${_endBuilding!.name} (${_endBuilding!.lat}, ${_endBuilding!.lng})');
+      debugPrint('   출발 호실: ${_startRoomInfo?['roomName'] ?? 'None'}');
+      debugPrint('   도착 호실: ${_endRoomInfo?['roomName'] ?? 'None'}');
+      // 🔥 즉시 미리보기 계산 (Future.microtask 제거)
+      _calculateRoutePreview();
     } else {
       debugPrint('⚠️ 출발지 또는 도착지가 설정되지 않음 (검색 결과 선택)');
       debugPrint('   출발지: ${_startBuilding?.name ?? 'null'}');
@@ -959,7 +981,108 @@ void _onSearchResultSelected(SearchResult result) {
   }
 }
 
-// 🔥 내 위치를 출발지로 설정하는 메서드
+// 🔥 내 위치를 출발지로 설정하는 메서드 (비동기 버전)
+Future<void> _setMyLocationAsStartAsync() async {
+  try {
+    debugPrint('📍 내 위치를 출발지로 자동 설정 (비동기)');
+    
+    final locationManager = Provider.of<LocationManager>(context, listen: false);
+    
+    if (locationManager.hasValidLocation && locationManager.currentLocation != null) {
+      final myLocationBuilding = Building(
+        name: '내 위치',
+        info: '현재 위치에서 출발',
+        lat: locationManager.currentLocation!.latitude!,
+        lng: locationManager.currentLocation!.longitude!,
+        category: '현재위치',
+        baseStatus: '사용가능',
+        hours: '',
+        phone: '',
+        imageUrl: '',
+        description: '현재 위치에서 길찾기를 시작합니다',
+      );
+
+      setState(() {
+        _startBuilding = myLocationBuilding;
+        _startRoomInfo = null;
+      });
+
+      debugPrint('✅ 내 위치 설정 완료: (${myLocationBuilding.lat}, ${myLocationBuilding.lng})');
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(
+                Icons.my_location,
+                color: Colors.white,
+                size: 16,
+              ),
+              const SizedBox(width: 8),
+              const Text('내 위치가 출발지로 자동 설정되었습니다'),
+            ],
+          ),
+          backgroundColor: const Color(0xFF10B981),
+          duration: const Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.all(16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+      );
+    } else {
+      // 위치 정보가 없으면 기본 위치 사용
+      debugPrint('⚠️ 위치 정보가 없어서 기본 위치 사용');
+      final defaultLocationBuilding = Building(
+        name: '내 위치',
+        info: '현재 위치에서 출발 (기본 위치)',
+        lat: 36.338133,
+        lng: 127.446423,
+        category: '현재위치',
+        baseStatus: '사용가능',
+        hours: '',
+        phone: '',
+        imageUrl: '',
+        description: '현재 위치에서 길찾기를 시작합니다',
+      );
+
+      setState(() {
+        _startBuilding = defaultLocationBuilding;
+        _startRoomInfo = null;
+      });
+
+      debugPrint('✅ 기본 위치 설정 완료: (${defaultLocationBuilding.lat}, ${defaultLocationBuilding.lng})');
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(
+                Icons.warning,
+                color: Colors.white,
+                size: 16,
+              ),
+              const SizedBox(width: 8),
+              const Text('기본 위치가 출발지로 설정되었습니다'),
+            ],
+          ),
+          backgroundColor: Colors.orange,
+          duration: const Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.all(16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+      );
+    }
+  } catch (e) {
+    debugPrint('❌ 내 위치 자동 설정 오류: $e');
+  }
+}
+
+// 🔥 내 위치를 출발지로 설정하는 메서드 (기존 버전)
 void _setMyLocationAsStart() {
   try {
     debugPrint('📍 내 위치를 출발지로 자동 설정');
@@ -985,9 +1108,13 @@ void _setMyLocationAsStart() {
         _startRoomInfo = null;
       });
 
+      debugPrint('✅ 내 위치 설정 완료: (${myLocationBuilding.lat}, ${myLocationBuilding.lng})');
+
       // 🔥 내 위치 설정 후 미리보기 계산
       if (_endBuilding != null) {
-        Future.microtask(() => _calculateRoutePreview());
+        debugPrint('🎯 도착지가 이미 설정되어 있음, 미리보기 계산 시작');
+        // 🔥 즉시 미리보기 계산 (Future.microtask 제거)
+        _calculateRoutePreview();
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1014,6 +1141,7 @@ void _setMyLocationAsStart() {
       );
     } else {
       // 위치 정보가 없으면 기본 위치 사용
+      debugPrint('⚠️ 위치 정보가 없어서 기본 위치 사용');
       final defaultLocationBuilding = Building(
         name: '내 위치',
         info: '현재 위치에서 출발 (기본 위치)',
@@ -1032,9 +1160,13 @@ void _setMyLocationAsStart() {
         _startRoomInfo = null;
       });
 
+      debugPrint('✅ 기본 위치 설정 완료: (${defaultLocationBuilding.lat}, ${defaultLocationBuilding.lng})');
+
       // 🔥 기본 위치 설정 후 미리보기 계산
       if (_endBuilding != null) {
-        Future.microtask(() => _calculateRoutePreview());
+        debugPrint('🎯 도착지가 이미 설정되어 있음, 미리보기 계산 시작');
+        // 🔥 즉시 미리보기 계산 (Future.microtask 제거)
+        _calculateRoutePreview();
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1918,7 +2050,7 @@ void _showBuildingInfoForRoom(SearchResult result) {
               ),
             ],
 
-            // 로딩 중이거나 기본 안내 메시지
+            // 로딩 중 표시
             if (_isCalculatingPreview) ...[
               Container(
                 margin: const EdgeInsets.all(16),
@@ -1946,7 +2078,46 @@ void _showBuildingInfoForRoom(SearchResult result) {
                   ],
                 ),
               ),
-            ] else if (_previewResponse == null &&
+            ],
+
+            // 출발지와 도착지가 모두 설정되었지만 경로 계산에 실패한 경우
+            if (_previewResponse == null &&
+                !_isCalculatingPreview &&
+                _startBuilding != null &&
+                _endBuilding != null) ...[
+              Container(
+                margin: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey.shade200),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.info_outline,
+                      color: Colors.grey.shade600,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        '경로를 계산할 수 없습니다. 다시 시도해주세요.',
+                        style: TextStyle(
+                          color: Colors.grey.shade600,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+
+            // 아무것도 설정되지 않은 경우
+            if (_previewResponse == null &&
+                !_isCalculatingPreview &&
                 _startBuilding == null &&
                 _endBuilding == null) ...[
               Container(
