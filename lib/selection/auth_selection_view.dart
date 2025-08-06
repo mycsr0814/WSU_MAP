@@ -9,6 +9,7 @@ import '../auth/user_auth.dart';
 import '../generated/app_localizations.dart';
 import 'package:flutter_application_1/welcome_view.dart';
 import '../providers/app_language_provider.dart';
+import '../providers/category_provider.dart';
 
 class AuthSelectionView extends StatefulWidget {
   const AuthSelectionView({super.key});
@@ -166,7 +167,14 @@ class _AuthSelectionViewState extends State<AuthSelectionView>
   /// 게스트 로그인 실제 수행 (다이얼로그 없이)
   Future<void> _performGuestLogin() async {
     final userAuth = Provider.of<UserAuth>(context, listen: false);
-    await userAuth.loginAsGuest(context: context);
+    final categoryProvider = Provider.of<CategoryProvider>(context, listen: false);
+    
+    // 🔥 게스트 로그인과 동시에 카테고리 로드
+    await Future.wait([
+      userAuth.loginAsGuest(context: context),
+      categoryProvider.loadCategoriesFromServer(),
+    ]);
+    
     if (mounted) {
       Navigator.of(context).pushReplacement(
         PageRouteBuilder(
@@ -663,20 +671,34 @@ Navigator.of(context).pushAndRemoveUntil(
     );
   }
 
-  void _navigateToSignUp() {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => const SignUpView(),
-      ),
-    );
+  void _navigateToSignUp() async {
+    final categoryProvider = Provider.of<CategoryProvider>(context, listen: false);
+    
+    // 🔥 회원가입 화면으로 이동하면서 카테고리 로드
+    await categoryProvider.loadCategoriesFromServer();
+    
+    if (mounted) {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => const SignUpView(),
+        ),
+      );
+    }
   }
 
-  void _navigateToLogin() {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => const LoginFormView(),
-      ),
-    );
+  void _navigateToLogin() async {
+    final categoryProvider = Provider.of<CategoryProvider>(context, listen: false);
+    
+    // 🔥 로그인 화면으로 이동하면서 카테고리 로드
+    await categoryProvider.loadCategoriesFromServer();
+    
+    if (mounted) {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => const LoginFormView(),
+        ),
+      );
+    }
   }
 
   void _showGuestDialog(AppLocalizations l10n) {

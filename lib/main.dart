@@ -13,6 +13,7 @@ import 'auth/user_auth.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'generated/app_localizations.dart';
 import 'providers/app_language_provider.dart';
+import 'providers/category_provider.dart';
 import 'dart:io';
 import 'dart:async';
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -45,6 +46,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => UserAuth()),
         ChangeNotifierProvider(create: (_) => AppLanguageProvider()),
         ChangeNotifierProvider(create: (_) => LocationManager()),
+        ChangeNotifierProvider(create: (_) => CategoryProvider()),
       ],
       child: const CampusNavigatorApp(),
     ),
@@ -95,6 +97,10 @@ class _CampusNavigatorAppState extends State<CampusNavigatorApp>
     // provider 인스턴스 캐싱
     _userAuth = Provider.of<UserAuth>(context, listen: false);
     _locationManager = Provider.of<LocationManager>(context, listen: false);
+
+    // 🔥 CategoryProvider 초기화
+    final categoryProvider = Provider.of<CategoryProvider>(context, listen: false);
+    categoryProvider.initializeWithFallback();
 
     // 네트워크 상태 변화 감지 및 WebSocket 재연결
     _connectivitySubscription = Connectivity().onConnectivityChanged.listen((List<ConnectivityResult> results) {

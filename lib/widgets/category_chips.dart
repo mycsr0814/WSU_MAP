@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:flutter_application_1/services/category_api_service.dart';
 import 'package:flutter_application_1/data/category_fallback_data.dart';
 import 'package:flutter_application_1/utils/CategoryLocalization.dart';
+import 'package:flutter_application_1/providers/category_provider.dart';
 
 class CategoryChips extends StatefulWidget {
   final Function(String, List<Map<String, dynamic>>) onCategorySelected;
@@ -21,9 +23,6 @@ class CategoryChips extends StatefulWidget {
 }
 
 class _CategoryChipsState extends State<CategoryChips> {
-  // 🔥 고정된 카테고리 목록 (UI는 항상 이걸 사용)
-  final List<String> _fixedCategories = CategoryFallbackData.getCategories();
-  
   String? _selectedCategory;
   bool _isApiCalling = false;
   bool _isDisposed = false;
@@ -34,7 +33,8 @@ class _CategoryChipsState extends State<CategoryChips> {
     
     debugPrint('🎯 selectCategory 호출됨: $category');
     
-    if (_fixedCategories.contains(category)) {
+    final categoryProvider = Provider.of<CategoryProvider>(context, listen: false);
+    if (categoryProvider.categories.contains(category)) {
       debugPrint('✅ 카테고리 찾음, 선택 처리 중: $category');
       setState(() {
         _selectedCategory = category;
@@ -68,8 +68,9 @@ class _CategoryChipsState extends State<CategoryChips> {
   }
 
   void refresh() {
-    // 🔥 고정된 카테고리이므로 새로고침 불필요
-    debugPrint('🔄 고정된 카테고리이므로 새로고침 무시');
+    // 🔥 CategoryProvider의 새로고침 사용
+    final categoryProvider = Provider.of<CategoryProvider>(context, listen: false);
+    categoryProvider.refreshCategories();
   }
 
   void _onCategoryTap(String? category) async {
@@ -154,18 +155,22 @@ class _CategoryChipsState extends State<CategoryChips> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 40,
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: _fixedCategories.length,
-        separatorBuilder: (context, index) => const SizedBox(width: 6),
-        itemBuilder: (context, index) {
-          final category = _fixedCategories[index];
-          return _buildCategoryChip(category);
-        },
-      ),
+    return Consumer<CategoryProvider>(
+      builder: (context, categoryProvider, child) {
+        return Container(
+          height: 40,
+          margin: const EdgeInsets.symmetric(horizontal: 16),
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: categoryProvider.categories.length,
+            separatorBuilder: (context, index) => const SizedBox(width: 6),
+            itemBuilder: (context, index) {
+              final category = categoryProvider.categories[index];
+              return _buildCategoryChip(category);
+            },
+          ),
+        );
+      },
     );
   }
 
