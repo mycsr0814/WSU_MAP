@@ -5,6 +5,8 @@ import 'package:flutter_application_1/generated/app_localizations.dart';
 import 'package:flutter_application_1/models/building.dart';
 import 'package:flutter_application_1/models/search_result.dart';
 import 'package:flutter_application_1/services/integrated_search_service.dart';
+import 'package:flutter_application_1/map/widgets/room_selection_dialog.dart';
+import 'package:flutter_application_1/inside/building_map_page.dart';
 // 🔥 BuildingMapPage import 추가
 
 
@@ -82,8 +84,8 @@ Future<void> _onSearchChanged() async {
   // 🔥 기존 _onResultSelected 메서드 수정
   void _onResultSelected(SearchResult result) {
     if (result.isRoom) {
-      // 🔥 강의실인 경우 건물 정보창 표시
-      _showBuildingInfoForRoom(result);
+      // 🔥 강의실인 경우 팝업 다이얼로그 표시
+      _showRoomSelectionDialog(result);
     } else {
       // 건물인 경우 기존 방식대로
       widget.onBuildingSelected(result.building);
@@ -91,29 +93,57 @@ Future<void> _onSearchChanged() async {
     }
   }
 
-  // 🔥 새로 추가: 강의실 검색 결과에서 건물 정보창 표시하는 메서드
-  void _showBuildingInfoForRoom(SearchResult result) {
-    final buildingCode = _extractBuildingCode(result.building.name);
+  // 🔥 새로 추가: 강의실 검색 결과에서 팝업 다이얼로그 표시하는 메서드
+  void _showRoomSelectionDialog(SearchResult result) {
+    debugPrint('🎯 강의실 검색 결과에서 팝업 다이얼로그 표시: ${result.displayName}');
     
-    debugPrint('🎯 강의실 검색 결과에서 건물 정보창 표시: ${result.displayName}');
-    debugPrint('   건물: $buildingCode');
-    debugPrint('   층: ${result.floorNumber}');
-    debugPrint('   호실: ${result.roomNumber}');
-    
-    // 사용자에게 건물 정보창이 표시됨을 알림
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('${result.building.name} 건물 정보를 표시합니다'),
-        duration: const Duration(seconds: 2),
-        backgroundColor: Colors.blue,
-      ),
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return RoomSelectionDialog(
+          roomResult: result,
+          onNavigateToIndoorMap: () {
+            Navigator.of(context).pop(); // 다이얼로그 닫기
+            _navigateToIndoorMap(result);
+          },
+          onShowBuildingMarker: () {
+            Navigator.of(context).pop(); // 다이얼로그 닫기
+            _showBuildingMarker(result);
+          },
+        );
+      },
     );
-    
-    // 건물 정보창 표시를 위해 onBuildingSelected 콜백 호출
-    widget.onBuildingSelected(result.building);
+  }
+
+  // 🔥 내부도면으로 이동하는 메서드
+  void _navigateToIndoorMap(SearchResult result) {
+    debugPrint('🏢 내부도면으로 이동: ${result.building.name}');
     
     // 검색 화면 닫기
     Navigator.pop(context);
+    
+    // 내부도면 페이지로 이동
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => BuildingMapPage(
+          buildingName: result.building.name,
+          targetRoomId: result.roomNumber,
+          targetFloorNumber: result.floorNumber,
+        ),
+      ),
+    );
+  }
+
+  // 🔥 건물 마커를 보여주는 메서드
+  void _showBuildingMarker(SearchResult result) {
+    debugPrint('📍 건물 마커 표시: ${result.building.name}');
+    
+    // 검색 화면 닫기
+    Navigator.pop(context);
+    
+    // 건물 정보창 표시를 위해 onBuildingSelected 콜백 호출
+    widget.onBuildingSelected(result.building);
   }
 
   // 🔥 건물명에서 건물 코드 추출 헬퍼 메서드

@@ -1630,6 +1630,15 @@ class AppLocalizationsKo extends AppLocalizations {
   String get floor_plan => '도면';
 
   @override
+  String get floor => '층';
+
+  @override
+  String get indoorMap => '내부도면';
+
+  @override
+  String get showBuildingMarker => '건물 마커 보기';
+
+  @override
   String get search_hint => '캠퍼스 건물 검색';
 
   @override

@@ -85,6 +85,7 @@ class _CampusNavigatorAppState extends State<CampusNavigatorApp>
   bool _isInitialized = false;
   bool _disposed = false; // 👈 dispose 상태 추적
   Timer? _systemUIResetTimer; // 👈 시스템 UI 재설정 타이머
+  AppLifecycleState _lastLifecycleState = AppLifecycleState.resumed; // 👈 상태 추적
 
   late final UserAuth _userAuth;
   late final LocationManager _locationManager;
@@ -167,6 +168,12 @@ class _CampusNavigatorAppState extends State<CampusNavigatorApp>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
 
+    // 🔥 중복 처리 방지
+    if (_lastLifecycleState == state) {
+      return;
+    }
+    _lastLifecycleState = state;
+
     switch (state) {
       case AppLifecycleState.resumed:
         debugPrint('📱 앱 포그라운드 복귀');
@@ -191,8 +198,6 @@ class _CampusNavigatorAppState extends State<CampusNavigatorApp>
   // ---------- 상태별 처리 ----------
   /// 포그라운드 복귀
   Future<void> _handleAppResumed() async {
-    debugPrint('📱 앱 포그라운드 복귀');
-
     // 👈 Android에서 시스템 UI 재설정
     if (Platform.isAndroid) {
       await _setSystemUIMode();
@@ -203,7 +208,6 @@ class _CampusNavigatorAppState extends State<CampusNavigatorApp>
         _userAuth.userRole == UserRole.external ||
         _userAuth.userId == null ||
         _userAuth.userId!.startsWith('guest_')) {
-      debugPrint('⚠️ 게스트 사용자 - 위치 전송 및 웹소켓 연결 제외');
       return;
     }
 
@@ -216,8 +220,6 @@ class _CampusNavigatorAppState extends State<CampusNavigatorApp>
       // 위치 전송 및 웹소켓 연결 재시작
       _locationManager.startPeriodicLocationSending(userId: _userAuth.userId!);
       WebSocketService().connect(_userAuth.userId!);
-
-      debugPrint('✅ 일반 사용자 위치 전송 및 웹소켓 연결 재시작');
     } catch (e) {
       debugPrint('❌ 포그라운드 복귀 처리 오류: $e');
     }
@@ -225,14 +227,10 @@ class _CampusNavigatorAppState extends State<CampusNavigatorApp>
 
   /// 🔥 백그라운드 이동 시 - 플랫폼 무관하게 위치 전송 및 웹소켓 연결 중지
   Future<void> _handleAppPaused() async {
-    debugPrint('📱 앱 백그라운드 이동 - 위치 전송 및 웹소켓 연결 중지');
-    debugPrint('🔍 플랫폼: ${Platform.isIOS ? 'iOS' : 'Android'}');
-
     _systemUIResetTimer?.cancel(); // 👈 백그라운드 이동 시 타이머 중지
 
     // 🔥 iOS에서는 백그라운드 이동 시에도 즉시 로그아웃 처리 (앱 강제 종료 대응)
     if (Platform.isIOS) {
-      debugPrint('🔥 iOS 백그라운드 이동: 즉시 로그아웃 처리 시작');
       await _handleAppDetached();
       return;
     }
@@ -248,7 +246,6 @@ class _CampusNavigatorAppState extends State<CampusNavigatorApp>
       } else {
         wsService.disconnect();
       }
-      debugPrint('✅ 위치 전송 및 웹소켓 연결 중지 완료');
     } catch (e) {
       debugPrint('❌ 위치 전송 및 웹소켓 연결 중지 오류: $e');
     }
@@ -260,9 +257,7 @@ class _CampusNavigatorAppState extends State<CampusNavigatorApp>
         !_userAuth.userId!.startsWith('guest_')) {
       try {
         // 🔥 UserAuth의 logout() 메서드 호출하지 않고 서버 로그아웃만 처리
-        debugPrint('🔥 백그라운드 이동: 서버 로그아웃 처리 시작');
         await _userAuth.logoutServerOnly();
-        debugPrint('✅ 서버 로그아웃 완료');
       } catch (e) {
         debugPrint('❌ 서버 로그아웃 오류: $e');
       }
@@ -271,36 +266,24 @@ class _CampusNavigatorAppState extends State<CampusNavigatorApp>
 
   /// 🔥 앱 완전 종료 시 - 강제 중지 (비동기)
   Future<void> _handleAppDetached() async {
-    debugPrint('📱 앱 완전 종료 - 모든 연결 강제 중지');
-    debugPrint('🔍 플랫폼: ${Platform.isIOS ? 'iOS' : 'Android'}');
-
     _systemUIResetTimer?.cancel(); // 👈 앱 종료 시 타이머 중지
 
     // 🔥 강제 위치 전송 및 웹소켓 연결 중지
     try {
-      _locationManager.forceStopLocationSending();
-
-      // 🔥 웹소켓을 통해 서버에 로그아웃 상태 알림
-      final wsService = WebSocketService();
-      if (wsService.isConnected) {
-        await wsService.logoutAndDisconnect();
-      } else {
-        wsService.disconnect();
-      }
-      debugPrint('✅ 모든 연결 강제 중지 완료');
+      _locationManager.stopPeriodicLocationSending();
+      WebSocketService().disconnect();
     } catch (e) {
       debugPrint('❌ 연결 강제 중지 오류: $e');
     }
 
-    // 🔥 일반 사용자만 서버 로그아웃 처리
+    // 🔥 일반 사용자만 서버 로그아웃 처리 (동기)
     if (_userAuth.isLoggedIn &&
         _userAuth.userRole != UserRole.external &&
         _userAuth.userId != null &&
         !_userAuth.userId!.startsWith('guest_')) {
       try {
-        debugPrint('🔥 앱 완전 종료: 서버 로그아웃 처리 시작');
-        await _userAuth.logoutServerOnly();
-        debugPrint('✅ 서버 로그아웃 완료');
+        // 동기적으로 서버 로그아웃 처리 (간단한 HTTP 요청)
+        _userAuth.logoutServerOnly();
       } catch (e) {
         debugPrint('❌ 서버 로그아웃 오류: $e');
       }

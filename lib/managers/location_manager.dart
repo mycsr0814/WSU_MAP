@@ -45,11 +45,18 @@ class LocationManager extends ChangeNotifier {
   // 🔥 즉시 UI 갱신을 위한 플래그
   bool _needsImmediateUIUpdate = false;
   DateTime? _lastUIUpdateTime;
-  static const Duration _uiUpdateThrottle = Duration(milliseconds: 100); // 더 빠르게
+  static const Duration _uiUpdateThrottle = Duration(
+    milliseconds: 100,
+  ); // 더 빠르게
 
   // 캐시 관리
   DateTime? _lastLocationTime;
-  static const Duration _cacheValidDuration = Duration(seconds: 30);  // 2분에서 30초로 다시 조정
+  static const Duration _cacheValidDuration = Duration(
+    seconds: 30,
+  ); // 2분에서 30초로 다시 조정
+
+  // 🔥 앱 생명주기 상태 추적
+  AppLifecycleState? _lastLifecycleState;
 
   // 기존 Getters
   bool get isInitialized => _isInitialized;
@@ -145,7 +152,10 @@ class LocationManager extends ChangeNotifier {
         const Duration(milliseconds: 1500), // 1.5초로 단축
         onTimeout: () {
           debugPrint('⏰ 위치 요청 타임아웃 (1.5초)');
-          throw TimeoutException('위치 요청 타임아웃', const Duration(milliseconds: 1500));
+          throw TimeoutException(
+            '위치 요청 타임아웃',
+            const Duration(milliseconds: 1500),
+          );
         },
       );
 
@@ -163,7 +173,6 @@ class LocationManager extends ChangeNotifier {
         completer.complete(null);
         return null;
       }
-
     } catch (e) {
       debugPrint('❌ 단순화된 위치 요청 실패: $e');
       completer.complete(null);
@@ -193,7 +202,10 @@ class LocationManager extends ChangeNotifier {
         const Duration(seconds: 2), // 2초 타임아웃
         onTimeout: () {
           debugPrint('⏰ LocationService 초기화 타임아웃 - 계속 진행');
-          throw TimeoutException('LocationService 초기화 타임아웃', const Duration(seconds: 2));
+          throw TimeoutException(
+            'LocationService 초기화 타임아웃',
+            const Duration(seconds: 2),
+          );
         },
       );
 
@@ -201,20 +213,22 @@ class LocationManager extends ChangeNotifier {
       if (Platform.isIOS) {
         debugPrint('📱 iOS 최적화 설정');
         try {
-          await _location.changeSettings(
-            accuracy: loc.LocationAccuracy.balanced,
-          ).timeout(const Duration(seconds: 1));
+          await _location
+              .changeSettings(accuracy: loc.LocationAccuracy.balanced)
+              .timeout(const Duration(seconds: 1));
         } catch (e) {
           debugPrint('⏰ iOS 설정 타임아웃 - 기본값 사용: $e');
         }
       } else {
         debugPrint('🤖 Android 최적화 설정');
         try {
-          await _location.changeSettings(
-            accuracy: loc.LocationAccuracy.balanced,
-            interval: 3000, // 5000에서 3000으로 단축
-            distanceFilter: 5, // 10에서 5로 단축
-          ).timeout(const Duration(seconds: 1));
+          await _location
+              .changeSettings(
+                accuracy: loc.LocationAccuracy.balanced,
+                interval: 3000, // 5000에서 3000으로 단축
+                distanceFilter: 5, // 10에서 5로 단축
+              )
+              .timeout(const Duration(seconds: 1));
         } catch (e) {
           debugPrint('⏰ Android 설정 타임아웃 - 기본값 사용: $e');
         }
@@ -380,7 +394,7 @@ class LocationManager extends ChangeNotifier {
       // 2. 🔥 LocationService를 통한 위치 요청
       final locationResult = await _locationService.getCurrentLocation(
         forceRefresh: true,
-        timeout: const Duration(seconds: 5),  // 8초에서 5초로 더 단축
+        timeout: const Duration(seconds: 5), // 8초에서 5초로 더 단축
       );
 
       if (locationResult.isSuccess && locationResult.locationData != null) {
@@ -448,7 +462,7 @@ class LocationManager extends ChangeNotifier {
 
       // 실제 위치 요청
       final locationData = await _location.getLocation().timeout(
-        const Duration(seconds: 4),  // 6초에서 4초로 더 단축
+        const Duration(seconds: 4), // 6초에서 4초로 더 단축
         onTimeout: () {
           debugPrint('⏰ 직접 위치 획득 타임아웃');
           throw TimeoutException('직접 위치 획득 타임아웃', const Duration(seconds: 4));
@@ -791,7 +805,9 @@ class LocationManager extends ChangeNotifier {
 
     _trackingSubscription = _location.onLocationChanged.listen(
       (loc.LocationData locationData) {
-        debugPrint('📍 위치 이벤트: ${locationData.latitude}, ${locationData.longitude}');
+        debugPrint(
+          '📍 위치 이벤트: ${locationData.latitude}, ${locationData.longitude}',
+        );
         if (_isLocationDataValid(locationData) &&
             isActualGPSLocation(locationData)) {
           currentLocation = locationData;
@@ -875,39 +891,51 @@ class LocationManager extends ChangeNotifier {
 
   /// 🔥 개선된 앱 라이프사이클 변경 처리
   void handleAppLifecycleChange(AppLifecycleState state) {
+    // 🔥 중복 처리 방지
+    if (_lastLifecycleState == state) {
+      return;
+    }
+    _lastLifecycleState = state;
+
     switch (state) {
       case AppLifecycleState.resumed:
-        debugPrint('📱 앱 복귀 - 위치 전송 및 UI 갱신');
-
-        // 위치 요청
-        Future.delayed(const Duration(seconds: 1), () {
-          if (!_isCacheValid() && !_isRequestingLocation) {
-            refreshLocation(); // 즉시 새로고침
-          }
-        });
-
-        // 위치 전송이 활성화되어 있으면 즉시 전송
-        if (_isLocationSendingEnabled && _currentUserId != null) {
-          Future.delayed(const Duration(seconds: 2), () {
-            _sendCurrentLocationToServerImproved();
-          });
-        }
+        debugPrint('📱 앱 복귀 - 위치 서비스 재시작');
+        _resumeLocationServices();
         break;
 
       case AppLifecycleState.paused:
-        debugPrint('📱 앱 일시정지');
-        // 🔥 백그라운드에서도 위치 전송 중지
-        forceStopLocationSending();
+        debugPrint('📱 앱 일시정지 - 위치 서비스 중단');
+        _pauseLocationServices();
         break;
 
       case AppLifecycleState.detached:
-        debugPrint('📱 앱 종료');
-        forceStopLocationSending();
+        debugPrint('📱 앱 종료 - 모든 서비스 정리');
+        _cleanupAllServices();
         break;
 
       default:
         break;
     }
+  }
+
+  /// 🔥 위치 서비스 재시작
+  void _resumeLocationServices() {
+    if (_isLocationSendingEnabled && _currentUserId != null) {
+      startPeriodicLocationSending(userId: _currentUserId!);
+    }
+  }
+
+  /// 🔥 위치 서비스 일시정지
+  void _pauseLocationServices() {
+    stopPeriodicLocationSending();
+    stopLocationTracking();
+  }
+
+  /// 🔥 모든 서비스 정리
+  void _cleanupAllServices() {
+    stopPeriodicLocationSending();
+    stopLocationTracking();
+    clearLocation();
   }
 
   /// 권한 상태 재확인

@@ -11,6 +11,8 @@ import 'package:flutter_application_1/managers/location_manager.dart';
 import 'package:flutter_application_1/unified_navigation_stepper_page.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_application_1/services/unified_path_service.dart';
+import 'package:flutter_application_1/map/widgets/room_selection_dialog.dart';
+import 'package:flutter_application_1/inside/building_map_page.dart';
 
 class DirectionsScreen extends StatefulWidget {
   final Building? presetStart;
@@ -112,21 +114,13 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
     // 출발지와 도착지가 모두 설정되면 미리보기 계산
     if (_startBuilding != null && _endBuilding != null) {
       _calculateRoutePreview();
-    } else if (_endBuilding != null && _startBuilding == null) {
-      // 🔥 도착지만 설정된 경우 내 위치 자동 설정 후 경로 계산
-      debugPrint('📍 도착지만 설정됨, 내 위치 자동 설정 후 경로 계산');
-      WidgetsBinding.instance.addPostFrameCallback((_) async {
-        await _setMyLocationAsStartAsync();
-        // 🔥 내 위치 설정 완료 후 경로 계산
-        if (_startBuilding != null && _endBuilding != null) {
-          debugPrint('🎯 내 위치 설정 완료, 경로 계산 시작');
-          _calculateRoutePreview();
-        }
-      });
     }
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final locationManager = Provider.of<LocationManager>(context, listen: false);
+      final locationManager = Provider.of<LocationManager>(
+        context,
+        listen: false,
+      );
       locationManager.requestLocationQuickly(); // 언어 변경 후에도 위치 강제 갱신
     });
   }
@@ -156,7 +150,7 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
       final roomBuilding = Building(
         name: buildingName,
         info:
-            '${floorNumberStr.isNotEmpty ? "${floorNumberStr}층 " : ""}$roomName호',
+            '${floorNumberStr.isNotEmpty ? "$floorNumberStr층 " : ""}$roomName호',
         lat: 0.0,
         lng: 0.0,
         category: '강의실',
@@ -165,7 +159,7 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
         phone: '',
         imageUrl: '',
         description:
-            '$buildingName ${floorNumberStr.isNotEmpty ? "${floorNumberStr}층 " : ""}$roomName호',
+            '$buildingName ${floorNumberStr.isNotEmpty ? "$floorNumberStr층 " : ""}$roomName호',
       );
 
       if (type == 'start') {
@@ -183,19 +177,6 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
       }
 
       _needsCoordinateUpdate = true;
-
-      // 🔥 출발지와 도착지가 모두 설정되면 즉시 경로 계산
-      if (_startBuilding != null && _endBuilding != null) {
-        debugPrint('🎯 출발지와 도착지가 모두 설정됨, 미리보기 계산 시작 (방 정보 설정)');
-        debugPrint('   출발지: ${_startBuilding!.name}');
-        debugPrint('   도착지: ${_endBuilding!.name}');
-        // 🔥 즉시 미리보기 계산
-        _calculateRoutePreview();
-      } else {
-        debugPrint('⚠️ 출발지 또는 도착지가 설정되지 않음 (방 정보 설정)');
-        debugPrint('   출발지: ${_startBuilding?.name ?? 'null'}');
-        debugPrint('   도착지: ${_endBuilding?.name ?? 'null'}');
-      }
 
       debugPrint('=== _handleRoomData 완료 ===');
     } catch (e, stackTrace) {
@@ -337,440 +318,448 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
 
   // 🔥 통합 API를 사용한 경로 미리보기 계산
   // 3. 경로 미리보기 계산 시 (건물 코드/층번호 일치 보장)
-Future<void> _calculateRoutePreview() async {
-  try {
-    // 내위치가 설정되지 않았으면 자동으로 설정하고 완료될 때까지 대기
-    if (_startBuilding == null) {
-      debugPrint('📍 내위치가 설정되지 않음. 자동으로 내위치 설정');
-      await _setMyLocationAsStartAsync();
-    }
-    
-    if (_startBuilding == null || _endBuilding == null) {
-      debugPrint('⚠️ 출발지 또는 도착지가 없어서 경로 계산 불가');
-      return;
-    }
+  Future<void> _calculateRoutePreview() async {
+    try {
+      // 내위치가 설정되지 않았으면 자동으로 설정
+      if (_startBuilding == null) {
+        debugPrint('📍 내위치가 설정되지 않음. 자동으로 내위치 설정');
+        _setMyLocationAsStart();
+      }
 
-    // 🔥 setState 중복 호출 제거
-    setState(() => _isCalculatingPreview = true);
+      if (_startBuilding == null || _endBuilding == null) {
+        debugPrint('⚠️ 출발지 또는 도착지가 없어서 경로 계산 불가');
+        return;
+      }
 
-    debugPrint('🔍 경로 미리보기 계산 시작');
-    debugPrint('   출발지: ${_startBuilding!.name}');
-    debugPrint('   도착지: ${_endBuilding!.name}');
-    debugPrint('   출발 호실: ${_startRoomInfo?['roomName'] ?? 'None'}');
-    debugPrint('   도착 호실: ${_endRoomInfo?['roomName'] ?? 'None'}');
+      setState(() => _isCalculatingPreview = true);
+      setState(() => _isCalculatingPreview = true);
 
-    UnifiedPathResponse? response;
+      debugPrint('🔍 경로 미리보기 계산 시작');
+      debugPrint('   출발지: ${_startBuilding!.name}');
+      debugPrint('   도착지: ${_endBuilding!.name}');
+      debugPrint('   출발 호실: ${_startRoomInfo?['roomName'] ?? 'None'}');
+      debugPrint('   도착 호실: ${_endRoomInfo?['roomName'] ?? 'None'}');
 
-    // 🔥 1. 호실-호실 경로
-    if (_startRoomInfo != null && _endRoomInfo != null) {
-      response = await _calculateRoomToRoomPath();
-    }
-    // 🔥 2. 호실-건물 경로  
-    else if (_startRoomInfo != null) {
-      response = await _calculateRoomToBuildingPath();
-    }
-    // 🔥 3. 건물-호실 경로 (내 위치 → 호실 포함)
-    else if (_endRoomInfo != null) {
-      response = await _calculateBuildingToRoomPath();
-    }
-    // 🔥 4. 건물-건물 경로 (내 위치 → 건물 포함)
-    else {
-      response = await _calculateBuildingToBuildingPath();
-    }
+      UnifiedPathResponse? response;
 
-    // 🔥 응답 처리 및 검증
-    await _processRouteResponse(response);
+      // 🔥 1. 호실-호실 경로
+      if (_startRoomInfo != null && _endRoomInfo != null) {
+        response = await _calculateRoomToRoomPath();
+      }
+      // 🔥 2. 호실-건물 경로
+      else if (_startRoomInfo != null) {
+        response = await _calculateRoomToBuildingPath();
+      }
+      // 🔥 3. 건물-호실 경로 (내 위치 → 호실 포함)
+      else if (_endRoomInfo != null) {
+        response = await _calculateBuildingToRoomPath();
+      }
+      // 🔥 4. 건물-건물 경로 (내 위치 → 건물 포함)
+      else {
+        response = await _calculateBuildingToBuildingPath();
+      }
 
-  } catch (e) {
-    debugPrint('❌ 경로 미리보기 계산 전체 오류: $e');
-    await _handleRouteCalculationError(e);
-  } finally {
-    // 🔥 로딩 상태 해제
-    if (mounted) {
-      setState(() => _isCalculatingPreview = false);
+      // 🔥 응답 처리 및 검증
+      await _processRouteResponse(response);
+    } catch (e) {
+      debugPrint('❌ 경로 미리보기 계산 전체 오류: $e');
+      await _handleRouteCalculationError(e);
+    } finally {
+      if (mounted) {
+        setState(() => _isCalculatingPreview = false);
+      }
     }
   }
-}
 
-Future<UnifiedPathResponse?> _calculateRoomToRoomPath() async {
-  try {
-    debugPrint('🏠 호실-호실 경로 계산');
-    
-    // 🔥 안전한 호실 정보 추출
-    final fromBuilding = _safeExtractRoomData(_startRoomInfo!, 'buildingName');
-    final fromFloor = _safeExtractFloorNumber(_startRoomInfo!, 'floorNumber');
-    final fromRoom = _safeExtractRoomData(_startRoomInfo!, 'roomName');
-    
-    final toBuilding = _safeExtractRoomData(_endRoomInfo!, 'buildingName');
-    final toFloor = _safeExtractFloorNumber(_endRoomInfo!, 'floorNumber');
-    final toRoom = _safeExtractRoomData(_endRoomInfo!, 'roomName');
-    
-    // 🔥 필수 정보 검증
-    if (fromBuilding.isEmpty || fromRoom.isEmpty || 
-        toBuilding.isEmpty || toRoom.isEmpty) {
-      throw Exception('호실 정보가 불완전합니다: from($fromBuilding-$fromRoom) to($toBuilding-$toRoom)');
+  Future<UnifiedPathResponse?> _calculateRoomToRoomPath() async {
+    try {
+      debugPrint('🏠 호실-호실 경로 계산');
+
+      // 🔥 안전한 호실 정보 추출
+      final fromBuilding = _safeExtractRoomData(
+        _startRoomInfo!,
+        'buildingName',
+      );
+      final fromFloor = _safeExtractFloorNumber(_startRoomInfo!, 'floorNumber');
+      final fromRoom = _safeExtractRoomData(_startRoomInfo!, 'roomName');
+
+      final toBuilding = _safeExtractRoomData(_endRoomInfo!, 'buildingName');
+      final toFloor = _safeExtractFloorNumber(_endRoomInfo!, 'floorNumber');
+      final toRoom = _safeExtractRoomData(_endRoomInfo!, 'roomName');
+
+      // 🔥 필수 정보 검증
+      if (fromBuilding.isEmpty ||
+          fromRoom.isEmpty ||
+          toBuilding.isEmpty ||
+          toRoom.isEmpty) {
+        throw Exception(
+          '호실 정보가 불완전합니다: from($fromBuilding-$fromRoom) to($toBuilding-$toRoom)',
+        );
+      }
+
+      if (fromFloor < 1 || toFloor < 1) {
+        throw Exception('층 번호가 유효하지 않습니다: from($fromFloor층) to($toFloor층)');
+      }
+
+      debugPrint(
+        '✅ 호실-호실 경로: $fromBuilding $fromFloor층 $fromRoom호 → $toBuilding $toFloor층 $toRoom호',
+      );
+
+      final response = await UnifiedPathService.getPathBetweenRooms(
+        fromBuilding: fromBuilding,
+        fromFloor: fromFloor,
+        fromRoom: fromRoom,
+        toBuilding: toBuilding,
+        toFloor: toFloor,
+        toRoom: toRoom,
+      );
+
+      if (response == null) {
+        throw Exception('호실 간 경로 API 응답이 null입니다');
+      }
+
+      return response;
+    } catch (e) {
+      debugPrint('❌ 호실-호실 경로 계산 오류: $e');
+      throw Exception('호실 간 경로 계산 실패: $e');
     }
-    
-    if (fromFloor < 1 || toFloor < 1) {
-      throw Exception('층 번호가 유효하지 않습니다: from($fromFloor층) to($toFloor층)');
-    }
-    
-    debugPrint('✅ 호실-호실 경로: $fromBuilding $fromFloor층 $fromRoom호 → $toBuilding $toFloor층 $toRoom호');
-    
-    final response = await UnifiedPathService.getPathBetweenRooms(
-      fromBuilding: fromBuilding,
-      fromFloor: fromFloor,
-      fromRoom: fromRoom,
-      toBuilding: toBuilding,
-      toFloor: toFloor,
-      toRoom: toRoom,
-    );
-    
-    if (response == null) {
-      throw Exception('호실 간 경로 API 응답이 null입니다');
-    }
-    
-    return response;
-  } catch (e) {
-    debugPrint('❌ 호실-호실 경로 계산 오류: $e');
-    throw Exception('호실 간 경로 계산 실패: $e');
   }
-}
 
-// 🔥 호실-건물 경로 계산
-Future<UnifiedPathResponse?> _calculateRoomToBuildingPath() async {
-  try {
-    debugPrint('🏠 호실-건물 경로 계산');
-    
-    final fromBuilding = _safeExtractRoomData(_startRoomInfo!, 'buildingName');
-    final fromFloor = _safeExtractFloorNumber(_startRoomInfo!, 'floorNumber');
-    final fromRoom = _safeExtractRoomData(_startRoomInfo!, 'roomName');
-    
-    if (fromBuilding.isEmpty || fromRoom.isEmpty) {
-      throw Exception('출발 호실 정보가 불완전합니다: $fromBuilding-$fromRoom');
+  // 🔥 호실-건물 경로 계산
+  Future<UnifiedPathResponse?> _calculateRoomToBuildingPath() async {
+    try {
+      debugPrint('🏠 호실-건물 경로 계산');
+
+      final fromBuilding = _safeExtractRoomData(
+        _startRoomInfo!,
+        'buildingName',
+      );
+      final fromFloor = _safeExtractFloorNumber(_startRoomInfo!, 'floorNumber');
+      final fromRoom = _safeExtractRoomData(_startRoomInfo!, 'roomName');
+
+      if (fromBuilding.isEmpty || fromRoom.isEmpty) {
+        throw Exception('출발 호실 정보가 불완전합니다: $fromBuilding-$fromRoom');
+      }
+
+      if (fromFloor < 1) {
+        throw Exception('출발 층 번호가 유효하지 않습니다: $fromFloor층');
+      }
+
+      debugPrint(
+        '✅ 호실-건물 경로: $fromBuilding $fromFloor층 $fromRoom호 → ${_endBuilding!.name}',
+      );
+
+      final response = await UnifiedPathService.getPathFromRoom(
+        fromBuilding: fromBuilding,
+        fromFloor: fromFloor,
+        fromRoom: fromRoom,
+        toBuilding: _endBuilding!,
+      );
+
+      if (response == null) {
+        throw Exception('호실-건물 경로 API 응답이 null입니다');
+      }
+
+      return response;
+    } catch (e) {
+      debugPrint('❌ 호실-건물 경로 계산 오류: $e');
+      throw Exception('호실에서 건물로의 경로 계산 실패: $e');
     }
-    
-    if (fromFloor < 1) {
-      throw Exception('출발 층 번호가 유효하지 않습니다: $fromFloor층');
-    }
-    
-    debugPrint('✅ 호실-건물 경로: $fromBuilding $fromFloor층 $fromRoom호 → ${_endBuilding!.name}');
-    
-    final response = await UnifiedPathService.getPathFromRoom(
-      fromBuilding: fromBuilding,
-      fromFloor: fromFloor,
-      fromRoom: fromRoom,
-      toBuilding: _endBuilding!,
-    );
-    
-    if (response == null) {
-      throw Exception('호실-건물 경로 API 응답이 null입니다');
-    }
-    
-    return response;
-  } catch (e) {
-    debugPrint('❌ 호실-건물 경로 계산 오류: $e');
-    throw Exception('호실에서 건물로의 경로 계산 실패: $e');
   }
-}
 
-// 🔥 건물-호실 경로 계산
-// 🔥 _calculateBuildingToRoomPath 간단 수정 - "내 위치" 체크 추가
+  // 🔥 건물-호실 경로 계산
+  // 🔥 _calculateBuildingToRoomPath 간단 수정 - "내 위치" 체크 추가
 
-Future<UnifiedPathResponse?> _calculateBuildingToRoomPath() async {
-  try {
-    debugPrint('🏠 건물-호실 경로 계산');
-    
-    final toBuilding = _safeExtractRoomData(_endRoomInfo!, 'buildingName');
-    final toFloor = _safeExtractFloorNumber(_endRoomInfo!, 'floorNumber');
-    final toRoom = _safeExtractRoomData(_endRoomInfo!, 'roomName');
-    
-    if (toBuilding.isEmpty || toRoom.isEmpty) {
-      throw Exception('도착 호실 정보가 불완전합니다: $toBuilding-$toRoom');
+  Future<UnifiedPathResponse?> _calculateBuildingToRoomPath() async {
+    try {
+      debugPrint('🏠 건물-호실 경로 계산');
+
+      final toBuilding = _safeExtractRoomData(_endRoomInfo!, 'buildingName');
+      final toFloor = _safeExtractFloorNumber(_endRoomInfo!, 'floorNumber');
+      final toRoom = _safeExtractRoomData(_endRoomInfo!, 'roomName');
+
+      if (toBuilding.isEmpty || toRoom.isEmpty) {
+        throw Exception('도착 호실 정보가 불완전합니다: $toBuilding-$toRoom');
+      }
+
+      if (toFloor < 1) {
+        throw Exception('도착 층 번호가 유효하지 않습니다: $toFloor층');
+      }
+
+      // 🔥 "내 위치"든 일반 건물이든 동일하게 처리
+      debugPrint(
+        '✅ 건물-호실 경로: ${_startBuilding!.name} → $toBuilding $toFloor층 $toRoom호',
+      );
+
+      final response = await UnifiedPathService.getPathToRoom(
+        fromBuilding: _startBuilding!, // "내 위치"도 그대로 전달
+        toBuilding: toBuilding,
+        toFloor: toFloor,
+        toRoom: toRoom,
+      );
+
+      if (response == null) {
+        throw Exception('건물-호실 경로 API 응답이 null입니다');
+      }
+
+      return response;
+    } catch (e) {
+      debugPrint('❌ 건물-호실 경로 계산 오류: $e');
+      throw Exception('건물에서 호실로의 경로 계산 실패: $e');
     }
-    
-    if (toFloor < 1) {
-      throw Exception('도착 층 번호가 유효하지 않습니다: $toFloor층');
-    }
-    
-    // 🔥 "내 위치"든 일반 건물이든 동일하게 처리
-    debugPrint('✅ 건물-호실 경로: ${_startBuilding!.name} → $toBuilding $toFloor층 $toRoom호');
-    
-    final response = await UnifiedPathService.getPathToRoom(
-      fromBuilding: _startBuilding!,  // "내 위치"도 그대로 전달
-      toBuilding: toBuilding,
-      toFloor: toFloor,
-      toRoom: toRoom,
-    );
-    
-    if (response == null) {
-      throw Exception('건물-호실 경로 API 응답이 null입니다');
-    }
-    
-    return response;
-  } catch (e) {
-    debugPrint('❌ 건물-호실 경로 계산 오류: $e');
-    throw Exception('건물에서 호실로의 경로 계산 실패: $e');
   }
-}
 
-// 🔥 건물-건물 경로 계산
-Future<UnifiedPathResponse?> _calculateBuildingToBuildingPath() async {
-  try {
-    debugPrint('🏢 건물-건물 경로 계산');
-    
-    final startName = _startBuilding!.name;
-    final endName = _endBuilding!.name;
-    
-    if (startName.isEmpty || endName.isEmpty) {
-      throw Exception('건물 이름이 비어있습니다: start($startName) end($endName)');
+  // 🔥 건물-건물 경로 계산
+  Future<UnifiedPathResponse?> _calculateBuildingToBuildingPath() async {
+    try {
+      debugPrint('🏢 건물-건물 경로 계산');
+
+      final startName = _startBuilding!.name;
+      final endName = _endBuilding!.name;
+
+      if (startName.isEmpty || endName.isEmpty) {
+        throw Exception('건물 이름이 비어있습니다: start($startName) end($endName)');
+      }
+
+      // 🔥 "내 위치"든 일반 건물이든 동일하게 처리
+      debugPrint('✅ 건물-건물 경로: $startName → $endName');
+
+      final response = await UnifiedPathService.getPathBetweenBuildings(
+        fromBuilding: _startBuilding!, // "내 위치"도 그대로 전달
+        toBuilding: _endBuilding!,
+      );
+
+      if (response == null) {
+        throw Exception('건물 간 경로 API 응답이 null입니다');
+      }
+
+      return response;
+    } catch (e) {
+      debugPrint('❌ 건물-건물 경로 계산 오류: $e');
+      throw Exception('건물 간 경로 계산 실패: $e');
     }
-    
-    // 🔥 "내 위치"든 일반 건물이든 동일하게 처리
-    debugPrint('✅ 건물-건물 경로: $startName → $endName');
-    
-    final response = await UnifiedPathService.getPathBetweenBuildings(
-      fromBuilding: _startBuilding!,  // "내 위치"도 그대로 전달
-      toBuilding: _endBuilding!,
-    );
-    
-    if (response == null) {
-      throw Exception('건물 간 경로 API 응답이 null입니다');
-    }
-    
-    return response;
-  } catch (e) {
-    debugPrint('❌ 건물-건물 경로 계산 오류: $e');
-    throw Exception('건물 간 경로 계산 실패: $e');
   }
-}
 
-// 🔥 경로 응답 처리 및 검증
-Future<void> _processRouteResponse(UnifiedPathResponse? response) async {
-  try {
-    if (response == null) {
-      throw Exception('경로 계산 API 응답이 null입니다');
+  // 🔥 경로 응답 처리 및 검증
+  Future<void> _processRouteResponse(UnifiedPathResponse? response) async {
+    try {
+      if (response == null) {
+        throw Exception('경로 계산 API 응답이 null입니다');
+      }
+
+      if (!mounted) {
+        debugPrint('⚠️ 컴포넌트가 unmounted 상태입니다');
+        return;
+      }
+
+      // 🔥 성공적으로 응답 처리
+      setState(() {
+        _previewResponse = response;
+      });
+
+      // 🔥 거리/시간 계산
+      _calculateEstimatesFromResponse(response);
+
+      debugPrint('✅ 경로 미리보기 계산 완료');
+      debugPrint('   경로 타입: ${response.type}');
+      debugPrint('   예상 거리: $_estimatedDistance');
+      debugPrint('   예상 시간: $_estimatedTime');
+    } catch (e) {
+      debugPrint('❌ 경로 응답 처리 오류: $e');
+      throw Exception('경로 응답 처리 실패: $e');
     }
-    
-    if (!mounted) {
-      debugPrint('⚠️ 컴포넌트가 unmounted 상태입니다');
-      return;
-    }
-    
-    // 🔥 성공적으로 응답 처리 - 즉시 UI 업데이트
-    setState(() {
-      _previewResponse = response;
-      _isCalculatingPreview = false; // 로딩 상태도 함께 해제
-    });
-    
-    // 🔥 거리/시간 계산
-    _calculateEstimatesFromResponse(response);
-    
-    debugPrint('✅ 경로 미리보기 계산 완료');
-    debugPrint('   경로 타입: ${response.type}');
-    debugPrint('   예상 거리: $_estimatedDistance');
-    debugPrint('   예상 시간: $_estimatedTime');
-    
-  } catch (e) {
-    debugPrint('❌ 경로 응답 처리 오류: $e');
-    throw Exception('경로 응답 처리 실패: $e');
   }
-}
 
-// 🔥 경로 계산 오류 처리
-Future<void> _handleRouteCalculationError(dynamic error) async {
-  try {
-    if (!mounted) return;
-    
-    // 🔥 오류 상태 초기화 및 로딩 상태 해제
-    setState(() {
-      _previewResponse = null;
-      _estimatedDistance = '';
-      _estimatedTime = '';
-      _isCalculatingPreview = false; // 로딩 상태 해제
-    });
-    
-    final errorMessage = error.toString();
-    debugPrint('🚨 경로 계산 오류 처리: $errorMessage');
-    
-    // 🔥 오류 타입별 사용자 알림
-    String userMessage;
-    Color messageColor;
-    
-    if (errorMessage.contains('호실')) {
-      userMessage = '호실 경로 계산 중 오류가 발생했습니다. 건물 단위로 검색해보세요.';
-      messageColor = Colors.orange;
-    } else if (errorMessage.contains('위치')) {
-      userMessage = '현재 위치를 확인할 수 없습니다. 다시 시도해주세요.';
-      messageColor = Colors.blue;
-    } else if (errorMessage.contains('API') || errorMessage.contains('null')) {
-      userMessage = '서버 연결에 문제가 있습니다. 잠시 후 다시 시도해주세요.';
-      messageColor = Colors.red;
-    } else {
-      userMessage = '경로 계산 중 오류가 발생했습니다. 다시 시도해주세요.';
-      messageColor = Colors.red;
-    }
-    
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(userMessage),
-        backgroundColor: messageColor,
-        duration: const Duration(seconds: 4),
-        action: SnackBarAction(
-          label: '다시 시도',
-          textColor: Colors.white,
-          onPressed: () {
-            _calculateRoutePreview();
-          },
+  // 🔥 경로 계산 오류 처리
+  Future<void> _handleRouteCalculationError(dynamic error) async {
+    try {
+      if (!mounted) return;
+
+      // 🔥 오류 상태 초기화
+      setState(() {
+        _previewResponse = null;
+        _estimatedDistance = '';
+        _estimatedTime = '';
+      });
+
+      final errorMessage = error.toString();
+      debugPrint('🚨 경로 계산 오류 처리: $errorMessage');
+
+      // 🔥 오류 타입별 사용자 알림
+      String userMessage;
+      Color messageColor;
+
+      if (errorMessage.contains('호실')) {
+        userMessage = '호실 경로 계산 중 오류가 발생했습니다. 건물 단위로 검색해보세요.';
+        messageColor = Colors.orange;
+      } else if (errorMessage.contains('위치')) {
+        userMessage = '현재 위치를 확인할 수 없습니다. 다시 시도해주세요.';
+        messageColor = Colors.blue;
+      } else if (errorMessage.contains('API') ||
+          errorMessage.contains('null')) {
+        userMessage = '서버 연결에 문제가 있습니다. 잠시 후 다시 시도해주세요.';
+        messageColor = Colors.red;
+      } else {
+        userMessage = '경로 계산 중 오류가 발생했습니다. 다시 시도해주세요.';
+        messageColor = Colors.red;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(userMessage),
+          backgroundColor: messageColor,
+          duration: const Duration(seconds: 4),
+          action: SnackBarAction(
+            label: '다시 시도',
+            textColor: Colors.white,
+            onPressed: () {
+              _calculateRoutePreview();
+            },
+          ),
         ),
-      ),
-    );
-    
-  } catch (e) {
-    debugPrint('❌ 오류 처리 중 추가 오류: $e');
+      );
+    } catch (e) {
+      debugPrint('❌ 오류 처리 중 추가 오류: $e');
+    }
   }
-}
 
-String _safeExtractRoomData(Map<String, dynamic> roomInfo, String key) {
-  try {
-    final value = roomInfo[key];
-    if (value == null) return '';
-    return value.toString().trim();
-  } catch (e) {
-    debugPrint('❌ 호실 데이터 추출 오류 ($key): $e');
-    return '';
+  String _safeExtractRoomData(Map<String, dynamic> roomInfo, String key) {
+    try {
+      final value = roomInfo[key];
+      if (value == null) return '';
+      return value.toString().trim();
+    } catch (e) {
+      debugPrint('❌ 호실 데이터 추출 오류 ($key): $e');
+      return '';
+    }
   }
-}
 
-/// 🔥 안전한 층 번호 추출 헬퍼 메서드
-int _safeExtractFloorNumber(Map<String, dynamic> roomInfo, String key) {
-  try {
-    final value = roomInfo[key];
-    if (value == null) return 1;
-    
-    final floorStr = value.toString().trim();
-    if (floorStr.isEmpty) return 1;
-    
-    final floorNumber = int.tryParse(floorStr);
-    return floorNumber ?? 1;
-  } catch (e) {
-    debugPrint('❌ 층 번호 추출 오류 ($key): $e');
-    return 1;
+  /// 🔥 안전한 층 번호 추출 헬퍼 메서드
+  int _safeExtractFloorNumber(Map<String, dynamic> roomInfo, String key) {
+    try {
+      final value = roomInfo[key];
+      if (value == null) return 1;
+
+      final floorStr = value.toString().trim();
+      if (floorStr.isEmpty) return 1;
+
+      final floorNumber = int.tryParse(floorStr);
+      return floorNumber ?? 1;
+    } catch (e) {
+      debugPrint('❌ 층 번호 추출 오류 ($key): $e');
+      return 1;
+    }
   }
-}
 
   // 🔥 통합 API 응답으로부터 예상 시간과 거리 계산
   void _calculateEstimatesFromResponse(UnifiedPathResponse response) {
-  try {
-    double totalDistance = 0;
-    
-    // 🔥 null 체크 강화
-    if (response.result.departureIndoor?.path.distance != null) {
-      totalDistance += response.result.departureIndoor!.path.distance;
-    }
-    if (response.result.outdoor?.path.distance != null) {
-      totalDistance += response.result.outdoor!.path.distance;
-    }
-    if (response.result.arrivalIndoor?.path.distance != null) {
-      totalDistance += response.result.arrivalIndoor!.path.distance;
-    }
-    
-    // 🔥 거리 포맷팅 - 안전한 계산
-    if (totalDistance <= 0) {
-      _estimatedDistance = '0m';
-      _estimatedTime = '0분';
-      return;
-    }
-    
-    if (totalDistance < 1000) {
-      _estimatedDistance = '${totalDistance.round()}m';
-    } else {
-      _estimatedDistance = '${(totalDistance / 1000).toStringAsFixed(1)}km';
-    }
-    
-    // 🔥 예상 시간 계산 - 안전한 계산
-    const double walkingSpeedKmh = 4.0;
-    final double timeInHours = totalDistance / 1000 / walkingSpeedKmh;
-    final int timeInMinutes = (timeInHours * 60).round();
-    
-    // 🔥 시간 표시를 로컬라이제이션으로 변경
-    if (timeInMinutes <= 0) {
-      _estimatedTime = '1분 이내';
-    } else if (timeInMinutes < 60) {
-      _estimatedTime = '${timeInMinutes}분';
-    } else {
-      final int hours = timeInMinutes ~/ 60;
-      final int minutes = timeInMinutes % 60;
-      if (minutes == 0) {
-        _estimatedTime = '${hours}시간';
-      } else {
-        _estimatedTime = '${hours}시간 ${minutes}분';
-      }
-    }
+    try {
+      double totalDistance = 0;
 
-    debugPrint('📊 통합 API 기반 예상: 거리 $_estimatedDistance, 시간 $_estimatedTime');
-    
-  } catch (e) {
-    debugPrint('❌ 거리/시간 계산 오류: $e');
-    _estimatedDistance = '계산 불가';
-    _estimatedTime = '계산 불가';
+      // 🔥 null 체크 강화
+      if (response.result.departureIndoor?.path.distance != null) {
+        totalDistance += response.result.departureIndoor!.path.distance;
+      }
+      if (response.result.outdoor?.path.distance != null) {
+        totalDistance += response.result.outdoor!.path.distance;
+      }
+      if (response.result.arrivalIndoor?.path.distance != null) {
+        totalDistance += response.result.arrivalIndoor!.path.distance;
+      }
+
+      // 🔥 거리 포맷팅 - 안전한 계산
+      if (totalDistance <= 0) {
+        _estimatedDistance = '0m';
+        _estimatedTime = '0분';
+        return;
+      }
+
+      if (totalDistance < 1000) {
+        _estimatedDistance = '${totalDistance.round()}m';
+      } else {
+        _estimatedDistance = '${(totalDistance / 1000).toStringAsFixed(1)}km';
+      }
+
+      // 🔥 예상 시간 계산 - 안전한 계산
+      const double walkingSpeedKmh = 4.0;
+      final double timeInHours = totalDistance / 1000 / walkingSpeedKmh;
+      final int timeInMinutes = (timeInHours * 60).round();
+
+      if (timeInMinutes <= 0) {
+        _estimatedTime = '1분 이내';
+      } else if (timeInMinutes < 60) {
+        _estimatedTime = '도보 $timeInMinutes분';
+      } else {
+        final int hours = timeInMinutes ~/ 60;
+        final int minutes = timeInMinutes % 60;
+        if (minutes == 0) {
+          _estimatedTime = '도보 $hours시간';
+        } else {
+          _estimatedTime = '도보 $hours시간 $minutes분';
+        }
+      }
+
+      debugPrint('📊 통합 API 기반 예상: 거리 $_estimatedDistance, 시간 $_estimatedTime');
+    } catch (e) {
+      debugPrint('❌ 거리/시간 계산 오류: $e');
+      _estimatedDistance = '계산 불가';
+      _estimatedTime = '계산 불가';
+    }
   }
-}
 
   Future<void> _onSearchChanged() async {
-  final query = _searchController.text.trim();
-  
-  if (query.isEmpty) {
-    setState(() {
-      _searchResults = [];
-      _isSearching = false;
-      _isLoading = false;
-    });
-    return;
-  }
+    final query = _searchController.text.trim();
 
-  // 🔥 "내 위치" 관련 검색은 건너뛰기
-  final lowercaseQuery = query.toLowerCase();
-  final l10n = AppLocalizations.of(context)!;
-  if (lowercaseQuery.contains(l10n.myLocation.toLowerCase()) || 
-      lowercaseQuery.contains('내위치') || 
-      lowercaseQuery.contains('현재위치') || 
-      lowercaseQuery.contains('현재 위치') ||
-      lowercaseQuery.contains('my location') ||
-      lowercaseQuery.contains('current location')) {
-    setState(() {
-      _searchResults = [];
-      _isSearching = false;
-      _isLoading = false;
-    });
-    debugPrint('⚠️ "내 위치" 관련 검색은 건너뛰기: $query');
-    return;
-  }
-
-  setState(() {
-    _isSearching = true;
-    _isLoading = true;
-  });
-
-  try {
-    final results = await IntegratedSearchService.search(query, context);
-    
-    if (mounted) {
-      setState(() {
-        _searchResults = results ?? []; // null 체크 추가
-        _isLoading = false;
-      });
-    }
-  } catch (e) {
-    debugPrint('❌ 검색 오류: $e');
-    if (mounted) {
+    if (query.isEmpty) {
       setState(() {
         _searchResults = [];
+        _isSearching = false;
         _isLoading = false;
       });
+      return;
+    }
+
+    // 🔥 "내 위치" 관련 검색은 건너뛰기
+    final lowercaseQuery = query.toLowerCase();
+    if (lowercaseQuery.contains('내 위치') ||
+        lowercaseQuery.contains('내위치') ||
+        lowercaseQuery.contains('현재위치') ||
+        lowercaseQuery.contains('현재 위치') ||
+        lowercaseQuery.contains('my location') ||
+        lowercaseQuery.contains('current location')) {
+      setState(() {
+        _searchResults = [];
+        _isSearching = false;
+        _isLoading = false;
+      });
+      debugPrint('⚠️ "내 위치" 관련 검색은 건너뛰기: $query');
+      return;
+    }
+
+    setState(() {
+      _isSearching = true;
+      _isLoading = true;
+    });
+
+    try {
+      final results = await IntegratedSearchService.search(query, context);
+
+      if (mounted) {
+        setState(() {
+          _searchResults = results ?? []; // null 체크 추가
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('❌ 검색 오류: $e');
+      if (mounted) {
+        setState(() {
+          _searchResults = [];
+          _isLoading = false;
+        });
+      }
     }
   }
-}
 
   void _selectStartLocation() {
     setState(() {
@@ -781,7 +770,7 @@ int _safeExtractFloorNumber(Map<String, dynamic> roomInfo, String key) {
       _searchController.clear();
     });
     _focusNode.requestFocus();
-    
+
     // 내위치가 설정되어 있으면 검색 가능하도록 안내
     if (_startBuilding?.name == '내 위치') {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -805,440 +794,302 @@ int _safeExtractFloorNumber(Map<String, dynamic> roomInfo, String key) {
     _focusNode.requestFocus();
   }
 
- // 2. 검색 결과 선택 시 (건물/호실 모두 건물 코드만 사용)
-void _onSearchResultSelected(SearchResult result) {
-  try {
-    Building building;
-    Map<String, dynamic>? roomInfo;
+  // 2. 검색 결과 선택 시 (건물/호실 모두 건물 코드만 사용)
+  void _onSearchResultSelected(SearchResult result) {
+    try {
+      Building building;
+      Map<String, dynamic>? roomInfo;
 
-    if (result.isRoom) {
-      building = result.toBuildingWithRoomLocation();
-      roomInfo = {
-        'roomName': result.roomNumber ?? '',
-        'buildingName': _extractBuildingCode(result.building.name),
-        'floorNumber': result.floorNumber?.toString() ?? '1',
-      };
-    } else {
-      final buildingCode = _extractBuildingCode(result.building.name);
-      building = Building(
-        name: buildingCode,
-        info: result.building.info,
-        lat: result.building.lat,
-        lng: result.building.lng,
-        category: result.building.category,
-        baseStatus: result.building.baseStatus,
-        hours: result.building.hours,
-        phone: result.building.phone,
-        imageUrl: result.building.imageUrl,
-        description: result.building.description,
-      );
-    }
-
-    // 🔥 안전한 리스트 업데이트
-    setState(() {
-      try {
-        _recentSearches.removeWhere((b) => b.name == building.name);
-        _recentSearches.insert(0, building);
-        if (_recentSearches.length > 5) {
-          _recentSearches = _recentSearches.take(5).toList();
-        }
-      } catch (e) {
-        debugPrint('❌ 최근 검색 목록 업데이트 오류: $e');
-        _recentSearches = [building]; // 안전하게 초기화
-      }
-    });
-
-    if (_searchType == 'start') {
-      setState(() {
-        _startBuilding = building;
-        _startRoomInfo = roomInfo;
-        _searchType = null;
-        _isSearching = false;
-        _isLoading = false;
-        _searchResults = [];
-        _searchController.clear();
-      });
-      debugPrint('✅ 출발지 설정: ${building.name}');
-    } else if (_searchType == 'end') {
-      setState(() {
-        _endBuilding = building;
-        _endRoomInfo = roomInfo;
-        _searchType = null;
-        _isSearching = false;
-        _isLoading = false;
-        _searchResults = [];
-        _searchController.clear();
-      });
-      debugPrint('✅ 도착지 설정: ${building.name}');
-      
-      // 🔥 출발지가 비어있으면 내 위치 자동 설정
-      if (_startBuilding == null) {
-        debugPrint('📍 출발지가 비어있어서 내 위치 자동 설정');
-        debugPrint('📍 도착지: ${building.name}');
-        _setMyLocationAsStart();
+      if (result.isRoom) {
+        building = result.toBuildingWithRoomLocation();
+        roomInfo = {
+          'roomName': result.roomNumber ?? '',
+          'buildingName': _extractBuildingCode(result.building.name),
+          'floorNumber': result.floorNumber?.toString() ?? '1',
+        };
       } else {
-        debugPrint('📍 출발지가 이미 설정되어 있음: ${_startBuilding!.name}');
+        final buildingCode = _extractBuildingCode(result.building.name);
+        building = Building(
+          name: buildingCode,
+          info: result.building.info,
+          lat: result.building.lat,
+          lng: result.building.lng,
+          category: result.building.category,
+          baseStatus: result.building.baseStatus,
+          hours: result.building.hours,
+          phone: result.building.phone,
+          imageUrl: result.building.imageUrl,
+          description: result.building.description,
+        );
       }
-    }
 
-    _focusNode.unfocus();
-    _focusNode.unfocus();
+      // 🔥 안전한 리스트 업데이트
+      setState(() {
+        try {
+          _recentSearches.removeWhere((b) => b.name == building.name);
+          _recentSearches.insert(0, building);
+          if (_recentSearches.length > 5) {
+            _recentSearches = _recentSearches.take(5).toList();
+          }
+        } catch (e) {
+          debugPrint('❌ 최근 검색 목록 업데이트 오류: $e');
+          _recentSearches = [building]; // 안전하게 초기화
+        }
+      });
 
-    // 🔥 안전한 경로 미리보기 계산
-    if (_startBuilding != null && _endBuilding != null) {
-      debugPrint('🎯 출발지와 도착지가 모두 설정됨, 미리보기 계산 시작 (검색 결과 선택)');
-      debugPrint('   출발지: ${_startBuilding!.name} (${_startBuilding!.lat}, ${_startBuilding!.lng})');
-      debugPrint('   도착지: ${_endBuilding!.name} (${_endBuilding!.lat}, ${_endBuilding!.lng})');
-      debugPrint('   출발 호실: ${_startRoomInfo?['roomName'] ?? 'None'}');
-      debugPrint('   도착 호실: ${_endRoomInfo?['roomName'] ?? 'None'}');
-      // 🔥 즉시 미리보기 계산 (Future.microtask 제거)
-      _calculateRoutePreview();
-    } else {
-      debugPrint('⚠️ 출발지 또는 도착지가 설정되지 않음 (검색 결과 선택)');
-      debugPrint('   출발지: ${_startBuilding?.name ?? 'null'}');
-      debugPrint('   도착지: ${_endBuilding?.name ?? 'null'}');
-    }
-    
-  } catch (e) {
-    debugPrint('❌ 검색 결과 선택 오류: $e');
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('선택 중 오류가 발생했습니다. 다시 시도해주세요.'),
-          backgroundColor: Colors.red,
-          duration: Duration(seconds: 2),
-        ),
-      );
+      if (_searchType == 'start') {
+        setState(() {
+          _startBuilding = building;
+          _startRoomInfo = roomInfo;
+          _searchType = null;
+          _isSearching = false;
+          _isLoading = false;
+          _searchResults = [];
+          _searchController.clear();
+        });
+        debugPrint('✅ 출발지 설정: ${building.name}');
+      } else if (_searchType == 'end') {
+        setState(() {
+          _endBuilding = building;
+          _endRoomInfo = roomInfo;
+          _searchType = null;
+          _isSearching = false;
+          _isLoading = false;
+          _searchResults = [];
+          _searchController.clear();
+        });
+        debugPrint('✅ 도착지 설정: ${building.name}');
+      }
+
+      _focusNode.unfocus();
+      _focusNode.unfocus();
+
+      // 🔥 안전한 경로 미리보기 계산
+      if (_startBuilding != null && _endBuilding != null) {
+        debugPrint('🎯 출발지와 도착지가 모두 설정됨, 미리보기 계산 시작');
+        debugPrint('   출발지: ${_startBuilding!.name}');
+        debugPrint('   도착지: ${_endBuilding!.name}');
+        Future.microtask(() => _calculateRoutePreview());
+      } else {
+        debugPrint('⚠️ 출발지 또는 도착지가 설정되지 않음');
+        debugPrint('   출발지: ${_startBuilding?.name ?? 'null'}');
+        debugPrint('   도착지: ${_endBuilding?.name ?? 'null'}');
+      }
+    } catch (e) {
+      debugPrint('❌ 검색 결과 선택 오류: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('선택 중 오류가 발생했습니다. 다시 시도해주세요.'),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
     }
   }
-}
 
   void _onBuildingSelected(Building building) {
-  try {
-    final buildingCode = _extractBuildingCode(building.name);
-    final cleanBuilding = Building(
-      name: buildingCode,
-      info: building.info,
-      lat: building.lat,
-      lng: building.lng,
-      category: building.category,
-      baseStatus: building.baseStatus,
-      hours: building.hours,
-      phone: building.phone,
-      imageUrl: building.imageUrl,
-      description: building.description,
-    );
+    try {
+      final buildingCode = _extractBuildingCode(building.name);
+      final cleanBuilding = Building(
+        name: buildingCode,
+        info: building.info,
+        lat: building.lat,
+        lng: building.lng,
+        category: building.category,
+        baseStatus: building.baseStatus,
+        hours: building.hours,
+        phone: building.phone,
+        imageUrl: building.imageUrl,
+        description: building.description,
+      );
 
-    // 🔥 안전한 리스트 업데이트
-    setState(() {
-      try {
-        _recentSearches.removeWhere((b) => b.name == cleanBuilding.name);
-        _recentSearches.insert(0, cleanBuilding);
-        if (_recentSearches.length > 5) {
-          _recentSearches = _recentSearches.take(5).toList();
+      // 🔥 안전한 리스트 업데이트
+      setState(() {
+        try {
+          _recentSearches.removeWhere((b) => b.name == cleanBuilding.name);
+          _recentSearches.insert(0, cleanBuilding);
+          if (_recentSearches.length > 5) {
+            _recentSearches = _recentSearches.take(5).toList();
+          }
+        } catch (e) {
+          debugPrint('❌ 최근 검색 목록 업데이트 오류: $e');
+          _recentSearches = [cleanBuilding]; // 안전하게 초기화
         }
-      } catch (e) {
-        debugPrint('❌ 최근 검색 목록 업데이트 오류: $e');
-        _recentSearches = [cleanBuilding]; // 안전하게 초기화
-      }
-    });
+      });
 
-    if (_searchType == 'start') {
-      setState(() {
-        _startBuilding = cleanBuilding;
-        _startRoomInfo = null;
-        _searchType = null;
-        _isSearching = false;
-        _isLoading = false;
-        _searchResults = [];
-        _searchController.clear();
-      });
-      debugPrint('✅ 출발지 건물 설정: ${cleanBuilding.name}');
-    } else if (_searchType == 'end') {
-      setState(() {
-        _endBuilding = cleanBuilding;
-        _endRoomInfo = null;
-        _searchType = null;
-        _isSearching = false;
-        _isLoading = false;
-        _searchResults = [];
-        _searchController.clear();
-      });
-      debugPrint('✅ 도착지 건물 설정: ${cleanBuilding.name}');
-      
-      // 🔥 출발지가 비어있으면 내 위치 자동 설정
-      if (_startBuilding == null) {
-        debugPrint('📍 출발지가 비어있어서 내 위치 자동 설정');
-        debugPrint('📍 도착지: ${cleanBuilding.name}');
-        _setMyLocationAsStart();
+      if (_searchType == 'start') {
+        setState(() {
+          _startBuilding = cleanBuilding;
+          _startRoomInfo = null;
+          _searchType = null;
+          _isSearching = false;
+          _isLoading = false;
+          _searchResults = [];
+          _searchController.clear();
+        });
+        debugPrint('✅ 출발지 건물 설정: ${cleanBuilding.name}');
+      } else if (_searchType == 'end') {
+        setState(() {
+          _endBuilding = cleanBuilding;
+          _endRoomInfo = null;
+          _searchType = null;
+          _isSearching = false;
+          _isLoading = false;
+          _searchResults = [];
+          _searchController.clear();
+        });
+        debugPrint('✅ 도착지 건물 설정: ${cleanBuilding.name}');
+
+        // 🔥 도착지 설정 시 출발지가 비어있으면 내 위치 자동 설정
+        if (_startBuilding == null) {
+          _setMyLocationAsStart();
+        }
+      }
+
+      _focusNode.unfocus();
+
+      // 🔥 안전한 경로 미리보기 계산
+      if (_startBuilding != null && _endBuilding != null) {
+        debugPrint('🎯 출발지와 도착지가 모두 설정됨, 미리보기 계산 시작 (검색 결과 선택)');
+        debugPrint('   출발지: ${_startBuilding!.name}');
+        debugPrint('   도착지: ${_endBuilding!.name}');
+        Future.microtask(() => _calculateRoutePreview());
       } else {
-        debugPrint('📍 출발지가 이미 설정되어 있음: ${_startBuilding!.name}');
+        debugPrint('⚠️ 출발지 또는 도착지가 설정되지 않음 (검색 결과 선택)');
+        debugPrint('   출발지: ${_startBuilding?.name ?? 'null'}');
+        debugPrint('   도착지: ${_endBuilding?.name ?? 'null'}');
+      }
+    } catch (e) {
+      debugPrint('❌ 건물 선택 오류: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('건물 선택 중 오류가 발생했습니다. 다시 시도해주세요.'),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 2),
+          ),
+        );
       }
     }
-    
-    _focusNode.unfocus();
-
-    // 🔥 안전한 경로 미리보기 계산
-    if (_startBuilding != null && _endBuilding != null) {
-      debugPrint('🎯 출발지와 도착지가 모두 설정됨, 미리보기 계산 시작 (건물 선택)');
-      debugPrint('   출발지: ${_startBuilding!.name} (${_startBuilding!.lat}, ${_startBuilding!.lng})');
-      debugPrint('   도착지: ${_endBuilding!.name} (${_endBuilding!.lat}, ${_endBuilding!.lng})');
-      debugPrint('   출발 호실: ${_startRoomInfo?['roomName'] ?? 'None'}');
-      debugPrint('   도착 호실: ${_endRoomInfo?['roomName'] ?? 'None'}');
-      // 🔥 즉시 미리보기 계산 (Future.microtask 제거)
-      _calculateRoutePreview();
-    } else {
-      debugPrint('⚠️ 출발지 또는 도착지가 설정되지 않음 (건물 선택)');
-      debugPrint('   출발지: ${_startBuilding?.name ?? 'null'}');
-      debugPrint('   도착지: ${_endBuilding?.name ?? 'null'}');
-    }
-    
-  } catch (e) {
-    debugPrint('❌ 건물 선택 오류: $e');
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('건물 선택 중 오류가 발생했습니다. 다시 시도해주세요.'),
-          backgroundColor: Colors.red,
-          duration: Duration(seconds: 2),
-        ),
-      );
-    }
   }
-}
 
-// 🔥 내 위치를 출발지로 설정하는 메서드 (비동기 버전)
-Future<void> _setMyLocationAsStartAsync() async {
-  try {
-    debugPrint('📍 내 위치를 출발지로 자동 설정 (비동기)');
-    
-    final locationManager = Provider.of<LocationManager>(context, listen: false);
-    final l10n = AppLocalizations.of(context)!;
-    
-    if (locationManager.hasValidLocation && locationManager.currentLocation != null) {
-      final myLocationBuilding = Building(
-        name: l10n.myLocation,
-        info: l10n.current_location_departure,
-        lat: locationManager.currentLocation!.latitude!,
-        lng: locationManager.currentLocation!.longitude!,
-        category: l10n.current_location,
-        baseStatus: l10n.available,
-        hours: '',
-        phone: '',
-        imageUrl: '',
-        description: l10n.start_navigation_from_current_location,
+  // 🔥 내 위치를 출발지로 설정하는 메서드
+  void _setMyLocationAsStart() {
+    try {
+      debugPrint('📍 내 위치를 출발지로 자동 설정');
+
+      final locationManager = Provider.of<LocationManager>(
+        context,
+        listen: false,
       );
 
-      setState(() {
-        _startBuilding = myLocationBuilding;
-        _startRoomInfo = null;
-      });
+      if (locationManager.hasValidLocation &&
+          locationManager.currentLocation != null) {
+        final myLocationBuilding = Building(
+          name: '내 위치',
+          info: '현재 위치에서 출발',
+          lat: locationManager.currentLocation!.latitude!,
+          lng: locationManager.currentLocation!.longitude!,
+          category: '현재위치',
+          baseStatus: '사용가능',
+          hours: '',
+          phone: '',
+          imageUrl: '',
+          description: '현재 위치에서 길찾기를 시작합니다',
+        );
 
-      debugPrint('✅ 내 위치 설정 완료: (${myLocationBuilding.lat}, ${myLocationBuilding.lng})');
+        setState(() {
+          _startBuilding = myLocationBuilding;
+          _startRoomInfo = null;
+        });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(
-                Icons.my_location,
-                color: Colors.white,
-                size: 16,
-              ),
-              const SizedBox(width: 8),
-              Text(l10n.my_location_set_as_start),
-            ],
+        // 🔥 내 위치 설정 후 미리보기 계산
+        if (_endBuilding != null) {
+          Future.microtask(() => _calculateRoutePreview());
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.my_location, color: Colors.white, size: 16),
+                const SizedBox(width: 8),
+                const Text('내 위치가 출발지로 자동 설정되었습니다'),
+              ],
+            ),
+            backgroundColor: const Color(0xFF10B981),
+            duration: const Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.all(16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
           ),
-          backgroundColor: const Color(0xFF10B981),
-          duration: const Duration(seconds: 2),
-          behavior: SnackBarBehavior.floating,
-          margin: const EdgeInsets.all(16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
+        );
+      } else {
+        // 위치 정보가 없으면 기본 위치 사용
+        final defaultLocationBuilding = Building(
+          name: '내 위치',
+          info: '현재 위치에서 출발 (기본 위치)',
+          lat: 36.338133,
+          lng: 127.446423,
+          category: '현재위치',
+          baseStatus: '사용가능',
+          hours: '',
+          phone: '',
+          imageUrl: '',
+          description: '현재 위치에서 길찾기를 시작합니다',
+        );
+
+        setState(() {
+          _startBuilding = defaultLocationBuilding;
+          _startRoomInfo = null;
+        });
+
+        // 🔥 기본 위치 설정 후 미리보기 계산
+        if (_endBuilding != null) {
+          Future.microtask(() => _calculateRoutePreview());
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.warning, color: Colors.white, size: 16),
+                const SizedBox(width: 8),
+                const Text('기본 위치가 출발지로 설정되었습니다'),
+              ],
+            ),
+            backgroundColor: Colors.orange,
+            duration: const Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.all(16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
           ),
-        ),
-      );
-    } else {
-      // 위치 정보가 없으면 기본 위치 사용
-      debugPrint('⚠️ 위치 정보가 없어서 기본 위치 사용');
-      final defaultLocationBuilding = Building(
-        name: l10n.myLocation,
-        info: l10n.current_location_departure_default,
-        lat: 36.338133,
-        lng: 127.446423,
-        category: l10n.current_location,
-        baseStatus: l10n.available,
-        hours: '',
-        phone: '',
-        imageUrl: '',
-        description: l10n.start_navigation_from_current_location,
-      );
-
-      setState(() {
-        _startBuilding = defaultLocationBuilding;
-        _startRoomInfo = null;
-      });
-
-      debugPrint('✅ 기본 위치 설정 완료: (${defaultLocationBuilding.lat}, ${defaultLocationBuilding.lng})');
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(
-                Icons.warning,
-                color: Colors.white,
-                size: 16,
-              ),
-              const SizedBox(width: 8),
-              Text(l10n.default_location_set_as_start),
-            ],
-          ),
-          backgroundColor: Colors.orange,
-          duration: const Duration(seconds: 2),
-          behavior: SnackBarBehavior.floating,
-          margin: const EdgeInsets.all(16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-        ),
-      );
-    }
-  } catch (e) {
-    debugPrint('❌ 내 위치 자동 설정 오류: $e');
-  }
-}
-
-// 🔥 내 위치를 출발지로 설정하는 메서드 (기존 버전)
-void _setMyLocationAsStart() {
-  try {
-    debugPrint('📍 내 위치를 출발지로 자동 설정');
-    
-    final locationManager = Provider.of<LocationManager>(context, listen: false);
-    final l10n = AppLocalizations.of(context)!;
-    
-    if (locationManager.hasValidLocation && locationManager.currentLocation != null) {
-      final myLocationBuilding = Building(
-        name: l10n.myLocation,
-        info: l10n.current_location_departure,
-        lat: locationManager.currentLocation!.latitude!,
-        lng: locationManager.currentLocation!.longitude!,
-        category: l10n.current_location,
-        baseStatus: l10n.available,
-        hours: '',
-        phone: '',
-        imageUrl: '',
-        description: l10n.start_navigation_from_current_location,
-      );
-
-      setState(() {
-        _startBuilding = myLocationBuilding;
-        _startRoomInfo = null;
-      });
-
-      debugPrint('✅ 내 위치 설정 완료: (${myLocationBuilding.lat}, ${myLocationBuilding.lng})');
-
-      // 🔥 내 위치 설정 후 미리보기 계산
-      if (_endBuilding != null) {
-        debugPrint('🎯 도착지가 이미 설정되어 있음, 미리보기 계산 시작');
-        // 🔥 즉시 미리보기 계산 (Future.microtask 제거)
-        _calculateRoutePreview();
+        );
       }
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(
-                Icons.my_location,
-                color: Colors.white,
-                size: 16,
-              ),
-              const SizedBox(width: 8),
-              Text(l10n.my_location_set_as_start),
-            ],
-          ),
-          backgroundColor: const Color(0xFF10B981),
-          duration: const Duration(seconds: 2),
-          behavior: SnackBarBehavior.floating,
-          margin: const EdgeInsets.all(16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-        ),
-      );
-    } else {
-      // 위치 정보가 없으면 기본 위치 사용
-      debugPrint('⚠️ 위치 정보가 없어서 기본 위치 사용');
-      final defaultLocationBuilding = Building(
-        name: l10n.myLocation,
-        info: l10n.current_location_departure_default,
-        lat: 36.338133,
-        lng: 127.446423,
-        category: l10n.current_location,
-        baseStatus: l10n.available,
-        hours: '',
-        phone: '',
-        imageUrl: '',
-        description: l10n.start_navigation_from_current_location,
-      );
-
-      setState(() {
-        _startBuilding = defaultLocationBuilding;
-        _startRoomInfo = null;
-      });
-
-      debugPrint('✅ 기본 위치 설정 완료: (${defaultLocationBuilding.lat}, ${defaultLocationBuilding.lng})');
-
-      // 🔥 기본 위치 설정 후 미리보기 계산
-      if (_endBuilding != null) {
-        debugPrint('🎯 도착지가 이미 설정되어 있음, 미리보기 계산 시작');
-        // 🔥 즉시 미리보기 계산 (Future.microtask 제거)
-        _calculateRoutePreview();
-      }
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(
-                Icons.warning,
-                color: Colors.white,
-                size: 16,
-              ),
-              const SizedBox(width: 8),
-              Text(l10n.default_location_set_as_start),
-            ],
-          ),
-          backgroundColor: Colors.orange,
-          duration: const Duration(seconds: 2),
-          behavior: SnackBarBehavior.floating,
-          margin: const EdgeInsets.all(16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-        ),
-      );
+    } catch (e) {
+      debugPrint('❌ 내 위치 자동 설정 오류: $e');
     }
-  } catch (e) {
-    debugPrint('❌ 내 위치 자동 설정 오류: $e');
   }
-}
 
   // 🔥 기본 내위치 Building 객체 반환
   Building _getDefaultMyLocation() {
-    final l10n = AppLocalizations.of(context)!;
     return Building(
-      name: l10n.myLocation,
-      info: l10n.current_location_departure,
+      name: '내 위치',
+      info: '현재 위치에서 출발',
       lat: 36.338133, // 기본 위도
       lng: 127.446423, // 기본 경도
-      category: l10n.current_location,
-      baseStatus: l10n.available,
+      category: '현재위치',
+      baseStatus: '사용가능',
       hours: '',
       phone: '',
       imageUrl: '',
-      description: l10n.start_navigation_from_current_location,
+      description: '현재 위치에서 길찾기를 시작합니다',
     );
   }
 
@@ -1261,198 +1112,205 @@ void _setMyLocationAsStart() {
   }
 
   // 🔥 통합 네비게이션 시작 (기존 _startNavigation 대체)
-void _startUnifiedNavigation() {
-  try {
-    debugPrint('=== 통합 네비게이션 시작 ===');
-    
-    // 내위치가 설정되지 않았으면 자동으로 설정
-    if (_startBuilding == null) {
-      debugPrint('📍 내위치가 설정되지 않음. 자동으로 내위치 설정');
-      _setMyLocationAsStart();
-    }
-    
-    debugPrint('출발지: ${_startBuilding?.name} (호실: ${_startRoomInfo?['roomName'] ?? 'None'})');
-    debugPrint('도착지: ${_endBuilding?.name} (호실: ${_endRoomInfo?['roomName'] ?? 'None'})');
-    debugPrint('PathResponse 상태: ${_previewResponse != null ? '있음' : 'null'}');
+  void _startUnifiedNavigation() {
+    try {
+      debugPrint('=== 통합 네비게이션 시작 ===');
 
-    if (_startBuilding == null || _endBuilding == null) {
-      debugPrint('❌ 출발지 또는 도착지가 설정되지 않음');
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('출발지와 도착지를 모두 설정해주세요'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-
-    // 🔥 pathResponse null 체크 및 재계산
-    if (_previewResponse == null) {
-      debugPrint('⚠️ pathResponse가 null입니다. 경로를 다시 계산합니다...');
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Row(
-            children: [
-              SizedBox(
-                width: 16,
-                height: 16,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                ),
-              ),
-              SizedBox(width: 12),
-              Text('경로를 계산하는 중...'),
-            ],
-          ),
-          backgroundColor: Colors.blue,
-          duration: Duration(seconds: 3),
-        ),
-      );
-
-      // 경로 재계산 후 네비게이션 시작
-      _calculateRoutePreview().then((_) {
-        if (_previewResponse != null) {
-          _proceedWithNavigation();
-        } else {
-          _handleNavigationFailure();
-        }
-      }).catchError((error) {
-        debugPrint('❌ 경로 재계산 실패: $error');
-        _handleNavigationFailure();
-      });
-      
-      return;
-    }
-
-    // pathResponse가 있으면 바로 진행
-    _proceedWithNavigation();
-
-  } catch (e) {
-    debugPrint('❌ _startUnifiedNavigation 전체 오류: $e');
-    _handleNavigationFailure();
-  }
-}
-
-void _proceedWithNavigation() {
-  try {
-    debugPrint('✅ 경로 데이터로 네비게이션 시작');
-
-    // 🔥 통합 네비게이션 데이터 구성
-    final l10n = AppLocalizations.of(context)!;
-    final unifiedNavigationData = {
-      'type': 'unified_navigation',
-      'start': _startBuilding,
-      'end': _endBuilding,
-      'startRoomInfo': _startRoomInfo,
-      'endRoomInfo': _endRoomInfo,
-      'useCurrentLocation': _startBuilding!.name == l10n.myLocation,
-      'estimatedDistance': _estimatedDistance,
-      'estimatedTime': _estimatedTime,
-      'pathResponse': _previewResponse,
-      'showNavigationStatus': true,
-    };
-
-    debugPrint('✅ 통합 네비게이션 데이터 구성 완료');
-
-    // === 안전한 단계별 네비게이션 데이터 추출 ===
-    final departureIndoor = _previewResponse?.result?.departureIndoor;
-    final outdoor = _previewResponse?.result?.outdoor;
-    final arrivalIndoor = _previewResponse?.result?.arrivalIndoor;
-
-    // 🔥 안전한 출발 실내 노드 리스트
-    final List<String> departureNodeIds = [];
-    if (departureIndoor?.path?.path != null) {
-      try {
-        departureNodeIds.addAll(
-          (departureIndoor!.path.path).map((e) => e.toString()).toList()
-        );
-      } catch (e) {
-        debugPrint('❌ 출발 실내 노드 추출 오류: $e');
+      // 내위치가 설정되지 않았으면 자동으로 설정
+      if (_startBuilding == null) {
+        debugPrint('📍 내위치가 설정되지 않음. 자동으로 내위치 설정');
+        _setMyLocationAsStart();
       }
-    }
 
-    // 🔥 안전한 실외 경로 좌표 리스트
-    final List<Map<String, dynamic>> outdoorPath = [];
-    if (outdoor?.path?.path != null) {
-      try {
-        final pathData = outdoor!.path.path;
-        if (pathData is List) {
+      debugPrint(
+        '출발지: ${_startBuilding?.name} (호실: ${_startRoomInfo?['roomName'] ?? 'None'})',
+      );
+      debugPrint(
+        '도착지: ${_endBuilding?.name} (호실: ${_endRoomInfo?['roomName'] ?? 'None'})',
+      );
+      debugPrint(
+        'PathResponse 상태: ${_previewResponse != null ? '있음' : 'null'}',
+      );
+
+      if (_startBuilding == null || _endBuilding == null) {
+        debugPrint('❌ 출발지 또는 도착지가 설정되지 않음');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('출발지와 도착지를 모두 설정해주세요'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      // 🔥 pathResponse null 체크 및 재계산
+      if (_previewResponse == null) {
+        debugPrint('⚠️ pathResponse가 null입니다. 경로를 다시 계산합니다...');
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Row(
+              children: [
+                SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                ),
+                SizedBox(width: 12),
+                Text('경로를 계산하는 중...'),
+              ],
+            ),
+            backgroundColor: Colors.blue,
+            duration: Duration(seconds: 3),
+          ),
+        );
+
+        // 경로 재계산 후 네비게이션 시작
+        _calculateRoutePreview()
+            .then((_) {
+              if (_previewResponse != null) {
+                _proceedWithNavigation();
+              } else {
+                _handleNavigationFailure();
+              }
+            })
+            .catchError((error) {
+              debugPrint('❌ 경로 재계산 실패: $error');
+              _handleNavigationFailure();
+            });
+
+        return;
+      }
+
+      // pathResponse가 있으면 바로 진행
+      _proceedWithNavigation();
+    } catch (e) {
+      debugPrint('❌ _startUnifiedNavigation 전체 오류: $e');
+      _handleNavigationFailure();
+    }
+  }
+
+  void _proceedWithNavigation() {
+    try {
+      debugPrint('✅ 경로 데이터로 네비게이션 시작');
+
+      // 🔥 통합 네비게이션 데이터 구성
+      final unifiedNavigationData = {
+        'type': 'unified_navigation',
+        'start': _startBuilding,
+        'end': _endBuilding,
+        'startRoomInfo': _startRoomInfo,
+        'endRoomInfo': _endRoomInfo,
+        'useCurrentLocation': _startBuilding!.name == '내 위치',
+        'estimatedDistance': _estimatedDistance,
+        'estimatedTime': _estimatedTime,
+        'pathResponse': _previewResponse,
+        'showNavigationStatus': true,
+      };
+
+      debugPrint('✅ 통합 네비게이션 데이터 구성 완료');
+
+      // === 안전한 단계별 네비게이션 데이터 추출 ===
+      final departureIndoor = _previewResponse?.result.departureIndoor;
+      final outdoor = _previewResponse?.result.outdoor;
+      final arrivalIndoor = _previewResponse?.result.arrivalIndoor;
+
+      // 🔥 안전한 출발 실내 노드 리스트
+      final List<String> departureNodeIds = [];
+      if (departureIndoor?.path.path != null) {
+        try {
+          departureNodeIds.addAll(
+            (departureIndoor!.path.path).map((e) => e.toString()).toList(),
+          );
+        } catch (e) {
+          debugPrint('❌ 출발 실내 노드 추출 오류: $e');
+        }
+      }
+
+      // 🔥 안전한 실외 경로 좌표 리스트
+      final List<Map<String, dynamic>> outdoorPath = [];
+      if (outdoor?.path.path != null) {
+        try {
+          final pathData = outdoor!.path.path;
           for (final item in pathData) {
             if (item is Map<String, dynamic>) {
               outdoorPath.add(item);
             }
           }
+        } catch (e) {
+          debugPrint('❌ 실외 경로 추출 오류: $e');
         }
-      } catch (e) {
-        debugPrint('❌ 실외 경로 추출 오류: $e');
       }
-    }
 
-    // 🔥 안전한 실외 거리
-    final double outdoorDistance = outdoor?.path?.distance ?? 0.0;
+      // 🔥 안전한 실외 거리
+      final double outdoorDistance = outdoor?.path.distance ?? 0.0;
 
-    // 🔥 안전한 도착 실내 노드 리스트
-    final List<String> arrivalNodeIds = [];
-    if (arrivalIndoor?.path?.path != null) {
-      try {
-        arrivalNodeIds.addAll(
-          (arrivalIndoor!.path.path).map((e) => e.toString()).toList()
-        );
-      } catch (e) {
-        debugPrint('❌ 도착 실내 노드 추출 오류: $e');
+      // 🔥 안전한 도착 실내 노드 리스트
+      final List<String> arrivalNodeIds = [];
+      if (arrivalIndoor?.path.path != null) {
+        try {
+          arrivalNodeIds.addAll(
+            (arrivalIndoor!.path.path).map((e) => e.toString()).toList(),
+          );
+        } catch (e) {
+          debugPrint('❌ 도착 실내 노드 추출 오류: $e');
+        }
       }
-    }
 
-    // 🔥 안전한 건물 코드 추출
-    final String departureBuilding = _extractBuildingCode(_startBuilding?.name ?? '');
-    final String arrivalBuilding = _extractBuildingCode(_endBuilding?.name ?? '');
+      // 🔥 안전한 건물 코드 추출
+      final String departureBuilding = _extractBuildingCode(
+        _startBuilding?.name ?? '',
+      );
+      final String arrivalBuilding = _extractBuildingCode(
+        _endBuilding?.name ?? '',
+      );
 
-    debugPrint('📊 네비게이션 데이터 요약:');
-    debugPrint('   출발 노드: ${departureNodeIds.length}개');
-    debugPrint('   실외 경로: ${outdoorPath.length}개 좌표');
-    debugPrint('   실외 거리: ${outdoorDistance}m');
-    debugPrint('   도착 노드: ${arrivalNodeIds.length}개');
+      debugPrint('📊 네비게이션 데이터 요약:');
+      debugPrint('   출발 노드: ${departureNodeIds.length}개');
+      debugPrint('   실외 경로: ${outdoorPath.length}개 좌표');
+      debugPrint('   실외 거리: ${outdoorDistance}m');
+      debugPrint('   도착 노드: ${arrivalNodeIds.length}개');
 
-    // 🔥 최소한의 데이터 검증
-    if (departureBuilding.isEmpty || arrivalBuilding.isEmpty) {
-      throw Exception('건물 정보가 불완전합니다');
-    }
+      // 🔥 최소한의 데이터 검증
+      if (departureBuilding.isEmpty || arrivalBuilding.isEmpty) {
+        throw Exception('건물 정보가 불완전합니다');
+      }
 
-    // 단계별 네비게이션 Wrapper로 이동
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => UnifiedNavigationStepperPage(
-          departureBuilding: departureBuilding,
-          departureNodeIds: departureNodeIds,
-          outdoorPath: outdoorPath,
-          outdoorDistance: outdoorDistance,
-          arrivalBuilding: arrivalBuilding,
-          arrivalNodeIds: arrivalNodeIds,
+      // 단계별 네비게이션 Wrapper로 이동
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => UnifiedNavigationStepperPage(
+            departureBuilding: departureBuilding,
+            departureNodeIds: departureNodeIds,
+            outdoorPath: outdoorPath,
+            outdoorDistance: outdoorDistance,
+            arrivalBuilding: arrivalBuilding,
+            arrivalNodeIds: arrivalNodeIds,
+          ),
         ),
-      ),
-    );
-
-  } catch (e) {
-    debugPrint('❌ 네비게이션 진행 오류: $e');
-    _handleNavigationFailure();
+      );
+    } catch (e) {
+      debugPrint('❌ 네비게이션 진행 오류: $e');
+      _handleNavigationFailure();
+    }
   }
-}
 
-void _handleNavigationFailure() {
-  if (mounted) {
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('네비게이션을 시작할 수 없습니다. 경로를 다시 확인해주세요.'),
-        backgroundColor: Colors.red,
-        duration: Duration(seconds: 4),
-      ),
-    );
+  void _handleNavigationFailure() {
+    if (mounted) {
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('네비게이션을 시작할 수 없습니다. 경로를 다시 확인해주세요.'),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 4),
+        ),
+      );
+    }
   }
-}
 
   void _cancelSearch() {
     setState(() {
@@ -1473,10 +1331,10 @@ void _handleNavigationFailure() {
     });
 
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(AppLocalizations.of(context)!.navigation_ended),
+      const SnackBar(
+        content: Text('길찾기가 종료되었습니다'),
         backgroundColor: Colors.grey,
-        duration: const Duration(seconds: 2),
+        duration: Duration(seconds: 2),
       ),
     );
   }
@@ -1484,7 +1342,9 @@ void _handleNavigationFailure() {
   @override
   @override
   Widget build(BuildContext context) {
-    final locationManager = Provider.of<LocationManager>(context); // 항상 최신 상태 구독
+    final locationManager = Provider.of<LocationManager>(
+      context,
+    ); // 항상 최신 상태 구독
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       appBar: _buildAppBar(),
@@ -1696,156 +1556,168 @@ void _handleNavigationFailure() {
 
   // directions_screen.dart에서 _buildSearchResultItem의 onTap 부분을 다음과 같이 수정
 
-Widget _buildSearchResultItem(SearchResult result) {
-  return Container(
-    margin: const EdgeInsets.only(bottom: 1),
-    decoration: const BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.zero,
-    ),
-    child: ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      leading: Container(
-        width: 32,
-        height: 32,
-        decoration: BoxDecoration(
-          color: result.isBuilding
-              ? const Color(0xFF3B82F6).withOpacity(0.1)
-              : const Color(0xFF10B981).withOpacity(0.1),
-          borderRadius: BorderRadius.circular(6),
-        ),
-        child: Icon(
-          result.isBuilding ? Icons.business : Icons.room,
-          color: result.isBuilding
-              ? const Color(0xFF3B82F6)
-              : const Color(0xFF10B981),
-          size: 18,
-        ),
+  Widget _buildSearchResultItem(SearchResult result) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 1),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.zero,
       ),
-      title: Text(
-        result.displayName ?? '이름 없음', // 🔥 null 체크 추가
-        style: const TextStyle(
-          fontSize: 15,
-          fontWeight: FontWeight.w500,
-          color: Colors.black87,
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 12,
         ),
-      ),
-      subtitle: Text(
-        _buildSafeSubtitle(result), // 🔥 안전한 subtitle 생성
-        style: TextStyle(
-          fontSize: 13,
-          color: Colors.grey.shade600,
+        leading: Container(
+          width: 32,
+          height: 32,
+          decoration: BoxDecoration(
+            color: result.isBuilding
+                ? const Color(0xFF3B82F6).withOpacity(0.1)
+                : const Color(0xFF10B981).withOpacity(0.1),
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Icon(
+            result.isBuilding ? Icons.business : Icons.room,
+            color: result.isBuilding
+                ? const Color(0xFF3B82F6)
+                : const Color(0xFF10B981),
+            size: 18,
+          ),
         ),
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-      ),
-      trailing: Icon(
-        Icons.chevron_right,
-        color: Colors.grey.shade400,
-        size: 20,
-      ),
-      onTap: () => _handleSearchResultTap(result), // 🔥 안전한 탭 처리
-    ),
-  );
-}
-
-String _buildSafeSubtitle(SearchResult result) {
-  try {
-    if (result.isRoom) {
-      return result.roomDescription?.isNotEmpty == true 
-          ? result.roomDescription! 
-          : '강의실';
-    } else {
-      return result.building.info.isNotEmpty 
-          ? result.building.info 
-          : result.building.category.isNotEmpty 
-              ? result.building.category 
-              : '건물';
-    }
-  } catch (e) {
-    debugPrint('❌ subtitle 생성 오류: $e');
-    return '정보 없음';
-  }
-}
-
-void _handleSearchResultTap(SearchResult result) {
-  try {
-    if (_searchType != null) {
-      // 길찾기 모드: 출발지/도착지 설정
-      _onSearchResultSelected(result);
-    } else {
-      // 🔥 단독 검색 모드: 강의실이면 건물 정보창 표시
-      if (result.isRoom) {
-        _showBuildingInfoForRoom(result);
-      } else {
-        // 건물이면 길찾기 모드로 설정
-        _onSearchResultSelected(result);
-      }
-    }
-  } catch (e) {
-    debugPrint('❌ 검색 결과 탭 처리 오류: $e');
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('항목 선택 중 오류가 발생했습니다'),
-          backgroundColor: Colors.red,
+        title: Text(
+          result.displayName ?? '이름 없음', // 🔥 null 체크 추가
+          style: const TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w500,
+            color: Colors.black87,
+          ),
         ),
-      );
-    }
-  }
-}
-
-// 🔥 강의실 검색 결과에서 건물 정보창 표시하는 메서드
-void _showBuildingInfoForRoom(SearchResult result) {
-  try {
-    if (!result.isRoom || result.building == null) {
-      debugPrint('❌ 유효하지 않은 강의실 정보');
-      return;
-    }
-
-    final buildingCode = _extractBuildingCode(result.building.name);
-    final roomNumber = result.roomNumber ?? '';
-    final floorNumber = result.floorNumber ?? 1;
-
-    if (buildingCode.isEmpty || roomNumber.isEmpty) {
-      debugPrint('❌ 필수 정보 누락: 건물($buildingCode), 호실($roomNumber)');
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('강의실 정보가 불완전합니다'),
-          backgroundColor: Colors.orange,
+        subtitle: Text(
+          _buildSafeSubtitle(result), // 🔥 안전한 subtitle 생성
+          style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
         ),
-      );
-      return;
-    }
-
-    debugPrint('🎯 강의실 검색 결과에서 건물 정보창 표시: ${result.displayName}');
-    debugPrint('   건물: $buildingCode');
-    debugPrint('   층: $floorNumber');
-    debugPrint('   호실: $roomNumber');
-
-    // 사용자에게 건물 정보창이 표시됨을 알림
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('${result.building.name} 건물 정보를 표시합니다'),
-        duration: const Duration(seconds: 2),
-        backgroundColor: Colors.blue,
+        trailing: Icon(
+          Icons.chevron_right,
+          color: Colors.grey.shade400,
+          size: 20,
+        ),
+        onTap: () => _handleSearchResultTap(result), // 🔥 안전한 탭 처리
       ),
     );
+  }
+
+  String _buildSafeSubtitle(SearchResult result) {
+    try {
+      if (result.isRoom) {
+        return result.roomDescription?.isNotEmpty == true
+            ? result.roomDescription!
+            : '강의실';
+      } else {
+        return result.building.info.isNotEmpty
+            ? result.building.info
+            : result.building.category.isNotEmpty
+            ? result.building.category
+            : '건물';
+      }
+    } catch (e) {
+      debugPrint('❌ subtitle 생성 오류: $e');
+      return '정보 없음';
+    }
+  }
+
+  void _handleSearchResultTap(SearchResult result) {
+    try {
+      if (_searchType != null) {
+        // 길찾기 모드: 출발지/도착지 설정
+        _onSearchResultSelected(result);
+      } else {
+        // 🔥 단독 검색 모드: 강의실이면 팝업 다이얼로그 표시
+        if (result.isRoom) {
+          _showRoomSelectionDialog(result);
+        } else {
+          // 건물이면 길찾기 모드로 설정
+          _onSearchResultSelected(result);
+        }
+      }
+    } catch (e) {
+      debugPrint('❌ 검색 결과 탭 처리 오류: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('항목 선택 중 오류가 발생했습니다'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  // 🔥 강의실 검색 결과에서 팝업 다이얼로그 표시하는 메서드
+  void _showRoomSelectionDialog(SearchResult result) {
+    try {
+      if (!result.isRoom) {
+        debugPrint('❌ 유효하지 않은 강의실 정보');
+        return;
+      }
+
+      debugPrint('🎯 강의실 검색 결과에서 팝업 다이얼로그 표시: ${result.displayName}');
+
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return RoomSelectionDialog(
+            roomResult: result,
+            onNavigateToIndoorMap: () {
+              Navigator.of(context).pop(); // 다이얼로그 닫기
+              _navigateToIndoorMap(result);
+            },
+            onShowBuildingMarker: () {
+              Navigator.of(context).pop(); // 다이얼로그 닫기
+              _showBuildingMarker(result);
+            },
+          );
+        },
+      );
+    } catch (e) {
+      debugPrint('❌ 강의실 팝업 다이얼로그 표시 오류: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('다이얼로그 표시 중 오류가 발생했습니다'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  // 🔥 내부도면으로 이동하는 메서드
+  void _navigateToIndoorMap(SearchResult result) {
+    debugPrint('🏢 내부도면으로 이동: ${result.building.name}');
+
+    // 내부도면 페이지로 이동
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => BuildingMapPage(
+          buildingName: result.building.name,
+          targetRoomId: result.roomNumber,
+          targetFloorNumber: result.floorNumber,
+        ),
+      ),
+    );
+  }
+
+  // 🔥 건물 마커를 보여주는 메서드
+  void _showBuildingMarker(SearchResult result) {
+    debugPrint('📍 건물 마커 표시: ${result.building.name}');
 
     // 건물 정보창 표시를 위해 _onSearchResultSelected 호출
     _onSearchResultSelected(result);
-  } catch (e) {
-    debugPrint('❌ 강의실 건물 정보창 표시 오류: $e');
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('건물 정보 표시 중 오류가 발생했습니다'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
   }
-}
 
   Widget _buildBuildingResultItem(Building building, {bool isRecent = false}) {
     return Container(
@@ -2080,7 +1952,7 @@ void _showBuildingInfoForRoom(SearchResult result) {
               ),
             ],
 
-            // 로딩 중 표시
+            // 로딩 중이거나 기본 안내 메시지
             if (_isCalculatingPreview) ...[
               Container(
                 margin: const EdgeInsets.all(16),
@@ -2108,46 +1980,7 @@ void _showBuildingInfoForRoom(SearchResult result) {
                   ],
                 ),
               ),
-            ],
-
-            // 출발지와 도착지가 모두 설정되었지만 경로 계산에 실패한 경우
-            if (_previewResponse == null &&
-                !_isCalculatingPreview &&
-                _startBuilding != null &&
-                _endBuilding != null) ...[
-              Container(
-                margin: const EdgeInsets.all(16),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey.shade200),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.info_outline,
-                      color: Colors.grey.shade600,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        '경로를 계산할 수 없습니다. 다시 시도해주세요.',
-                        style: TextStyle(
-                          color: Colors.grey.shade600,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-
-            // 아무것도 설정되지 않은 경우
-            if (_previewResponse == null &&
-                !_isCalculatingPreview &&
+            ] else if (_previewResponse == null &&
                 _startBuilding == null &&
                 _endBuilding == null) ...[
               Container(
@@ -2208,15 +2041,19 @@ void _showBuildingInfoForRoom(SearchResult result) {
                 Icon(
                   Icons.navigation,
                   size: 20,
-                  color: _endBuilding != null ? Colors.white : Colors.grey.shade500,
+                  color: _endBuilding != null
+                      ? Colors.white
+                      : Colors.grey.shade500,
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  l10n.start_navigation,
+                  l10n.start_unified_navigation,
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: _endBuilding != null ? Colors.white : Colors.grey.shade500,
+                    color: _endBuilding != null
+                        ? Colors.white
+                        : Colors.grey.shade500,
                   ),
                 ),
               ],
@@ -2236,16 +2073,6 @@ void _showBuildingInfoForRoom(SearchResult result) {
     final result = _previewResponse!.result;
     final steps = <Widget>[];
 
-    // 출발지 정보 표시
-    steps.add(
-      _buildLocationInfo(
-        isStart: true,
-        building: _startBuilding!,
-        roomInfo: _startRoomInfo,
-        color: const Color(0xFF10B981),
-      ),
-    );
-
     // 출발지 실내 구간
     if (result.departureIndoor != null) {
       steps.add(
@@ -2256,7 +2083,6 @@ void _showBuildingInfoForRoom(SearchResult result) {
               '${result.departureIndoor!.path.distance.toStringAsFixed(0)}m',
           description: l10n.to_building_exit,
           color: Colors.green,
-          isFirstStep: true,
         ),
       );
     }
@@ -2270,7 +2096,6 @@ void _showBuildingInfoForRoom(SearchResult result) {
           distance: '${result.outdoor!.path.distance.toStringAsFixed(0)}m',
           description: l10n.to_destination_building,
           color: Colors.blue,
-          isMiddleStep: true,
         ),
       );
     }
@@ -2285,117 +2110,28 @@ void _showBuildingInfoForRoom(SearchResult result) {
               '${result.arrivalIndoor!.path.distance.toStringAsFixed(0)}m',
           description: l10n.to_final_destination,
           color: Colors.orange,
-          isLastStep: true,
         ),
       );
     }
 
-    // 도착지 정보 표시
-    steps.add(
-      _buildLocationInfo(
-        isStart: false,
-        building: _endBuilding!,
-        roomInfo: _endRoomInfo,
-        color: const Color(0xFFEF4444),
-      ),
-    );
-
     return Column(
       children: [
         // 전체 요약
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: Colors.blue.shade50,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildSummaryItem(l10n.total_distance, _estimatedDistance),
-              Container(
-                width: 1,
-                height: 30,
-                color: Colors.blue.shade200,
-              ),
-              _buildSummaryItem(l10n.estimated_time, _estimatedTime),
-            ],
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            _buildSummaryItem(l10n.total_distance, _estimatedDistance),
+            _buildSummaryItem(l10n.estimated_time, _estimatedTime),
+            _buildSummaryItem(l10n.route_type, _getRouteTypeDescription()),
+          ],
         ),
         const SizedBox(height: 16),
+        const Divider(),
+        const SizedBox(height: 12),
 
-        // 경로 단계들
+        // 단계별 경로
         ...steps,
       ],
-    );
-  }
-
-  // 🔥 출발지/도착지 정보 위젯
-  Widget _buildLocationInfo({
-    required bool isStart,
-    required Building building,
-    required Map<String, dynamic>? roomInfo,
-    required Color color,
-  }) {
-    final icon = isStart ? Icons.my_location : Icons.location_on;
-    final title = isStart ? '출발지' : '도착지';
-    final roomName = roomInfo?['roomName'] ?? '';
-    final floorNumber = roomInfo?['floorNumber'] ?? '';
-    
-    String locationText = building.name;
-    if (roomName.isNotEmpty) {
-      locationText = '$locationText ${floorNumber}층 $roomName호';
-    }
-
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.3)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: color,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Icon(
-              icon,
-              color: Colors.white,
-              size: 18,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    color: color,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  locationText,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -2405,110 +2141,45 @@ void _showBuildingInfoForRoom(SearchResult result) {
     required String distance,
     required String description,
     required Color color,
-    bool isFirstStep = false,
-    bool isMiddleStep = false,
-    bool isLastStep = false,
   }) {
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 4),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         children: [
-          // 연결선 표시
-          SizedBox(
+          Container(
             width: 32,
-            child: Column(
-              children: [
-                if (isFirstStep) ...[
-                  Container(
-                    width: 2,
-                    height: 16,
-                    color: color.withOpacity(0.3),
-                  ),
-                ] else if (isMiddleStep) ...[
-                  Container(
-                    width: 2,
-                    height: 8,
-                    color: color.withOpacity(0.3),
-                  ),
-                  Container(
-                    width: 8,
-                    height: 8,
-                    decoration: BoxDecoration(
-                      color: color,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                  Container(
-                    width: 2,
-                    height: 8,
-                    color: color.withOpacity(0.3),
-                  ),
-                ] else if (isLastStep) ...[
-                  Container(
-                    width: 2,
-                    height: 16,
-                    color: color.withOpacity(0.3),
-                  ),
-                ],
-              ],
+            height: 32,
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(16),
             ),
+            child: Icon(icon, color: color, size: 16),
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: color.withOpacity(0.2)),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 32,
-                    height: 32,
-                    decoration: BoxDecoration(
-                      color: color.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Icon(icon, color: color, size: 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          title,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        Text(
-                          description,
-                          style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: color.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      distance,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: color,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+                ),
+                Text(
+                  description,
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                ),
+              ],
+            ),
+          ),
+          Text(
+            distance,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: color,
             ),
           ),
         ],
@@ -2517,31 +2188,10 @@ void _showBuildingInfoForRoom(SearchResult result) {
   }
 
   Widget _buildSummaryItem(String label, String value) {
-    final l10n = AppLocalizations.of(context)!;
-    
-    // 🔥 시간 표시를 로컬라이제이션으로 변경
-    String displayValue = value;
-    if (value.contains('분') || value.contains('시간')) {
-      if (value == '1분 이내') {
-        displayValue = l10n.within_minute;
-      } else if (value.contains('분') && !value.contains('시간')) {
-        final minutes = value.replaceAll('분', '');
-        displayValue = l10n.minutes_only(int.parse(minutes));
-      } else if (value.contains('시간') && !value.contains('분')) {
-        final hours = value.replaceAll('시간', '');
-        displayValue = l10n.hours_only(int.parse(hours));
-      } else if (value.contains('시간') && value.contains('분')) {
-        final parts = value.split(' ');
-        final hours = parts[0].replaceAll('시간', '');
-        final minutes = parts[1].replaceAll('분', '');
-        displayValue = l10n.hours_and_minutes(int.parse(hours), int.parse(minutes));
-      }
-    }
-    
     return Column(
       children: [
         Text(
-          displayValue,
+          value,
           style: const TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,
@@ -2663,9 +2313,7 @@ void _showBuildingInfoForRoom(SearchResult result) {
                               fontWeight: FontWeight.w500,
                             ),
                           ),
-                        ] else if (selectedBuilding
-                            .category
-                            .isNotEmpty) ...[
+                        ] else if (selectedBuilding.category.isNotEmpty) ...[
                           const SizedBox(height: 2),
                           Text(
                             selectedBuilding.category,
