@@ -481,7 +481,7 @@
   "developer_name": "이름: 홍길동",
   "developer_email": "이메일: example@email.com",
   "developer_github": "GitHub: github.com/yourid",
-  "help": "도움말",
+  "help": "사용법",
   "no_help_images": "도움말 이미지가 없습니다",
   "image_load_error": "이미지를 불러올 수 없습니다",
   "description_hint": "설명을 입력하세요",

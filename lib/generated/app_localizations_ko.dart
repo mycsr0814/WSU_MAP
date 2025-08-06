@@ -1406,7 +1406,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get developer_github => 'GitHub: github.com/yourid';
 
   @override
-  String get help => '도움말';
+  String get help => '사용법';
 
   @override
   String get no_help_images => '도움말 이미지가 없습니다';
