@@ -1,13 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
 import 'package:flutter_application_1/components/woosong_button.dart';
 import 'package:flutter_application_1/components/woosong_input_field.dart';
 import 'package:flutter_application_1/friends/friends_controller.dart';
-import 'package:flutter_application_1/friends/friends_screen.dart';
-import 'package:flutter_application_1/friends/friends_dialogs.dart';
 import 'package:flutter_application_1/friends/friends_tiles.dart';
-import 'package:flutter_application_1/friends/friend.dart';
 import 'package:flutter_application_1/generated/app_localizations.dart';
 import 'package:flutter_application_1/services/auth_service.dart';
 
@@ -71,7 +66,7 @@ class FriendsTabs {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    AppLocalizations.of(context)!.available_user_list,
+                    '사용 가능한 사용자 목록:',
                     style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
@@ -81,7 +76,7 @@ class FriendsTabs {
                   IconButton(
                     icon: const Icon(Icons.refresh, size: 16),
                     onPressed: onRefreshUserList,
-                    tooltip: AppLocalizations.of(context)!.refresh_user_list,
+                    tooltip: '사용자 목록 새로고침',
                   ),
                 ],
               ),
@@ -147,7 +142,7 @@ class FriendsTabs {
     StateSetter setModalState,
     ScrollController scrollController,
     FriendsController controller,
-    Function(SentFriendRequest) onCancelRequest,
+    Future<void> Function(String userId, String userName) onCancelRequest,
   ) {
     return ListView(
       controller: scrollController,
@@ -217,7 +212,7 @@ class FriendsTabs {
             (request) => FriendsTiles.buildSentRequestTile(
               context,
               request,
-              () => onCancelRequest(request),
+              () => onCancelRequest(request.toUserId, request.toUserName),
             ),
           ),
       ],
@@ -230,8 +225,8 @@ class FriendsTabs {
     StateSetter setModalState,
     ScrollController scrollController,
     FriendsController controller,
-    Function(FriendRequest) onAcceptRequest,
-    Function(FriendRequest) onRejectRequest,
+    Future<void> Function(String userId, String userName) onAcceptRequest,
+    Future<void> Function(String userId, String userName) onRejectRequest,
   ) {
     return ListView(
       controller: scrollController,
@@ -309,8 +304,8 @@ class FriendsTabs {
             (request) => FriendsTiles.buildReceivedRequestTile(
               context,
               request,
-              () => onAcceptRequest(request),
-              () => onRejectRequest(request),
+              () => onAcceptRequest(request.fromUserId, request.fromUserName),
+              () => onRejectRequest(request.fromUserId, request.fromUserName),
             ),
           ),
       ],

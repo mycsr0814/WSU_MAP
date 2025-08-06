@@ -125,7 +125,10 @@ class _FriendsScreenState extends State<FriendsScreen>
 
     final id = _addController.text.trim();
     if (id.isEmpty) {
-      FriendsUtils.showErrorMessage(context, AppLocalizations.of(context)!.enter_id_prompt);
+      FriendsUtils.showErrorMessage(
+        context,
+        AppLocalizations.of(context)!.enter_id_prompt,
+      );
       return;
     }
 
@@ -140,7 +143,10 @@ class _FriendsScreenState extends State<FriendsScreen>
 
       // 성공 - 예외가 발생하지 않았으면 성공
       debugPrint('✅ UI: 친구 요청 성공으로 판단');
-      FriendsUtils.showSuccessMessage(context, AppLocalizations.of(context)!.friend_request_sent_success);
+      FriendsUtils.showSuccessMessage(
+        context,
+        AppLocalizations.of(context)!.friend_request_sent_success,
+      );
       _addController.clear();
       _clearCachedUserList(); // 캐시 초기화
       if (mounted) Navigator.of(context).pop();
@@ -281,9 +287,7 @@ class _FriendsScreenState extends State<FriendsScreen>
                   Icon(Icons.wifi, color: Colors.green.shade600, size: 14),
                   const SizedBox(width: 6),
                   Text(
-                    AppLocalizations.of(
-                      context,
-                    )!.realTimeSyncStatus,
+                    AppLocalizations.of(context)!.realTimeSyncStatus,
                     style: TextStyle(
                       color: Colors.green.shade700,
                       fontSize: 12,
@@ -498,18 +502,22 @@ class _FriendsScreenState extends State<FriendsScreen>
                             setModalState,
                             scrollController,
                             controller,
-                            (SentFriendRequest request) async {
+                            (String userId, String userName) async {
                               // 요청 취소 로직
                               try {
-                                await controller.cancelSentRequest(request.toUserId);
+                                await controller.cancelSentRequest(userId);
                                 FriendsUtils.showSuccessMessage(
                                   context,
-                                  AppLocalizations.of(context)!.friendRequestCancelled(request.toUserName),
+                                  AppLocalizations.of(
+                                    context,
+                                  )!.friendRequestCancelled(userName),
                                 );
                               } catch (e) {
                                 FriendsUtils.showErrorMessage(
                                   context,
-                                  AppLocalizations.of(context)!.friendRequestCancelError,
+                                  AppLocalizations.of(
+                                    context,
+                                  )!.friendRequestCancelError,
                                 );
                               }
                             },
@@ -519,33 +527,41 @@ class _FriendsScreenState extends State<FriendsScreen>
                             setModalState,
                             scrollController,
                             controller,
-                            (FriendRequest request) async {
+                            (String userId, String userName) async {
                               // 요청 수락 로직
                               try {
-                                await controller.acceptRequest(request.fromUserId);
+                                await controller.acceptRequest(userId);
                                 FriendsUtils.showSuccessMessage(
                                   context,
-                                  AppLocalizations.of(context)!.friendRequestAccepted(request.fromUserName),
+                                  AppLocalizations.of(
+                                    context,
+                                  )!.friendRequestAccepted(userName),
                                 );
                               } catch (e) {
                                 FriendsUtils.showErrorMessage(
                                   context,
-                                  AppLocalizations.of(context)!.friendRequestAcceptError,
+                                  AppLocalizations.of(
+                                    context,
+                                  )!.friendRequestAcceptError,
                                 );
                               }
                             },
-                            (FriendRequest request) async {
+                            (String userId, String userName) async {
                               // 요청 거절 로직
                               try {
-                                await controller.rejectRequest(request.fromUserId);
+                                await controller.rejectRequest(userId);
                                 FriendsUtils.showSuccessMessage(
                                   context,
-                                  AppLocalizations.of(context)!.friendRequestRejected(request.fromUserName),
+                                  AppLocalizations.of(
+                                    context,
+                                  )!.friendRequestRejected(userName),
                                 );
                               } catch (e) {
                                 FriendsUtils.showErrorMessage(
                                   context,
-                                  AppLocalizations.of(context)!.friendRequestRejectError,
+                                  AppLocalizations.of(
+                                    context,
+                                  )!.friendRequestRejectError,
                                 );
                               }
                             },
