@@ -21,7 +21,12 @@ class CategoryChips extends StatefulWidget {
 }
 
 class _CategoryChipsState extends State<CategoryChips> {
-  List<String> _categories = [];
+  // 🔥 고정된 카테고리 목록 (UI는 항상 이걸 사용)
+  final List<String> _fixedCategories = CategoryFallbackData.getCategories();
+  
+  // 🔥 서버에서 받은 카테고리 (별도 관리)
+  List<String> _serverCategories = [];
+  
   String? _selectedCategory;
   bool _isLoading = false;
   bool _isApiCalling = false;
@@ -33,7 +38,7 @@ class _CategoryChipsState extends State<CategoryChips> {
     
     debugPrint('🎯 selectCategory 호출됨: $category');
     
-    if (_categories.contains(category)) {
+    if (_fixedCategories.contains(category)) {
       debugPrint('✅ 카테고리 찾음, 선택 처리 중: $category');
       setState(() {
         _selectedCategory = category;
@@ -49,10 +54,7 @@ class _CategoryChipsState extends State<CategoryChips> {
     super.initState();
     _selectedCategory = widget.selectedCategory;
     
-    // 🔥 즉시 fallback 데이터로 초기화하여 버튼이 사라지지 않도록 함
-    _categories = CategoryFallbackData.getCategories();
-    
-    // 🔥 백그라운드에서 서버 데이터 시도 (지연 실행)
+    // 🔥 백그라운드에서 서버 데이터 시도 (UI에는 영향 없음)
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted && !_isDisposed) {
         _loadCategoriesFromServer();
@@ -83,7 +85,7 @@ class _CategoryChipsState extends State<CategoryChips> {
     }
   }
 
-  /// 🔥 서버에서 카테고리 로드 (백그라운드에서 실행) - 안정성 개선
+  /// 🔥 서버에서 카테고리 로드 (백그라운드에서 실행) - UI에 영향 없음
   Future<void> _loadCategoriesFromServer() async {
     if (!mounted || _isDisposed) return;
 
@@ -93,6 +95,7 @@ class _CategoryChipsState extends State<CategoryChips> {
       return;
     }
 
+    // 🔥 로딩 상태만 업데이트 (UI 카테고리는 변경하지 않음)
     setState(() {
       _isLoading = true;
     });
@@ -109,12 +112,15 @@ class _CategoryChipsState extends State<CategoryChips> {
 
       if (categoryNames.isNotEmpty && mounted && !_isDisposed) {
         debugPrint('✅ 서버에서 카테고리 로딩 성공: ${categoryNames.length}개');
+        
+        // 🔥 서버 데이터는 별도로 저장 (UI에는 영향 없음)
+        _serverCategories = categoryNames;
         setState(() {
-          _categories = categoryNames;
           _isLoading = false;
         });
+        debugPrint('🔄 서버 카테고리 데이터 저장됨 (UI는 그대로)');
       } else {
-        debugPrint('⚠️ 서버에서 빈 카테고리 목록 반환, fallback 유지');
+        debugPrint('⚠️ 서버에서 빈 카테고리 목록 반환');
         if (mounted && !_isDisposed) {
           setState(() {
             _isLoading = false;
@@ -122,7 +128,7 @@ class _CategoryChipsState extends State<CategoryChips> {
         }
       }
     } catch (e) {
-      debugPrint('❌ 서버 카테고리 로딩 실패: $e, fallback 유지');
+      debugPrint('❌ 서버 카테고리 로딩 실패: $e');
       if (mounted && !_isDisposed) {
         setState(() {
           _isLoading = false;
@@ -213,9 +219,6 @@ class _CategoryChipsState extends State<CategoryChips> {
 
   @override
   Widget build(BuildContext context) {
-    // 🔥 카테고리가 비어있으면 fallback 데이터 사용
-    final displayCategories = _categories.isNotEmpty ? _categories : CategoryFallbackData.getCategories();
-    
     return Container(
       height: 40,
       margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -267,10 +270,10 @@ class _CategoryChipsState extends State<CategoryChips> {
           Expanded(
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
-              itemCount: displayCategories.length,
+              itemCount: _fixedCategories.length,
               separatorBuilder: (context, index) => const SizedBox(width: 6),
               itemBuilder: (context, index) {
-                final category = displayCategories[index];
+                final category = _fixedCategories[index];
                 return _buildCategoryChip(category);
               },
             ),
