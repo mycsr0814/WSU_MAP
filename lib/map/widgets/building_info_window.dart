@@ -136,67 +136,92 @@ class _BuildingInfoWindowState extends State<BuildingInfoWindow> {
     );
   }
 
-  /// 🔥 여러 이미지를 표시하는 갤러리 위젯
+  /// 🔥 대표 사진만 표시하는 위젯
   Widget _buildImageGallery(List<String> imagePaths, bool isNetworkImage) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 이미지 갤러리
-        SizedBox(
-          height: 120,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: imagePaths.length,
-            itemBuilder: (context, index) {
-              return GestureDetector(
-                onTap: () => _showImageDialog(imagePaths, index, isNetworkImage),
-                child: Container(
-                  margin: EdgeInsets.only(right: index < imagePaths.length - 1 ? 8 : 0),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Image.network(
-                      imagePaths[index],
+        // 대표 사진 (첫 번째 이미지만 표시)
+        GestureDetector(
+          onTap: () => _showImageDialog(imagePaths, 0, isNetworkImage),
+          child: Stack(
+            children: [
+              // 대표 이미지
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.network(
+                  imagePaths.first,
+                  width: 120,
+                  height: 120,
+                  fit: BoxFit.cover,
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return Container(
                       width: 120,
                       height: 120,
-                      fit: BoxFit.cover,
-                      loadingBuilder: (context, child, loadingProgress) {
-                        if (loadingProgress == null) return child;
-                        return Container(
-                          width: 120,
-                          height: 120,
-                          decoration: BoxDecoration(
-                            color: Colors.grey[200],
-                            borderRadius: BorderRadius.circular(8),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200],
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Center(
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          value: loadingProgress.expectedTotalBytes != null
+                              ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                              : null,
+                        ),
+                      ),
+                    );
+                  },
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      width: 120,
+                      height: 120,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200],
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(Icons.error, color: Colors.grey),
+                    );
+                  },
+                ),
+              ),
+              // 여러 이미지가 있을 때 갤러리 아이콘 표시
+              if (imagePaths.length > 1)
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.7),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.photo_library,
+                          color: Colors.white,
+                          size: 16,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${imagePaths.length}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
                           ),
-                          child: Center(
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              value: loadingProgress.expectedTotalBytes != null
-                                  ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
-                                  : null,
-                            ),
-                          ),
-                        );
-                      },
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          width: 120,
-                          height: 120,
-                          decoration: BoxDecoration(
-                            color: Colors.grey[200],
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Icon(Icons.error, color: Colors.grey),
-                        );
-                      },
+                        ),
+                      ],
                     ),
                   ),
                 ),
-              );
-            },
+            ],
           ),
         ),
-        // 이미지 개수 표시
+        // 이미지 개수 표시 (여러 장일 때만)
         if (imagePaths.length > 1) ...[
           const SizedBox(height: 8),
           Text(
@@ -278,11 +303,11 @@ class _BuildingInfoWindowState extends State<BuildingInfoWindow> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
-            color: Colors.green.withOpacity(0.1),
+            color: Colors.green.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Text(
-            '이용 가능',
+            widget.building.getLocalizedStatus(context),
             style: TextStyle(
               fontSize: 12,
               color: Colors.green[700],
@@ -292,7 +317,7 @@ class _BuildingInfoWindowState extends State<BuildingInfoWindow> {
         ),
         const SizedBox(width: 8),
         Text(
-          '24시간',
+          widget.building.hours,
           style: TextStyle(
             fontSize: 12,
             color: Colors.grey[600],
@@ -324,27 +349,27 @@ class _BuildingInfoWindowState extends State<BuildingInfoWindow> {
       children: [
         Expanded(
           child: OutlinedButton(
-            onPressed: () => _showLocationSettingDialog('출발지'),
+            onPressed: () => _showLocationSettingDialog(l10n.set_start_point),
             style: OutlinedButton.styleFrom(
               side: BorderSide(color: Colors.grey[300]!),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
-            child: Text('출발지 설정'),
+            child: Text(l10n.set_start_point),
           ),
         ),
         const SizedBox(width: 12),
         Expanded(
           child: ElevatedButton(
-            onPressed: () => _showLocationSettingDialog('도착지'),
+            onPressed: () => _showLocationSettingDialog(l10n.set_end_point),
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF1E3A8A),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
-            child: const Text('도착지 설정'),
+            child: Text(l10n.set_end_point),
           ),
         ),
       ],
@@ -352,6 +377,7 @@ class _BuildingInfoWindowState extends State<BuildingInfoWindow> {
   }
 
   void _showLocationSettingDialog(String locationType) {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (context) => _LocationSettingDialog(
@@ -365,8 +391,8 @@ class _BuildingInfoWindowState extends State<BuildingInfoWindow> {
             context,
             MaterialPageRoute(
               builder: (context) => DirectionsScreen(
-                presetStart: locationType == '출발지' ? widget.building : null,
-                presetEnd: locationType == '도착지' ? widget.building : null,
+                presetStart: locationType == l10n.set_start_point ? widget.building : null,
+                presetEnd: locationType == l10n.set_end_point ? widget.building : null,
               ),
             ),
           );
@@ -513,6 +539,7 @@ class _LocationSettingDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Material(
       color: Colors.transparent,
       child: Center(
@@ -539,14 +566,14 @@ class _LocationSettingDialog extends StatelessWidget {
                 Row(
                   children: [
                     Icon(
-                      locationType == '출발지' ? Icons.play_arrow : Icons.flag,
-                      color: locationType == '출발지' ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+                      locationType == l10n.set_start_point ? Icons.play_arrow : Icons.flag,
+                      color: locationType == l10n.set_start_point ? const Color(0xFF10B981) : const Color(0xFFEF4444),
                       size: 24,
                     ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        '$locationType 설정',
+                        '$locationType ${l10n.setting}',
                         style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w600,
@@ -558,7 +585,7 @@ class _LocationSettingDialog extends StatelessWidget {
                 const SizedBox(height: 16),
                 // 내용
                 Text(
-                  '$buildingName을 $locationType로 설정하시겠습니까?',
+                  l10n.location_setting_confirm(buildingName, locationType),
                   style: const TextStyle(
                     fontSize: 16,
                     color: Colors.black87,
@@ -584,7 +611,7 @@ class _LocationSettingDialog extends StatelessWidget {
                       );
                     },
                     icon: const Icon(Icons.room, size: 18),
-                    label: const Text('방 설정하기'),
+                    label: Text(l10n.set_room),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: const Color(0xFF1E3A8A),
                       side: const BorderSide(color: Color(0xFF1E3A8A)),
@@ -607,7 +634,7 @@ class _LocationSettingDialog extends StatelessWidget {
                             borderRadius: BorderRadius.circular(12),
                           ),
                         ),
-                        child: Text('취소'),
+                        child: Text(l10n.cancel),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -620,7 +647,7 @@ class _LocationSettingDialog extends StatelessWidget {
                             borderRadius: BorderRadius.circular(12),
                           ),
                         ),
-                        child: const Text('확인'),
+                        child: Text(l10n.confirm),
                       ),
                     ),
                   ],

@@ -5,10 +5,6 @@ import 'timetable_item.dart';
 import 'timetable_api_service.dart';
 import '../map/widgets/directions_screen.dart'; // 폴더 구조에 맞게 경로 수정!
 import 'package:url_launcher/url_launcher.dart';
-import 'package:file_picker/file_picker.dart';
-import 'package:http/http.dart' as http;
-import '../config/api_config.dart';
-import 'dart:io';
 import 'excel_import_service.dart';
 
 class ScheduleScreen extends StatefulWidget {
@@ -279,97 +275,97 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   Widget _buildHeader() {
     final l10n = AppLocalizations.of(context);
 
-  return Container(
-    padding: const EdgeInsets.all(20),
-    decoration: const BoxDecoration(
-      color: Colors.white,
-      boxShadow: [
-        BoxShadow(
-          color: Color(0x0F000000),
-          blurRadius: 10,
-          offset: Offset(0, 2),
-        ),
-      ],
-    ),
-    child: Row(
-      children: [
-        // 시간표(시계) 아이콘 부분 삭제됨
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Color(0x0F000000),
+            blurRadius: 10,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          // 시간표(시계) 아이콘 부분 삭제됨
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  l10n?.timetable ?? 'Timetable',
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF1E3A8A),
+                  ),
+                ),
+                Row(
+                  children: [
+                    Text(
+                      l10n?.current_year(_getCurrentYear()) ??
+                          '${_getCurrentYear()}',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      _currentSemester,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Color(0xFF1E3A8A),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          Row(
             children: [
-              Text(
-                l10n?.timetable ?? 'Timetable',
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF1E3A8A),
+              GestureDetector(
+                onTap: _showExcelImportDialog,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.file_upload_outlined,
+                      color: Color(0xFF1E3A8A),
+                      size: 28,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      AppLocalizations.of(context)!.excel_file,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF1E3A8A),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              Row(
-                children: [
-                  Text(
-                    l10n?.current_year(_getCurrentYear()) ??
-                        '${_getCurrentYear()}',
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    _currentSemester,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: Color(0xFF1E3A8A),
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
+              const SizedBox(width: 16),
+              IconButton(
+                onPressed: _showAddScheduleDialog,
+                icon: const Icon(
+                  Icons.add_circle_outline,
+                  color: Color(0xFF1E3A8A),
+                  size: 28,
+                ),
               ),
             ],
           ),
-        ),
-        Row(
-          children: [
-            GestureDetector(
-              onTap: _showExcelImportDialog,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(
-                    Icons.file_upload_outlined,
-                    color: Color(0xFF1E3A8A),
-                    size: 28,
-                  ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    '엑셀파일',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Color(0xFF1E3A8A),
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 16),
-            IconButton(
-              onPressed: _showAddScheduleDialog,
-              icon: const Icon(
-                Icons.add_circle_outline,
-                color: Color(0xFF1E3A8A),
-                size: 28,
-              ),
-            ),
-          ],
-        ),
-      ],
-    ),
-  );
-}
+        ],
+      ),
+    );
+  }
 
   Widget _buildScheduleView() {
     return Container(
@@ -1250,60 +1246,138 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                                   setState(() => selectedDay = value!),
                             ),
                             const SizedBox(height: 16),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: _buildStyledDropdownField<String>(
-                                    value: startTime,
-                                    labelText: l10n?.start_time ?? 'Start Time',
-                                    icon: Icons.access_time,
-                                    items: _generateTimeSlots()
-                                        .map(
-                                          (time) => DropdownMenuItem(
-                                            value: time,
-                                            child: Text(time),
-                                          ),
-                                        )
-                                        .toList(),
-                                    onChanged: (value) {
-                                      setState(() {
-                                        startTime = value!;
-                                        var slotList = _generateTimeSlots();
-                                        int idx = slotList.indexOf(startTime);
-                                        if (_parseTime(endTime) <=
-                                            _parseTime(startTime)) {
-                                          endTime = (idx + 1 < slotList.length)
-                                              ? slotList[idx + 1]
-                                              : slotList[idx];
-                                        }
-                                      });
-                                    },
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: _buildStyledDropdownField<String>(
-                                    value: endTime,
-                                    labelText: l10n?.end_time ?? 'End Time',
-                                    icon: Icons.access_time_filled,
-                                    items: _generateTimeSlots()
-                                        .where(
-                                          (time) =>
-                                              _parseTime(time) >
-                                              _parseTime(startTime),
-                                        )
-                                        .map(
-                                          (time) => DropdownMenuItem(
-                                            value: time,
-                                            child: Text(time),
-                                          ),
-                                        )
-                                        .toList(),
-                                    onChanged: (value) =>
-                                        setState(() => endTime = value!),
-                                  ),
-                                ),
-                              ],
+                            LayoutBuilder(
+                              builder: (context, constraints) {
+                                final isSmallScreen =
+                                    constraints.maxWidth < 400;
+
+                                if (isSmallScreen) {
+                                  // 작은 화면: 세로로 배치
+                                  return Column(
+                                    children: [
+                                      _buildStyledDropdownField<String>(
+                                        value: startTime,
+                                        labelText:
+                                            l10n?.start_time ?? 'Start Time',
+                                        icon: Icons.access_time,
+                                        items: _generateTimeSlots()
+                                            .map(
+                                              (time) => DropdownMenuItem(
+                                                value: time,
+                                                child: Text(time),
+                                              ),
+                                            )
+                                            .toList(),
+                                        onChanged: (value) {
+                                          setState(() {
+                                            startTime = value!;
+                                            var slotList = _generateTimeSlots();
+                                            int idx = slotList.indexOf(
+                                              startTime,
+                                            );
+                                            if (_parseTime(endTime) <=
+                                                _parseTime(startTime)) {
+                                              endTime =
+                                                  (idx + 1 < slotList.length)
+                                                  ? slotList[idx + 1]
+                                                  : slotList[idx];
+                                            }
+                                          });
+                                        },
+                                      ),
+                                      const SizedBox(height: 12),
+                                      _buildStyledDropdownField<String>(
+                                        value: endTime,
+                                        labelText: l10n?.end_time ?? 'End Time',
+                                        icon: Icons.access_time_filled,
+                                        items: _generateTimeSlots()
+                                            .where(
+                                              (time) =>
+                                                  _parseTime(time) >
+                                                  _parseTime(startTime),
+                                            )
+                                            .map(
+                                              (time) => DropdownMenuItem(
+                                                value: time,
+                                                child: Text(time),
+                                              ),
+                                            )
+                                            .toList(),
+                                        onChanged: (value) =>
+                                            setState(() => endTime = value!),
+                                      ),
+                                    ],
+                                  );
+                                } else {
+                                  // 큰 화면: 가로로 배치
+                                  return Row(
+                                    children: [
+                                      Expanded(
+                                        child:
+                                            _buildStyledDropdownField<String>(
+                                              value: startTime,
+                                              labelText:
+                                                  l10n?.start_time ??
+                                                  'Start Time',
+                                              icon: Icons.access_time,
+                                              items: _generateTimeSlots()
+                                                  .map(
+                                                    (time) => DropdownMenuItem(
+                                                      value: time,
+                                                      child: Text(time),
+                                                    ),
+                                                  )
+                                                  .toList(),
+                                              onChanged: (value) {
+                                                setState(() {
+                                                  startTime = value!;
+                                                  var slotList =
+                                                      _generateTimeSlots();
+                                                  int idx = slotList.indexOf(
+                                                    startTime,
+                                                  );
+                                                  if (_parseTime(endTime) <=
+                                                      _parseTime(startTime)) {
+                                                    endTime =
+                                                        (idx + 1 <
+                                                            slotList.length)
+                                                        ? slotList[idx + 1]
+                                                        : slotList[idx];
+                                                  }
+                                                });
+                                              },
+                                            ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child:
+                                            _buildStyledDropdownField<String>(
+                                              value: endTime,
+                                              labelText:
+                                                  l10n?.end_time ?? 'End Time',
+                                              icon: Icons.access_time_filled,
+                                              items: _generateTimeSlots()
+                                                  .where(
+                                                    (time) =>
+                                                        _parseTime(time) >
+                                                        _parseTime(startTime),
+                                                  )
+                                                  .map(
+                                                    (time) => DropdownMenuItem(
+                                                      value: time,
+                                                      child: Text(time),
+                                                    ),
+                                                  )
+                                                  .toList(),
+                                              onChanged: (value) => setState(
+                                                () => endTime = value!,
+                                              ),
+                                            ),
+                                      ),
+                                    ],
+                                  );
+                                }
+                              },
                             ),
                             const SizedBox(height: 24),
                             Container(
@@ -2125,7 +2199,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                     LayoutBuilder(
                       builder: (context, constraints) {
                         final isSmallScreen = constraints.maxWidth < 350;
-                        
+
                         if (isSmallScreen) {
                           // 작은 화면: 세로로 배치
                           return Column(
@@ -2145,7 +2219,9 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                                           backgroundColor: Colors.transparent,
                                           foregroundColor: Colors.white,
                                           shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(16),
+                                            borderRadius: BorderRadius.circular(
+                                              16,
+                                            ),
                                           ),
                                           elevation: 0,
                                           padding: EdgeInsets.zero,
@@ -2160,19 +2236,27 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                                               begin: Alignment.topLeft,
                                               end: Alignment.bottomRight,
                                             ),
-                                            borderRadius: BorderRadius.circular(16),
+                                            borderRadius: BorderRadius.circular(
+                                              16,
+                                            ),
                                             boxShadow: [
                                               BoxShadow(
-                                                color: const Color(0xFF1E3A8A).withOpacity(0.3),
+                                                color: const Color(
+                                                  0xFF1E3A8A,
+                                                ).withOpacity(0.3),
                                                 blurRadius: 12,
                                                 offset: const Offset(0, 6),
                                               ),
                                             ],
                                           ),
                                           child: Row(
-                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
                                             children: [
-                                              const Icon(Icons.directions, size: 18),
+                                              const Icon(
+                                                Icons.directions,
+                                                size: 18,
+                                              ),
                                               const SizedBox(width: 8),
                                               const Text(
                                                 '추천경로',
@@ -2202,7 +2286,9 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                                           backgroundColor: Colors.transparent,
                                           foregroundColor: Colors.white,
                                           shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(16),
+                                            borderRadius: BorderRadius.circular(
+                                              16,
+                                            ),
                                           ),
                                           elevation: 0,
                                           padding: EdgeInsets.zero,
@@ -2217,19 +2303,27 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                                               begin: Alignment.topLeft,
                                               end: Alignment.bottomRight,
                                             ),
-                                            borderRadius: BorderRadius.circular(16),
+                                            borderRadius: BorderRadius.circular(
+                                              16,
+                                            ),
                                             boxShadow: [
                                               BoxShadow(
-                                                color: const Color(0xFF3B82F6).withOpacity(0.3),
+                                                color: const Color(
+                                                  0xFF3B82F6,
+                                                ).withOpacity(0.3),
                                                 blurRadius: 12,
                                                 offset: const Offset(0, 6),
                                               ),
                                             ],
                                           ),
                                           child: Row(
-                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
                                             children: [
-                                              const Icon(Icons.location_on, size: 18),
+                                              const Icon(
+                                                Icons.location_on,
+                                                size: 18,
+                                              ),
                                               const SizedBox(width: 8),
                                               const Text(
                                                 '위치 보기',
@@ -2262,7 +2356,9 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                                           backgroundColor: Colors.transparent,
                                           foregroundColor: Colors.white,
                                           shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(16),
+                                            borderRadius: BorderRadius.circular(
+                                              16,
+                                            ),
                                           ),
                                           elevation: 0,
                                           padding: EdgeInsets.zero,
@@ -2277,17 +2373,22 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                                               begin: Alignment.topLeft,
                                               end: Alignment.bottomRight,
                                             ),
-                                            borderRadius: BorderRadius.circular(16),
+                                            borderRadius: BorderRadius.circular(
+                                              16,
+                                            ),
                                             boxShadow: [
                                               BoxShadow(
-                                                color: const Color(0xFF64748B).withOpacity(0.3),
+                                                color: const Color(
+                                                  0xFF64748B,
+                                                ).withOpacity(0.3),
                                                 blurRadius: 12,
                                                 offset: const Offset(0, 6),
                                               ),
                                             ],
                                           ),
                                           child: Row(
-                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
                                             children: [
                                               const Icon(Icons.edit, size: 18),
                                               const SizedBox(width: 8),
@@ -2317,7 +2418,9 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                                         backgroundColor: Colors.transparent,
                                         foregroundColor: Colors.white,
                                         shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(16),
+                                          borderRadius: BorderRadius.circular(
+                                            16,
+                                          ),
                                         ),
                                         elevation: 0,
                                         padding: EdgeInsets.zero,
@@ -2332,16 +2435,23 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                                             begin: Alignment.topLeft,
                                             end: Alignment.bottomRight,
                                           ),
-                                          borderRadius: BorderRadius.circular(16),
+                                          borderRadius: BorderRadius.circular(
+                                            16,
+                                          ),
                                           boxShadow: [
                                             BoxShadow(
-                                              color: const Color(0xFFEF4444).withOpacity(0.3),
+                                              color: const Color(
+                                                0xFFEF4444,
+                                              ).withOpacity(0.3),
                                               blurRadius: 12,
                                               offset: const Offset(0, 6),
                                             ),
                                           ],
                                         ),
-                                        child: const Icon(Icons.delete, size: 18),
+                                        child: const Icon(
+                                          Icons.delete,
+                                          size: 18,
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -2383,16 +2493,22 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                                         borderRadius: BorderRadius.circular(16),
                                         boxShadow: [
                                           BoxShadow(
-                                            color: const Color(0xFF1E3A8A).withOpacity(0.3),
+                                            color: const Color(
+                                              0xFF1E3A8A,
+                                            ).withOpacity(0.3),
                                             blurRadius: 12,
                                             offset: const Offset(0, 6),
                                           ),
                                         ],
                                       ),
                                       child: Row(
-                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
                                         children: [
-                                          const Icon(Icons.directions, size: 18),
+                                          const Icon(
+                                            Icons.directions,
+                                            size: 18,
+                                          ),
                                           const SizedBox(width: 8),
                                           const Text(
                                             '추천경로',
@@ -2439,16 +2555,22 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                                         borderRadius: BorderRadius.circular(16),
                                         boxShadow: [
                                           BoxShadow(
-                                            color: const Color(0xFF3B82F6).withOpacity(0.3),
+                                            color: const Color(
+                                              0xFF3B82F6,
+                                            ).withOpacity(0.3),
                                             blurRadius: 12,
                                             offset: const Offset(0, 6),
                                           ),
                                         ],
                                       ),
                                       child: Row(
-                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
                                         children: [
-                                          const Icon(Icons.location_on, size: 18),
+                                          const Icon(
+                                            Icons.location_on,
+                                            size: 18,
+                                          ),
                                           const SizedBox(width: 8),
                                           const Text(
                                             '위치 보기',
@@ -2494,14 +2616,17 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                                         borderRadius: BorderRadius.circular(16),
                                         boxShadow: [
                                           BoxShadow(
-                                            color: const Color(0xFF64748B).withOpacity(0.3),
+                                            color: const Color(
+                                              0xFF64748B,
+                                            ).withOpacity(0.3),
                                             blurRadius: 12,
                                             offset: const Offset(0, 6),
                                           ),
                                         ],
                                       ),
                                       child: Row(
-                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
                                         children: [
                                           const Icon(Icons.edit, size: 18),
                                           const SizedBox(width: 8),
@@ -2549,7 +2674,9 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                                       borderRadius: BorderRadius.circular(16),
                                       boxShadow: [
                                         BoxShadow(
-                                          color: const Color(0xFFEF4444).withOpacity(0.3),
+                                          color: const Color(
+                                            0xFFEF4444,
+                                          ).withOpacity(0.3),
                                           blurRadius: 12,
                                           offset: const Offset(0, 6),
                                         ),
@@ -2617,34 +2744,37 @@ class _ExcelTutorialDialogState extends State<_ExcelTutorialDialog> {
   int _page = 0;
 
   List<Widget> get _pages => [
-        // 안내 텍스트 페이지
-        Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Text(
-                '우송대학교 대학정보시스템에 로그인 해주세요',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 8),
-              GestureDetector(
-                onTap: () => launchUrl(Uri.parse('https://wsinfo.wsu.ac.kr')),
-                child: const Text(
-                  'https://wsinfo.wsu.ac.kr',
-                  style: TextStyle(
-                    color: Colors.blue,
-                    decoration: TextDecoration.underline,
-                    fontSize: 15,
-                  ),
-                ),
-              ),
-            ],
+    // 안내 텍스트 페이지
+    Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Text(
+            '우송대학교 대학정보시스템에 로그인 해주세요',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            textAlign: TextAlign.center,
           ),
-        ),
-        // 이미지 페이지들
-        ...List.generate(5, (i) => _buildImagePage('assets/timetable/tutorial/${i + 1}.png')),
-      ];
+          const SizedBox(height: 8),
+          GestureDetector(
+            onTap: () => launchUrl(Uri.parse('https://wsinfo.wsu.ac.kr')),
+            child: const Text(
+              'https://wsinfo.wsu.ac.kr',
+              style: TextStyle(
+                color: Colors.blue,
+                decoration: TextDecoration.underline,
+                fontSize: 15,
+              ),
+            ),
+          ),
+        ],
+      ),
+    ),
+    // 이미지 페이지들
+    ...List.generate(
+      5,
+      (i) => _buildImagePage('assets/timetable/tutorial/${i + 1}.png'),
+    ),
+  ];
 
   static Widget _buildImagePage(String assetPath) {
     return Expanded(
@@ -2675,9 +2805,7 @@ class _ExcelTutorialDialogState extends State<_ExcelTutorialDialog> {
         child: Column(
           children: [
             // 페이지 내용
-            Expanded(
-              child: _pages[_page],
-            ),
+            Expanded(child: _pages[_page]),
             const SizedBox(height: 8),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -2699,7 +2827,10 @@ class _ExcelTutorialDialogState extends State<_ExcelTutorialDialog> {
                     onPressed: () async {
                       Navigator.pop(context);
                       try {
-                        final success = await ExcelImportService.uploadExcelToServer(widget.userId);
+                        final success =
+                            await ExcelImportService.uploadExcelToServer(
+                              widget.userId,
+                            );
                         if (context.mounted) {
                           if (success) {
                             ScaffoldMessenger.of(context).showSnackBar(
@@ -2708,8 +2839,15 @@ class _ExcelTutorialDialogState extends State<_ExcelTutorialDialog> {
                                 backgroundColor: Colors.green,
                               ),
                             );
-                            // 업로드 성공 후 시간표 새로고침
-                            // _loadScheduleItems()는 이 컨텍스트에서 접근할 수 없으므로 제거
+                                                  // 업로드 성공 후 시간표 새로고침
+                      // 화면을 다시 빌드하여 시간표가 새로고침되도록 함
+                      if (context.mounted) {
+                        Navigator.of(context).pushReplacement(
+                          MaterialPageRoute(
+                            builder: (context) => ScheduleScreen(userId: widget.userId),
+                          ),
+                        );
+                      }
                           } else {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
@@ -2760,24 +2898,30 @@ void _showExcelUploadChoiceDialog(BuildContext context, String userId) {
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 minimumSize: const Size.fromHeight(48),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
               onPressed: () {
                 Navigator.pop(context);
                 _showExcelTutorialDialog(context, userId);
               },
-              child: const Text('엑셀파일 튜토리얼'),
+              child: Text(AppLocalizations.of(context)!.excel_file_tutorial),
             ),
             const SizedBox(height: 12),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 minimumSize: const Size.fromHeight(48),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
               onPressed: () async {
                 Navigator.pop(context);
                 try {
-                  final success = await ExcelImportService.uploadExcelToServer(userId);
+                  final success = await ExcelImportService.uploadExcelToServer(
+                    userId,
+                  );
                   if (context.mounted) {
                     if (success) {
                       ScaffoldMessenger.of(context).showSnackBar(
@@ -2787,7 +2931,14 @@ void _showExcelUploadChoiceDialog(BuildContext context, String userId) {
                         ),
                       );
                       // 업로드 성공 후 시간표 새로고침
-                      // _loadScheduleItems()는 이 컨텍스트에서 접근할 수 없으므로 제거
+                      // 화면을 다시 빌드하여 시간표가 새로고침되도록 함
+                      if (context.mounted) {
+                        Navigator.of(context).pushReplacement(
+                          MaterialPageRoute(
+                            builder: (context) => ScheduleScreen(userId: userId),
+                          ),
+                        );
+                      }
                     } else {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
@@ -2816,5 +2967,3 @@ void _showExcelUploadChoiceDialog(BuildContext context, String userId) {
     ),
   );
 }
-
-

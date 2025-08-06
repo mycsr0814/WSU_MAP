@@ -46,15 +46,15 @@ class ScheduleItem {
   factory ScheduleItem.fromJson(Map<String, dynamic> json) {
     return ScheduleItem(
       id: json['id']?.toString(),
-      title: json['title'],
-      professor: json['professor'],
+      title: json['title'] ?? '',
+      professor: json['professor'] ?? '',
       buildingName: json['building_name'] ?? '',
       floorNumber: json['floor_number'] ?? '',
       roomName: json['room_name'] ?? '',
       dayOfWeek: _dayOfWeekInt(json['day_of_week']),
-      startTime: json['start_time'],
-      endTime: json['end_time'],
-      color: Color(int.parse(json['color'], radix: 16)),
+      startTime: json['start_time'] ?? '',
+      endTime: json['end_time'] ?? '',
+      color: _parseColor(json['color']),
       memo: json['memo'] ?? '',
     );
   }
@@ -72,6 +72,31 @@ class ScheduleItem {
         if (value is String && int.tryParse(value) != null) return int.parse(value);
         return 0;
     }
+  }
+
+  /// 색상 파싱 함수 (fromJson에서 사용)
+  static Color _parseColor(dynamic value) {
+    if (value == null) return const Color(0xFF3B82F6); // 기본 파란색
+    
+    try {
+      if (value is String) {
+        // 16진수 문자열로 온 경우
+        if (value.startsWith('FF')) {
+          return Color(int.parse(value, radix: 16));
+        } else if (value.startsWith('#')) {
+          return Color(int.parse(value.substring(1), radix: 16));
+        } else {
+          // 숫자만 있는 경우 FF를 앞에 추가
+          return Color(int.parse('FF$value', radix: 16));
+        }
+      } else if (value is int) {
+        return Color(value);
+      }
+    } catch (e) {
+      print('색상 파싱 오류: $value, $e');
+    }
+    
+    return const Color(0xFF3B82F6); // 기본 파란색
   }
 
   /// ScheduleItem 객체를 서버로 보낼 JSON으로 변환

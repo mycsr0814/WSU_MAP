@@ -100,15 +100,23 @@ class Success<T> extends Result<T> {
 
 /// 🔥 실패 케이스
 class Failure<T> extends Result<T> {
-  final String error;
-  final String? errorCode;
+  final String _error;
+  final String? _errorCode;
   final DateTime? timestamp;
   
-  const Failure(this.error, [this.errorCode, this.timestamp]);
+  const Failure(this._error, [this._errorCode, this.timestamp]);
+  
+  @override
+  String get error => _error;
+  
+  @override
+  String? get errorCode => _errorCode;
   
   /// 타임스탬프를 포함한 생성자
-  Failure.withTimestamp(this.error, [this.errorCode]) 
-      : timestamp = null; // const 문제로 null로 설정, 실제 사용 시 DateTime.now() 할당
+  Failure.withTimestamp(String error, [String? errorCode]) 
+      : _error = error,
+        _errorCode = errorCode,
+        timestamp = null; // const 문제로 null로 설정, 실제 사용 시 DateTime.now() 할당
   
   @override
   String toString() => 'Failure(error: $error, errorCode: $errorCode)';

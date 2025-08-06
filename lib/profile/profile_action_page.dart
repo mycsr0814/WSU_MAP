@@ -4,6 +4,7 @@ import 'dart:async';
 import '../auth/user_auth.dart';
 import '../services/auth_service.dart';
 import '../services/websocket_service.dart';
+import '../generated/app_localizations.dart';
 
 class ProfileActionPage extends StatefulWidget {
   final UserAuth userAuth;
@@ -139,9 +140,9 @@ class _ProfileActionPageState extends State<ProfileActionPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: const Text(
-          '내 정보',
-          style: TextStyle(
+        title: Text(
+          AppLocalizations.of(context)!.my_info,
+          style: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.w800,
             fontSize: 22,
@@ -196,6 +197,7 @@ class _ProfileActionPageState extends State<ProfileActionPage> {
   }
 
   Widget _buildLocationSection() {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -244,7 +246,7 @@ class _ProfileActionPageState extends State<ProfileActionPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '위치 정보 공유',
+                  l10n.location_share_title,
                   style: TextStyle(
                     fontSize: 17,
                     fontWeight: FontWeight.w700,
@@ -253,7 +255,7 @@ class _ProfileActionPageState extends State<ProfileActionPage> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  _isLocationEnabled ? '위치 정보가 활성화되어 있습니다' : '위치 정보가 비활성화되어 있습니다',
+                  _isLocationEnabled ? l10n.location_share_enabled : l10n.location_share_disabled,
                   style: TextStyle(
                     fontSize: 14,
                     color: _isLocationEnabled ? Colors.grey[600] : Colors.grey[500],
@@ -296,6 +298,7 @@ class _ProfileActionPageState extends State<ProfileActionPage> {
   }
 
   Widget _buildEditProfileSection() {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -340,9 +343,9 @@ class _ProfileActionPageState extends State<ProfileActionPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    '프로필 정보 수정',
-                    style: TextStyle(
+                  Text(
+                    l10n.profile_edit_title,
+                    style: const TextStyle(
                       fontSize: 17,
                       fontWeight: FontWeight.w700,
                       color: Color(0xFF1E293B),
@@ -350,7 +353,7 @@ class _ProfileActionPageState extends State<ProfileActionPage> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '이름, 이메일, 전화번호, 비밀번호 변경',
+                    l10n.profile_edit_subtitle,
                     style: TextStyle(
                       fontSize: 14,
                       color: Colors.grey[600],
@@ -380,6 +383,7 @@ class _ProfileActionPageState extends State<ProfileActionPage> {
   }
 
   Widget _buildDeleteAccountSection() {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -424,9 +428,9 @@ class _ProfileActionPageState extends State<ProfileActionPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    '계정 삭제',
-                    style: TextStyle(
+                  Text(
+                    l10n.account_delete_title,
+                    style: const TextStyle(
                       fontSize: 17,
                       fontWeight: FontWeight.w700,
                       color: Colors.red,
@@ -434,7 +438,7 @@ class _ProfileActionPageState extends State<ProfileActionPage> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '모든 데이터가 영구적으로 삭제됩니다',
+                    l10n.account_delete_subtitle,
                     style: TextStyle(
                       fontSize: 14,
                       color: Colors.red.withOpacity(0.7),
@@ -464,6 +468,7 @@ class _ProfileActionPageState extends State<ProfileActionPage> {
   }
 
   Widget _buildLogoutSection() {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -508,9 +513,9 @@ class _ProfileActionPageState extends State<ProfileActionPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    '로그아웃',
-                    style: TextStyle(
+                  Text(
+                    l10n.logout_title,
+                    style: const TextStyle(
                       fontSize: 17,
                       fontWeight: FontWeight.w700,
                       color: Color(0xFF1E3A8A),
@@ -518,7 +523,7 @@ class _ProfileActionPageState extends State<ProfileActionPage> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '현재 계정에서 로그아웃합니다',
+                    l10n.logout_subtitle,
                     style: TextStyle(
                       fontSize: 14,
                       color: const Color(0xFF1E3A8A).withOpacity(0.7),
@@ -563,6 +568,7 @@ class _ProfileActionPageState extends State<ProfileActionPage> {
     
     final userId = widget.userAuth.userId;
     final prev = _isLocationEnabled;
+    final l10n = AppLocalizations.of(context)!;
     
     // UI를 즉시 업데이트 (사용자 경험 향상)
     setState(() {
@@ -587,7 +593,7 @@ class _ProfileActionPageState extends State<ProfileActionPage> {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text(value ? '위치 공유가 활성화되었습니다.' : '위치 공유가 비활성화되었습니다.'),
+                content: Text(value ? l10n.location_share_enabled_success : l10n.location_share_disabled_success),
                 backgroundColor: const Color(0xFF10B981),
                 duration: const Duration(seconds: 2),
               ),
@@ -603,10 +609,10 @@ class _ProfileActionPageState extends State<ProfileActionPage> {
             // SharedPreferences도 롤백
             await _saveLocationShareStatus(prev);
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('서버에 위치공유 상태 저장에 실패했습니다. 다시 시도해주세요.'),
+              SnackBar(
+                content: Text(l10n.location_share_update_failed),
                 backgroundColor: Colors.red,
-                duration: Duration(seconds: 3),
+                duration: const Duration(seconds: 3),
               ),
             );
           }
@@ -622,7 +628,7 @@ class _ProfileActionPageState extends State<ProfileActionPage> {
           await _saveLocationShareStatus(prev);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('위치공유 상태 저장 중 오류가 발생했습니다: $e'),
+              content: Text(l10n.location_share_update_failed),
               backgroundColor: Colors.red,
               duration: const Duration(seconds: 3),
             ),
@@ -635,7 +641,7 @@ class _ProfileActionPageState extends State<ProfileActionPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(value ? '위치 공유가 활성화되었습니다.' : '위치 공유가 비활성화되었습니다.'),
+            content: Text(l10n.guest_location_share_success),
             backgroundColor: const Color(0xFF10B981),
             duration: const Duration(seconds: 2),
           ),

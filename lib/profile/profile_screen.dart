@@ -92,49 +92,49 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
-Widget _buildHeader(AppLocalizations l10n) {
-  return Container(
-    padding: const EdgeInsets.all(20),
-    decoration: const BoxDecoration(
-      color: Colors.white,
-      boxShadow: [
-        BoxShadow(
-          color: Color(0x0F000000),
-          blurRadius: 10,
-          offset: Offset(0, 2),
-        ),
-      ],
-    ),
-    child: Row(
-      children: [
-        // 사람 아이콘 Container, SizedBox(width: 16)은 제거!
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                l10n.my_page,
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF1E3A8A),
-                ),
-              ),
-              Text(
-                '마이페이지',
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
+  Widget _buildHeader(AppLocalizations l10n) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Color(0x0F000000),
+            blurRadius: 10,
+            offset: Offset(0, 2),
           ),
-        ),
-      ],
-    ),
-  );
-}
+        ],
+      ),
+      child: Row(
+        children: [
+          // 사람 아이콘 Container, SizedBox(width: 16)은 제거!
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  l10n.my_page,
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF1E3A8A),
+                  ),
+                ),
+                Text(
+                  l10n.my_page_subtitle,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _buildUserInfoCard(
     BuildContext context,
@@ -145,16 +145,16 @@ Widget _buildHeader(AppLocalizations l10n) {
       borderRadius: BorderRadius.circular(24),
       onTap: userAuth.isLoggedIn && !userAuth.isGuest
           ? () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => ProfileActionPage(
-                    userAuth: userAuth,
-                    onLogout: () => _handleLogout(userAuth),
-                    onDelete: () => _handleMenuTap(l10n.delete_account),
-                    onEdit: () => _handleMenuTap(l10n.edit_profile),
-                  ),
+              context,
+              MaterialPageRoute(
+                builder: (_) => ProfileActionPage(
+                  userAuth: userAuth,
+                  onLogout: () => _handleLogout(userAuth),
+                  onDelete: () => _handleMenuTap(l10n.delete_account),
+                  onEdit: () => _handleMenuTap(l10n.edit_profile),
                 ),
-              )
+              ),
+            )
           : null,
       child: Container(
         width: double.infinity,
@@ -190,7 +190,7 @@ Widget _buildHeader(AppLocalizations l10n) {
                   ),
                 ],
               ),
-                              child: Icon(
+              child: Icon(
                 userAuth.currentUserIcon,
                 size: 32,
                 color: const Color(0xFF1E3A8A),
@@ -229,7 +229,8 @@ Widget _buildHeader(AppLocalizations l10n) {
                     child: Text(
                       userAuth.isLoggedIn && !userAuth.isGuest
                           ? userAuth.userId ?? l10n.user
-                          : (userAuth.userRole?.displayName(context) ?? l10n.guest_role),
+                          : (userAuth.userRole?.displayName(context) ??
+                                l10n.guest_role),
                       style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
@@ -277,8 +278,8 @@ Widget _buildHeader(AppLocalizations l10n) {
       if (!userAuth.isGuest)
         {
           'icon': Icons.contact_support,
-          'title': '문의하기',
-          'subtitle': '버그 신고 및 기능 제안',
+          'title': l10n.inquiry,
+          'subtitle': l10n.inquiry_content_hint,
           'color': const Color(0xFFF59E0B),
         },
     ];
@@ -308,10 +309,7 @@ Widget _buildHeader(AppLocalizations l10n) {
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [
-                Colors.grey.shade50,
-                Colors.grey.shade100,
-              ],
+              colors: [Colors.grey.shade50, Colors.grey.shade100],
             ),
             borderRadius: BorderRadius.circular(24),
             border: Border.all(
@@ -400,8 +398,9 @@ Widget _buildHeader(AppLocalizations l10n) {
     required VoidCallback onTap,
   }) {
     final iconColor = color ?? const Color(0xFF1E3A8A);
-    final backgroundColor = color?.withOpacity(0.1) ?? const Color(0xFF1E3A8A).withOpacity(0.1);
-    
+    final backgroundColor =
+        color?.withOpacity(0.1) ?? const Color(0xFF1E3A8A).withOpacity(0.1);
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       child: Material(
@@ -448,9 +447,7 @@ Widget _buildHeader(AppLocalizations l10n) {
                   child: Icon(
                     icon,
                     size: 24,
-                    color: isDestructive
-                        ? Colors.red[600]
-                        : iconColor,
+                    color: isDestructive ? Colors.red[600] : iconColor,
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -472,7 +469,7 @@ Widget _buildHeader(AppLocalizations l10n) {
                       Text(
                         subtitle,
                         style: TextStyle(
-                          fontSize: 14, 
+                          fontSize: 14,
                           color: Colors.grey[600],
                           fontWeight: FontWeight.w500,
                         ),
@@ -527,11 +524,7 @@ Widget _buildHeader(AppLocalizations l10n) {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(
-                Icons.login,
-                color: Colors.white,
-                size: 20,
-              ),
+              const Icon(Icons.login, color: Colors.white, size: 20),
               const SizedBox(width: 8),
               Text(
                 l10n.login_signup,
@@ -883,7 +876,7 @@ Widget _buildHeader(AppLocalizations l10n) {
       _showPasswordConfirmDialog();
     } else if (title == l10n.delete_account) {
       _showDeleteDialog();
-    } else if (title == '문의하기') {
+    } else if (title == l10n.inquiry) {
       Navigator.push(
         context,
         MaterialPageRoute(builder: (_) => InquiryPage(userAuth: userAuth)),
@@ -946,12 +939,12 @@ Widget _buildHeader(AppLocalizations l10n) {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // 🔥 헤더 - 보안 스타일
+              // 🔥 헤더
               Container(
                 padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1E3A8A).withOpacity(0.1),
-                  borderRadius: const BorderRadius.only(
+                decoration: const BoxDecoration(
+                  color: Color(0xFF1E3A8A),
+                  borderRadius: BorderRadius.only(
                     topLeft: Radius.circular(20),
                     topRight: Radius.circular(20),
                   ),
@@ -959,16 +952,15 @@ Widget _buildHeader(AppLocalizations l10n) {
                 child: Row(
                   children: [
                     Container(
-                      width: 60,
-                      height: 60,
+                      padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF1E3A8A).withOpacity(0.2),
-                        shape: BoxShape.circle,
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Icon(
-                        Icons.lock_outline,
-                        color: Color(0xFF1E3A8A),
-                        size: 30,
+                        Icons.lock,
+                        color: Colors.white,
+                        size: 24,
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -976,20 +968,20 @@ Widget _buildHeader(AppLocalizations l10n) {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            '비밀번호 확인',
-                            style: TextStyle(
+                          Text(
+                            l10n.password_confirm_title,
+                            style: const TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.w700,
-                              color: Color(0xFF1E3A8A),
+                              color: Colors.white,
                             ),
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            '회원정보 수정을 위해 비밀번호를 입력해주세요',
+                            l10n.password_confirm_subtitle,
                             style: TextStyle(
                               fontSize: 14,
-                              color: const Color(0xFF1E3A8A).withOpacity(0.7),
+                              color: Colors.white.withOpacity(0.8),
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -1023,19 +1015,19 @@ Widget _buildHeader(AppLocalizations l10n) {
                       child: TextFormField(
                         controller: passwordController,
                         obscureText: true,
-                        decoration: const InputDecoration(
-                          labelText: '비밀번호',
-                          labelStyle: TextStyle(
+                        decoration: InputDecoration(
+                          labelText: l10n.password,
+                          labelStyle: const TextStyle(
                             color: Color(0xFF64748B),
                             fontSize: 14,
                           ),
-                          prefixIcon: Icon(
+                          prefixIcon: const Icon(
                             Icons.lock,
                             color: Color(0xFF1E3A8A),
                             size: 20,
                           ),
                           border: InputBorder.none,
-                          contentPadding: EdgeInsets.symmetric(
+                          contentPadding: const EdgeInsets.symmetric(
                             horizontal: 16,
                             vertical: 16,
                           ),
@@ -1047,6 +1039,7 @@ Widget _buildHeader(AppLocalizations l10n) {
                       ),
                     ),
                     const SizedBox(height: 24),
+                    // 🔥 버튼들
                     Row(
                       children: [
                         Expanded(
@@ -1054,17 +1047,14 @@ Widget _buildHeader(AppLocalizations l10n) {
                             onPressed: () => Navigator.pop(context, false),
                             style: OutlinedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(vertical: 16),
-                              side: const BorderSide(
-                                color: Color(0xFF1E3A8A),
-                                width: 1,
-                              ),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
+                              side: const BorderSide(color: Color(0xFF1E3A8A)),
                             ),
-                            child: const Text(
-                              '취소',
-                              style: TextStyle(
+                            child: Text(
+                              l10n.cancel,
+                              style: const TextStyle(
                                 color: Color(0xFF1E3A8A),
                                 fontWeight: FontWeight.w600,
                                 fontSize: 16,
@@ -1079,22 +1069,22 @@ Widget _buildHeader(AppLocalizations l10n) {
                               final password = passwordController.text.trim();
                               if (password.isEmpty) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('비밀번호를 입력해주세요'),
+                                  SnackBar(
+                                    content: Text(l10n.password_required),
                                     backgroundColor: Colors.orange,
                                   ),
                                 );
                                 return;
                               }
-                              
+
                               // 비밀번호 확인 로직
                               final isValid = await _verifyPassword(password);
                               if (isValid) {
                                 Navigator.pop(context, true);
                               } else {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('비밀번호가 일치하지 않습니다'),
+                                  SnackBar(
+                                    content: Text(l10n.password_mismatch_confirm),
                                     backgroundColor: Colors.red,
                                   ),
                                 );
@@ -1107,9 +1097,9 @@ Widget _buildHeader(AppLocalizations l10n) {
                                 borderRadius: BorderRadius.circular(12),
                               ),
                             ),
-                            child: const Text(
-                              '확인',
-                              style: TextStyle(
+                            child: Text(
+                              l10n.password_confirm_button,
+                              style: const TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.w600,
                                 fontSize: 16,
@@ -1143,7 +1133,7 @@ Widget _buildHeader(AppLocalizations l10n) {
     // SharedPreferences에서 저장된 비밀번호와 비교
     final prefs = await SharedPreferences.getInstance();
     final savedPassword = prefs.getString('user_password');
-    
+
     debugPrint('🔐 비밀번호 확인 시작');
     debugPrint('🔐 입력된 비밀번호: $password');
     debugPrint('🔐 저장된 비밀번호: $savedPassword');
@@ -1151,14 +1141,14 @@ Widget _buildHeader(AppLocalizations l10n) {
     debugPrint('🔐 사용자 이름: ${userAuth.userName}');
     debugPrint('🔐 로그인 상태: ${userAuth.isLoggedIn}');
     debugPrint('🔐 일치 여부: ${savedPassword == password}');
-    
+
     // 저장된 비밀번호가 없으면 서버에서 확인
     if (savedPassword == null || savedPassword.isEmpty) {
       debugPrint('🔐 저장된 비밀번호가 없음, 서버 확인 시도');
       // 서버에서 비밀번호 확인 (선택적)
       return await _verifyPasswordFromServer(password);
     }
-    
+
     return savedPassword == password;
   }
 
@@ -1167,14 +1157,14 @@ Widget _buildHeader(AppLocalizations l10n) {
     try {
       final userAuth = Provider.of<UserAuth>(context, listen: false);
       final userId = userAuth.userId;
-      
+
       if (userId == null) {
         debugPrint('🔐 사용자 ID가 없음');
         return false;
       }
-      
+
       debugPrint('🔐 서버에서 비밀번호 확인 시도: $userId');
-      
+
       // 서버에서 비밀번호 확인 API 호출 (선택적)
       // 현재는 false 반환 (서버 API가 구현되지 않은 경우)
       return false;
