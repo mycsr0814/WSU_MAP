@@ -298,7 +298,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get friends => 'Friends';
 
   @override
-  String get my_page => 'My Page';
+  String get my_page => 'MY';
 
   @override
   String get cafe => 'Cafe';
@@ -1623,71 +1623,4 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get floor_detail_view => 'View Details';
-
-  @override
-  String get building_info_display_error =>
-      'Error occurred while displaying building information';
-
-  @override
-  String get status_offline => 'Offline';
-
-  @override
-  String get ok_button => 'OK';
-
-  @override
-  String get route_start_caption => 'START';
-
-  @override
-  String get route_end_caption => 'END';
-
-  @override
-  String get inquiry_title => 'Inquiry';
-
-  @override
-  String get my_inquiries => 'My Inquiries';
-
-  @override
-  String get inquiry_type_route_error => 'Route Guidance Error';
-
-  @override
-  String get inquiry_type_place_error => 'Place/Information Error';
-
-  @override
-  String get inquiry_type_bug_report => 'Bug Report';
-
-  @override
-  String get inquiry_type_feature_request => 'Feature Request';
-
-  @override
-  String get inquiry_type_other => 'Other Inquiry';
-
-  @override
-  String get inquiry_title_label => 'Title';
-
-  @override
-  String get inquiry_content_label => 'Content';
-
-  @override
-  String get inquiry_required => 'Required';
-
-  @override
-  String get inquiry_cancel => 'Cancel';
-
-  @override
-  String get inquiry_delete => 'Delete';
-
-  @override
-  String get password_label => 'Password';
-
-  @override
-  String get excel_file => 'Excel File';
-
-  @override
-  String get recommended_route => 'Recommended Route';
-
-  @override
-  String get previous => 'Previous';
-
-  @override
-  String get next => 'Next';
 }

@@ -285,7 +285,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get friends => '친구';
 
   @override
-  String get my_page => '마이페이지';
+  String get my_page => 'MY';
 
   @override
   String get cafe => '카페';
@@ -960,7 +960,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get enableLocationServices => '위치 서비스를 활성화해주세요';
 
   @override
-  String get retry => '재시도';
+  String get retry => '다시 시도';
 
   @override
   String get noResults => '검색 결과가 없습니다';
@@ -1591,70 +1591,4 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get floor_detail_view => '상세 정보 보기';
-
-  @override
-  String get building_info_display_error => '건물 정보 표시 중 오류가 발생했습니다';
-
-  @override
-  String get status_offline => '오프라인';
-
-  @override
-  String get ok_button => '확인';
-
-  @override
-  String get route_start_caption => '출발';
-
-  @override
-  String get route_end_caption => '도착';
-
-  @override
-  String get inquiry_title => '문의하기';
-
-  @override
-  String get my_inquiries => '내 문의';
-
-  @override
-  String get inquiry_type_route_error => '경로 안내 오류';
-
-  @override
-  String get inquiry_type_place_error => '장소/정보 오류';
-
-  @override
-  String get inquiry_type_bug_report => '버그 신고';
-
-  @override
-  String get inquiry_type_feature_request => '기능 제안';
-
-  @override
-  String get inquiry_type_other => '기타 문의';
-
-  @override
-  String get inquiry_title_label => '제목';
-
-  @override
-  String get inquiry_content_label => '내용';
-
-  @override
-  String get inquiry_required => '필수';
-
-  @override
-  String get inquiry_cancel => '취소';
-
-  @override
-  String get inquiry_delete => '삭제';
-
-  @override
-  String get password_label => '비밀번호';
-
-  @override
-  String get excel_file => '엑셀파일';
-
-  @override
-  String get recommended_route => '추천경로';
-
-  @override
-  String get previous => '이전';
-
-  @override
-  String get next => '다음';
 }
