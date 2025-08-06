@@ -893,8 +893,7 @@ class MapScreenController extends ChangeNotifier {
 
     _selectedCategory = category;
     _isCategoryLoading = true;
-    // 🔥 카테고리 선택 시에는 UI 업데이트만 (마커 표시 후에 notifyListeners 호출)
-    notifyListeners();
+    // 🔥 카테고리 선택 시에는 UI 업데이트 제한 (마커 표시 완료 후에만)
 
     _mapService?.saveLastCategorySelection(category, buildingInfoList.map((e) => e['Building_Name'] as String).toList());
 
@@ -1134,7 +1133,8 @@ class MapScreenController extends ChangeNotifier {
     debugPrint('모든 건물 마커 다시 표시 시작...');
     _showAllBuildingMarkers(); // 해제 시에만 빌딩 마커 다시 보이기
     debugPrint('✅ 카테고리 선택 해제 완료');
-    notifyListeners(); // UI 업데이트를 위해 다시 추가
+    // 🔥 UI 업데이트는 한 번만
+    notifyListeners();
   }
 
   /// 🔥 모든 건물 마커 다시 표시

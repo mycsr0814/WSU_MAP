@@ -24,11 +24,7 @@ class _CategoryChipsState extends State<CategoryChips> {
   // 🔥 고정된 카테고리 목록 (UI는 항상 이걸 사용)
   final List<String> _fixedCategories = CategoryFallbackData.getCategories();
   
-  // 🔥 서버에서 받은 카테고리 (별도 관리)
-  List<String> _serverCategories = [];
-  
   String? _selectedCategory;
-  bool _isLoading = false;
   bool _isApiCalling = false;
   bool _isDisposed = false;
 
@@ -53,13 +49,6 @@ class _CategoryChipsState extends State<CategoryChips> {
   void initState() {
     super.initState();
     _selectedCategory = widget.selectedCategory;
-    
-    // 🔥 백그라운드에서 서버 데이터 시도 (UI에는 영향 없음)
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted && !_isDisposed) {
-        _loadCategoriesFromServer();
-      }
-    });
   }
 
   @override
@@ -79,62 +68,8 @@ class _CategoryChipsState extends State<CategoryChips> {
   }
 
   void refresh() {
-    if (mounted && !_isDisposed) {
-      debugPrint('🔄 카테고리 새로고침');
-      _loadCategoriesFromServer();
-    }
-  }
-
-  /// 🔥 서버에서 카테고리 로드 (백그라운드에서 실행) - UI에 영향 없음
-  Future<void> _loadCategoriesFromServer() async {
-    if (!mounted || _isDisposed) return;
-
-    // 이미 로딩 중이면 중복 실행 방지
-    if (_isLoading) {
-      debugPrint('⚠️ 이미 로딩 중이므로 서버 요청 건너뜀');
-      return;
-    }
-
-    // 🔥 로딩 상태만 업데이트 (UI 카테고리는 변경하지 않음)
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      debugPrint('🔄 서버에서 카테고리 로드 시작...');
-      
-      final categories = await CategoryApiService.getCategories();
-      final categoryNames = categories
-          .map((category) => category.categoryName)
-          .where((name) => name.isNotEmpty)
-          .toSet()
-          .toList();
-
-      if (categoryNames.isNotEmpty && mounted && !_isDisposed) {
-        debugPrint('✅ 서버에서 카테고리 로딩 성공: ${categoryNames.length}개');
-        
-        // 🔥 서버 데이터는 별도로 저장 (UI에는 영향 없음)
-        _serverCategories = categoryNames;
-        setState(() {
-          _isLoading = false;
-        });
-        debugPrint('🔄 서버 카테고리 데이터 저장됨 (UI는 그대로)');
-      } else {
-        debugPrint('⚠️ 서버에서 빈 카테고리 목록 반환');
-        if (mounted && !_isDisposed) {
-          setState(() {
-            _isLoading = false;
-          });
-        }
-      }
-    } catch (e) {
-      debugPrint('❌ 서버 카테고리 로딩 실패: $e');
-      if (mounted && !_isDisposed) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
+    // 🔥 고정된 카테고리이므로 새로고침 불필요
+    debugPrint('🔄 고정된 카테고리이므로 새로고침 무시');
   }
 
   void _onCategoryTap(String? category) async {
@@ -222,63 +157,14 @@ class _CategoryChipsState extends State<CategoryChips> {
     return Container(
       height: 40,
       margin: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
-        children: [
-          // 🔥 로딩 중일 때만 상단에 인디케이터 표시 (카테고리는 계속 보이도록)
-          if (_isLoading)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              margin: const EdgeInsets.only(bottom: 4),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    const Color(0xFF1E3A8A).withValues(alpha: 0.1),
-                    const Color(0xFF3B82F6).withValues(alpha: 0.05),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                  color: const Color(0xFF1E3A8A).withValues(alpha: 0.2),
-                  width: 1,
-                ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const SizedBox(
-                    width: 14,
-                    height: 14,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF1E3A8A)),
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    '카테고리 업데이트 중...',
-                    style: TextStyle(
-                      color: const Color(0xFF1E3A8A),
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          
-          // 🔥 카테고리 버튼들은 항상 표시 (로딩 중에도 유지)
-          Expanded(
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: _fixedCategories.length,
-              separatorBuilder: (context, index) => const SizedBox(width: 6),
-              itemBuilder: (context, index) {
-                final category = _fixedCategories[index];
-                return _buildCategoryChip(category);
-              },
-            ),
-          ),
-        ],
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: _fixedCategories.length,
+        separatorBuilder: (context, index) => const SizedBox(width: 6),
+        itemBuilder: (context, index) {
+          final category = _fixedCategories[index];
+          return _buildCategoryChip(category);
+        },
       ),
     );
   }
