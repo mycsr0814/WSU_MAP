@@ -112,6 +112,17 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
     // 출발지와 도착지가 모두 설정되면 미리보기 계산
     if (_startBuilding != null && _endBuilding != null) {
       _calculateRoutePreview();
+    } else if (_endBuilding != null && _startBuilding == null) {
+      // 🔥 도착지만 설정된 경우 내 위치 자동 설정 후 경로 계산
+      debugPrint('📍 도착지만 설정됨, 내 위치 자동 설정 후 경로 계산');
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        await _setMyLocationAsStartAsync();
+        // 🔥 내 위치 설정 완료 후 경로 계산
+        if (_startBuilding != null && _endBuilding != null) {
+          debugPrint('🎯 내 위치 설정 완료, 경로 계산 시작');
+          _calculateRoutePreview();
+        }
+      });
     }
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -172,6 +183,19 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
       }
 
       _needsCoordinateUpdate = true;
+
+      // 🔥 출발지와 도착지가 모두 설정되면 즉시 경로 계산
+      if (_startBuilding != null && _endBuilding != null) {
+        debugPrint('🎯 출발지와 도착지가 모두 설정됨, 미리보기 계산 시작 (방 정보 설정)');
+        debugPrint('   출발지: ${_startBuilding!.name}');
+        debugPrint('   도착지: ${_endBuilding!.name}');
+        // 🔥 즉시 미리보기 계산
+        _calculateRoutePreview();
+      } else {
+        debugPrint('⚠️ 출발지 또는 도착지가 설정되지 않음 (방 정보 설정)');
+        debugPrint('   출발지: ${_startBuilding?.name ?? 'null'}');
+        debugPrint('   도착지: ${_endBuilding?.name ?? 'null'}');
+      }
 
       debugPrint('=== _handleRoomData 완료 ===');
     } catch (e, stackTrace) {
@@ -954,7 +978,7 @@ void _onSearchResultSelected(SearchResult result) {
 
     // 🔥 안전한 경로 미리보기 계산
     if (_startBuilding != null && _endBuilding != null) {
-      debugPrint('🎯 출발지와 도착지가 모두 설정됨, 미리보기 계산 시작 (검색 결과 선택)');
+      debugPrint('🎯 출발지와 도착지가 모두 설정됨, 미리보기 계산 시작 (건물 선택)');
       debugPrint('   출발지: ${_startBuilding!.name} (${_startBuilding!.lat}, ${_startBuilding!.lng})');
       debugPrint('   도착지: ${_endBuilding!.name} (${_endBuilding!.lat}, ${_endBuilding!.lng})');
       debugPrint('   출발 호실: ${_startRoomInfo?['roomName'] ?? 'None'}');
@@ -962,7 +986,7 @@ void _onSearchResultSelected(SearchResult result) {
       // 🔥 즉시 미리보기 계산 (Future.microtask 제거)
       _calculateRoutePreview();
     } else {
-      debugPrint('⚠️ 출발지 또는 도착지가 설정되지 않음 (검색 결과 선택)');
+      debugPrint('⚠️ 출발지 또는 도착지가 설정되지 않음 (건물 선택)');
       debugPrint('   출발지: ${_startBuilding?.name ?? 'null'}');
       debugPrint('   도착지: ${_endBuilding?.name ?? 'null'}');
     }
@@ -2206,6 +2230,16 @@ void _showBuildingInfoForRoom(SearchResult result) {
     final result = _previewResponse!.result;
     final steps = <Widget>[];
 
+    // 출발지 정보 표시
+    steps.add(
+      _buildLocationInfo(
+        isStart: true,
+        building: _startBuilding!,
+        roomInfo: _startRoomInfo,
+        color: const Color(0xFF10B981),
+      ),
+    );
+
     // 출발지 실내 구간
     if (result.departureIndoor != null) {
       steps.add(
@@ -2216,6 +2250,7 @@ void _showBuildingInfoForRoom(SearchResult result) {
               '${result.departureIndoor!.path.distance.toStringAsFixed(0)}m',
           description: l10n.to_building_exit,
           color: Colors.green,
+          isFirstStep: true,
         ),
       );
     }
@@ -2229,6 +2264,7 @@ void _showBuildingInfoForRoom(SearchResult result) {
           distance: '${result.outdoor!.path.distance.toStringAsFixed(0)}m',
           description: l10n.to_destination_building,
           color: Colors.blue,
+          isMiddleStep: true,
         ),
       );
     }
@@ -2243,28 +2279,123 @@ void _showBuildingInfoForRoom(SearchResult result) {
               '${result.arrivalIndoor!.path.distance.toStringAsFixed(0)}m',
           description: l10n.to_final_destination,
           color: Colors.orange,
+          isLastStep: true,
         ),
       );
     }
 
+    // 도착지 정보 표시
+    steps.add(
+      _buildLocationInfo(
+        isStart: false,
+        building: _endBuilding!,
+        roomInfo: _endRoomInfo,
+        color: const Color(0xFFEF4444),
+      ),
+    );
+
     return Column(
       children: [
         // 전체 요약
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            _buildSummaryItem(l10n.total_distance, _estimatedDistance),
-            _buildSummaryItem(l10n.estimated_time, _estimatedTime),
-            _buildSummaryItem(l10n.route_type, _getRouteTypeDescription()),
-          ],
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.blue.shade50,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildSummaryItem(l10n.total_distance, _estimatedDistance),
+              Container(
+                width: 1,
+                height: 30,
+                color: Colors.blue.shade200,
+              ),
+              _buildSummaryItem(l10n.estimated_time, _estimatedTime),
+              Container(
+                width: 1,
+                height: 30,
+                color: Colors.blue.shade200,
+              ),
+              _buildSummaryItem(l10n.route_type, _getRouteTypeDescription()),
+            ],
+          ),
         ),
         const SizedBox(height: 16),
-        const Divider(),
-        const SizedBox(height: 12),
 
-        // 단계별 경로
+        // 경로 단계들
         ...steps,
       ],
+    );
+  }
+
+  // 🔥 출발지/도착지 정보 위젯
+  Widget _buildLocationInfo({
+    required bool isStart,
+    required Building building,
+    required Map<String, dynamic>? roomInfo,
+    required Color color,
+  }) {
+    final icon = isStart ? Icons.my_location : Icons.location_on;
+    final title = isStart ? '출발지' : '도착지';
+    final roomName = roomInfo?['roomName'] ?? '';
+    final floorNumber = roomInfo?['floorNumber'] ?? '';
+    
+    String locationText = building.name;
+    if (roomName.isNotEmpty) {
+      locationText = '$locationText ${floorNumber}층 $roomName호';
+    }
+
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: color,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Icon(
+              icon,
+              color: Colors.white,
+              size: 18,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: color,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  locationText,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -2274,45 +2405,110 @@ void _showBuildingInfoForRoom(SearchResult result) {
     required String distance,
     required String description,
     required Color color,
+    bool isFirstStep = false,
+    bool isMiddleStep = false,
+    bool isLastStep = false,
   }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         children: [
-          Container(
+          // 연결선 표시
+          SizedBox(
             width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Icon(icon, color: color, size: 16),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
+                if (isFirstStep) ...[
+                  Container(
+                    width: 2,
+                    height: 16,
+                    color: color.withOpacity(0.3),
                   ),
-                ),
-                Text(
-                  description,
-                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-                ),
+                ] else if (isMiddleStep) ...[
+                  Container(
+                    width: 2,
+                    height: 8,
+                    color: color.withOpacity(0.3),
+                  ),
+                  Container(
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: color,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  Container(
+                    width: 2,
+                    height: 8,
+                    color: color.withOpacity(0.3),
+                  ),
+                ] else if (isLastStep) ...[
+                  Container(
+                    width: 2,
+                    height: 16,
+                    color: color.withOpacity(0.3),
+                  ),
+                ],
               ],
             ),
           ),
-          Text(
-            distance,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              color: color,
+          const SizedBox(width: 12),
+          Expanded(
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: color.withOpacity(0.2)),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: color.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Icon(icon, color: color, size: 16),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        Text(
+                          description,
+                          style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: color.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      distance,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: color,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ],

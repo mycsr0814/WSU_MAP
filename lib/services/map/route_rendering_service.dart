@@ -52,7 +52,7 @@ class RouteRenderingService {
     try {
       final timestamp = DateTime.now().millisecondsSinceEpoch;
       
-      // 🔥 출발점 마커 (초록색 원형)
+      // 🔥 출발점 마커 (파란색 원형)
       final startMarkerId = 'route_start_$timestamp';
       final startMarker = NMarker(
         id: startMarkerId,
@@ -62,7 +62,7 @@ class RouteRenderingService {
         caption: NOverlayCaption(
           text: '출발',
           color: Colors.white,
-          haloColor: const Color(0xFF10B981),
+          haloColor: const Color(0xFF3B82F6), // 파란색으로 변경
           textSize: 13,
         ),
       );
@@ -77,7 +77,7 @@ class RouteRenderingService {
         caption: NOverlayCaption(
           text: '도착',
           color: Colors.white,
-          haloColor: const Color(0xFFEF4444),
+          haloColor: const Color(0xFFEF4444), // 빨간색 유지
           textSize: 13,
         ),
       );
