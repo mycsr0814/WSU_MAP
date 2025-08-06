@@ -224,8 +224,8 @@ class MapService {
   }
 
   // 🔥 경로 관련 메서드들 - 서비스로 위임
-  Future<void> drawPath(List<NLatLng> pathCoordinates) async {
-    await _routeRenderingService.drawPath(pathCoordinates);
+  Future<void> drawPath(List<NLatLng> pathCoordinates, {double? pathWidth}) async {
+    await _routeRenderingService.drawPath(pathCoordinates, pathWidth: pathWidth);
   }
 
   Future<void> moveCameraToPath(List<NLatLng> pathCoordinates) async {
