@@ -284,7 +284,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get friends => '朋友';
 
   @override
-  String get my_page => '我的';
+  String get my_page => '我的页面';
 
   @override
   String get cafe => '咖啡厅';
@@ -1588,4 +1588,70 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get floor_detail_view => '查看详情';
+
+  @override
+  String get building_info_display_error => '显示建筑信息时发生错误';
+
+  @override
+  String get status_offline => '离线';
+
+  @override
+  String get ok_button => '确定';
+
+  @override
+  String get route_start_caption => '起点';
+
+  @override
+  String get route_end_caption => '终点';
+
+  @override
+  String get inquiry_title => '咨询';
+
+  @override
+  String get my_inquiries => '我的咨询';
+
+  @override
+  String get inquiry_type_route_error => '路线指引错误';
+
+  @override
+  String get inquiry_type_place_error => '地点/信息错误';
+
+  @override
+  String get inquiry_type_bug_report => '错误报告';
+
+  @override
+  String get inquiry_type_feature_request => '功能建议';
+
+  @override
+  String get inquiry_type_other => '其他咨询';
+
+  @override
+  String get inquiry_title_label => '标题';
+
+  @override
+  String get inquiry_content_label => '内容';
+
+  @override
+  String get inquiry_required => '必填';
+
+  @override
+  String get inquiry_cancel => '取消';
+
+  @override
+  String get inquiry_delete => '删除';
+
+  @override
+  String get password_label => '密码';
+
+  @override
+  String get excel_file => 'Excel文件';
+
+  @override
+  String get recommended_route => '推荐路线';
+
+  @override
+  String get previous => '上一个';
+
+  @override
+  String get next => '下一个';
 }

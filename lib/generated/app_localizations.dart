@@ -649,7 +649,7 @@ abstract class AppLocalizations {
   /// No description provided for @my_page.
   ///
   /// In en, this message translates to:
-  /// **'MY'**
+  /// **'My Page'**
   String get my_page;
 
   /// No description provided for @cafe.
@@ -3057,6 +3057,138 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'View Details'**
   String get floor_detail_view;
+
+  /// No description provided for @building_info_display_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Error occurred while displaying building information'**
+  String get building_info_display_error;
+
+  /// No description provided for @status_offline.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline'**
+  String get status_offline;
+
+  /// No description provided for @ok_button.
+  ///
+  /// In en, this message translates to:
+  /// **'OK'**
+  String get ok_button;
+
+  /// No description provided for @route_start_caption.
+  ///
+  /// In en, this message translates to:
+  /// **'START'**
+  String get route_start_caption;
+
+  /// No description provided for @route_end_caption.
+  ///
+  /// In en, this message translates to:
+  /// **'END'**
+  String get route_end_caption;
+
+  /// No description provided for @inquiry_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Inquiry'**
+  String get inquiry_title;
+
+  /// No description provided for @my_inquiries.
+  ///
+  /// In en, this message translates to:
+  /// **'My Inquiries'**
+  String get my_inquiries;
+
+  /// No description provided for @inquiry_type_route_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Route Guidance Error'**
+  String get inquiry_type_route_error;
+
+  /// No description provided for @inquiry_type_place_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Place/Information Error'**
+  String get inquiry_type_place_error;
+
+  /// No description provided for @inquiry_type_bug_report.
+  ///
+  /// In en, this message translates to:
+  /// **'Bug Report'**
+  String get inquiry_type_bug_report;
+
+  /// No description provided for @inquiry_type_feature_request.
+  ///
+  /// In en, this message translates to:
+  /// **'Feature Request'**
+  String get inquiry_type_feature_request;
+
+  /// No description provided for @inquiry_type_other.
+  ///
+  /// In en, this message translates to:
+  /// **'Other Inquiry'**
+  String get inquiry_type_other;
+
+  /// No description provided for @inquiry_title_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Title'**
+  String get inquiry_title_label;
+
+  /// No description provided for @inquiry_content_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Content'**
+  String get inquiry_content_label;
+
+  /// No description provided for @inquiry_required.
+  ///
+  /// In en, this message translates to:
+  /// **'Required'**
+  String get inquiry_required;
+
+  /// No description provided for @inquiry_cancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get inquiry_cancel;
+
+  /// No description provided for @inquiry_delete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get inquiry_delete;
+
+  /// No description provided for @password_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Password'**
+  String get password_label;
+
+  /// No description provided for @excel_file.
+  ///
+  /// In en, this message translates to:
+  /// **'Excel File'**
+  String get excel_file;
+
+  /// No description provided for @recommended_route.
+  ///
+  /// In en, this message translates to:
+  /// **'Recommended Route'**
+  String get recommended_route;
+
+  /// No description provided for @previous.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous'**
+  String get previous;
+
+  /// No description provided for @next.
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get next;
 }
 
 class _AppLocalizationsDelegate
