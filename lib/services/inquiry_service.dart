@@ -423,6 +423,9 @@ class InquiryService {
               );
               
               debugPrint('파싱된 문의: ${inquiryItem.title} (${inquiryItem.status})');
+              debugPrint('  - Image_Path: ${item['Image_Path']}');
+              debugPrint('  - hasImage: ${inquiryItem.hasImage}');
+              debugPrint('  - inquiryCode: ${inquiryItem.inquiryCode}');
               return inquiryItem;
             }).toList();
 
@@ -476,14 +479,17 @@ class InquiryService {
         debugPrint('URL 시도 ${i + 1}: $url');
 
         try {
+          final requestBody = {
+            'inquiry_code': inquiryCode,
+          };
+          debugPrint('요청 본문: $requestBody');
+          
           final response = await http.delete(
             Uri.parse(url),
             headers: {
               'Content-Type': 'application/json',
             },
-            body: jsonEncode({
-              'inquiry_code': inquiryCode,
-            }),
+            body: jsonEncode(requestBody),
           );
 
           debugPrint('응답 상태: ${response.statusCode}');
@@ -494,6 +500,7 @@ class InquiryService {
             return true;
           } else {
             debugPrint('❌ 문의 삭제 실패: ${response.statusCode}');
+            debugPrint('❌ 실패 응답: ${response.body}');
           }
         } catch (e) {
           debugPrint('❌ URL 시도 ${i + 1} 실패: $e');

@@ -135,10 +135,11 @@ class _CreateInquiryTabState extends State<CreateInquiryTab> {
     super.didChangeDependencies();
     final l10n = AppLocalizations.of(context)!;
     _inquiryTypes = [
-      l10n.inquiry_type_bug,
-      l10n.inquiry_type_feature,
-      l10n.inquiry_type_improvement,
-      l10n.inquiry_type_other,
+      l10n.inquiry_category_place_error,
+      l10n.inquiry_category_bug,
+      l10n.inquiry_category_feature,
+      l10n.inquiry_category_route_error,
+      l10n.inquiry_category_other,
     ];
   }
 
@@ -788,10 +789,7 @@ class _CreateInquiryTabState extends State<CreateInquiryTab> {
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(l10n.image_selection_error(e.toString())),
-          backgroundColor: Colors.red,
-        ),
+        SnackBar(content: Text(l10n.image_selection_error), backgroundColor: Colors.red),
       );
     }
   }
@@ -857,10 +855,7 @@ class _CreateInquiryTabState extends State<CreateInquiryTab> {
       if (mounted) {
         Navigator.pop(context); // 로딩 다이얼로그 닫기
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('오류가 발생했습니다: $e'),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text(l10n.inquiry_error_occurred), backgroundColor: Colors.red),
         );
       }
     } finally {
@@ -1041,7 +1036,7 @@ class _MyInquiriesTabState extends State<MyInquiriesTab> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
-                          inquiry.category,
+                          _getLocalizedCategory(inquiry.category),
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
@@ -1062,7 +1057,7 @@ class _MyInquiriesTabState extends State<MyInquiriesTab> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
-                          inquiry.status,
+                          _getLocalizedStatus(inquiry.status),
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
@@ -1252,7 +1247,7 @@ class _MyInquiriesTabState extends State<MyInquiriesTab> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        l10n.inquiry_title_label(inquiry.title),
+                        l10n.inquiry_title_label,
                         style: const TextStyle(
                           fontSize: 14,
                           color: Color(0xFF64748B),
@@ -1311,9 +1306,9 @@ class _MyInquiriesTabState extends State<MyInquiriesTab> {
                             ),
                             elevation: 2,
                           ),
-                          child: const Text(
-                            '삭제',
-                            style: TextStyle(
+                          child: Text(
+                            l10n.inquiry_delete,
+                            style: const TextStyle(
                               fontWeight: FontWeight.w600,
                               fontSize: 16,
                             ),
@@ -1338,6 +1333,11 @@ class _MyInquiriesTabState extends State<MyInquiriesTab> {
   Future<void> _deleteInquiry(InquiryItem inquiry) async {
     final l10n = AppLocalizations.of(context)!;
     try {
+      debugPrint('=== 클라이언트에서 삭제 시도 ===');
+      debugPrint('문의 제목: ${inquiry.title}');
+      debugPrint('문의 코드: ${inquiry.inquiryCode}');
+      debugPrint('이미지 여부: ${inquiry.hasImage}');
+      
       final success = await InquiryService.deleteInquiry(
         widget.userAuth.userId!,
         inquiry.inquiryCode,
@@ -1356,14 +1356,20 @@ class _MyInquiriesTabState extends State<MyInquiriesTab> {
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(l10n.inquiry_delete_failed),
+            content: Text('${l10n.inquiry_delete_failed}\n문의 코드: ${inquiry.inquiryCode}'),
             backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
           ),
         );
       }
     } catch (e) {
+      debugPrint('❌ 삭제 중 예외 발생: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('오류가 발생했습니다: $e'), backgroundColor: Colors.red),
+        SnackBar(
+          content: Text('${l10n.inquiry_error_occurred}\n오류: $e'),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 5),
+        ),
       );
     }
   }
@@ -1387,6 +1393,48 @@ class _MyInquiriesTabState extends State<MyInquiriesTab> {
         return Colors.green;
       default:
         return Colors.grey;
+    }
+  }
+
+  String _getLocalizedStatus(String status) {
+    final l10n = AppLocalizations.of(context)!;
+    switch (status.toLowerCase()) {
+      case 'pending':
+      case '답변 대기':
+        return l10n.inquiry_status_pending;
+      case 'answered':
+      case '답변 완료':
+        return l10n.inquiry_status_answered;
+      default:
+        return l10n.inquiry_status_pending;
+    }
+  }
+
+  String _getLocalizedCategory(String category) {
+    final l10n = AppLocalizations.of(context)!;
+    switch (category) {
+      case '장소/정보 오류':
+      case 'Place/Info Error':
+      case '地点/信息错误':
+        return l10n.inquiry_category_place_error;
+      case '버그 신고':
+      case 'Bug Report':
+      case '错误报告':
+        return l10n.inquiry_category_bug;
+      case '기능 제안':
+      case 'Feature Request':
+      case '功能建议':
+        return l10n.inquiry_category_feature;
+      case '경로 안내 오류':
+      case 'Route Guidance Error':
+      case '路线指导错误':
+        return l10n.inquiry_category_route_error;
+      case '기타 문의':
+      case 'Other Inquiry':
+      case '其他咨询':
+        return l10n.inquiry_category_other;
+      default:
+        return category;
     }
   }
 }

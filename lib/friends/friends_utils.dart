@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_application_1/generated/app_localizations.dart';
 
 /// 친구 화면에서 사용되는 유틸리티 함수들
 class FriendsUtils {
@@ -81,7 +82,7 @@ class FriendsUtils {
             children: [
               const Icon(Icons.error_outline, color: Colors.white, size: 20),
               const SizedBox(width: 12),
-              const Expanded(child: Text('전화앱을 열 수 없습니다.')),
+              Expanded(child: Text(AppLocalizations.of(context)!.phone_app_error)),
             ],
           ),
           backgroundColor: const Color(0xFFEF4444),
@@ -95,22 +96,22 @@ class FriendsUtils {
   }
 
   /// 친구 추가 에러 메시지 처리
-  static String getAddFriendErrorMessage(dynamic error) {
-    String errorMsg = '친구 추가 중 오류가 발생했습니다';
+  static String getAddFriendErrorMessage(BuildContext context, dynamic error) {
+    String errorMsg = AppLocalizations.of(context)!.add_friend_error;
     final errorString = error.toString();
 
     if (errorString.contains('존재하지 않는 사용자')) {
-      errorMsg = '존재하지 않는 사용자입니다';
+      errorMsg = AppLocalizations.of(context)!.user_not_found;
     } else if (errorString.contains('이미 친구')) {
-      errorMsg = '이미 친구인 사용자입니다';
+      errorMsg = AppLocalizations.of(context)!.already_friend;
     } else if (errorString.contains('이미 요청')) {
-      errorMsg = '이미 친구 요청을 보낸 사용자입니다';
+      errorMsg = AppLocalizations.of(context)!.already_requested;
     } else if (errorString.contains('자기 자신')) {
-      errorMsg = '자기 자신을 친구로 추가할 수 없습니다';
+      errorMsg = AppLocalizations.of(context)!.cannot_add_self;
     } else if (errorString.contains('잘못된')) {
-      errorMsg = '잘못된 사용자 ID입니다';
+      errorMsg = AppLocalizations.of(context)!.invalid_user_id;
     } else if (errorString.contains('서버 오류')) {
-      errorMsg = '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요';
+      errorMsg = AppLocalizations.of(context)!.server_error_retry;
     } else {
       errorMsg = errorString.replaceAll('Exception: ', '');
     }

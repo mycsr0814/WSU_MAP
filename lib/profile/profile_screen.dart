@@ -939,12 +939,12 @@ class _ProfileScreenState extends State<ProfileScreen>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // 🔥 헤더 - 보안 스타일
+              // 🔥 헤더
               Container(
                 padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1E3A8A).withOpacity(0.1),
-                  borderRadius: const BorderRadius.only(
+                decoration: const BoxDecoration(
+                  color: Color(0xFF1E3A8A),
+                  borderRadius: BorderRadius.only(
                     topLeft: Radius.circular(20),
                     topRight: Radius.circular(20),
                   ),
@@ -952,16 +952,15 @@ class _ProfileScreenState extends State<ProfileScreen>
                 child: Row(
                   children: [
                     Container(
-                      width: 60,
-                      height: 60,
+                      padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF1E3A8A).withOpacity(0.2),
-                        shape: BoxShape.circle,
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Icon(
-                        Icons.lock_outline,
-                        color: Color(0xFF1E3A8A),
-                        size: 30,
+                        Icons.lock,
+                        color: Colors.white,
+                        size: 24,
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -969,20 +968,20 @@ class _ProfileScreenState extends State<ProfileScreen>
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            '비밀번호 확인',
-                            style: TextStyle(
+                          Text(
+                            l10n.password_confirm_title,
+                            style: const TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.w700,
-                              color: Color(0xFF1E3A8A),
+                              color: Colors.white,
                             ),
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            '회원정보 수정을 위해 비밀번호를 입력해주세요',
+                            l10n.password_confirm_subtitle,
                             style: TextStyle(
                               fontSize: 14,
-                              color: const Color(0xFF1E3A8A).withOpacity(0.7),
+                              color: Colors.white.withOpacity(0.8),
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -1016,19 +1015,19 @@ class _ProfileScreenState extends State<ProfileScreen>
                       child: TextFormField(
                         controller: passwordController,
                         obscureText: true,
-                        decoration: const InputDecoration(
-                          labelText: '비밀번호',
-                          labelStyle: TextStyle(
+                        decoration: InputDecoration(
+                          labelText: l10n.password,
+                          labelStyle: const TextStyle(
                             color: Color(0xFF64748B),
                             fontSize: 14,
                           ),
-                          prefixIcon: Icon(
+                          prefixIcon: const Icon(
                             Icons.lock,
                             color: Color(0xFF1E3A8A),
                             size: 20,
                           ),
                           border: InputBorder.none,
-                          contentPadding: EdgeInsets.symmetric(
+                          contentPadding: const EdgeInsets.symmetric(
                             horizontal: 16,
                             vertical: 16,
                           ),
@@ -1040,6 +1039,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                       ),
                     ),
                     const SizedBox(height: 24),
+                    // 🔥 버튼들
                     Row(
                       children: [
                         Expanded(
@@ -1047,17 +1047,14 @@ class _ProfileScreenState extends State<ProfileScreen>
                             onPressed: () => Navigator.pop(context, false),
                             style: OutlinedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(vertical: 16),
-                              side: const BorderSide(
-                                color: Color(0xFF1E3A8A),
-                                width: 1,
-                              ),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
+                              side: const BorderSide(color: Color(0xFF1E3A8A)),
                             ),
-                            child: const Text(
-                              '취소',
-                              style: TextStyle(
+                            child: Text(
+                              l10n.cancel,
+                              style: const TextStyle(
                                 color: Color(0xFF1E3A8A),
                                 fontWeight: FontWeight.w600,
                                 fontSize: 16,
@@ -1072,8 +1069,8 @@ class _ProfileScreenState extends State<ProfileScreen>
                               final password = passwordController.text.trim();
                               if (password.isEmpty) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('비밀번호를 입력해주세요'),
+                                  SnackBar(
+                                    content: Text(l10n.password_required),
                                     backgroundColor: Colors.orange,
                                   ),
                                 );
@@ -1086,8 +1083,8 @@ class _ProfileScreenState extends State<ProfileScreen>
                                 Navigator.pop(context, true);
                               } else {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('비밀번호가 일치하지 않습니다'),
+                                  SnackBar(
+                                    content: Text(l10n.password_mismatch_confirm),
                                     backgroundColor: Colors.red,
                                   ),
                                 );
@@ -1100,9 +1097,9 @@ class _ProfileScreenState extends State<ProfileScreen>
                                 borderRadius: BorderRadius.circular(12),
                               ),
                             ),
-                            child: const Text(
-                              '확인',
-                              style: TextStyle(
+                            child: Text(
+                              l10n.password_confirm_button,
+                              style: const TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.w600,
                                 fontSize: 16,

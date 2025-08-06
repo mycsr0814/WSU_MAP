@@ -311,6 +311,28 @@ class WebSocketService {
           _handleFriendLoggedOut(data);
           break;
 
+        // 🔥 친구 요청 관련 메시지들 추가
+        case 'new_friend_request':
+          _handleNewFriendRequest(data);
+          break;
+
+        case 'friend_request_accepted':
+          _handleFriendRequestAccepted(data);
+          break;
+
+        case 'friend_request_rejected':
+          _handleFriendRequestRejected(data);
+          break;
+
+        case 'friend_deleted':
+          _handleFriendDeleted(data);
+          break;
+
+        // 🔥 위치 공유 상태 변경 처리 추가
+        case 'friend_location_share_status_change':
+          _handleFriendLocationShareStatusChange(data);
+          break;
+
         case 'heartbeat_response':
           debugPrint('❤️ 하트비트 응답 수신');
           break;
@@ -366,6 +388,50 @@ class WebSocketService {
     //   isLocationPublic,
     //   data['message'] ?? '친구의 위치 공유 상태가 변경되었습니다.',
     // );
+  }
+
+  // 🔥 새로 추가: 새로운 친구 요청 처리
+  void _handleNewFriendRequest(Map<String, dynamic> data) {
+    final fromUserId = data['fromUserId'];
+    final fromUserName = data['fromUserName'];
+    debugPrint('📨 새로운 친구 요청: $fromUserName ($fromUserId)');
+    debugPrint('📨 친구 요청 메시지 전체: $data');
+
+    // 메시지를 스트림으로 전달하여 FriendsController에서 처리
+    _messageController.add(data);
+  }
+
+  // 🔥 새로 추가: 친구 요청 수락 처리
+  void _handleFriendRequestAccepted(Map<String, dynamic> data) {
+    final fromUserId = data['fromUserId'];
+    final fromUserName = data['fromUserName'];
+    debugPrint('✅ 친구 요청 수락: $fromUserName ($fromUserId)');
+    debugPrint('✅ 친구 요청 수락 메시지 전체: $data');
+
+    // 메시지를 스트림으로 전달하여 FriendsController에서 처리
+    _messageController.add(data);
+  }
+
+  // 🔥 새로 추가: 친구 요청 거절 처리
+  void _handleFriendRequestRejected(Map<String, dynamic> data) {
+    final fromUserId = data['fromUserId'];
+    final fromUserName = data['fromUserName'];
+    debugPrint('❌ 친구 요청 거절: $fromUserName ($fromUserId)');
+    debugPrint('❌ 친구 요청 거절 메시지 전체: $data');
+
+    // 메시지를 스트림으로 전달하여 FriendsController에서 처리
+    _messageController.add(data);
+  }
+
+  // 🔥 새로 추가: 친구 삭제 처리
+  void _handleFriendDeleted(Map<String, dynamic> data) {
+    final deletedUserId = data['deletedUserId'];
+    final deletedUserName = data['deletedUserName'];
+    debugPrint('🗑️ 친구 삭제: $deletedUserName ($deletedUserId)');
+    debugPrint('🗑️ 친구 삭제 메시지 전체: $data');
+
+    // 메시지를 스트림으로 전달하여 FriendsController에서 처리
+    _messageController.add(data);
   }
 
   // 🔥 웹소켓 연결 확인 메시지 처리
@@ -665,6 +731,16 @@ class WebSocketService {
       });
     } else {
       debugPrint('❌ 웹소켓 연결되지 않음 - 친구 상태 요청 실패');
+    }
+  }
+
+  /// 🔥 웹소켓 메시지 전송 (공개 메서드)
+  void sendMessage(Map<String, dynamic> message) {
+    if (_isConnected && _channel != null) {
+      debugPrint('📤 웹소켓 메시지 전송: ${message['type']}');
+      _sendMessage(message);
+    } else {
+      debugPrint('❌ 웹소켓 연결되지 않음 - 메시지 전송 실패');
     }
   }
 }

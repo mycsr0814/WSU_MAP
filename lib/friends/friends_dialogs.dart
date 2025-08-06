@@ -216,7 +216,7 @@ class FriendsDialogs {
                                     if (!friend.isLocationPublic) {
                                       FriendsUtils.showErrorMessage(
                                         context,
-                                        '${friend.userName}님이 위치 공유를 허용하지 않았습니다.',
+                                        AppLocalizations.of(context)!.friend_location_permission_denied(friend.userName),
                                       );
                                       return;
                                     }
@@ -408,7 +408,7 @@ class FriendsDialogs {
       }
     } catch (e) {
       debugPrint('❌ 친구 위치 표시 오류: $e');
-      FriendsUtils.showErrorMessage(context, '친구 위치를 표시할 수 없습니다.');
+      FriendsUtils.showErrorMessage(context, AppLocalizations.of(context)!.friend_location_display_error);
     }
   }
 
@@ -434,7 +434,7 @@ class FriendsDialogs {
       debugPrint('❌ 친구 위치 제거 오류: $e');
       FriendsUtils.showErrorMessage(
         context,
-        AppLocalizations.of(context)!.errorCannotRemoveLocation,
+        AppLocalizations.of(context)!.friend_location_remove_error,
       );
     }
   }
@@ -514,7 +514,7 @@ class FriendsDialogs {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            '보낸 친구 요청을 취소합니다',
+                            AppLocalizations.of(context)!.cancel_request_description,
                             style: TextStyle(
                               fontSize: 14,
                               color: Colors.red.withValues(alpha: 0.8),
@@ -752,7 +752,7 @@ class FriendsDialogs {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        l10n.friendDeleteToConfirm(friend.userName),
+                        l10n.friendDeleteToConfirm,
                         style: const TextStyle(
                           fontSize: 14,
                           color: Color(0xFF64748B),

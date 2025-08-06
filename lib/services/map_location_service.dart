@@ -154,29 +154,25 @@ class MapLocationService {
     }
   }
 
-  /// 일반 위치 마커 추가
+  /// 내 위치 마커 추가
   Future<void> _addLocationMarker(NLatLng location) async {
     try {
-      // 🔥 고정 ID 사용으로 중복 방지
-      const markerId = 'my_location_marker';
       _myLocationMarker = NMarker(
-        id: markerId,
+        id: 'my_location_marker_${DateTime.now().millisecondsSinceEpoch}',
         position: location,
+        icon: NOverlayImage.fromAssetImage('assets/images/my_location_marker.png'),
         caption: NOverlayCaption(
           text: '내 위치',
-          color: Colors.white,
-          haloColor: const Color(0xFF1E3A8A),
+          color: const Color(0xFF1E3A8A),
           textSize: 12,
+          haloColor: Colors.white,
         ),
-        // 기본 마커 사용 (커스텀 아이콘 원하면 수정 가능)
+        size: const Size(32, 32),
       );
-      
       await _mapController!.addOverlay(_myLocationMarker!);
-      
-      debugPrint('✅ 위치 마커 추가');
-      
+      debugPrint('✅ 내 위치 마커 추가 완료');
     } catch (e) {
-      debugPrint('❌ 위치 마커 추가 실패: $e');
+      debugPrint('❌ 내 위치 마커 추가 실패: $e');
     }
   }
 

@@ -3,8 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_application_1/controllers/map_controller.dart';
 import 'package:flutter_application_1/managers/location_manager.dart';
-import 'package:flutter_application_1/friends/friends_controller.dart';
 import 'package:flutter_application_1/auth/user_auth.dart';
+import 'package:flutter_application_1/friends/friends_controller.dart';
+import 'package:flutter_application_1/generated/app_localizations.dart';
 
 class MapControls extends StatelessWidget {
   final MapScreenController controller;
@@ -129,14 +130,14 @@ class MapControls extends StatelessWidget {
           if (context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: const Row(
+                content: Row(
                   children: [
-                    Icon(Icons.location_off, color: Colors.white, size: 20),
-                    SizedBox(width: 12),
+                    const Icon(Icons.location_off, color: Colors.white, size: 20),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        '친구 위치를 지도에서 제거했습니다.',
-                        style: TextStyle(
+                        AppLocalizations.of(context)!.friendLocationRemovedFromMap,
+                        style: const TextStyle(
                           fontWeight: FontWeight.w500,
                           fontSize: 14,
                         ),

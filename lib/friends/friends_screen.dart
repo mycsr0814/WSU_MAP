@@ -119,13 +119,16 @@ class _FriendsScreenState extends State<FriendsScreen>
   Future<void> _handleAddFriend([StateSetter? setModalState]) async {
     // 이미 제출 중이면 중복 제출 방지
     if (_isAddingFriend) {
-      debugPrint('이미 친구 추가 중입니다. 중복 제출 방지');
+      debugPrint(AppLocalizations.of(context)!.already_adding_friend);
       return;
     }
 
     final id = _addController.text.trim();
     if (id.isEmpty) {
-      FriendsUtils.showErrorMessage(context, '아이디를 입력하세요');
+      FriendsUtils.showErrorMessage(
+        context,
+        AppLocalizations.of(context)!.enter_id_prompt,
+      );
       return;
     }
 
@@ -140,7 +143,10 @@ class _FriendsScreenState extends State<FriendsScreen>
 
       // 성공 - 예외가 발생하지 않았으면 성공
       debugPrint('✅ UI: 친구 요청 성공으로 판단');
-      FriendsUtils.showSuccessMessage(context, '친구 요청이 성공적으로 전송되었습니다');
+      FriendsUtils.showSuccessMessage(
+        context,
+        AppLocalizations.of(context)!.friend_request_sent_success,
+      );
       _addController.clear();
       _clearCachedUserList(); // 캐시 초기화
       if (mounted) Navigator.of(context).pop();
@@ -151,7 +157,7 @@ class _FriendsScreenState extends State<FriendsScreen>
       debugPrint('❌ UI: 예외 메시지: ${e.toString()}');
 
       // 구체적인 에러 메시지 처리
-      final errorMsg = FriendsUtils.getAddFriendErrorMessage(e);
+      final errorMsg = FriendsUtils.getAddFriendErrorMessage(context, e);
       FriendsUtils.showErrorMessage(context, errorMsg);
       // 실패 시에도 모달창 닫기
       if (mounted) Navigator.of(context).pop();
@@ -281,9 +287,7 @@ class _FriendsScreenState extends State<FriendsScreen>
                   Icon(Icons.wifi, color: Colors.green.shade600, size: 14),
                   const SizedBox(width: 6),
                   Text(
-                    AppLocalizations.of(
-                      context,
-                    )!.realTimeSyncStatus(controller.lastUpdateTime),
+                    AppLocalizations.of(context)!.realTimeSyncStatus,
                     style: TextStyle(
                       color: Colors.green.shade700,
                       fontSize: 12,
@@ -309,9 +313,9 @@ class _FriendsScreenState extends State<FriendsScreen>
       backgroundColor: Colors.transparent,
       builder: (ctx) => StatefulBuilder(
         builder: (context, setModalState) => DraggableScrollableSheet(
-          initialChildSize: 0.7,
-          minChildSize: 0.5,
-          maxChildSize: 0.95,
+          initialChildSize: 0.85, // 0.7에서 0.85로 증가
+          minChildSize: 0.6, // 0.5에서 0.6으로 증가
+          maxChildSize: 0.95, // 0.95에서 0.95로 유지
           expand: false,
           builder: (context, scrollController) => Padding(
             padding: EdgeInsets.only(
@@ -498,9 +502,24 @@ class _FriendsScreenState extends State<FriendsScreen>
                             setModalState,
                             scrollController,
                             controller,
-                            () async {
-                              // 요청 취소 로직은 여기서 처리
-                              // 실제 구현에서는 선택된 요청을 전달해야 함
+                            (String userId, String userName) async {
+                              // 요청 취소 로직
+                              try {
+                                await controller.cancelSentRequest(userId);
+                                FriendsUtils.showSuccessMessage(
+                                  context,
+                                  AppLocalizations.of(
+                                    context,
+                                  )!.friendRequestCancelled(userName),
+                                );
+                              } catch (e) {
+                                FriendsUtils.showErrorMessage(
+                                  context,
+                                  AppLocalizations.of(
+                                    context,
+                                  )!.friendRequestCancelError,
+                                );
+                              }
                             },
                           ),
                           FriendsTabs.buildReceivedRequestsTab(
@@ -508,13 +527,43 @@ class _FriendsScreenState extends State<FriendsScreen>
                             setModalState,
                             scrollController,
                             controller,
-                            () async {
-                              // 요청 수락 로직은 여기서 처리
-                              // 실제 구현에서는 선택된 요청을 전달해야 함
+                            (String userId, String userName) async {
+                              // 요청 수락 로직
+                              try {
+                                await controller.acceptRequest(userId);
+                                FriendsUtils.showSuccessMessage(
+                                  context,
+                                  AppLocalizations.of(
+                                    context,
+                                  )!.friendRequestAccepted(userName),
+                                );
+                              } catch (e) {
+                                FriendsUtils.showErrorMessage(
+                                  context,
+                                  AppLocalizations.of(
+                                    context,
+                                  )!.friendRequestAcceptError,
+                                );
+                              }
                             },
-                            () async {
-                              // 요청 거절 로직은 여기서 처리
-                              // 실제 구현에서는 선택된 요청을 전달해야 함
+                            (String userId, String userName) async {
+                              // 요청 거절 로직
+                              try {
+                                await controller.rejectRequest(userId);
+                                FriendsUtils.showSuccessMessage(
+                                  context,
+                                  AppLocalizations.of(
+                                    context,
+                                  )!.friendRequestRejected(userName),
+                                );
+                              } catch (e) {
+                                FriendsUtils.showErrorMessage(
+                                  context,
+                                  AppLocalizations.of(
+                                    context,
+                                  )!.friendRequestRejectError,
+                                );
+                              }
                             },
                           ),
                         ],

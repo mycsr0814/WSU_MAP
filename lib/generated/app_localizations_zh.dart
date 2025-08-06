@@ -9,13 +9,13 @@ class AppLocalizationsZh extends AppLocalizations {
   AppLocalizationsZh([String locale = 'zh']) : super(locale);
 
   @override
-  String get appTitle => '따라우송';
+  String get appTitle => '跟随乌松';
 
   @override
   String get subtitle => '智能校园指南';
 
   @override
-  String get woosong => '又松';
+  String get woosong => '乌松';
 
   @override
   String get start => '开始';
@@ -24,7 +24,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get login => '登录';
 
   @override
-  String get logout => '注销';
+  String get logout => '登出';
 
   @override
   String get guest => '访客';
@@ -57,7 +57,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get remember_me => '记住登录信息';
 
   @override
-  String get remember_me_description => '下次将自动登录';
+  String get remember_me_description => '下次自动登录';
 
   @override
   String get login_as_guest => '以访客身份浏览';
@@ -69,7 +69,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get login_success => '登录成功';
 
   @override
-  String get logout_success => '已成功注销';
+  String get logout_success => '已成功登出';
 
   @override
   String get enter_username => '请输入用户名';
@@ -78,7 +78,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get enter_password => '请输入密码';
 
   @override
-  String get password_hint => '请输入6位以上字符';
+  String get password_hint => '请输入至少6个字符';
 
   @override
   String get confirm_password_hint => '请再次输入密码';
@@ -109,17 +109,17 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String feature_coming_soon(String feature) {
-    return '$feature 功能正在开发中。\n将很快添加。';
+    return '$feature功能即将推出。\n很快会添加。';
   }
 
   @override
   String get start_campus_exploration => '开始探索校园';
 
   @override
-  String get woosong_university => '又松大学';
+  String get woosong_university => '乌松大学';
 
   @override
-  String get campus_navigator => '校园导航';
+  String get campus_navigator => '校园导航器';
 
   @override
   String get user_info_not_found => '登录响应中未找到用户信息';
@@ -134,10 +134,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get register => '注册';
 
   @override
-  String get register_success => '注册成功完成';
+  String get register_success => '注册完成';
 
   @override
-  String get register_success_message => '注册完成！\n正在跳转到登录页面。';
+  String get register_success_message => '注册完成！\n正在跳转到登录界面。';
 
   @override
   String get register_error => '注册过程中发生意外错误';
@@ -146,7 +146,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get update_user_info => '更新用户信息';
 
   @override
-  String get update_success => '用户信息更新成功';
+  String get update_success => '用户信息已更新';
 
   @override
   String get update_error => '更新用户信息时发生意外错误';
@@ -155,7 +155,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get delete_account => '删除账户';
 
   @override
-  String get delete_success => '账户删除成功';
+  String get delete_success => '账户删除完成';
 
   @override
   String get delete_error => '删除账户时发生意外错误';
@@ -164,7 +164,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get name => '姓名';
 
   @override
-  String get phone => '电话号码';
+  String get phone => '电话';
 
   @override
   String get email => '邮箱';
@@ -185,19 +185,19 @@ class AppLocalizationsZh extends AppLocalizations {
   String get password_mismatch => '密码不匹配';
 
   @override
-  String get password_too_short => '密码必须至少6个字符';
+  String get password_too_short => '密码至少需要6个字符';
 
   @override
-  String get invalid_phone_format => '请输入有效的电话号码格式 (例如: 010-1234-5678)';
+  String get invalid_phone_format => '请输入正确的电话号码格式（例如：010-1234-5678）';
 
   @override
-  String get invalid_email_format => '请输入有效的邮箱格式';
+  String get invalid_email_format => '请输入正确的邮箱格式';
 
   @override
-  String get required_fields_notice => '* 标记的项目为必填项';
+  String get required_fields_notice => '*标记的字段为必填项';
 
   @override
-  String get welcome_to_campus_navigator => '欢迎使用又松大学校园导航';
+  String get welcome_to_campus_navigator => '欢迎使用乌松校园导航器';
 
   @override
   String get enter_real_name => '请输入真实姓名';
@@ -206,7 +206,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get phone_format_hint => '010-1234-5678';
 
   @override
-  String get enter_student_number => '请输入学号或工号';
+  String get enter_student_number => '请输入学号或教工号';
 
   @override
   String get email_hint => 'example@woosong.org';
@@ -239,7 +239,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get select_auth_method => '选择认证方式';
 
   @override
-  String get woosong_campus_guide_service => '又松大学校园导航服务';
+  String get woosong_campus_guide_service => '乌松大学校园指南服务';
 
   @override
   String get register_description => '创建新账户以使用所有功能';
@@ -254,73 +254,379 @@ class AppLocalizationsZh extends AppLocalizations {
   String get processing => '处理中...';
 
   @override
-  String get campus_navigator_version => 'Campus Navigator v1.0';
+  String get campus_navigator_version => '校园导航器 v1.0';
 
   @override
   String get guest_mode => '访客模式';
 
   @override
-  String get guest_mode_description => '在访客模式下，您只能查看基本的校园信息。\n请注册并登录以使用所有功能。';
+  String get guest_mode_description => '在访客模式下，您只能查看基本的校园信息。\n要使用所有功能，请注册并登录。';
 
   @override
-  String get continue_as_guest => '继续作为访客';
+  String get continue_as_guest => '以访客身份继续';
 
   @override
   String get moved_to_my_location => '已自动移动到我的位置';
 
   @override
-  String get friends_screen_bottom_sheet => '朋友界面显示为底部表单';
+  String get friends_screen_bottom_sheet => '好友界面以底部表单显示';
 
   @override
   String get finding_current_location => '正在查找当前位置...';
 
   @override
-  String get home => '主页';
+  String get home => '首页';
 
   @override
-  String get timetable => '时间表';
+  String get timetable => '课程表';
 
   @override
-  String get friends => '朋友';
+  String get friends => '好友';
 
   @override
-  String get my_page => 'MY';
+  String get profile => '个人资料';
 
   @override
-  String get my_page_subtitle => '我的页面';
+  String get inquiry => '咨询';
 
   @override
-  String get cafe => '咖啡厅';
+  String get my_inquiry => '我的咨询';
 
   @override
-  String get restaurant => '餐厅';
+  String get inquiry_type => '咨询类型';
 
   @override
-  String get library => '图书馆';
+  String get inquiry_type_required => '请选择咨询类型';
 
   @override
-  String get educational_facility => '教育设施';
+  String get inquiry_type_select_hint => '选择咨询类型';
 
   @override
-  String get estimated_distance => '预计距离';
+  String get inquiry_title => '咨询标题';
 
   @override
-  String get estimated_time => '预计时间';
+  String get inquiry_content => '咨询内容';
 
   @override
-  String get calculating => '计算中...';
+  String get inquiry_content_hint => '请输入咨询内容';
 
   @override
-  String get calculating_route => '正在计算路线...';
+  String get inquiry_submit => '提交咨询';
+
+  @override
+  String get inquiry_submit_success => '咨询提交成功';
+
+  @override
+  String get inquiry_submit_failed => '咨询提交失败';
+
+  @override
+  String get no_inquiry_history => '无咨询历史';
+
+  @override
+  String get no_inquiry_history_hint => '暂无咨询记录';
+
+  @override
+  String get inquiry_delete => '删除咨询';
+
+  @override
+  String get inquiry_delete_confirm => '您要删除此咨询吗？';
+
+  @override
+  String get inquiry_delete_success => '咨询已删除';
+
+  @override
+  String get inquiry_delete_failed => '删除咨询失败';
+
+  @override
+  String get inquiry_detail => '咨询详情';
+
+  @override
+  String get inquiry_category => '咨询类别';
+
+  @override
+  String get inquiry_status => '咨询状态';
+
+  @override
+  String get inquiry_created_at => '咨询时间';
+
+  @override
+  String get inquiry_title_label => '咨询标题';
+
+  @override
+  String get inquiry_type_bug => '错误报告';
+
+  @override
+  String get inquiry_type_feature => '功能请求';
+
+  @override
+  String get inquiry_type_improvement => '改进建议';
+
+  @override
+  String get inquiry_type_other => '其他';
+
+  @override
+  String get inquiry_status_pending => '等待回复';
+
+  @override
+  String get inquiry_status_in_progress => '处理中';
+
+  @override
+  String get inquiry_status_answered => '已回答';
+
+  @override
+  String get phone_required => '电话号码为必填项';
+
+  @override
+  String get building_info => '建筑信息';
+
+  @override
+  String get directions => '路线';
+
+  @override
+  String get floor_detail_view => '楼层详情视图';
+
+  @override
+  String get no_floor_info => '无楼层信息';
+
+  @override
+  String get floor_detail_info => '楼层详情信息';
+
+  @override
+  String get search_start_location => '搜索起点';
+
+  @override
+  String get search_end_location => '搜索终点';
+
+  @override
+  String get unified_navigation_in_progress => '统一导航进行中';
+
+  @override
+  String get unified_navigation => '统一导航';
+
+  @override
+  String get recent_searches => '最近搜索';
+
+  @override
+  String get clear_all => '全部清除';
+
+  @override
+  String get searching => '搜索中...';
+
+  @override
+  String get try_different_keyword => '尝试其他关键词';
+
+  @override
+  String get enter_end_location => '输入目的地';
+
+  @override
+  String get route_preview => '路线预览';
+
+  @override
+  String get calculating_optimal_route => '计算最佳路线...';
+
+  @override
+  String get set_departure_and_destination => '设置起点和终点';
+
+  @override
+  String get start_unified_navigation => '开始统一导航';
+
+  @override
+  String get departure_indoor => '起点（室内）';
+
+  @override
+  String get to_building_exit => '到建筑出口';
+
+  @override
+  String get outdoor_movement => '室外移动';
+
+  @override
+  String get to_destination_building => '到目的地建筑';
+
+  @override
+  String get arrival_indoor => '终点（室内）';
+
+  @override
+  String get to_final_destination => '到最终目的地';
+
+  @override
+  String get total_distance => '总距离';
+
+  @override
+  String get route_type => '路线类型';
+
+  @override
+  String get building_to_building => '建筑间移动';
+
+  @override
+  String get room_to_building => '房间到建筑';
+
+  @override
+  String get building_to_room => '建筑到房间';
+
+  @override
+  String get room_to_room => '房间间移动';
+
+  @override
+  String get location_to_building => '当前位置到建筑';
+
+  @override
+  String get unified_route => '统一路线';
+
+  @override
+  String get status_offline => '离线';
+
+  @override
+  String get status_open => '开放';
+
+  @override
+  String get status_closed => '关闭';
+
+  @override
+  String get status_24hours => '24小时';
+
+  @override
+  String get status_temp_closed => '临时关闭';
+
+  @override
+  String get status_closed_permanently => '永久关闭';
+
+  @override
+  String get status_next_open => '上午9点开放';
+
+  @override
+  String get status_next_close => '下午6点关闭';
+
+  @override
+  String get status_next_open_tomorrow => '明天上午9点开放';
+
+  @override
+  String get set_start_point => '设置起点';
+
+  @override
+  String get set_end_point => '设置终点';
+
+  @override
+  String get scheduleDeleteTitle => '删除课程';
+
+  @override
+  String get scheduleDeleteSubtitle => '请谨慎决定';
+
+  @override
+  String get scheduleDeleteLabel => '要删除的课程';
+
+  @override
+  String scheduleDeleteDescription(Object title) {
+    return '\"$title\"课程将从课程表中删除。\n删除的课程无法恢复。';
+  }
+
+  @override
+  String get cancelButton => '取消';
+
+  @override
+  String get deleteButton => '删除';
+
+  @override
+  String get building_name => '建筑名称';
+
+  @override
+  String get floor_number => '楼层';
+
+  @override
+  String get room_name => '房间';
+
+  @override
+  String get memo => '备注';
+
+  @override
+  String get overlap_message => '此时间已有注册的课程';
+
+  @override
+  String friendDeleteSuccessMessage(Object userName) {
+    return '$userName已从好友列表中移除';
+  }
+
+  @override
+  String get enterFriendIdPrompt => '请输入要添加的好友ID';
+
+  @override
+  String get friendId => '好友ID';
+
+  @override
+  String get enterFriendId => '输入好友ID';
+
+  @override
+  String get sendFriendRequest => '发送好友请求';
+
+  @override
+  String get realTimeSyncActive => '实时同步激活 • 自动更新';
+
+  @override
+  String get noSentRequests => '无发送的好友请求';
+
+  @override
+  String newFriendRequests(int count) {
+    return '$count个新的好友请求';
+  }
+
+  @override
+  String get noReceivedRequests => '无接收的好友请求';
+
+  @override
+  String get id => 'ID';
+
+  @override
+  String requestDate(String date) {
+    return '请求日期: $date';
+  }
+
+  @override
+  String get newBadge => 'NEW';
+
+  @override
+  String get online => '在线';
+
+  @override
+  String get offline => '离线';
+
+  @override
+  String get contact => '联系';
+
+  @override
+  String get noContactInfo => '无联系信息';
+
+  @override
+  String get friendOfflineError => '好友离线';
+
+  @override
+  String get removeLocation => '移除位置';
+
+  @override
+  String get showLocation => '显示位置';
+
+  @override
+  String get close => '关闭';
+
+  @override
+  String friendLocationRemoved(String userName) {
+    return '$userName的位置已移除';
+  }
+
+  @override
+  String friendLocationShown(String userName) {
+    return '$userName的位置已显示';
+  }
+
+  @override
+  String get errorCannotRemoveLocation => '无法移除位置';
+
+  @override
+  String get my_page => '我的页面';
+
+  @override
+  String get calculating_route => '计算路线中...';
 
   @override
   String get finding_optimal_route => '服务器正在寻找最佳路线';
-
-  @override
-  String get departure => '出发地';
-
-  @override
-  String get destination => '目的地';
 
   @override
   String get clear_route => '清除路线';
@@ -329,394 +635,136 @@ class AppLocalizationsZh extends AppLocalizations {
   String get location_permission_denied => '位置权限被拒绝。\n请在设置中允许位置权限。';
 
   @override
-  String finding_route_to_building(String building) {
-    return '正在查找到$building的路线...';
-  }
+  String get estimated_time => '预计时间';
 
   @override
-  String route_displayed_to_building(String building) {
-    return '已显示到$building的路线';
-  }
+  String get account_delete_title => '删除账户';
 
   @override
-  String set_as_departure(String building) {
-    return '已将$building设为出发地。';
-  }
+  String get account_delete_subtitle => '永久删除您的账户';
 
   @override
-  String set_as_destination(String building) {
-    return '已将$building设为目的地。';
-  }
+  String get logout_title => '登出';
 
   @override
-  String get woosong_library_w1 => '又松图书馆 (W1)';
+  String get logout_subtitle => '从当前账户登出';
 
   @override
-  String get woosong_library_info =>
-      'B2F\t停车场\nB1F\t小礼堂、设备室、电气室、停车场\n1F\t就业支持中心 (630-9976)、借阅台、信息休息室\n2F\t普通阅览室、团体学习室\n3F\t普通阅览室\n4F\t文学图书/西方图书';
+  String get location_share_enabled_success => '位置共享已启用';
 
   @override
-  String get woosong_library_desc => '又松大学中央图书馆';
+  String get location_share_disabled_success => '位置共享已禁用';
 
   @override
-  String get sol_cafe => 'Sol咖啡厅';
+  String get location_share_update_failed => '位置共享设置更新失败';
 
   @override
-  String get sol_cafe_info => '1F\t餐厅\n2F\t咖啡厅';
+  String get guest_location_share_success => '访客模式下仅在本地设置位置共享';
 
   @override
-  String get sol_cafe_desc => '校园内咖啡厅';
+  String get no_changes => '无更改';
 
   @override
-  String get cheongun_1_dormitory => '青云1宿舍';
+  String get profile_edit_error => '编辑个人资料时发生错误';
 
   @override
-  String get cheongun_1_dormitory_info =>
-      '1F\t实习室\n2F\t学生餐厅\n2F\t青云1宿舍(女) (629-6542)\n2F\t生活馆\n3~5F\t生活馆';
+  String get password_confirm_title => '密码确认';
 
   @override
-  String get cheongun_1_dormitory_desc => '女学生宿舍';
+  String get password_confirm_subtitle => '请输入密码以修改账户信息';
 
   @override
-  String get industry_cooperation_w2 => '产学合作团 (W2)';
+  String get password_confirm_button => '确认';
 
   @override
-  String get industry_cooperation_info =>
-      '1F\t产学合作团\n2F\t建筑工程专业 (630-9720)\n3F\t又松大学融合技术研究所、产学研综合企业支持中心\n4F\t企业附设研究所、LG CNS教室、铁道数字学院教室';
+  String get password_required => '请输入密码';
 
   @override
-  String get industry_cooperation_desc => '产学合作及研究设施';
-
-  @override
-  String get rotc_w2_1 => '学军团 (W2-1)';
-
-  @override
-  String get rotc_info => '\t学军团 (630-4601)';
-
-  @override
-  String get rotc_desc => '学军团设施';
-
-  @override
-  String get international_dormitory_w3 => '留学生宿舍 (W3)';
-
-  @override
-  String get international_dormitory_info =>
-      '1F\t留学生支持团队 (629-6623)\n1F\t学生餐厅\n2F\t留学生宿舍 (629-6655)\n2F\t保健室\n3~12F\t生活馆';
-
-  @override
-  String get international_dormitory_desc => '留学生专用宿舍';
-
-  @override
-  String get railway_logistics_w4 => '铁道物流馆 (W4)';
-
-  @override
-  String get railway_logistics_info =>
-      'B1F\t实习室\n1F\t实习室\n2F\t铁道建设系统学部 (629-6710)\n2F\t铁道车辆系统学科 (629-6780)\n3F\t教室/实习室\n4F\t铁道系统学部 (630-6730,9700)\n5F\t消防防灾学科 (629-6770)\n5F\t物流系统学科 (630-9330)';
-
-  @override
-  String get railway_logistics_desc => '铁道及物流相关学科';
-
-  @override
-  String get health_medical_science_w5 => '保健医疗科学馆 (W5)';
-
-  @override
-  String get health_medical_science_info =>
-      'B1F\t停车场\n1F\t视听室/停车场\n2F\t教室\n2F\t运动健康康复学科 (630-9840)\n3F\t急救学科 (630-9280)\n3F\t护理学科 (630-9290)\n4F\t作业治疗学科 (630-9820)\n4F\t语言治疗听觉康复学科 (630-9220)\n5F\t物理治疗学科 (630-4620)\n5F\t保健医疗经营学科 (630-4610)\n5F\t教室\n6F\t铁道经营学科 (630-9770)';
-
-  @override
-  String get health_medical_science_desc => '保健医疗相关学科';
-
-  @override
-  String get liberal_arts_w6 => '教养教育馆 (W6)';
-
-  @override
-  String get liberal_arts_info => '2F\t教室\n3F\t教室\n4F\t教室\n5F\t教室';
-
-  @override
-  String get liberal_arts_desc => '教养教室';
-
-  @override
-  String get woosong_hall_w7 => '又松馆 (W7)';
-
-  @override
-  String get woosong_hall_info =>
-      '1F\t入学处 (630-9627)\n1F\t教务处 (630-9622)\n1F\t设施处 (630-9970)\n1F\t管理团队 (629-6658)\n1F\t产学合作团 (630-4653)\n1F\t对外合作处 (630-9636)\n2F\t战略企划处 (630-9102)\n2F\t总务处-总务、采购 (630-9653)\n2F\t企划处 (630-9661)\n3F\t校长室 (630-8501)\n3F\t国际交流处 (630-9373)\n3F\t幼儿教育科 (630-9360)\n3F\t经营学专业 (629-6640)\n3F\t金融/房地产学专业 (630-9350)\n4F\t大会议室\n5F\t会议室';
-
-  @override
-  String get woosong_hall_desc => '大学本部建筑';
-
-  @override
-  String get woosong_kindergarten_w8 => '又松幼儿园 (W8)';
-
-  @override
-  String get woosong_kindergarten_info => '1F, 2F\t又松幼儿园 (629~6750~1)';
-
-  @override
-  String get woosong_kindergarten_desc => '大学附属幼儿园';
-
-  @override
-  String get west_campus_culinary_w9 => '西校区烹饪学院 (W9)';
-
-  @override
-  String get west_campus_culinary_info => 'B1F\t实习室\n1F\t实习室\n2F\t实习室';
-
-  @override
-  String get west_campus_culinary_desc => '烹饪实习设施';
-
-  @override
-  String get social_welfare_w10 => '社会福利融合馆 (W10)';
-
-  @override
-  String get social_welfare_info =>
-      '1F\t视听室/实习室\n2F\t教室/实习室\n3F\t社会福利学科 (630-9830)\n3F\t全球儿童教育学科 (630-9260)\n4F\t教室/实习室\n5F\t教室/实习室';
-
-  @override
-  String get social_welfare_desc => '社会福利相关学科';
-
-  @override
-  String get gymnasium_w11 => '体育馆 (W11)';
-
-  @override
-  String get gymnasium_info => '1F\t体力锻炼室\n2F~4F\t体育馆';
-
-  @override
-  String get gymnasium_desc => '体育设施';
-
-  @override
-  String get sica_w12 => 'SICA (W12)';
-
-  @override
-  String get sica_info =>
-      'B1F\t实习室\n1F\tStarrico咖啡厅\n2F~3F\t教室\n5F\t全球烹饪学部 (629-6860)';
-
-  @override
-  String get sica_desc => '国际烹饪学院';
-
-  @override
-  String get woosong_tower_w13 => '又松塔 (W13)';
-
-  @override
-  String get woosong_tower_info =>
-      'B1~1F\t停车场\n2F\t停车场、Solpine面包店 (629-6429)\n4F\t研讨室\n5F\t教室\n6F\t餐饮烹饪营养学科 (630-9380,9740)\n7F\t教室\n8F\t餐饮、烹饪经营专业 (630-9250)\n9F\t教室/实习室\n10F\t餐饮烹饪专业 (629-6821)、全球韩式烹饪专业 (629-6560)\n11F, 12F\t实习室\n13F\tSolpine餐厅 (629-6610)';
-
-  @override
-  String get woosong_tower_desc => '综合教育设施';
-
-  @override
-  String get culinary_center_w14 => '烹饪中心 (W14)';
-
-  @override
-  String get culinary_center_info =>
-      '1F\t教室/实习室\n2F\t教室/实习室\n3F\t教室/实习室\n4F\t教室/实习室\n5F\t教室/实习室';
-
-  @override
-  String get culinary_center_desc => '烹饪专业教育设施';
-
-  @override
-  String get food_architecture_w15 => '食品建筑馆 (W15)';
-
-  @override
-  String get food_architecture_info =>
-      'B1F\t实习室\n1F\t实习室\n2F\t教室\n3F\t教室\n4F\t教室\n5F\t教室';
-
-  @override
-  String get food_architecture_desc => '食品及建筑相关学科';
-
-  @override
-  String get student_hall_w16 => '学生会馆 (W16)';
-
-  @override
-  String get student_hall_info =>
-      '1F\t学生餐厅、校内书店 (629-6127)\n2F\t教职员餐厅\n3F\t社团房\n3F\t学生福利处-学生团队 (630-9641)、奖学金团队 (630-9876)\n3F\t残疾学生支持中心 (630-9903)\n3F\t社会服务团 (630-9904)\n3F\t学生咨询中心 (630-9645)\n4F\t复学支持中心 (630-9139)\n4F\t教授学习开发中心 (630-9285)';
-
-  @override
-  String get student_hall_desc => '学生福利设施';
-
-  @override
-  String get media_convergence_w17 => '媒体融合馆 (W17)';
-
-  @override
-  String get media_convergence_info =>
-      'B1F\t教室/实习室\n1F\t媒体设计/影像专业 (630-9750)\n2F\t教室/实习室\n3F\t游戏多媒体专业 (630-9270)\n5F\t教室/实习室';
-
-  @override
-  String get media_convergence_desc => '媒体相关学科';
-
-  @override
-  String get woosong_arts_center_w18 => '又松艺术会馆 (W18)';
-
-  @override
-  String get woosong_arts_center_info =>
-      'B1F\t演出准备室\n1F\t又松艺术会馆 (629-6363)\n2F\t实习室\n3F\t实习室\n4F\t实习室\n5F\t实习室';
-
-  @override
-  String get woosong_arts_center_desc => '艺术演出设施';
-
-  @override
-  String get west_campus_andycut_w19 => '西校区AndyCut建筑 (W19)';
-
-  @override
-  String get west_campus_andycut_info =>
-      '2F\t全球融合商务学科 (630-9249)\n2F\t自由专业学部 (630-9390)\n2F\tAI/大数据学科 (630-9807)\n2F\t全球酒店管理学科 (630-9249)\n2F\t全球媒体影像学科 (630-9346)\n2F\t全球医疗服务经营学科 (630-9283)\n2F\t全球铁道/交通物流学部 (630-9347)\n2F\t全球餐饮创业学科 (629-6860)';
-
-  @override
-  String get west_campus_andycut_desc => '全球学科建筑';
-
-  @override
-  String get operating => '运营中';
-
-  @override
-  String get dormitory => '宿舍';
-
-  @override
-  String get military_facility => '军事设施';
-
-  @override
-  String get kindergarten => '幼儿园';
-
-  @override
-  String get sports_facility => '体育设施';
-
-  @override
-  String get complex_facility => '综合设施';
-
-  @override
-  String get search_campus_buildings => '搜索校园建筑';
-
-  @override
-  String get no_search_results => '没有搜索结果';
-
-  @override
-  String get building_details => '详细信息';
-
-  @override
-  String get parking => '停车';
-
-  @override
-  String get accessibility => '无障碍';
-
-  @override
-  String get facilities => '设施';
-
-  @override
-  String get elevator => '电梯';
-
-  @override
-  String get restroom => '洗手间';
-
-  @override
-  String get navigate_from_current_location => '从当前位置导航';
-
-  @override
-  String get title => '编辑个人资料';
-
-  @override
-  String get nameRequired => '请输入姓名';
-
-  @override
-  String get emailRequired => '请输入邮箱';
-
-  @override
-  String get save => '保存';
-
-  @override
-  String get saveSuccess => '个人资料已更新';
-
-  @override
-  String get my_info => '我的信息';
-
-  @override
-  String get guest_user => '예질배 크루';
-
-  @override
-  String get guest_role => '정진영의 노예';
-
-  @override
-  String get user => '用户';
-
-  @override
-  String get edit_profile => '编辑个人资料';
-
-  @override
-  String get edit_profile_subtitle => '您可以修改个人信息';
-
-  @override
-  String get help_subtitle => '查看应用使用方法';
-
-  @override
-  String get app_info_subtitle => '版本信息和开发者信息';
-
-  @override
-  String get delete_account_subtitle => '永久删除您的账户';
-
-  @override
-  String get login_message => '请登录或注册\n以使用所有功能';
-
-  @override
-  String get login_signup => '登录 / 注册';
-
-  @override
-  String get delete_account_confirm => '删除账户';
-
-  @override
-  String get delete_account_message => '您确定要删除账户吗？';
-
-  @override
-  String get logout_confirm => '注销';
-
-  @override
-  String get logout_message => '您确定要注销吗？';
-
-  @override
-  String get yes => '是';
-
-  @override
-  String get no => '否';
-
-  @override
-  String get feature_in_progress => '功能正在开发中';
-
-  @override
-  String get delete_feature_in_progress => '账户删除功能正在开发中';
-
-  @override
-  String get app_info => '应用信息';
-
-  @override
-  String get app_version => '应用版本';
-
-  @override
-  String get developer => '开发者';
-
-  @override
-  String get developer_name => '开发者姓名';
-
-  @override
-  String get developer_email => '开发者邮箱';
-
-  @override
-  String get developer_github => 'GitHub';
-
-  @override
-  String get help => '帮助';
-
-  @override
-  String get no_help_images => '没有帮助图片';
-
-  @override
-  String get image_load_error => '图片加载错误';
-
-  @override
-  String get description_hint => '输入描述';
-
-  @override
-  String get email_required => '请输入邮箱';
-
-  @override
-  String get name_required => '请输入姓名';
+  String get password_mismatch_confirm => '密码不匹配';
 
   @override
   String get profile_updated => '个人资料已更新';
+
+  @override
+  String get my_page_subtitle => '我的信息';
+
+  @override
+  String get excel_file => 'Excel文件';
+
+  @override
+  String get excel_file_tutorial => 'Excel文件教程';
+
+  @override
+  String get image_attachment => '图片附件';
+
+  @override
+  String get max_one_image => '最多1张';
+
+  @override
+  String get photo_attachment => '照片附件';
+
+  @override
+  String get photo_attachment_complete => '照片附件完成';
+
+  @override
+  String get image_selection => '图片选择';
+
+  @override
+  String get select_image_method => '请选择选择图片的方法';
+
+  @override
+  String get select_from_gallery => '从相册选择';
+
+  @override
+  String get select_from_gallery_desc => '从相册选择图片';
+
+  @override
+  String get select_from_file => '从文件选择';
+
+  @override
+  String get select_from_file_desc => '从文件选择图片';
+
+  @override
+  String get max_one_image_error => '一次只能附加一张图片';
+
+  @override
+  String get image_selection_error => '选择图片时发生错误';
+
+  @override
+  String get inquiry_error_occurred => '处理您的咨询时发生错误';
+
+  @override
+  String get inquiry_category_bug => '错误报告';
+
+  @override
+  String get inquiry_category_feature => '功能建议';
+
+  @override
+  String get inquiry_category_improvement => '改进建议';
+
+  @override
+  String get inquiry_category_other => '其他咨询';
+
+  @override
+  String get inquiry_category_route_error => '路线指导错误';
+
+  @override
+  String get inquiry_category_place_error => '地点/信息错误';
+
+  @override
+  String get location_share_title => '位置共享';
+
+  @override
+  String get location_share_enabled => '位置共享已启用';
+
+  @override
+  String get location_share_disabled => '位置共享已禁用';
+
+  @override
+  String get profile_edit_title => '编辑个人资料';
+
+  @override
+  String get profile_edit_subtitle => '您可以修改您的个人信息';
 
   @override
   String get schedule => '课程表';
@@ -764,7 +812,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get class_name => '课程名称';
 
   @override
-  String get professor_name => '教授姓名';
+  String get professor_name => '教授';
 
   @override
   String get classroom => '教室';
@@ -797,13 +845,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get friday_full => '星期五';
 
   @override
-  String get class_added => '课程已添加。';
+  String get class_added => '课程已添加';
 
   @override
-  String get class_updated => '课程已更新。';
+  String get class_updated => '课程已更新';
 
   @override
-  String get class_deleted => '课程已删除。';
+  String get class_deleted => '课程已删除';
 
   @override
   String delete_class_confirm(String className) {
@@ -823,42 +871,36 @@ class AppLocalizationsZh extends AppLocalizations {
   String get schedule_day => '星期';
 
   @override
-  String get map_feature_coming_soon => '地图功能将在以后添加。';
+  String get map_feature_coming_soon => '地图功能将在稍后添加';
 
   @override
   String current_year(int year) {
-    return '$year年';
+    return '$year';
   }
 
   @override
-  String get my_friends => '我的朋友';
+  String get my_friends => '我的好友';
 
   @override
   String online_friends(int total, int online) {
-    return '总计$total人 • 在线$online人';
+    return '总计 $total • 在线 $online';
   }
 
   @override
-  String get add_friend => '添加朋友';
+  String get add_friend => '添加好友';
 
   @override
-  String get friend_name_or_id => '请输入朋友的姓名或学号';
+  String get friend_name_or_id => '输入好友姓名或学号';
 
   @override
-  String get friend_request_sent => '好友请求已发送。';
-
-  @override
-  String get online => '在线';
-
-  @override
-  String get offline => '离线';
+  String get friend_request_sent => '好友请求已发送';
 
   @override
   String get in_class => '上课中';
 
   @override
   String last_location(String location) {
-    return '最后位置：$location';
+    return '最后位置: $location';
   }
 
   @override
@@ -871,7 +913,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get student_center => '学生中心';
 
   @override
-  String get cafeteria => '自助餐厅';
+  String get cafeteria => '学生食堂';
 
   @override
   String get message => '消息';
@@ -884,24 +926,18 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String start_chat_with(String name) {
-    return '开始与$name聊天。';
+    return '开始与$name聊天';
   }
 
   @override
   String view_location_on_map(String name) {
-    return '在地图上查看$name的位置。';
+    return '在地图上查看$name的位置';
   }
 
   @override
   String calling(String name) {
-    return '正在呼叫$name。';
+    return '正在呼叫$name';
   }
-
-  @override
-  String get add => '添加';
-
-  @override
-  String get close => '关闭';
 
   @override
   String get edit => '编辑';
@@ -931,7 +967,82 @@ class AppLocalizationsZh extends AppLocalizations {
   String get minutes => '分钟';
 
   @override
-  String get meters => '米';
+  String get hours => '小时';
+
+  @override
+  String get within_minute => '1分钟内';
+
+  @override
+  String minutes_only(Object minutes) {
+    return '$minutes分钟';
+  }
+
+  @override
+  String hours_only(Object hours) {
+    return '$hours小时';
+  }
+
+  @override
+  String hours_and_minutes(Object hours, Object minutes) {
+    return '$hours小时$minutes分钟';
+  }
+
+  @override
+  String get calculation_failed => '计算失败';
+
+  @override
+  String get current_location_departure => '从当前位置出发';
+
+  @override
+  String get current_location => '当前位置';
+
+  @override
+  String get available => '可用';
+
+  @override
+  String get start_navigation_from_current_location => '从当前位置开始导航';
+
+  @override
+  String get my_location_set_as_start => '我的位置已设为起点';
+
+  @override
+  String get current_location_departure_default => '从当前位置出发（默认）';
+
+  @override
+  String get default_location_set_as_start => '默认位置已设为起点';
+
+  @override
+  String get start_navigation => '开始导航';
+
+  @override
+  String get navigation_ended => '导航已结束';
+
+  @override
+  String get departure => '出发';
+
+  @override
+  String get arrival => '到达';
+
+  @override
+  String get destination => '目的地';
+
+  @override
+  String get outdoor_movement_distance => '室外移动距离';
+
+  @override
+  String get indoor_arrival => '室内到达';
+
+  @override
+  String get indoor_departure => '室内出发';
+
+  @override
+  String get previous => '上一个';
+
+  @override
+  String get next => '下一个';
+
+  @override
+  String get complete => '完成';
 
   @override
   String get findRoute => '查找路线';
@@ -943,7 +1054,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get setAsStart => '设为起点';
 
   @override
-  String get setAsDestination => '设为终点';
+  String get setAsDestination => '设为目的地的';
 
   @override
   String get navigateFromHere => '从这里导航';
@@ -952,16 +1063,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get buildingInfo => '建筑信息';
 
   @override
-  String get category => '类别';
-
-  @override
   String get locationPermissionRequired => '需要位置权限';
 
   @override
   String get enableLocationServices => '请启用位置服务';
-
-  @override
-  String get retry => '重试';
 
   @override
   String get noResults => '未找到结果';
@@ -977,42 +1082,36 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String friends_count_status(int total, int online) {
-    return '总共 $total人 • 在线 $online人';
+    return '总计 $total • 在线 $online';
   }
 
   @override
-  String get enter_friend_info => '请输入朋友的姓名或学号';
+  String get enter_friend_info => '输入好友姓名或学号';
 
   @override
   String show_location_on_map(String name) {
-    return '在地图上显示$name的位置。';
+    return '在地图上显示$name的位置';
   }
 
   @override
-  String get open_settings => '打开设置';
+  String get location_error => '无法找到您的位置';
 
   @override
-  String get location_error => '无法获取您的位置。';
-
-  @override
-  String get view_floor_plan => '查看平面图';
-
-  @override
-  String get floor_plan => '平面图';
+  String get view_floor_plan => '查看楼层平面图';
 
   @override
   String floor_plan_title(String buildingName) {
-    return '$buildingName 平面图';
+    return '$buildingName楼层平面图';
   }
 
   @override
-  String get floor_plan_not_available => '无法加载平面图图像';
+  String get floor_plan_not_available => '无法加载楼层平面图';
 
   @override
-  String get floor_plan_default_text => '平面图';
+  String get floor_plan_default_text => '楼层平面图';
 
   @override
-  String get delete_account_success => '您的账户已被删除。';
+  String get delete_account_success => '您的账户已被删除';
 
   @override
   String get convenience_store => '便利店';
@@ -1027,7 +1126,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get copier => '复印机';
 
   @override
-  String get atm => '自动取款机';
+  String get atm => 'ATM';
 
   @override
   String get bank_atm => '银行(ATM)';
@@ -1036,7 +1135,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get medical => '医疗';
 
   @override
-  String get health_center => '卫生所';
+  String get health_center => '保健中心';
 
   @override
   String get gym => '体育馆';
@@ -1051,7 +1150,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get extinguisher => '灭火器';
 
   @override
-  String get water_purifier => '饮水机';
+  String get water_purifier => '净水器';
 
   @override
   String get bookstore => '书店';
@@ -1060,691 +1159,662 @@ class AppLocalizationsZh extends AppLocalizations {
   String get post_office => '邮局';
 
   @override
-  String get instructionExitToOutdoor => '请前往建筑出口';
-
-  @override
-  String instructionMoveToDestination(Object place) {
-    return '前往 $place';
+  String instructionMoveToDestination(String place) {
+    return '移动到$place';
   }
 
   @override
-  String instructionMoveToDestinationBuilding(Object building) {
-    return '前往 $building 建筑';
+  String get instructionExitToOutdoor => '移动到建筑出口';
+
+  @override
+  String instructionMoveToDestinationBuilding(String building) {
+    return '移动到$building建筑';
   }
 
   @override
-  String get instructionMoveToRoom => '前往目标房间';
+  String get instructionMoveToRoom => '移动到目的地房间';
 
   @override
   String get instructionArrived => '您已到达目的地！';
 
   @override
-  String get search_hint => '请搜索校区建筑';
+  String get no => '否';
 
   @override
-  String get searchHint => '请输入建筑名称或房间号进行搜索';
+  String get woosong_library_w1 => '乌松图书馆 (W1)';
 
   @override
-  String get searchInitialGuide => '搜索大楼或教室';
+  String get woosong_library_info =>
+      'B2F\t停车场\nB1F\t小礼堂、设备室、电气室、停车场\n1F\t就业支持中心 (630-9976)、借阅台、信息休息室\n2F\t普通阅览室、团体学习室\n3F\t普通阅览室\n4F\t文学图书/西方图书';
 
   @override
-  String get searchHintExample => '例如：W19，工程馆，401室';
+  String get educational_facility => 'Educational Facility';
 
   @override
-  String get searchLoading => '搜索中...';
+  String get operating => 'Operating';
 
   @override
-  String get searchNoResult => '未找到搜索结果';
+  String get woosong_library_desc => '乌松大学中央图书馆';
 
   @override
-  String get searchTryAgain => '请尝试使用其他关键词';
+  String get sol_cafe => 'Sol Cafe';
 
   @override
-  String get lectureRoom => '教室';
+  String get sol_cafe_info => '1F\tRestaurant\n2F\tCafe';
 
   @override
-  String get status_open => '营业中';
+  String get cafe => 'Cafe';
 
   @override
-  String get status_closed => '已关闭';
+  String get sol_cafe_desc => 'Campus cafe';
 
   @override
-  String get status_next_open => '上午 9 点开始营业';
+  String get cheongun_1_dormitory => 'Cheongun 1 Dormitory';
 
   @override
-  String get status_next_close => '下午 6 点结束营业';
+  String get cheongun_1_dormitory_info =>
+      '1F\tPractice Room\n2F\tStudent Cafeteria\n2F\tCheongun 1 Dormitory (Female) (629-6542)\n2F\tLiving Hall\n3~5F\tLiving Hall';
 
   @override
-  String get status_next_open_tomorrow => '明天上午 9 点开始营业';
+  String get dormitory => 'Dormitory';
 
   @override
-  String get office_hours => '09:00 - 18:00';
+  String get cheongun_1_dormitory_desc => 'Female student dormitory';
 
   @override
-  String get status_24hours => '24小时';
+  String get industry_cooperation_w2 => 'Industry Cooperation (W2)';
 
   @override
-  String get status_temp_closed => '临时休业';
+  String get industry_cooperation_info =>
+      '1F\tIndustry Cooperation\n2F\tArchitectural Engineering (630-9720)\n3F\tWoosong University Convergence Technology Institute, Industry-University-Research Comprehensive Enterprise Support Center\n4F\tCorporate Research Institute, LG CNS Classroom, Railway Digital Academy Classroom';
 
   @override
-  String get status_closed_permanently => '休业';
+  String get industry_cooperation_desc =>
+      'Industry cooperation and research facilities';
 
   @override
-  String get label_basic_info => '基本信息';
+  String get rotc_w2_1 => 'ROTC (W2-1)';
 
   @override
-  String get label_category_type => '分类';
+  String get rotc_info => '\tROTC (630-4601)';
 
   @override
-  String get label_status => '状态';
+  String get rotc_desc => 'ROTC facilities';
 
   @override
-  String get label_hours => '营业时间';
+  String get military_facility => 'Military Facility';
 
   @override
-  String get label_phone => '电话号码';
+  String get international_dormitory_w3 => 'International Dormitory (W3)';
 
   @override
-  String get label_coordinates => '坐标';
+  String get international_dormitory_info =>
+      '1F\tInternational Student Support Team (629-6623)\n1F\tStudent Cafeteria\n2F\tInternational Dormitory (629-6655)\n2F\tHealth Center\n3~12F\tLiving Hall';
 
   @override
-  String get unified_navigation => '统一导航';
+  String get international_dormitory_desc => 'International student dormitory';
 
   @override
-  String get unified_navigation_in_progress => '统一导航进行中';
+  String get railway_logistics_w4 => 'Railway Logistics (W4)';
 
   @override
-  String get search_start_location => '请搜索出发地（建筑名或房间号）';
+  String get railway_logistics_info =>
+      'B1F\tPractice Room\n1F\tPractice Room\n2F\tRailway Construction System Department (629-6710)\n2F\tRailway Vehicle System Department (629-6780)\n3F\tClassroom/Practice Room\n4F\tRailway System Department (630-6730,9700)\n5F\tFire Prevention Department (629-6770)\n5F\tLogistics System Department (630-9330)';
 
   @override
-  String get search_end_location => '请搜索目的地（建筑名或房间号）';
+  String get railway_logistics_desc =>
+      'Railway and logistics related departments';
 
   @override
-  String get enter_start_location => '请输入出发地';
+  String get health_medical_science_w5 => 'Health Medical Science (W5)';
 
   @override
-  String get enter_end_location => '请输入目的地';
+  String get health_medical_science_info =>
+      'B1F\tParking\n1F\tAudio-Visual Room/Parking\n2F\tClassroom\n2F\tExercise Health Rehabilitation Department (630-9840)\n3F\tEmergency Medical Department (630-9280)\n3F\tNursing Department (630-9290)\n4F\tOccupational Therapy Department (630-9820)\n4F\tSpeech Therapy Hearing Rehabilitation Department (630-9220)\n5F\tPhysical Therapy Department (630-4620)\n5F\tHealth Medical Management Department (630-4610)\n5F\tClassroom\n6F\tRailway Management Department (630-9770)';
 
   @override
-  String get recent_searches => '最近搜索';
+  String get health_medical_science_desc =>
+      'Health and medical related departments';
 
   @override
-  String get clear_all => '全部删除';
+  String get liberal_arts_w6 => 'Liberal Arts Education (W6)';
 
   @override
-  String get searching => '搜索中...';
+  String get liberal_arts_info =>
+      '2F\tClassroom\n3F\tClassroom\n4F\tClassroom\n5F\tClassroom';
 
   @override
-  String get try_different_keyword => '请尝试其他关键词';
+  String get liberal_arts_desc => 'Liberal arts classroom';
 
   @override
-  String get my_location => '我的位置';
+  String get woosong_hall_w7 => 'Woosong Hall (W7)';
 
   @override
-  String get start_from_current_location => '从当前位置出发';
+  String get woosong_hall_info =>
+      '1F\tAdmissions Office (630-9627)\n1F\tAcademic Affairs Office (630-9622)\n1F\tFacilities Office (630-9970)\n1F\tManagement Team (629-6658)\n1F\tIndustry Cooperation (630-4653)\n1F\tExternal Cooperation Office (630-9636)\n2F\tStrategic Planning Office (630-9102)\n2F\tGeneral Affairs Office-General Affairs, Procurement (630-9653)\n2F\tPlanning Office (630-9661)\n3F\tPresident\'s Office (630-8501)\n3F\tInternational Exchange Office (630-9373)\n3F\tEarly Childhood Education Department (630-9360)\n3F\tBusiness Administration Major (629-6640)\n3F\tFinance/Real Estate Major (630-9350)\n4F\tLarge Conference Room\n5F\tConference Room';
 
   @override
-  String get getting_current_location => '正在获取当前位置...';
+  String get woosong_hall_desc => 'University headquarters building';
 
   @override
-  String get current_location_set_as_start => '当前位置已设为出发地';
+  String get woosong_kindergarten_w8 => 'Woosong Kindergarten (W8)';
 
   @override
-  String get using_default_location => '使用默认位置';
+  String get woosong_kindergarten_info =>
+      '1F, 2F\tWoosong Kindergarten (629~6750~1)';
 
   @override
-  String get start_unified_navigation => '开始统一导航';
+  String get woosong_kindergarten_desc => 'University affiliated kindergarten';
 
   @override
-  String get set_both_locations => '请设置出发地和目的地';
+  String get kindergarten => 'Kindergarten';
 
   @override
-  String get navigation_ended => '导航已结束';
+  String get west_campus_culinary_w9 => 'West Campus Culinary Academy (W9)';
 
   @override
-  String get route_preview => '路线预览';
+  String get west_campus_culinary_info =>
+      'B1F\tPractice Room\n1F\tPractice Room\n2F\tPractice Room';
 
   @override
-  String get calculating_optimal_route => '正在计算最优路线...';
+  String get west_campus_culinary_desc => 'Culinary practice facilities';
 
   @override
-  String get set_departure_and_destination => '请设置出发地和目的地\\n可以输入建筑名或房间号';
+  String get social_welfare_w10 => 'Social Welfare Convergence (W10)';
 
   @override
-  String get total_distance => '总距离';
+  String get social_welfare_info =>
+      '1F\tAudio-Visual Room/Practice Room\n2F\tClassroom/Practice Room\n3F\tSocial Welfare Department (630-9830)\n3F\tGlobal Child Education Department (630-9260)\n4F\tClassroom/Practice Room\n5F\tClassroom/Practice Room';
 
   @override
-  String get route_type => '路线类型';
+  String get social_welfare_desc => 'Social welfare related departments';
 
   @override
-  String get departure_indoor => '出发地室内';
+  String get gymnasium_w11 => 'Gymnasium (W11)';
 
   @override
-  String get to_building_exit => '到建筑出口';
+  String get gymnasium_info => '1F\tPhysical Training Room\n2F~4F\tGymnasium';
 
   @override
-  String get outdoor_movement => '室外移动';
+  String get gymnasium_desc => 'Sports facilities';
 
   @override
-  String get to_destination_building => '到目的地建筑';
+  String get sports_facility => 'Sports Facility';
 
   @override
-  String get arrival_indoor => '到达地室内';
+  String get sica_w12 => 'SICA (W12)';
 
   @override
-  String get to_final_destination => '到最终目的地';
+  String get sica_info =>
+      'B1F\tPractice Room\n1F\tStarrico Cafe\n2F~3F\tClassroom\n5F\tGlobal Culinary Department (629-6860)';
 
   @override
-  String get building_to_building => '建筑间';
+  String get sica_desc => 'International Culinary Academy';
 
   @override
-  String get room_to_building => '房间→建筑';
+  String get woosong_tower_w13 => 'Woosong Tower (W13)';
 
   @override
-  String get building_to_room => '建筑→房间';
+  String get woosong_tower_info =>
+      'B1~1F\tParking\n2F\tParking, Solpine Bakery (629-6429)\n4F\tSeminar Room\n5F\tClassroom\n6F\tFood Service Culinary Nutrition Department (630-9380,9740)\n7F\tClassroom\n8F\tFood Service, Culinary Management Major (630-9250)\n9F\tClassroom/Practice Room\n10F\tFood Service Culinary Major (629-6821), Global Korean Cuisine Major (629-6560)\n11F, 12F\tPractice Room\n13F\tSolpine Restaurant (629-6610)';
 
   @override
-  String get room_to_room => '房间间';
+  String get woosong_tower_desc => 'Comprehensive education facility';
 
   @override
-  String get location_to_building => '位置→建筑';
+  String get complex_facility => 'Complex Facility';
 
   @override
-  String get unified_route => '统一路线';
+  String get culinary_center_w14 => 'Culinary Center (W14)';
 
   @override
-  String preset_room_start(Object building, Object room) {
-    return '$building $room号房间已设为出发地';
+  String get culinary_center_info =>
+      '1F\tClassroom/Practice Room\n2F\tClassroom/Practice Room\n3F\tClassroom/Practice Room\n4F\tClassroom/Practice Room\n5F\tClassroom/Practice Room';
+
+  @override
+  String get culinary_center_desc => 'Culinary major education facility';
+
+  @override
+  String get food_architecture_w15 => 'Food Architecture (W15)';
+
+  @override
+  String get food_architecture_info =>
+      'B1F\tPractice Room\n1F\tPractice Room\n2F\tClassroom\n3F\tClassroom\n4F\tClassroom\n5F\tClassroom';
+
+  @override
+  String get food_architecture_desc =>
+      'Food and architecture related departments';
+
+  @override
+  String get student_hall_w16 => 'Student Hall (W16)';
+
+  @override
+  String get student_hall_info =>
+      '1F\tStudent Cafeteria, Campus Bookstore (629-6127)\n2F\tFaculty Cafeteria\n3F\tClub Room\n3F\tStudent Welfare Office-Student Team (630-9641), Scholarship Team (630-9876)\n3F\tDisabled Student Support Center (630-9903)\n3F\tSocial Service Corps (630-9904)\n3F\tStudent Counseling Center (630-9645)\n4F\tReturn to School Support Center (630-9139)\n4F\tTeaching and Learning Development Center (630-9285)';
+
+  @override
+  String get student_hall_desc => 'Student welfare facility';
+
+  @override
+  String get media_convergence_w17 => 'Media Convergence (W17)';
+
+  @override
+  String get media_convergence_info =>
+      'B1F\tClassroom/Practice Room\n1F\tMedia Design/Video Major (630-9750)\n2F\tClassroom/Practice Room\n3F\tGame Multimedia Major (630-9270)\n5F\tClassroom/Practice Room';
+
+  @override
+  String get media_convergence_desc => 'Media related departments';
+
+  @override
+  String get woosong_arts_center_w18 => 'Woosong Arts Center (W18)';
+
+  @override
+  String get woosong_arts_center_info =>
+      'B1F\tPerformance Preparation Room\n1F\tWoosong Arts Center (629-6363)\n2F\tPractice Room\n3F\tPractice Room\n4F\tPractice Room\n5F\tPractice Room';
+
+  @override
+  String get woosong_arts_center_desc => 'Arts performance facility';
+
+  @override
+  String get west_campus_andycut_w19 => 'West Campus AndyCut Building (W19)';
+
+  @override
+  String get west_campus_andycut_info =>
+      '2F\tGlobal Convergence Business Department (630-9249)\n2F\tLiberal Studies Department (630-9390)\n2F\tAI/Big Data Department (630-9807)\n2F\tGlobal Hotel Management Department (630-9249)\n2F\tGlobal Media Video Department (630-9346)\n2F\tGlobal Medical Service Management Department (630-9283)\n2F\tGlobal Railway/Transportation Logistics Department (630-9347)\n2F\tGlobal Food Service Entrepreneurship Department (629-6860)';
+
+  @override
+  String get west_campus_andycut_desc => 'Global department building';
+
+  @override
+  String get search_campus_buildings => 'Search campus buildings';
+
+  @override
+  String get no_search_results => 'No search results';
+
+  @override
+  String get building_details => 'Details';
+
+  @override
+  String get parking => 'Parking';
+
+  @override
+  String get accessibility => 'Accessibility';
+
+  @override
+  String get facilities => 'Facilities';
+
+  @override
+  String get elevator => 'Elevator';
+
+  @override
+  String get restroom => 'Restroom';
+
+  @override
+  String get navigate_from_current_location => 'Navigate from current location';
+
+  @override
+  String get edit_profile => 'Edit Profile';
+
+  @override
+  String get nameRequired => 'Please enter name';
+
+  @override
+  String get emailRequired => 'Please enter email';
+
+  @override
+  String get save => 'Save';
+
+  @override
+  String get saveSuccess => 'Profile updated';
+
+  @override
+  String get app_info => 'App Info';
+
+  @override
+  String get app_version => 'App Version';
+
+  @override
+  String get developer => 'Developer';
+
+  @override
+  String get developer_name => 'Name: Hong Gil-dong';
+
+  @override
+  String get developer_email => 'Email: example@email.com';
+
+  @override
+  String get developer_github => 'GitHub: github.com/yourid';
+
+  @override
+  String get help => 'Help';
+
+  @override
+  String get no_help_images => 'No help images';
+
+  @override
+  String get image_load_error => 'Cannot load image';
+
+  @override
+  String get description_hint => 'Enter description';
+
+  @override
+  String get my_info => 'My Info';
+
+  @override
+  String get guest_user => 'Guest User';
+
+  @override
+  String get guest_role => 'Guest Role';
+
+  @override
+  String get user => 'User';
+
+  @override
+  String get edit_profile_subtitle =>
+      'You can modify your personal information';
+
+  @override
+  String get help_subtitle => 'Check app usage';
+
+  @override
+  String get app_info_subtitle =>
+      'Version information and developer information';
+
+  @override
+  String get delete_account_subtitle => 'Permanently delete your account';
+
+  @override
+  String get login_message => 'Login or register\nTo use all features';
+
+  @override
+  String get login_signup => 'Login / Register';
+
+  @override
+  String get delete_account_confirm => 'Delete Account';
+
+  @override
+  String get delete_account_message => 'Do you want to delete your account?';
+
+  @override
+  String get logout_confirm => 'Logout';
+
+  @override
+  String get logout_message => 'Do you want to logout?';
+
+  @override
+  String get yes => 'Yes';
+
+  @override
+  String get feature_in_progress => 'Feature in progress';
+
+  @override
+  String get delete_feature_in_progress =>
+      'Account deletion feature is in progress';
+
+  @override
+  String get title => 'Edit Profile';
+
+  @override
+  String get email_required => 'Please enter email';
+
+  @override
+  String get name_required => 'Please enter name';
+
+  @override
+  String get cancelFriendRequest => 'Cancel Friend Request';
+
+  @override
+  String cancelFriendRequestConfirm(String name) {
+    return 'Do you want to cancel the friend request sent to $name?';
   }
 
   @override
-  String preset_room_end(Object building, Object room) {
-    return '$building $room号房间已设为目的地';
-  }
+  String get cancelRequest => 'Cancel Request';
 
   @override
-  String preset_building_start(Object building) {
-    return '$building已设为出发地';
-  }
+  String get friendDeleteTitle => 'Delete Friend';
 
   @override
-  String preset_building_end(Object building) {
-    return '$building已设为目的地';
-  }
+  String get friendDeleteWarning => 'This action cannot be undone';
 
   @override
-  String floor_room(Object floor, Object room) {
-    return '$floor层$room号房间';
-  }
+  String get friendDeleteHeader => 'Delete Friend';
 
   @override
-  String get available => '可用';
+  String get friendDeleteToConfirm =>
+      'Please enter the name of the friend to delete';
 
   @override
-  String get current_location => '当前位置';
+  String get friendDeleteCancel => 'Cancel';
 
   @override
-  String get start_navigation_from_here => '从当前位置开始导航';
+  String get friendDeleteButton => 'Delete';
 
   @override
-  String get directions => '路线';
+  String get friendManagementAndRequests => 'Friend Management and Requests';
 
   @override
-  String get navigateHere => '导航到这里';
+  String get realTimeSyncStatus => 'Real-time Sync Status';
 
   @override
-  String get startLocation => '起点';
+  String get friendManagement => 'Friend Management';
 
   @override
-  String get endLocation => '终点';
-
-  @override
-  String get floor_plans => '楼层平面图';
-
-  @override
-  String get select_floor_to_view => '选择每层查看详细平面图';
-
-  @override
-  String get floor_info => '楼层信息';
-
-  @override
-  String get view_floor_plan_button => '查看楼层平面图';
-
-  @override
-  String get no_detailed_info => '无详细信息。';
-
-  @override
-  String get pinch_to_zoom => '捏合缩放，拖动移动';
-
-  @override
-  String get floor_plan_loading_failed => '楼层平面图加载失败';
-
-  @override
-  String loading_floor_plan(Object floor) {
-    return '正在加载$floor楼层平面图...';
-  }
-
-  @override
-  String server_info(Object building, Object floor) {
-    return '服务器: $building/$floor';
-  }
-
-  @override
-  String get building_name => '建筑物';
-
-  @override
-  String get floor_number => '楼层';
-
-  @override
-  String get room_name => '教室';
-
-  @override
-  String get overlap_message => '在该时间已注册课程。';
-
-  @override
-  String get memo => '备注';
-
-  @override
-  String get friendManagement => '朋友管理';
-
-  @override
-  String get friendManagementAndRequests => '朋友管理和请求';
-
-  @override
-  String get showLocation => '显示位置';
-
-  @override
-  String get removeLocation => '移除位置';
-
-  @override
-  String get accept => '接受';
-
-  @override
-  String get reject => '拒绝';
-
-  @override
-  String get id => 'ID';
-
-  @override
-  String get contact => '联系方式';
-
-  @override
-  String get lastLocation => '最后位置';
-
-  @override
-  String get noLocationInfo => '无位置信息';
-
-  @override
-  String get noContactInfo => '无信息';
-
-  @override
-  String friendRequestSent(String name) {
-    return '已向$name发送好友请求！';
-  }
-
-  @override
-  String friendRequestAccepted(String name) {
-    return '已接受$name的好友请求。';
-  }
-
-  @override
-  String friendRequestRejected(String name) {
-    return '已拒绝$name的好友请求。';
-  }
-
-  @override
-  String friendRequestCanceled(String name) {
-    return '已取消向$name发送的好友请求。';
-  }
-
-  @override
-  String friendDeleted(String name) {
-    return '已从好友列表中删除$name。';
-  }
-
-  @override
-  String friendLocationShown(String name) {
-    return '$name的位置已在地图上显示。';
-  }
-
-  @override
-  String friendLocationRemoved(String name) {
-    return '$name的位置已从地图上移除。';
-  }
-
-  @override
-  String friendCount(int count) {
-    return '我的朋友 ($count)';
-  }
+  String get add => 'Add';
 
   @override
   String sentRequestsCount(int count) {
-    return '已发送 ($count)';
+    return 'Sent ($count)';
   }
 
   @override
   String receivedRequestsCount(int count) {
-    return '已接收 ($count)';
+    return 'Received ($count)';
   }
 
   @override
-  String newFriendRequests(int count) {
-    return '$count个新的好友请求';
+  String friendCount(int count) {
+    return 'My Friends ($count)';
   }
 
   @override
-  String get addFriend => '添加';
+  String get noFriends =>
+      'You don\'t have any friends yet.\nTap the + button above to add friends!';
 
   @override
-  String get sent => '已发送';
+  String get open_settings => 'Open Settings';
 
   @override
-  String get received => '已接收';
+  String get retry => 'Retry';
 
   @override
-  String get sendFriendRequest => '发送好友请求';
+  String get basic_info => 'Basic Info';
 
   @override
-  String get friendId => '朋友ID';
+  String get category => 'Category';
 
   @override
-  String get enterFriendId => '请输入对方ID';
+  String get status => 'Status';
 
   @override
-  String get enterFriendIdPrompt => '请输入要添加的朋友的ID';
+  String get floor_plan => 'Floor Plan';
 
   @override
-  String get errorEnterFriendId => '请输入朋友ID。';
+  String get search_hint => 'Search campus buildings';
 
   @override
-  String get errorCannotAddSelf => '不能添加自己为好友。';
+  String get searchHint => 'Search by building or room';
 
   @override
-  String get errorAddFriend => '添加好友时发生错误。';
+  String get searchInitialGuide => 'Search for a building or room';
 
   @override
-  String get errorNetworkError => '网络错误，请重试。';
+  String get searchHintExample => 'e.g. W19, Engineering Hall, Room 401';
 
   @override
-  String get errorCannotShowLocation => '无法显示朋友位置。';
+  String get searchLoading => 'Searching...';
 
   @override
-  String get errorCannotRemoveLocation => '无法移除朋友位置。';
+  String get searchNoResult => 'No results found';
 
   @override
-  String get realTimeSyncActive => '实时同步中 • 自动更新';
+  String get searchTryAgain => 'Try a different search term';
 
   @override
-  String realTimeSyncStatus(String time) {
-    return '实时同步激活 • $time';
+  String get attached_image => 'Attached Image';
+
+  @override
+  String get required => 'Required';
+
+  @override
+  String get enter_title => 'Please enter a title';
+
+  @override
+  String get content => 'Content';
+
+  @override
+  String get enter_content => 'Please enter content';
+
+  @override
+  String get restaurant => 'Restaurant';
+
+  @override
+  String get library => 'Library';
+
+  @override
+  String get setting => '设置';
+
+  @override
+  String location_setting_confirm(String buildingName, String locationType) {
+    return '是否要将$buildingName设置为$locationType？';
   }
 
   @override
-  String get noSentRequests => '没有已发送的好友请求。';
+  String get set_room => '设置房间';
 
   @override
-  String get noReceivedRequests => '没有收到的好友请求。';
-
-  @override
-  String get noFriends => '还没有朋友。\n点击上方的+按钮添加朋友吧！';
-
-  @override
-  String get cancelFriendRequest => '取消好友请求';
-
-  @override
-  String cancelFriendRequestConfirm(String name) {
-    return '确定要取消向$name发送的好友请求吗？';
+  String friend_location_permission_denied(String name) {
+    return '$name未允许位置共享。';
   }
 
   @override
-  String get deleteFriend => '删除好友';
+  String get friend_location_display_error => '无法显示好友位置。';
 
   @override
-  String deleteFriendConfirm(String name) {
-    return '确定要从好友列表中删除$name吗？';
+  String get friend_location_remove_error => '无法移除位置。';
+
+  @override
+  String get phone_app_error => '无法打开电话应用。';
+
+  @override
+  String get add_friend_error => '添加好友时发生错误';
+
+  @override
+  String get user_not_found => '用户不存在';
+
+  @override
+  String get already_friend => '用户已经是好友';
+
+  @override
+  String get already_requested => '已向该用户发送好友请求';
+
+  @override
+  String get cannot_add_self => '无法将自己添加为好友';
+
+  @override
+  String get invalid_user_id => '无效的用户ID';
+
+  @override
+  String get server_error_retry => '服务器错误，请稍后重试';
+
+  @override
+  String get cancel_request_description => '取消已发送的好友请求';
+
+  @override
+  String get enter_id_prompt => '请输入ID';
+
+  @override
+  String get friend_request_sent_success => '好友请求发送成功';
+
+  @override
+  String get already_adding_friend => '正在添加好友，防止重复提交';
+
+  @override
+  String get no_friends_message => '您还没有好友。\n请添加好友后重试。';
+
+  @override
+  String friends_location_displayed(int count) {
+    return '显示了 $count 位好友的位置。';
   }
 
   @override
-  String get cancelRequest => '取消';
-
-  @override
-  String requestDate(String date) {
-    return '请求日期：$date';
+  String offline_friends_not_displayed(int count) {
+    return '\n$count 位离线好友未显示。';
   }
 
   @override
-  String get newBadge => '新';
-
-  @override
-  String get friend_delete_title => '删除好友';
-
-  @override
-  String get friend_delete_warning => '请慎重决定';
-
-  @override
-  String friendDeleteQuestion(Object userName) {
-    return '您确定要将$userName从好友列表中删除吗？\n删除的好友可以再次添加。';
+  String location_denied_friends_not_displayed(int count) {
+    return '\n$count 位拒绝位置共享的好友未显示。';
   }
 
   @override
-  String get empty_friend_list_message => '没有好友。';
-
-  @override
-  String get friendDeleteTitle => '删除好友';
-
-  @override
-  String get friendDeleteWarning => '请慎重决定';
-
-  @override
-  String get friendDeleteHeader => '待删除好友';
-
-  @override
-  String friendDeleteToConfirm(Object userName) {
-    return '您确定要将$userName从好友列表中删除吗？\n删除的好友可以再次添加。';
+  String both_offline_and_location_denied(int offlineCount, int locationCount) {
+    return '\n$offlineCount 位离线好友和 $locationCount 位拒绝位置共享的好友未显示。';
   }
 
   @override
-  String get friendDeleteCancel => '取消';
+  String get all_friends_offline_or_location_denied =>
+      '所有好友都离线或拒绝位置共享。\n当好友上线并允许位置共享时，您可以查看他们的位置。';
 
   @override
-  String get friendDeleteButton => '删除';
+  String get all_friends_offline => '所有好友都离线。\n当好友上线时，您可以查看他们的位置。';
 
   @override
-  String friendDeleteSuccessMessage(Object userName) {
-    return '已从好友列表中删除$userName。';
+  String get all_friends_location_denied =>
+      '所有好友都拒绝位置共享。\n当好友允许位置共享时，您可以查看他们的位置。';
+
+  @override
+  String friends_location_display_success(int count) {
+    return '在地图上显示了 $count 位好友的位置。';
   }
 
   @override
-  String get friendOfflineError => '此好友当前离线。';
-
-  @override
-  String get scheduleDeleteTitle => '删除时间表';
-
-  @override
-  String get scheduleDeleteSubtitle => '请慎重决定';
-
-  @override
-  String get scheduleDeleteLabel => '要删除的时间表';
-
-  @override
-  String scheduleDeleteDescription(Object title) {
-    return '您确定要从时间表中删除“$title”课程吗？\n已删除的时间表无法恢复。';
+  String friends_location_display_error(String error) {
+    return '无法显示好友位置: $error';
   }
 
   @override
-  String get cancelButton => '取消';
+  String get offline_friends_dialog_title => '离线好友';
 
   @override
-  String get deleteButton => '删除';
-
-  @override
-  String get phone_required => '请输入电话号码';
-
-  @override
-  String get building_info => '建筑信息';
-
-  @override
-  String get floor_detail_info => '楼层详细信息';
-
-  @override
-  String get no_floor_info => '没有楼层信息。';
-
-  @override
-  String get floor_detail_view => '查看详情';
-
-  @override
-  String get inquiry => '咨询';
-
-  @override
-  String get my_inquiry => '我的咨询';
-
-  @override
-  String get inquiry_type => '咨询类型';
-
-  @override
-  String get inquiry_type_required => '请选择咨询类型';
-
-  @override
-  String get inquiry_type_select_hint => '请选择咨询类型';
-
-  @override
-  String get inquiry_title => '标题';
-
-  @override
-  String get inquiry_content => '咨询内容';
-
-  @override
-  String get inquiry_content_hint => '请详细输入您的咨询内容';
-
-  @override
-  String get inquiry_submit => '提交咨询';
-
-  @override
-  String get inquiry_submit_success => '咨询已成功提交';
-
-  @override
-  String get inquiry_submit_failed => '提交咨询失败，请重试';
-
-  @override
-  String inquiry_list_load_failed(String error) {
-    return '加载咨询列表失败：$error';
+  String offline_friends_dialog_subtitle(int count) {
+    return '当前离线的 $count 位好友';
   }
 
   @override
-  String get no_inquiry_history => '暂无咨询记录';
-
-  @override
-  String get no_inquiry_history_hint => '在咨询标签页中创建新的咨询';
-
-  @override
-  String get inquiry_delete => '删除咨询';
-
-  @override
-  String get inquiry_delete_confirm => '您确定要删除此咨询吗？';
-
-  @override
-  String get inquiry_delete_success => '咨询已删除';
-
-  @override
-  String get inquiry_delete_failed => '删除咨询失败';
-
-  @override
-  String get inquiry_detail => '咨询详情';
-
-  @override
-  String get inquiry_category => '类别';
-
-  @override
-  String get inquiry_status => '状态';
-
-  @override
-  String get inquiry_created_at => '创建时间';
-
-  @override
-  String inquiry_title_label(String title) {
-    return '标题：$title';
+  String friendRequestCancelled(String name) {
+    return '已取消发送给 $name 的好友请求。';
   }
 
   @override
-  String get inquiry_type_bug => '错误报告';
+  String get friendRequestCancelError => '取消好友请求时发生错误。';
 
   @override
-  String get inquiry_type_feature => '功能请求';
-
-  @override
-  String get inquiry_type_improvement => '改进建议';
-
-  @override
-  String get inquiry_type_other => '其他咨询';
-
-  @override
-  String get inquiry_status_pending => '待处理';
-
-  @override
-  String get inquiry_status_in_progress => '处理中';
-
-  @override
-  String get inquiry_status_completed => '已完成';
-
-  @override
-  String get inquiry_status_rejected => '已拒绝';
-
-  @override
-  String get required => '必填';
-
-  @override
-  String get enter_title => '请输入标题';
-
-  @override
-  String get content => '内容';
-
-  @override
-  String get enter_content => '请输入内容';
-
-  @override
-  String get image_attachment => '图片附件';
-
-  @override
-  String get max_one_image => '最多1张';
-
-  @override
-  String get photo_attachment => '照片附件（最多1张）';
-
-  @override
-  String get photo_attachment_complete => '照片附件完成';
-
-  @override
-  String get image_selection => '图片选择';
-
-  @override
-  String get select_image_method => '请选择选择图片的方法';
-
-  @override
-  String get select_from_gallery => '从相册选择';
-
-  @override
-  String get select_from_gallery_desc => '从设备的照片相册中选择图片';
-
-  @override
-  String get select_from_file => '从文件选择';
-
-  @override
-  String get select_from_file_desc => '从设备的文件中选择图片';
-
-  @override
-  String get max_one_image_error => '最多只能附加1张图片';
-
-  @override
-  String image_selection_error(String error) {
-    return '选择图片时发生错误：$error';
+  String friendRequestAccepted(String name) {
+    return '已接受 $name 的好友请求。';
   }
 
   @override
-  String get attached_image => '附件图片';
+  String get friendRequestAcceptError => '接受好友请求时发生错误。';
 
   @override
-  String get excel_file => 'Excel文件';
+  String friendRequestRejected(String name) {
+    return '已拒绝 $name 的好友请求。';
+  }
 
   @override
-  String get excel_file_tutorial => 'Excel文件教程';
+  String get friendRequestRejectError => '拒绝好友请求时发生错误。';
+
+  @override
+  String get friendLocationRemovedFromMap => '已从地图中移除好友位置。';
 }

@@ -31,13 +31,25 @@ class Building {
   String get status => calculateCurrentStatus();
 
   String calculateCurrentStatus() {
-    if (baseStatus != '운영중' && baseStatus != 'open') return baseStatus;
+    // 24시간 운영이거나 특별한 상태인 경우
+    if (baseStatus == '24시간' || baseStatus == '24hours') {
+      return '24시간';
+    }
+    
+    // 운영중/운영종료가 아닌 다른 상태인 경우 (임시휴무, 영구휴업 등)
+    if (baseStatus != '운영중' && baseStatus != 'open' && 
+        baseStatus != '운영종료' && baseStatus != 'closed') {
+      return baseStatus;
+    }
+    
+    // 현재 시간에 따른 운영 상태 계산
     final now = DateTime.now();
     final currentHour = now.hour;
+    
     if (currentHour >= 9 && currentHour < 18) {
-      return baseStatus == 'open' ? 'open' : '운영중';
+      return '운영중';
     } else {
-      return baseStatus == 'open' ? 'closed' : '운영종료';
+      return '운영종료';
     }
   }
 

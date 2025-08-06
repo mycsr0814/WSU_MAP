@@ -19,6 +19,7 @@ import '../services/unified_path_service.dart';
 import '../controllers/unified_navigation_controller.dart';
 import '../data/category_fallback_data.dart'; // CategoryUtils를 위한 import
 import '../utils/CategoryLocalization.dart'; // CategoryLocalization을 위한 import
+import '../generated/app_localizations.dart'; // AppLocalizations를 위한 import
 
 class BuildingMapPage extends StatefulWidget {
   final String buildingName;
@@ -1644,16 +1645,19 @@ List<String>? _parseStringListNullable(dynamic value) {
 
   /// 🔥 카테고리 칩 위젯 (컴팩트 버전)
   Widget _buildCategoryChips() {
+    // 언어 변경 감지를 위해 AppLocalizations 사용
+    final l10n = AppLocalizations.of(context);
+    
     return ListView.builder(
       scrollDirection: Axis.horizontal,
       itemCount: _availableCategories.length + 1, // +1 for "전체" 버튼
       itemBuilder: (context, index) {
         if (index == 0) {
-          // "전체" 버튼
+          // "전체" 버튼 - 다국어 지원
           return Padding(
             padding: const EdgeInsets.only(right: 4),
             child: _buildCategoryChip(
-              '전체',
+              _getCategoryDisplayName(null), // null을 전달하여 "전체" 텍스트 가져오기
               null,
               _showAllCategories,
             ),
@@ -1762,7 +1766,14 @@ List<String>? _parseStringListNullable(dynamic value) {
 
   /// 🔥 카테고리 표시 이름 가져오기 (메인 화면과 동일)
   String _getCategoryDisplayName(String? category) {
-    if (category == null) return '전체';
+    if (category == null) {
+      // 다국어 지원으로 "전체" 버튼 처리
+      final l10n = AppLocalizations.of(context);
+      if (l10n != null) {
+        return l10n.clear_all;
+      }
+      return '전체';
+    }
     
     // bank를 atm으로 매핑 (SVG의 bank ID를 ATM으로 표시)
     final displayCategory = category == 'bank' ? 'atm' : category;

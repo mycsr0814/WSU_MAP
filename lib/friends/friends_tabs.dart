@@ -1,12 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
 import 'package:flutter_application_1/components/woosong_button.dart';
 import 'package:flutter_application_1/components/woosong_input_field.dart';
-import 'package:flutter_application_1/friends/friend.dart';
 import 'package:flutter_application_1/friends/friends_controller.dart';
 import 'package:flutter_application_1/friends/friends_tiles.dart';
-import 'package:flutter_application_1/friends/friends_utils.dart';
 import 'package:flutter_application_1/generated/app_localizations.dart';
 import 'package:flutter_application_1/services/auth_service.dart';
 
@@ -117,7 +113,32 @@ class FriendsTabs {
             SizedBox(
               width: double.infinity,
               child: WoosongButton(
-                onPressed: isAddingFriend ? null : onAddFriend,
+                onPressed: isAddingFriend ? null : () {
+                  // 백그라운드에서 사용자 목록을 확인하여 유효성 검증
+                  final enteredId = addController.text.trim();
+                  if (enteredId.isEmpty) {
+                    return;
+                  }
+                  
+                  // 사용자 목록에서 입력된 ID가 존재하는지 확인
+                  final isValidUser = userList.any((user) => user['id'] == enteredId);
+                  if (!isValidUser) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(AppLocalizations.of(context)!.user_not_found),
+                        backgroundColor: const Color(0xFFEF4444),
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                    );
+                    return;
+                  }
+                  
+                  // 유효한 사용자인 경우 친구 추가 진행
+                  onAddFriend();
+                },
                 child: isAddingFriend
                     ? const SizedBox(
                         width: 20,
@@ -146,7 +167,7 @@ class FriendsTabs {
     StateSetter setModalState,
     ScrollController scrollController,
     FriendsController controller,
-    VoidCallback onCancelRequest,
+    Future<void> Function(String userId, String userName) onCancelRequest,
   ) {
     return ListView(
       controller: scrollController,
@@ -216,7 +237,7 @@ class FriendsTabs {
             (request) => FriendsTiles.buildSentRequestTile(
               context,
               request,
-              () => onCancelRequest(),
+              () => onCancelRequest(request.toUserId, request.toUserName),
             ),
           ),
       ],
@@ -229,8 +250,8 @@ class FriendsTabs {
     StateSetter setModalState,
     ScrollController scrollController,
     FriendsController controller,
-    VoidCallback onAcceptRequest,
-    VoidCallback onRejectRequest,
+    Future<void> Function(String userId, String userName) onAcceptRequest,
+    Future<void> Function(String userId, String userName) onRejectRequest,
   ) {
     return ListView(
       controller: scrollController,
@@ -308,8 +329,8 @@ class FriendsTabs {
             (request) => FriendsTiles.buildReceivedRequestTile(
               context,
               request,
-              onAcceptRequest,
-              onRejectRequest,
+              () => onAcceptRequest(request.fromUserId, request.fromUserName),
+              () => onRejectRequest(request.fromUserId, request.fromUserName),
             ),
           ),
       ],

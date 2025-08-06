@@ -23,6 +23,10 @@
 -keep class androidx.core.** { *; }
 -keep class androidx.lifecycle.** { *; }
 
+# Google Play Core 관련 클래스 제외 (R8 오류 해결)
+-dontwarn com.google.android.play.core.**
+-keep class com.google.android.play.core.** { *; }
+
 # 디버깅을 위한 라인 넘버 보존
 -keepattributes SourceFile,LineNumberTable
 

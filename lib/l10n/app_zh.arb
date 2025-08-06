@@ -1,11 +1,11 @@
 {
   "@@locale": "zh",
-  "appTitle": "따라우송",
+  "appTitle": "跟随乌松",
   "subtitle": "智能校园指南",
-  "woosong": "又松",
+  "woosong": "乌松",
   "start": "开始",
   "login": "登录",
-  "logout": "注销",
+  "logout": "登出",
   "guest": "访客",
   "student_professor": "学生/教授",
   "admin": "管理员",
@@ -16,14 +16,14 @@
   "password": "密码",
   "confirm_password": "确认密码",
   "remember_me": "记住登录信息",
-  "remember_me_description": "下次将自动登录",
+  "remember_me_description": "下次自动登录",
   "login_as_guest": "以访客身份浏览",
   "login_failed": "登录失败",
   "login_success": "登录成功",
-  "logout_success": "已成功注销",
+  "logout_success": "已成功登出",
   "enter_username": "请输入用户名",
   "enter_password": "请输入密码",
-  "password_hint": "请输入6位以上字符",
+  "password_hint": "请输入至少6个字符",
   "confirm_password_hint": "请再次输入密码",
   "username_password_required": "请输入用户名和密码",
   "login_error": "登录失败",
@@ -33,7 +33,7 @@
   "confirm": "确认",
   "cancel": "取消",
   "coming_soon": "即将推出",
-  "feature_coming_soon": "{feature} 功能正在开发中。\n将很快添加。",
+  "feature_coming_soon": "{feature}功能即将推出。\n很快会添加。",
   "@feature_coming_soon": {
     "placeholders": {
       "feature": {
@@ -42,37 +42,37 @@
     }
   },
   "start_campus_exploration": "开始探索校园",
-  "woosong_university": "又松大学",
-  "campus_navigator": "校园导航",
+  "woosong_university": "乌松大学",
+  "campus_navigator": "校园导航器",
   "user_info_not_found": "登录响应中未找到用户信息",
   "unexpected_login_error": "登录过程中发生意外错误",
   "login_required": "需要登录",
   "register": "注册",
-  "register_success": "注册成功完成",
-  "register_success_message": "注册完成！\n正在跳转到登录页面。",
+  "register_success": "注册完成",
+  "register_success_message": "注册完成！\n正在跳转到登录界面。",
   "register_error": "注册过程中发生意外错误",
   "update_user_info": "更新用户信息",
-  "update_success": "用户信息更新成功",
+  "update_success": "用户信息已更新",
   "update_error": "更新用户信息时发生意外错误",
   "delete_account": "删除账户",
-  "delete_success": "账户删除成功",
+  "delete_success": "账户删除完成",
   "delete_error": "删除账户时发生意外错误",
   "name": "姓名",
-  "phone": "电话号码",
+  "phone": "电话",
   "email": "邮箱",
   "student_number": "学号",
   "user_type": "用户类型",
   "optional": "可选",
   "required_fields_empty": "请填写所有必填项",
   "password_mismatch": "密码不匹配",
-  "password_too_short": "密码必须至少6个字符",
-  "invalid_phone_format": "请输入有效的电话号码格式 (例如: 010-1234-5678)",
-  "invalid_email_format": "请输入有效的邮箱格式",
-  "required_fields_notice": "* 标记的项目为必填项",
-  "welcome_to_campus_navigator": "欢迎使用又松大学校园导航",
+  "password_too_short": "密码至少需要6个字符",
+  "invalid_phone_format": "请输入正确的电话号码格式（例如：010-1234-5678）",
+  "invalid_email_format": "请输入正确的邮箱格式",
+  "required_fields_notice": "*标记的字段为必填项",
+  "welcome_to_campus_navigator": "欢迎使用乌松校园导航器",
   "enter_real_name": "请输入真实姓名",
   "phone_format_hint": "010-1234-5678",
-  "enter_student_number": "请输入学号或工号",
+  "enter_student_number": "请输入学号或教工号",
   "email_hint": "example@woosong.org",
   "create_account": "创建账户",
   "loading": "加载中...",
@@ -83,186 +83,216 @@
   "server_error": "发生服务器错误",
   "unknown_error": "发生未知错误",
   "select_auth_method": "选择认证方式",
-  "woosong_campus_guide_service": "又松大学校园导航服务",
+  "woosong_campus_guide_service": "乌松大学校园指南服务",
   "register_description": "创建新账户以使用所有功能",
   "login_description": "使用现有账户登录以使用服务",
   "browse_as_guest": "以访客身份浏览",
   "processing": "处理中...",
-  "campus_navigator_version": "Campus Navigator v1.0",
+  "campus_navigator_version": "校园导航器 v1.0",
   "guest_mode": "访客模式",
-  "guest_mode_description": "在访客模式下，您只能查看基本的校园信息。\n请注册并登录以使用所有功能。",
-  "continue_as_guest": "继续作为访客",
+  "guest_mode_description": "在访客模式下，您只能查看基本的校园信息。\n要使用所有功能，请注册并登录。",
+  "continue_as_guest": "以访客身份继续",
   "moved_to_my_location": "已自动移动到我的位置",
-  "friends_screen_bottom_sheet": "朋友界面显示为底部表单",
+  "friends_screen_bottom_sheet": "好友界面以底部表单显示",
   "finding_current_location": "正在查找当前位置...",
-  "home": "主页",
-  "timetable": "时间表",
-  "friends": "朋友",
-  "my_page": "MY",
-  "my_page_subtitle": "我的页面",
-  "cafe": "咖啡厅",
-  "restaurant": "餐厅",
-  "library": "图书馆",
-  "educational_facility": "教育设施",
-  "estimated_distance": "预计距离",
-  "estimated_time": "预计时间",
-  "calculating": "计算中...",
-  "calculating_route": "正在计算路线...",
+  "home": "首页",
+  "timetable": "课程表",
+  "friends": "好友",
+  "profile": "个人资料",
+  "inquiry": "咨询",
+  "my_inquiry": "我的咨询",
+  "inquiry_type": "咨询类型",
+  "inquiry_type_required": "请选择咨询类型",
+  "inquiry_type_select_hint": "选择咨询类型",
+  "inquiry_title": "咨询标题",
+  "inquiry_content": "咨询内容",
+  "inquiry_content_hint": "请输入咨询内容",
+  "inquiry_submit": "提交咨询",
+  "inquiry_submit_success": "咨询提交成功",
+  "inquiry_submit_failed": "咨询提交失败",
+  "no_inquiry_history": "无咨询历史",
+  "no_inquiry_history_hint": "暂无咨询记录",
+  "inquiry_delete": "删除咨询",
+  "inquiry_delete_confirm": "您要删除此咨询吗？",
+  "inquiry_delete_success": "咨询已删除",
+  "inquiry_delete_failed": "删除咨询失败",
+  "inquiry_detail": "咨询详情",
+  "inquiry_category": "咨询类别",
+  "inquiry_status": "咨询状态",
+  "inquiry_created_at": "咨询时间",
+  "inquiry_title_label": "咨询标题",
+  "inquiry_type_bug": "错误报告",
+  "inquiry_type_feature": "功能请求",
+  "inquiry_type_improvement": "改进建议",
+  "inquiry_type_other": "其他",
+  "inquiry_status_pending": "等待回复",
+  "inquiry_status_in_progress": "处理中",
+  "inquiry_status_answered": "已回答",
+  "phone_required": "电话号码为必填项",
+  "building_info": "建筑信息",
+  "directions": "路线",
+  "floor_detail_view": "楼层详情视图",
+  "no_floor_info": "无楼层信息",
+  "floor_detail_info": "楼层详情信息",
+  "search_start_location": "搜索起点",
+  "search_end_location": "搜索终点",
+  "unified_navigation_in_progress": "统一导航进行中",
+  "unified_navigation": "统一导航",
+  "recent_searches": "最近搜索",
+  "clear_all": "全部清除",
+  "searching": "搜索中...",
+  "try_different_keyword": "尝试其他关键词",
+  "enter_end_location": "输入目的地",
+  "route_preview": "路线预览",
+  "calculating_optimal_route": "计算最佳路线...",
+  "set_departure_and_destination": "设置起点和终点",
+  "start_unified_navigation": "开始统一导航",
+  "departure_indoor": "起点（室内）",
+  "to_building_exit": "到建筑出口",
+  "outdoor_movement": "室外移动",
+  "to_destination_building": "到目的地建筑",
+  "arrival_indoor": "终点（室内）",
+  "to_final_destination": "到最终目的地",
+  "total_distance": "总距离",
+  "route_type": "路线类型",
+  "building_to_building": "建筑间移动",
+  "room_to_building": "房间到建筑",
+  "building_to_room": "建筑到房间",
+  "room_to_room": "房间间移动",
+  "location_to_building": "当前位置到建筑",
+  "unified_route": "统一路线",
+  "status_offline": "离线",
+  "status_open": "开放",
+  "status_closed": "关闭",
+  "status_24hours": "24小时",
+  "status_temp_closed": "临时关闭",
+  "status_closed_permanently": "永久关闭",
+  "status_next_open": "上午9点开放",
+  "status_next_close": "下午6点关闭",
+  "status_next_open_tomorrow": "明天上午9点开放",
+  "set_start_point": "设置起点",
+  "set_end_point": "设置终点",
+  "scheduleDeleteTitle": "删除课程",
+  "scheduleDeleteSubtitle": "请谨慎决定",
+  "scheduleDeleteLabel": "要删除的课程",
+  "scheduleDeleteDescription": "\"{title}\"课程将从课程表中删除。\n删除的课程无法恢复。",
+  "@scheduleDeleteDescription": {
+    "placeholders": {
+      "title": {}
+    }
+  },
+  "cancelButton": "取消",
+  "deleteButton": "删除",
+  "building_name": "建筑名称",
+  "floor_number": "楼层",
+  "room_name": "房间",
+  "memo": "备注",
+  "overlap_message": "此时间已有注册的课程",
+  "friendDeleteSuccessMessage": "{userName}已从好友列表中移除",
+  "@friendDeleteSuccessMessage": {
+    "placeholders": {
+      "userName": {}
+    }
+  },
+  "enterFriendIdPrompt": "请输入要添加的好友ID",
+  "friendId": "好友ID",
+  "enterFriendId": "输入好友ID",
+  "sendFriendRequest": "发送好友请求",
+  "realTimeSyncActive": "实时同步激活 • 自动更新",
+  "noSentRequests": "无发送的好友请求",
+  "newFriendRequests": "{count}个新的好友请求",
+  "@newFriendRequests": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "noReceivedRequests": "无接收的好友请求",
+  "id": "ID",
+  "requestDate": "请求日期: {date}",
+  "@requestDate": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "newBadge": "NEW",
+  "online": "在线",
+  "offline": "离线",
+  "contact": "联系",
+  "noContactInfo": "无联系信息",
+  "friendOfflineError": "好友离线",
+  "removeLocation": "移除位置",
+  "showLocation": "显示位置",
+  "close": "关闭",
+  "friendLocationRemoved": "{userName}的位置已移除",
+  "@friendLocationRemoved": {
+    "placeholders": {
+      "userName": {
+        "type": "String"
+      }
+    }
+  },
+  "friendLocationShown": "{userName}的位置已显示",
+  "@friendLocationShown": {
+    "placeholders": {
+      "userName": {
+        "type": "String"
+      }
+    }
+  },
+  "errorCannotRemoveLocation": "无法移除位置",
+  "my_page": "我的页面",
+  "calculating_route": "计算路线中...",
   "finding_optimal_route": "服务器正在寻找最佳路线",
-  "departure": "出发地",
-  "destination": "目的地",
   "clear_route": "清除路线",
   "location_permission_denied": "位置权限被拒绝。\n请在设置中允许位置权限。",
-  "finding_route_to_building": "正在查找到{building}的路线...",
-  "@finding_route_to_building": {
-    "placeholders": {
-      "building": {
-        "type": "String"
-      }
-    }
-  },
-  "route_displayed_to_building": "已显示到{building}的路线",
-  "@route_displayed_to_building": {
-    "placeholders": {
-      "building": {
-        "type": "String"
-      }
-    }
-  },
-  "set_as_departure": "已将{building}设为出发地。",
-  "@set_as_departure": {
-    "placeholders": {
-      "building": {
-        "type": "String"
-      }
-    }
-  },
-  "set_as_destination": "已将{building}设为目的地。",
-  "@set_as_destination": {
-    "placeholders": {
-      "building": {
-        "type": "String"
-      }
-    }
-  },
-  "woosong_library_w1": "又松图书馆 (W1)",
-  "woosong_library_info": "B2F\t停车场\nB1F\t小礼堂、设备室、电气室、停车场\n1F\t就业支持中心 (630-9976)、借阅台、信息休息室\n2F\t普通阅览室、团体学习室\n3F\t普通阅览室\n4F\t文学图书/西方图书",
-  "woosong_library_desc": "又松大学中央图书馆",
-  "sol_cafe": "Sol咖啡厅",
-  "sol_cafe_info": "1F\t餐厅\n2F\t咖啡厅",
-  "sol_cafe_desc": "校园内咖啡厅",
-  "cheongun_1_dormitory": "青云1宿舍",
-  "cheongun_1_dormitory_info": "1F\t实习室\n2F\t学生餐厅\n2F\t青云1宿舍(女) (629-6542)\n2F\t生活馆\n3~5F\t生活馆",
-  "cheongun_1_dormitory_desc": "女学生宿舍",
-  "industry_cooperation_w2": "产学合作团 (W2)",
-  "industry_cooperation_info": "1F\t产学合作团\n2F\t建筑工程专业 (630-9720)\n3F\t又松大学融合技术研究所、产学研综合企业支持中心\n4F\t企业附设研究所、LG CNS教室、铁道数字学院教室",
-  "industry_cooperation_desc": "产学合作及研究设施",
-  "rotc_w2_1": "学军团 (W2-1)",
-  "rotc_info": "\t学军团 (630-4601)",
-  "rotc_desc": "学军团设施",
-  "international_dormitory_w3": "留学生宿舍 (W3)",
-  "international_dormitory_info": "1F\t留学生支持团队 (629-6623)\n1F\t学生餐厅\n2F\t留学生宿舍 (629-6655)\n2F\t保健室\n3~12F\t生活馆",
-  "international_dormitory_desc": "留学生专用宿舍",
-  "railway_logistics_w4": "铁道物流馆 (W4)",
-  "railway_logistics_info": "B1F\t实习室\n1F\t实习室\n2F\t铁道建设系统学部 (629-6710)\n2F\t铁道车辆系统学科 (629-6780)\n3F\t教室/实习室\n4F\t铁道系统学部 (630-6730,9700)\n5F\t消防防灾学科 (629-6770)\n5F\t物流系统学科 (630-9330)",
-  "railway_logistics_desc": "铁道及物流相关学科",
-  "health_medical_science_w5": "保健医疗科学馆 (W5)",
-  "health_medical_science_info": "B1F\t停车场\n1F\t视听室/停车场\n2F\t教室\n2F\t运动健康康复学科 (630-9840)\n3F\t急救学科 (630-9280)\n3F\t护理学科 (630-9290)\n4F\t作业治疗学科 (630-9820)\n4F\t语言治疗听觉康复学科 (630-9220)\n5F\t物理治疗学科 (630-4620)\n5F\t保健医疗经营学科 (630-4610)\n5F\t教室\n6F\t铁道经营学科 (630-9770)",
-  "health_medical_science_desc": "保健医疗相关学科",
-  "liberal_arts_w6": "教养教育馆 (W6)",
-  "liberal_arts_info": "2F\t教室\n3F\t教室\n4F\t教室\n5F\t教室",
-  "liberal_arts_desc": "教养教室",
-  "woosong_hall_w7": "又松馆 (W7)",
-  "woosong_hall_info": "1F\t入学处 (630-9627)\n1F\t教务处 (630-9622)\n1F\t设施处 (630-9970)\n1F\t管理团队 (629-6658)\n1F\t产学合作团 (630-4653)\n1F\t对外合作处 (630-9636)\n2F\t战略企划处 (630-9102)\n2F\t总务处-总务、采购 (630-9653)\n2F\t企划处 (630-9661)\n3F\t校长室 (630-8501)\n3F\t国际交流处 (630-9373)\n3F\t幼儿教育科 (630-9360)\n3F\t经营学专业 (629-6640)\n3F\t金融/房地产学专业 (630-9350)\n4F\t大会议室\n5F\t会议室",
-  "woosong_hall_desc": "大学本部建筑",
-  "woosong_kindergarten_w8": "又松幼儿园 (W8)",
-  "woosong_kindergarten_info": "1F, 2F\t又松幼儿园 (629~6750~1)",
-  "woosong_kindergarten_desc": "大学附属幼儿园",
-  "west_campus_culinary_w9": "西校区烹饪学院 (W9)",
-  "west_campus_culinary_info": "B1F\t实习室\n1F\t实习室\n2F\t实习室",
-  "west_campus_culinary_desc": "烹饪实习设施",
-  "social_welfare_w10": "社会福利融合馆 (W10)",
-  "social_welfare_info": "1F\t视听室/实习室\n2F\t教室/实习室\n3F\t社会福利学科 (630-9830)\n3F\t全球儿童教育学科 (630-9260)\n4F\t教室/实习室\n5F\t教室/实习室",
-  "social_welfare_desc": "社会福利相关学科",
-  "gymnasium_w11": "体育馆 (W11)",
-  "gymnasium_info": "1F\t体力锻炼室\n2F~4F\t体育馆",
-  "gymnasium_desc": "体育设施",
-  "sica_w12": "SICA (W12)",
-  "sica_info": "B1F\t实习室\n1F\tStarrico咖啡厅\n2F~3F\t教室\n5F\t全球烹饪学部 (629-6860)",
-  "sica_desc": "国际烹饪学院",
-  "woosong_tower_w13": "又松塔 (W13)",
-  "woosong_tower_info": "B1~1F\t停车场\n2F\t停车场、Solpine面包店 (629-6429)\n4F\t研讨室\n5F\t教室\n6F\t餐饮烹饪营养学科 (630-9380,9740)\n7F\t教室\n8F\t餐饮、烹饪经营专业 (630-9250)\n9F\t教室/实习室\n10F\t餐饮烹饪专业 (629-6821)、全球韩式烹饪专业 (629-6560)\n11F, 12F\t实习室\n13F\tSolpine餐厅 (629-6610)",
-  "woosong_tower_desc": "综合教育设施",
-  "culinary_center_w14": "烹饪中心 (W14)",
-  "culinary_center_info": "1F\t教室/实习室\n2F\t教室/实习室\n3F\t教室/实习室\n4F\t教室/实习室\n5F\t教室/实习室",
-  "culinary_center_desc": "烹饪专业教育设施",
-  "food_architecture_w15": "食品建筑馆 (W15)",
-  "food_architecture_info": "B1F\t实习室\n1F\t实习室\n2F\t教室\n3F\t教室\n4F\t教室\n5F\t教室",
-  "food_architecture_desc": "食品及建筑相关学科",
-  "student_hall_w16": "学生会馆 (W16)",
-  "student_hall_info": "1F\t学生餐厅、校内书店 (629-6127)\n2F\t教职员餐厅\n3F\t社团房\n3F\t学生福利处-学生团队 (630-9641)、奖学金团队 (630-9876)\n3F\t残疾学生支持中心 (630-9903)\n3F\t社会服务团 (630-9904)\n3F\t学生咨询中心 (630-9645)\n4F\t复学支持中心 (630-9139)\n4F\t教授学习开发中心 (630-9285)",
-  "student_hall_desc": "学生福利设施",
-  "media_convergence_w17": "媒体融合馆 (W17)",
-  "media_convergence_info": "B1F\t教室/实习室\n1F\t媒体设计/影像专业 (630-9750)\n2F\t教室/实习室\n3F\t游戏多媒体专业 (630-9270)\n5F\t教室/实习室",
-  "media_convergence_desc": "媒体相关学科",
-  "woosong_arts_center_w18": "又松艺术会馆 (W18)",
-  "woosong_arts_center_info": "B1F\t演出准备室\n1F\t又松艺术会馆 (629-6363)\n2F\t实习室\n3F\t实习室\n4F\t实习室\n5F\t实习室",
-  "woosong_arts_center_desc": "艺术演出设施",
-  "west_campus_andycut_w19": "西校区AndyCut建筑 (W19)",
-  "west_campus_andycut_info": "2F\t全球融合商务学科 (630-9249)\n2F\t自由专业学部 (630-9390)\n2F\tAI/大数据学科 (630-9807)\n2F\t全球酒店管理学科 (630-9249)\n2F\t全球媒体影像学科 (630-9346)\n2F\t全球医疗服务经营学科 (630-9283)\n2F\t全球铁道/交通物流学部 (630-9347)\n2F\t全球餐饮创业学科 (629-6860)",
-  "west_campus_andycut_desc": "全球学科建筑",
-  "operating": "运营中",
-  "dormitory": "宿舍",
-  "military_facility": "军事设施",
-  "kindergarten": "幼儿园",
-  "sports_facility": "体育设施",
-  "complex_facility": "综合设施",
-  "search_campus_buildings": "搜索校园建筑",
-  "no_search_results": "没有搜索结果",
-  "building_details": "详细信息",
-  "parking": "停车",
-  "accessibility": "无障碍",
-  "facilities": "设施",
-  "elevator": "电梯",
-  "restroom": "洗手间",
-  "navigate_from_current_location": "从当前位置导航",
-  "edit_profile": "编辑个人资料",
-  "nameRequired": "请输入姓名",
-  "emailRequired": "请输入邮箱",
-  "save": "保存",
-  "saveSuccess": "个人资料已更新",
-  "app_info": "应用信息",
-  "app_version": "应用版本",
-  "developer": "开发者",
-  "developer_name": "姓名: 홍길동",
-  "developer_email": "邮箱: example@email.com",
-  "developer_github": "GitHub: github.com/yourid",
-  "help": "帮助",
-  "no_help_images": "没有帮助图片",
-  "image_load_error": "无法加载图片",
-  "description_hint": "输入描述",
+  "estimated_time": "预计时间",
+  "account_delete_title": "删除账户",
+  "account_delete_subtitle": "永久删除您的账户",
+  "logout_title": "登出",
+  "logout_subtitle": "从当前账户登出",
+  "location_share_enabled_success": "位置共享已启用",
+  "location_share_disabled_success": "位置共享已禁用",
+  "location_share_update_failed": "位置共享设置更新失败",
+  "guest_location_share_success": "访客模式下仅在本地设置位置共享",
+  "no_changes": "无更改",
+  "profile_edit_error": "编辑个人资料时发生错误",
+  "password_confirm_title": "密码确认",
+  "password_confirm_subtitle": "请输入密码以修改账户信息",
+  "password_confirm_button": "确认",
+  "password_required": "请输入密码",
+  "password_mismatch_confirm": "密码不匹配",
   "profile_updated": "个人资料已更新",
-  "my_info": "我的信息",
-  "guest_user": "예질배 크루",
-  "guest_role": "정진영의 노예",
-  "user": "用户",
-  "edit_profile_subtitle": "您可以修改个人信息",
-  "help_subtitle": "查看应用使用方法",
-  "app_info_subtitle": "版本信息和开发者信息",
-  "delete_account_subtitle": "永久删除您的账户",
-  "login_message": "请登录或注册\n以使用所有功能",
-  "login_signup": "登录 / 注册",
-  "delete_account_confirm": "删除账户",
-  "delete_account_message": "您确定要删除账户吗？",
-  "logout_confirm": "注销",
-  "logout_message": "您确定要注销吗？",
-  "yes": "是",
-  "no": "否",
-  "feature_in_progress": "功能正在开发中",
-  "delete_feature_in_progress": "账户删除功能正在开发中",
-  "title": "编辑个人资料",
-  "email_required": "请输入邮箱",
-  "name_required": "请输入姓名",
+  "my_page_subtitle": "我的信息",
+  "excel_file": "Excel文件",
+  "excel_file_tutorial": "Excel文件教程",
+  "image_attachment": "图片附件",
+  "max_one_image": "最多1张",
+  "photo_attachment": "照片附件",
+  "photo_attachment_complete": "照片附件完成",
+  "image_selection": "图片选择",
+  "select_image_method": "请选择选择图片的方法",
+  "select_from_gallery": "从相册选择",
+  "select_from_gallery_desc": "从相册选择图片",
+  "select_from_file": "从文件选择",
+  "select_from_file_desc": "从文件选择图片",
+  "max_one_image_error": "一次只能附加一张图片",
+  "image_selection_error": "选择图片时发生错误",
+  "inquiry_error_occurred": "处理您的咨询时发生错误",
+  "inquiry_category_bug": "错误报告",
+  "inquiry_category_feature": "功能请求",
+  "inquiry_category_improvement": "改进建议",
+  "inquiry_category_other": "其他",
+  "inquiry_category_route_error": "路线指导错误",
+  "inquiry_category_place_error": "地点/信息错误",
+  "location_share_title": "位置共享",
+  "location_share_enabled": "位置共享已启用",
+  "location_share_disabled": "位置共享已禁用",
+  "profile_edit_title": "编辑个人资料",
+  "profile_edit_subtitle": "您可以修改您的个人信息",
   "schedule": "课程表",
   "winter_semester": "冬季学期",
   "spring_semester": "春季学期",
@@ -278,7 +308,7 @@
   "edit_class": "编辑课程",
   "delete_class": "删除课程",
   "class_name": "课程名称",
-  "professor_name": "教授姓名",
+  "professor_name": "教授",
   "classroom": "教室",
   "day_of_week": "星期",
   "start_time": "开始时间",
@@ -289,9 +319,9 @@
   "wednesday_full": "星期三",
   "thursday_full": "星期四",
   "friday_full": "星期五",
-  "class_added": "课程已添加。",
-  "class_updated": "课程已更新。",
-  "class_deleted": "课程已删除。",
+  "class_added": "课程已添加",
+  "class_updated": "课程已更新",
+  "class_deleted": "课程已删除",
   "delete_class_confirm": "您要删除{className}课程吗？",
   "@delete_class_confirm": {
     "placeholders": {
@@ -304,8 +334,8 @@
   "location": "位置",
   "schedule_time": "时间",
   "schedule_day": "星期",
-  "map_feature_coming_soon": "地图功能将在以后添加。",
-  "current_year": "{year}年",
+  "map_feature_coming_soon": "地图功能将在稍后添加",
+  "current_year": "{year}",
   "@current_year": {
     "placeholders": {
       "year": {
@@ -313,8 +343,8 @@
       }
     }
   },
-  "my_friends": "我的朋友",
-  "online_friends": "总计{total}人 • 在线{online}人",
+  "my_friends": "我的好友",
+  "online_friends": "总计 {total} • 在线 {online}",
   "@online_friends": {
     "placeholders": {
       "total": {
@@ -325,13 +355,11 @@
       }
     }
   },
-  "add_friend": "添加朋友",
-  "friend_name_or_id": "请输入朋友的姓名或学号",
-  "friend_request_sent": "好友请求已发送。",
-  "online": "在线",
-  "offline": "离线",
+  "add_friend": "添加好友",
+  "friend_name_or_id": "输入好友姓名或学号",
+  "friend_request_sent": "好友请求已发送",
   "in_class": "上课中",
-  "last_location": "最后位置：{location}",
+  "last_location": "最后位置: {location}",
   "@last_location": {
     "placeholders": {
       "location": {
@@ -342,11 +370,11 @@
   "central_library": "中央图书馆",
   "engineering_building": "工程楼201",
   "student_center": "学生中心",
-  "cafeteria": "自助餐厅",
+  "cafeteria": "学生食堂",
   "message": "消息",
   "view_location": "查看位置",
   "call": "通话",
-  "start_chat_with": "开始与{name}聊天。",
+  "start_chat_with": "开始与{name}聊天",
   "@start_chat_with": {
     "placeholders": {
       "name": {
@@ -354,7 +382,7 @@
       }
     }
   },
-  "view_location_on_map": "在地图上查看{name}的位置。",
+  "view_location_on_map": "在地图上查看{name}的位置",
   "@view_location_on_map": {
     "placeholders": {
       "name": {
@@ -362,7 +390,7 @@
       }
     }
   },
-  "calling": "正在呼叫{name}。",
+  "calling": "正在呼叫{name}",
   "@calling": {
     "placeholders": {
       "name": {
@@ -370,8 +398,6 @@
       }
     }
   },
-  "add": "添加",
-  "close": "关闭",
   "edit": "编辑",
   "delete": "删除",
   "search": "搜索",
@@ -381,29 +407,65 @@
   "route": "路线",
   "distance": "距离",
   "minutes": "分钟",
-  "meters": "米",
+  "hours": "小时",
+  "within_minute": "1分钟内",
+  "minutes_only": "{minutes}分钟",
+  "hours_only": "{hours}小时",
+  "hours_and_minutes": "{hours}小时{minutes}分钟",
+  "calculation_failed": "计算失败",
+  "current_location_departure": "从当前位置出发",
+  "current_location": "当前位置",
+  "available": "可用",
+  "start_navigation_from_current_location": "从当前位置开始导航",
+  "my_location_set_as_start": "我的位置已设为起点",
+  "current_location_departure_default": "从当前位置出发（默认）",
+  "default_location_set_as_start": "默认位置已设为起点",
+  "start_navigation": "开始导航",
+  "navigation_ended": "导航已结束",
+  "departure": "出发",
+  "arrival": "到达",
+  "destination": "目的地",
+  "outdoor_movement_distance": "室外移动距离",
+  "indoor_arrival": "室内到达",
+  "indoor_departure": "室内出发",
+  "previous": "上一个",
+  "next": "下一个",
+  "complete": "完成",
   "findRoute": "查找路线",
   "clearRoute": "清除路线",
   "setAsStart": "设为起点",
-  "setAsDestination": "设为终点",
+  "setAsDestination": "设为目的地的",
   "navigateFromHere": "从这里导航",
   "buildingInfo": "建筑信息",
-  "category": "类别",
   "locationPermissionRequired": "需要位置权限",
   "enableLocationServices": "请启用位置服务",
-  "retry": "重试",
   "noResults": "未找到结果",
   "settings": "设置",
   "language": "语言",
   "about": "关于",
-  "friends_count_status": "总共 {total}人 • 在线 {online}人",
-  "enter_friend_info": "请输入朋友的姓名或学号",
-  "show_location_on_map": "在地图上显示{name}的位置。",
-  "open_settings": "打开设置",
-  "location_error": "无法获取您的位置。",
-  "view_floor_plan": "查看平面图",
-  "floor_plan": "平面图",
-  "floor_plan_title": "{buildingName} 平面图",
+  "friends_count_status": "总计 {total} • 在线 {online}",
+  "@friends_count_status": {
+    "placeholders": {
+      "total": {
+        "type": "int"
+      },
+      "online": {
+        "type": "int"
+      }
+    }
+  },
+  "enter_friend_info": "输入好友姓名或学号",
+  "show_location_on_map": "在地图上显示{name}的位置",
+  "@show_location_on_map": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "location_error": "无法找到您的位置",
+  "view_floor_plan": "查看楼层平面图",
+  "floor_plan_title": "{buildingName}楼层平面图",
   "@floor_plan_title": {
     "placeholders": {
       "buildingName": {
@@ -411,133 +473,162 @@
       }
     }
   },
-  "floor_plan_not_available": "无法加载平面图图像",
-  "floor_plan_default_text": "平面图",
-  "delete_account_success": "您的账户已被删除。",
+  "floor_plan_not_available": "无法加载楼层平面图",
+  "floor_plan_default_text": "楼层平面图",
+  "delete_account_success": "您的账户已被删除",
   "convenience_store": "便利店",
   "vending_machine": "自动售货机",
   "printer": "打印机",
   "copier": "复印机",
-  "atm": "自动取款机",
+  "atm": "ATM",
   "bank_atm": "银行(ATM)",
   "medical": "医疗",
-  "health_center": "卫生所",
+  "health_center": "保健中心",
   "gym": "体育馆",
   "fitness_center": "健身中心",
   "lounge": "休息室",
   "extinguisher": "灭火器",
-  "water_purifier": "饮水机",
+  "water_purifier": "净水器",
   "bookstore": "书店",
   "post_office": "邮局",
-  "instructionExitToOutdoor": "请前往建筑出口",
-  "instructionMoveToDestination": "前往 {place}",
-  "instructionMoveToDestinationBuilding": "前往 {building} 建筑",
-  "instructionMoveToRoom": "前往目标房间",
+  "instructionMoveToDestination": "移动到{place}",
+  "@instructionMoveToDestination": {
+    "placeholders": {
+      "place": {
+        "type": "String"
+      }
+    }
+  },
+  "instructionExitToOutdoor": "移动到建筑出口",
+  "instructionMoveToDestinationBuilding": "移动到{building}建筑",
+  "@instructionMoveToDestinationBuilding": {
+    "placeholders": {
+      "building": {
+        "type": "String"
+      }
+    }
+  },
+  "instructionMoveToRoom": "移动到目的地房间",
   "instructionArrived": "您已到达目的地！",
-  "search_hint": "请搜索校区建筑",
-  "searchHint": "请输入建筑名称或房间号进行搜索",
-  "searchInitialGuide": "搜索大楼或教室",
-  "searchHintExample": "例如：W19，工程馆，401室",
-  "searchLoading": "搜索中...",
-  "searchNoResult": "未找到搜索结果",
-  "searchTryAgain": "请尝试使用其他关键词",
-  "lectureRoom": "教室",
-  "status_open": "营业中",
-  "status_closed": "已关闭",
-  "status_next_open": "上午 9 点开始营业",
-  "status_next_close": "下午 6 点结束营业",
-  "status_next_open_tomorrow": "明天上午 9 点开始营业",
-  "office_hours": "09:00 - 18:00",
-  "status_24hours": "24小时",
-  "status_temp_closed": "临时休业",
-  "status_closed_permanently": "休业",
-  "label_category_type": "分类",
-  "label_basic_info": "基本信息",
-  "label_status": "状态",
-  "label_hours": "营业时间",
-  "label_phone": "电话号码",
-  "label_coordinates": "坐标",
-  "unified_navigation": "统一导航",
-  "unified_navigation_in_progress": "统一导航进行中",
-  "search_start_location": "请搜索出发地（建筑名或房间号）",
-  "search_end_location": "请搜索目的地（建筑名或房间号）",
-  "enter_start_location": "请输入出发地",
-  "enter_end_location": "请输入目的地",
-  "recent_searches": "最近搜索",
-  "clear_all": "全部删除",
-  "searching": "搜索中...",
-  "try_different_keyword": "请尝试其他关键词",
-  "my_location": "我的位置",
-  "start_from_current_location": "从当前位置出发",
-  "getting_current_location": "正在获取当前位置...",
-  "current_location_set_as_start": "当前位置已设为出发地",
-  "using_default_location": "使用默认位置",
-  "start_unified_navigation": "开始统一导航",
-  "set_both_locations": "请设置出发地和目的地",
-  "navigation_ended": "导航已结束",
-  "route_preview": "路线预览",
-  "calculating_optimal_route": "正在计算最优路线...",
-  "set_departure_and_destination": "请设置出发地和目的地\\n可以输入建筑名或房间号",
-  "total_distance": "总距离",
-  "route_type": "路线类型",
-  "departure_indoor": "出发地室内",
-  "to_building_exit": "到建筑出口",
-  "outdoor_movement": "室外移动",
-  "to_destination_building": "到目的地建筑",
-  "arrival_indoor": "到达地室内",
-  "to_final_destination": "到最终目的地",
-  "building_to_building": "建筑间",
-  "room_to_building": "房间→建筑",
-  "building_to_room": "建筑→房间",
-  "room_to_room": "房间间",
-  "location_to_building": "位置→建筑",
-  "unified_route": "统一路线",
-  "preset_room_start": "{building} {room}号房间已设为出发地",
-  "preset_room_end": "{building} {room}号房间已设为目的地",
-  "preset_building_start": "{building}已设为出发地",
-  "preset_building_end": "{building}已设为目的地",
-  "floor_room": "{floor}层{room}号房间",
-  "available": "可用",
-  "current_location": "当前位置",
-  "start_navigation_from_here": "从当前位置开始导航",
-  "directions": "导航",
-  "navigateHere": "导航到这里",
-  "startLocation": "起点",
-  "endLocation": "终点",
-  "floor_plans": "楼层平面图",
-  "select_floor_to_view": "选择每层查看详细平面图",
-  "floor_info": "楼层信息",
-  "view_floor_plan_button": "查看楼层平面图",
-  "no_detailed_info": "无详细信息。",
-  "pinch_to_zoom": "捏合缩放，拖动移动",
-  "floor_plan_loading_failed": "楼层平面图加载失败",
-  "loading_floor_plan": "正在加载{floor}楼层平面图...",
-  "server_info": "服务器: {building}/{floor}",
-  "building_name": "建筑物",
-  "floor_number": "楼层",
-  "room_name": "教室",
-  "overlap_message": "在该时间已注册课程。",
-  "memo": "备注",
-  "friendManagement": "朋友管理",
-  "friendManagementAndRequests": "朋友管理和请求",
-  "showLocation": "显示位置",
-  "removeLocation": "移除位置",
-  "accept": "接受",
-  "reject": "拒绝",
-  "id": "ID",
-  "contact": "联系方式",
-  "lastLocation": "最后位置",
-  "noLocationInfo": "无位置信息",
-  "noContactInfo": "无信息",
-  "friendRequestSent": "已向{name}发送好友请求！",
-  "@friendRequestSent": {
+  "no": "否",
+  "woosong_library_w1": "乌松图书馆 (W1)",
+  "woosong_library_info": "B2F\t停车场\nB1F\t小礼堂、设备室、电气室、停车场\n1F\t就业支持中心 (630-9976)、借阅台、信息休息室\n2F\t普通阅览室、团体学习室\n3F\t普通阅览室\n4F\t文学图书/西方图书",
+  "woosong_library_desc": "乌松大学中央图书馆",
+  "setting": "设置",
+  "location_setting_confirm": "是否要将{buildingName}设置为{locationType}？",
+  "@location_setting_confirm": {
+    "placeholders": {
+      "buildingName": {
+        "type": "String"
+      },
+      "locationType": {
+        "type": "String"
+      }
+    }
+  },
+  "set_room": "设置房间",
+  "inquiry_category_place_error": "地点/信息错误",
+  "inquiry_category_bug": "错误报告",
+  "inquiry_category_feature": "功能建议",
+  "inquiry_category_route_error": "路线指导错误",
+  "inquiry_category_other": "其他咨询",
+  "friend_location_permission_denied": "{name}未允许位置共享。",
+  "@friend_location_permission_denied": {
     "placeholders": {
       "name": {
         "type": "String"
       }
     }
   },
-  "friendRequestAccepted": "已接受{name}的好友请求。",
+  "friend_location_display_error": "无法显示好友位置。",
+  "friend_location_remove_error": "无法移除位置。",
+  "phone_app_error": "无法打开电话应用。",
+  "add_friend_error": "添加好友时发生错误",
+  "user_not_found": "用户不存在",
+  "already_friend": "用户已经是好友",
+  "already_requested": "已向该用户发送好友请求",
+  "cannot_add_self": "无法将自己添加为好友",
+  "invalid_user_id": "无效的用户ID",
+  "server_error_retry": "服务器错误，请稍后重试",
+  "cancel_request_description": "取消已发送的好友请求",
+  "enter_id_prompt": "请输入ID",
+  "friend_request_sent_success": "好友请求发送成功",
+  "already_adding_friend": "正在添加好友，防止重复提交",
+  "no_friends_message": "您还没有好友。\n请添加好友后重试。",
+  "friends_location_displayed": "显示了 {count} 位好友的位置。",
+  "@friends_location_displayed": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "offline_friends_not_displayed": "\n{count} 位离线好友未显示。",
+  "@offline_friends_not_displayed": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "location_denied_friends_not_displayed": "\n{count} 位拒绝位置共享的好友未显示。",
+  "@location_denied_friends_not_displayed": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "both_offline_and_location_denied": "\n{offlineCount} 位离线好友和 {locationCount} 位拒绝位置共享的好友未显示。",
+  "@both_offline_and_location_denied": {
+    "placeholders": {
+      "offlineCount": {
+        "type": "int"
+      },
+      "locationCount": {
+        "type": "int"
+      }
+    }
+  },
+  "all_friends_offline_or_location_denied": "所有好友都离线或拒绝位置共享。\n当好友上线并允许位置共享时，您可以查看他们的位置。",
+  "all_friends_offline": "所有好友都离线。\n当好友上线时，您可以查看他们的位置。",
+  "all_friends_location_denied": "所有好友都拒绝位置共享。\n当好友允许位置共享时，您可以查看他们的位置。",
+  "friends_location_display_success": "在地图上显示了 {count} 位好友的位置。",
+  "@friends_location_display_success": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "friends_location_display_error": "无法显示好友位置: {error}",
+  "@friends_location_display_error": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "offline_friends_dialog_title": "离线好友",
+  "offline_friends_dialog_subtitle": "当前离线的 {count} 位好友",
+  "@offline_friends_dialog_subtitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "offline": "离线",
+  "friendRequestCancelled": "已取消发送给 {name} 的好友请求。",
+  "@friendRequestCancelled": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "friendRequestCancelError": "取消好友请求时发生错误。",
+  "friendRequestAccepted": "已接受 {name} 的好友请求。",
   "@friendRequestAccepted": {
     "placeholders": {
       "name": {
@@ -545,7 +636,8 @@
       }
     }
   },
-  "friendRequestRejected": "已拒绝{name}的好友请求。",
+  "friendRequestAcceptError": "接受好友请求时发生错误。",
+  "friendRequestRejected": "已拒绝 {name} 的好友请求。",
   "@friendRequestRejected": {
     "placeholders": {
       "name": {
@@ -553,248 +645,6 @@
       }
     }
   },
-  "friendRequestCanceled": "已取消向{name}发送的好友请求。",
-  "@friendRequestCanceled": {
-    "placeholders": {
-      "name": {
-        "type": "String"
-      }
-    }
-  },
-  "friendDeleted": "已从好友列表中删除{name}。",
-  "@friendDeleted": {
-    "placeholders": {
-      "name": {
-        "type": "String"
-      }
-    }
-  },
-  "friendLocationShown": "{name}的位置已在地图上显示。",
-  "@friendLocationShown": {
-    "placeholders": {
-      "name": {
-        "type": "String"
-      }
-    }
-  },
-  "friendLocationRemoved": "{name}的位置已从地图上移除。",
-  "@friendLocationRemoved": {
-    "placeholders": {
-      "name": {
-        "type": "String"
-      }
-    }
-  },
-  "friendCount": "我的朋友 ({count})",
-  "@friendCount": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "sentRequestsCount": "已发送 ({count})",
-  "@sentRequestsCount": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "receivedRequestsCount": "已接收 ({count})",
-  "@receivedRequestsCount": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "newFriendRequests": "{count}个新的好友请求",
-  "@newFriendRequests": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "addFriend": "添加",
-  "sent": "已发送",
-  "received": "已接收",
-  "sendFriendRequest": "发送好友请求",
-  "friendId": "朋友ID",
-  "enterFriendId": "请输入对方ID",
-  "enterFriendIdPrompt": "请输入要添加的朋友的ID",
-  "errorEnterFriendId": "请输入朋友ID。",
-  "errorCannotAddSelf": "不能添加自己为好友。",
-  "errorAddFriend": "添加好友时发生错误。",
-  "errorNetworkError": "网络错误，请重试。",
-  "errorCannotShowLocation": "无法显示朋友位置。",
-  "errorCannotRemoveLocation": "无法移除朋友位置。",
-  "realTimeSyncActive": "实时同步中 • 自动更新",
-  "realTimeSyncStatus": "实时同步激活 • {time}",
-  "@realTimeSyncStatus": {
-    "placeholders": {
-      "time": {
-        "type": "String"
-      }
-    }
-  },
-  "noSentRequests": "没有已发送的好友请求。",
-  "noReceivedRequests": "没有收到的好友请求。",
-  "noFriends": "还没有朋友。\n点击上方的+按钮添加朋友吧！",
-  "cancelFriendRequest": "取消好友请求",
-  "cancelFriendRequestConfirm": "确定要取消向{name}发送的好友请求吗？",
-  "@cancelFriendRequestConfirm": {
-    "placeholders": {
-      "name": {
-        "type": "String"
-      }
-    }
-  },
-  "deleteFriend": "删除好友",
-  "deleteFriendConfirm": "确定要从好友列表中删除{name}吗？",
-  "@deleteFriendConfirm": {
-    "placeholders": {
-      "name": {
-        "type": "String"
-      }
-    }
-  },
-  "cancelRequest": "取消",
-  "requestDate": "请求日期：{date}",
-  "@requestDate": {
-    "placeholders": {
-      "date": {
-        "type": "String"
-      }
-    }
-  },
-  "newBadge": "新",
-  "friend_delete_title": "删除好友",
-  "friend_delete_warning": "请慎重决定",
-  "friendDeleteQuestion": "您确定要将{userName}从好友列表中删除吗？\n删除的好友可以再次添加。",
-  "@friendDeleteQuestion": {
-    "description": "包含用户名的好友删除确认消息"
-  },
-  "empty_friend_list_message": "没有好友。",
-  "friendDeleteTitle": "删除好友",
-  "friendDeleteWarning": "请慎重决定",
-  "friendDeleteHeader": "待删除好友",
-  "friendDeleteToConfirm": "您确定要将{userName}从好友列表中删除吗？\n删除的好友可以再次添加。",
-  "@friendDeleteToConfirm": {
-    "description": "好友删除确认消息，包含用户名称变量",
-    "placeholders": {
-      "userName": {}
-    }
-  },
-  "friendDeleteCancel": "取消",
-  "friendDeleteButton": "删除",
-  "friendDeleteSuccessMessage": "已从好友列表中删除{userName}。",
-  "@friendDeleteSuccessMessage": {
-    "description": "好友删除成功消息，带有用户名参数",
-    "placeholders": {
-      "userName": {}
-    }
-  },
-  "friendOfflineError": "此好友当前离线。",
-  "@friendOfflineError": {
-    "description": "Error message shown when trying to view the location of an offline friend."
-  },
-  "scheduleDeleteTitle": "删除时间表",
-  "scheduleDeleteSubtitle": "请慎重决定",
-  "scheduleDeleteLabel": "要删除的时间表",
-  "scheduleDeleteDescription": "您确定要从时间表中删除“{title}”课程吗？\n已删除的时间表无法恢复。",
-  "cancelButton": "取消",
-  "deleteButton": "删除",
-  "@scheduleDeleteDescription": {
-    "placeholders": {
-      "title": {}
-    }
-  },
-  "phone_required": "请输入电话号码",
-  "building_info": "建筑信息",
-  "floor_plan": "平面图",
-  "directions": "路线",
-  "floor_detail_info": "楼层详细信息",
-  "no_floor_info": "没有楼层信息。",
-  "floor_detail_view": "查看详情",
-  "inquiry": "咨询",
-  "my_inquiry": "我的咨询",
-  "inquiry_type": "咨询类型",
-  "inquiry_type_required": "请选择咨询类型",
-  "inquiry_type_select_hint": "请选择咨询类型",
-  "inquiry_title": "标题",
-  "inquiry_content": "咨询内容",
-  "inquiry_content_hint": "请详细输入您的咨询内容",
-  "inquiry_submit": "提交咨询",
-  "inquiry_submit_success": "咨询已成功提交",
-  "inquiry_submit_failed": "提交咨询失败，请重试",
-  "inquiry_list_load_failed": "加载咨询列表失败：{error}",
-  "@inquiry_list_load_failed": {
-    "placeholders": {
-      "error": {
-        "type": "String"
-      }
-    }
-  },
-  "no_inquiry_history": "暂无咨询记录",
-  "no_inquiry_history_hint": "在咨询标签页中创建新的咨询",
-  "inquiry_delete": "删除咨询",
-  "inquiry_delete_confirm": "您确定要删除此咨询吗？",
-  "inquiry_delete_success": "咨询已删除",
-  "inquiry_delete_failed": "删除咨询失败",
-  "inquiry_detail": "咨询详情",
-  "inquiry_category": "类别",
-  "inquiry_status": "状态",
-  "inquiry_created_at": "创建时间",
-  "inquiry_title_label": "标题：{title}",
-  "@inquiry_title_label": {
-    "placeholders": {
-      "title": {
-        "type": "String"
-      }
-    }
-  },
-  "inquiry_type_bug": "错误报告",
-  "inquiry_type_feature": "功能请求",
-  "inquiry_type_improvement": "改进建议",
-  "inquiry_type_other": "其他咨询",
-  "inquiry_status_pending": "待处理",
-  "inquiry_status_in_progress": "处理中",
-  "inquiry_status_completed": "已完成",
-  "inquiry_status_rejected": "已拒绝",
-  "required": "必填",
-  "enter_title": "请输入标题",
-  "content": "内容",
-  "enter_content": "请输入内容",
-  "image_attachment": "图片附件",
-  "max_one_image": "最多1张",
-  "photo_attachment": "照片附件（最多1张）",
-  "photo_attachment_complete": "照片附件完成",
-  "image_selection": "图片选择",
-  "select_image_method": "请选择选择图片的方法",
-  "select_from_gallery": "从相册选择",
-  "select_from_gallery_desc": "从设备的照片相册中选择图片",
-  "select_from_file": "从文件选择",
-  "select_from_file_desc": "从设备的文件中选择图片",
-  "max_one_image_error": "最多只能附加1张图片",
-  "image_selection_error": "选择图片时发生错误：{error}",
-  "@image_selection_error": {
-    "placeholders": {
-      "error": {
-        "type": "String"
-      }
-    }
-  },
-  "inquiry_content": "咨询内容",
-  "attached_image": "附件图片",
-  "app_version": "应用版本",
-  "developer": "开发者",
-  "developer_name": "开发者姓名",
-  "developer_email": "开发者邮箱",
-  "developer_github": "GitHub",
-  "image_load_error": "图片加载错误",
-  "description_hint": "输入描述",
-  "excel_file": "Excel文件",
-  "excel_file_tutorial": "Excel文件教程"
+  "friendRequestRejectError": "拒绝好友请求时发生错误。",
+  "friendLocationRemovedFromMap": "已从地图中移除好友位置。"
 }

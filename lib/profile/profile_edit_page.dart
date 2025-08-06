@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import '../generated/app_localizations.dart';
 import 'package:provider/provider.dart';
 import '../auth/user_auth.dart';
+import '../providers/app_language_provider.dart';
 
 class ProfileEditPage extends StatefulWidget {
   const ProfileEditPage({super.key});
@@ -156,7 +157,7 @@ class _ProfileEditPageState extends State<ProfileEditPage> with TickerProviderSt
             children: [
               const Icon(Icons.info, color: Colors.white),
               const SizedBox(width: 8),
-              const Text('변경사항이 없습니다.'),
+              Text(l10n.no_changes),
             ],
           ),
           backgroundColor: Colors.blue,
@@ -215,6 +216,7 @@ class _ProfileEditPageState extends State<ProfileEditPage> with TickerProviderSt
         );
       }
     } catch (e) {
+      final l10n = AppLocalizations.of(context)!;
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -222,7 +224,7 @@ class _ProfileEditPageState extends State<ProfileEditPage> with TickerProviderSt
               children: [
                 const Icon(Icons.error, color: Colors.white),
                 const SizedBox(width: 8),
-                Text('프로필 수정 중 오류가 발생했습니다.'),
+                Text(l10n.profile_edit_error),
               ],
             ),
             backgroundColor: Colors.red,
@@ -242,137 +244,141 @@ class _ProfileEditPageState extends State<ProfileEditPage> with TickerProviderSt
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
-      appBar: AppBar(
-        title: Text(
-          l10n.edit_profile,
-          style: const TextStyle(
-            color: Color(0xFF1E3A8A),
-            fontWeight: FontWeight.w700,
-            fontSize: 20,
+    return Consumer<AppLanguageProvider>(
+      builder: (context, languageProvider, child) {
+        final l10n = AppLocalizations.of(context)!;
+        return Scaffold(
+          backgroundColor: const Color(0xFFF8FAFC),
+          appBar: AppBar(
+            title: Text(
+              l10n.edit_profile,
+              style: const TextStyle(
+                color: Color(0xFF1E3A8A),
+                fontWeight: FontWeight.w700,
+                fontSize: 20,
+              ),
+            ),
+            backgroundColor: Colors.white,
+            elevation: 0,
+            foregroundColor: const Color(0xFF1E3A8A),
           ),
-        ),
-        backgroundColor: Colors.white,
-        elevation: 0,
-        foregroundColor: const Color(0xFF1E3A8A),
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // 🔥 우송 네이비 그라데이션 헤더
-                _buildHeader(l10n),
-                const SizedBox(height: 32),
-                
-                // 이름
-                _buildProfileField(
-                  label: l10n.name,
-                  controller: _nameController,
-                  icon: Icons.person,
-                  validator: (value) => value == null || value.trim().isEmpty ? l10n.name_required : null,
-                ),
-                const SizedBox(height: 20),
-                // 이메일
-                _buildProfileField(
-                  label: l10n.email,
-                  controller: _emailController,
-                  icon: Icons.email,
-                  validator: (value) => value == null || value.trim().isEmpty ? l10n.email_required : null,
-                ),
-                const SizedBox(height: 20),
-                // 전화번호
-                _buildProfileField(
-                  label: l10n.phone,
-                  controller: _phoneController,
-                  icon: Icons.phone,
-                  keyboardType: TextInputType.phone,
-                  inputFormatters: [
-                    FilteringTextInputFormatter.digitsOnly,
-                  ],
-                  validator: (value) => value == null || value.trim().isEmpty ? l10n.phone_required : null,
-                ),
-                const SizedBox(height: 20),
-                // 비밀번호
-                _buildProfileField(
-                  label: l10n.password,
-                  controller: _passwordController,
-                  icon: Icons.lock,
-                  obscureText: true,
-                  validator: (value) => null,
-                ),
-                const SizedBox(height: 20),
-                // 비밀번호 확인
-                _buildProfileField(
-                  label: l10n.confirm_password,
-                  controller: _confirmPasswordController,
-                  icon: Icons.lock_outline,
-                  obscureText: true,
-                  validator: (value) => null,
-                ),
-                const SizedBox(height: 40),
-                Row(
+          body: SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 18),
-                          side: const BorderSide(color: Color(0xFF1E3A8A), width: 2),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                        ),
-                        child: Text(
-                          l10n.cancel,
-                          style: const TextStyle(
-                            color: Color(0xFF1E3A8A),
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
+                    // 🔥 우송 네이비 그라데이션 헤더
+                    _buildHeader(l10n),
+                    const SizedBox(height: 32),
+                    
+                    // 이름
+                    _buildProfileField(
+                      label: l10n.name,
+                      controller: _nameController,
+                      icon: Icons.person,
+                      validator: (value) => value == null || value.trim().isEmpty ? l10n.name_required : null,
                     ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: _isLoading ? null : _saveProfile,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF1E3A8A),
-                          padding: const EdgeInsets.symmetric(vertical: 18),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          elevation: 0,
-                        ),
-                        child: _isLoading
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                              )
-                            : Text(
-                                l10n.save,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
-                                ),
+                    const SizedBox(height: 20),
+                    // 이메일
+                    _buildProfileField(
+                      label: l10n.email,
+                      controller: _emailController,
+                      icon: Icons.email,
+                      validator: (value) => value == null || value.trim().isEmpty ? l10n.email_required : null,
+                    ),
+                    const SizedBox(height: 20),
+                    // 전화번호
+                    _buildProfileField(
+                      label: l10n.phone,
+                      controller: _phoneController,
+                      icon: Icons.phone,
+                      keyboardType: TextInputType.phone,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                      ],
+                      validator: (value) => value == null || value.trim().isEmpty ? l10n.phone_required : null,
+                    ),
+                    const SizedBox(height: 20),
+                    // 비밀번호
+                    _buildProfileField(
+                      label: l10n.password,
+                      controller: _passwordController,
+                      icon: Icons.lock,
+                      obscureText: true,
+                      validator: (value) => null,
+                    ),
+                    const SizedBox(height: 20),
+                    // 비밀번호 확인
+                    _buildProfileField(
+                      label: l10n.confirm_password,
+                      controller: _confirmPasswordController,
+                      icon: Icons.lock_outline,
+                      obscureText: true,
+                      validator: (value) => null,
+                    ),
+                    const SizedBox(height: 40),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () => Navigator.of(context).pop(),
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 18),
+                              side: const BorderSide(color: Color(0xFF1E3A8A), width: 2),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
                               ),
-                      ),
+                            ),
+                            child: Text(
+                              l10n.cancel,
+                              style: const TextStyle(
+                                color: Color(0xFF1E3A8A),
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: _isLoading ? null : _saveProfile,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF1E3A8A),
+                              padding: const EdgeInsets.symmetric(vertical: 18),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              elevation: 0,
+                            ),
+                            child: _isLoading
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                  )
+                                : Text(
+                                    l10n.save,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ],
+              ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -422,9 +428,9 @@ class _ProfileEditPageState extends State<ProfileEditPage> with TickerProviderSt
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  '프로필 정보 수정',
-                  style: TextStyle(
+                Text(
+                  l10n.edit_profile,
+                  style: const TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.w800,
                     color: Colors.white,
@@ -433,7 +439,7 @@ class _ProfileEditPageState extends State<ProfileEditPage> with TickerProviderSt
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '개인정보를 수정하고 저장하세요',
+                  l10n.edit_profile_subtitle,
                   style: TextStyle(
                     fontSize: 14,
                     color: Colors.white.withOpacity(0.9),
