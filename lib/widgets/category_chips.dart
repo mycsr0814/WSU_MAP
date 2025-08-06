@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/services/category_api_service.dart';
 import 'package:flutter_application_1/data/category_fallback_data.dart';
 import 'package:flutter_application_1/utils/CategoryLocalization.dart';
 
@@ -20,27 +21,9 @@ class CategoryChips extends StatefulWidget {
 }
 
 class _CategoryChipsState extends State<CategoryChips> {
+  List<String> _categories = [];
   String? _selectedCategory;
-
-  // 🔥 고정된 카테고리 목록 (서버 요청 없이)
-  final List<String> _categories = [
-    'cafe',
-    'restaurant', 
-    'convenience',
-    'vending',
-    'water',
-    'printer',
-    'copier',
-    'atm',
-    'extinguisher',
-    'library',
-    'bookstore',
-    'gym',
-    'post_office',
-    'medical',
-    'health_center',
-    'lounge',
-  ];
+  bool _isLoading = true; // 초기 로딩만
 
   // 외부에서 카테고리 선택을 위한 메서드
   void selectCategory(String category) {
@@ -63,6 +46,7 @@ class _CategoryChipsState extends State<CategoryChips> {
   void initState() {
     super.initState();
     _selectedCategory = widget.selectedCategory;
+    _loadCategoriesOnce(); // 한 번만 로드
   }
 
   @override
@@ -76,8 +60,56 @@ class _CategoryChipsState extends State<CategoryChips> {
   }
 
   void refresh() {
-    // 🔥 새로고침 기능 제거 (고정된 버튼이므로 불필요)
-    debugPrint('🔄 새로고침 호출됨 (고정된 카테고리이므로 무시)');
+    // 새로고침 시에만 다시 로드
+    if (mounted) {
+      debugPrint('🔄 카테고리 새로고침');
+      _loadCategoriesOnce();
+    }
+  }
+
+  /// 🔥 한 번만 카테고리 로드
+  Future<void> _loadCategoriesOnce() async {
+    if (!mounted) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      debugPrint('🔄 카테고리 로드 시작...');
+      
+      // 서버에서 카테고리 가져오기
+      final categories = await CategoryApiService.getCategories();
+      final categoryNames = categories
+          .map((category) => category.categoryName)
+          .where((name) => name.isNotEmpty)
+          .toSet()
+          .toList();
+
+      if (categoryNames.isNotEmpty && mounted) {
+        debugPrint('✅ 서버에서 카테고리 로딩 성공: ${categoryNames.length}개');
+        setState(() {
+          _categories = categoryNames;
+          _isLoading = false;
+        });
+      } else {
+        debugPrint('⚠️ 서버에서 빈 카테고리 목록 반환, fallback 사용');
+        if (mounted) {
+          setState(() {
+            _categories = CategoryFallbackData.getCategories();
+            _isLoading = false;
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('❌ 서버 카테고리 로딩 실패: $e, fallback 사용');
+      if (mounted) {
+        setState(() {
+          _categories = CategoryFallbackData.getCategories();
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   void _onCategoryTap(String? category) async {
@@ -108,8 +140,8 @@ class _CategoryChipsState extends State<CategoryChips> {
     try {
       debugPrint('📡 카테고리 선택: $category');
 
-      // 🔥 고정된 건물 정보 사용 (서버 요청 없이)
-      final buildingInfoList = _getFixedBuildingInfoList(category);
+      // 카테고리별 건물 정보 가져오기
+      final buildingInfoList = await _getCategoryBuildingInfoList(category);
 
       debugPrint('📡 카테고리 선택 완료: $category, 건물 수: ${buildingInfoList.length}');
 
@@ -127,12 +159,12 @@ class _CategoryChipsState extends State<CategoryChips> {
     }
   }
 
-  /// 🔥 고정된 건물 정보 반환 (서버 요청 없이)
-  List<Map<String, dynamic>> _getFixedBuildingInfoList(String category) {
+  /// 카테고리별 건물 정보 가져오기
+  Future<List<Map<String, dynamic>>> _getCategoryBuildingInfoList(String category) async {
     try {
-      debugPrint('🔍 고정된 건물 정보 조회: $category');
+      debugPrint('🔍 카테고리 건물 정보 조회: $category');
       
-      final buildingNames = CategoryFallbackData.getBuildingsByCategory(category);
+      final buildingNames = await CategoryApiService.getCategoryBuildingNames(category);
       debugPrint('🏢 건물 목록: $buildingNames');
       
       return buildingNames.map((name) => {
@@ -147,6 +179,53 @@ class _CategoryChipsState extends State<CategoryChips> {
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return Container(
+        height: 40,
+        margin: const EdgeInsets.symmetric(horizontal: 16),
+        child: Center(
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Colors.blue.shade50,
+                  Colors.blue.shade100,
+                ],
+              ),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: Colors.blue.shade200,
+                width: 1,
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  '카테고리 로딩 중...',
+                  style: TextStyle(
+                    color: Colors.blue.shade700,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     return Container(
       height: 40,
       margin: const EdgeInsets.symmetric(horizontal: 16),
