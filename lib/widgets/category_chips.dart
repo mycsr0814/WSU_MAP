@@ -163,17 +163,18 @@ class _CategoryChipsState extends State<CategoryChips> {
     });
 
     try {
-      debugPrint('📡 API 호출 시작: $category');
+      debugPrint('📡 카테고리 선택: $category');
 
+      // 🔥 카테고리 선택 시 해당 카테고리의 건물 정보 가져오기
       final buildingInfoList = await _getCategoryBuildingInfoList(category);
 
-      debugPrint('📡 API 호출 완료: $category, 건물 수: ${buildingInfoList.length}');
+      debugPrint('📡 카테고리 선택 완료: $category, 건물 수: ${buildingInfoList.length}');
 
       if (mounted) {
         widget.onCategorySelected(category, buildingInfoList);
       }
     } catch (e) {
-      debugPrint('❌ API 호출 오류: $e');
+      debugPrint('❌ 카테고리 선택 오류: $e');
       if (mounted) {
         setState(() {
           _selectedCategory = null;
@@ -185,9 +186,14 @@ class _CategoryChipsState extends State<CategoryChips> {
     }
   }
 
+  /// 🔥 카테고리별 건물 정보 가져오기
   Future<List<Map<String, dynamic>>> _getCategoryBuildingInfoList(String category) async {
     try {
+      debugPrint('🔍 카테고리 건물 정보 조회: $category');
+      
       final buildingNames = await CategoryApiService.getCategoryBuildingNames(category);
+      debugPrint('🏢 건물 목록: $buildingNames');
+      
       return buildingNames.map((name) => {
         'Building_Name': name,
         'Floor_Numbers': <String>[],
@@ -197,6 +203,20 @@ class _CategoryChipsState extends State<CategoryChips> {
       return [];
     }
   }
+
+  // 🔥 더 이상 사용하지 않는 메서드 제거
+  // Future<List<Map<String, dynamic>>> _getCategoryBuildingInfoList(String category) async {
+  //   try {
+  //     final buildingNames = await CategoryApiService.getCategoryBuildingNames(category);
+  //     return buildingNames.map((name) => {
+  //       'Building_Name': name,
+  //       'Floor_Numbers': <String>[],
+  //     }).toList();
+  //   } catch (e) {
+  //     debugPrint('❌ 건물 정보 가져오기 실패: $e');
+  //     return [];
+  //   }
+  // }
 
   @override
   Widget build(BuildContext context) {
