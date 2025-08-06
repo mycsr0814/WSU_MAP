@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application_1/inside/building_map_page.dart';
 import 'package:flutter_application_1/outdoor_map_page.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
+import 'package:flutter_application_1/generated/app_localizations.dart';
 
 List<NLatLng> convertToNLatLngList(List<Map<String, dynamic>> path) {
   return path.map((point) {
@@ -111,6 +112,7 @@ class _UnifiedNavigationStepperPageState extends State<UnifiedNavigationStepperP
   Widget build(BuildContext context) {
     final currentStep = _steps[_currentStepIndex];
     final isLastStep = _currentStepIndex == _steps.length - 1;
+    final l10n = AppLocalizations.of(context)!;
 
     Widget content;
     if (currentStep.type == StepType.indoor) {
@@ -120,7 +122,7 @@ class _UnifiedNavigationStepperPageState extends State<UnifiedNavigationStepperP
         isArrivalNavigation: currentStep.isArrival,
       );
     } else {
-      String startLabel = '내 위치';
+      String startLabel = l10n.myLocation;
       String endLabel = widget.arrivalBuilding;
       
       if (widget.departureBuilding.isNotEmpty) {
@@ -163,20 +165,22 @@ class _UnifiedNavigationStepperPageState extends State<UnifiedNavigationStepperP
 
   String _getCurrentStepTitle() {
     final currentStep = _steps[_currentStepIndex];
+    final l10n = AppLocalizations.of(context)!;
     
     if (currentStep.type == StepType.indoor) {
       if (currentStep.isArrival) {
-        return '${currentStep.building} 실내 도착';
+        return '${currentStep.building} ${l10n.indoor_arrival}';
       } else {
-        return '${currentStep.building} 실내 출발';
+        return '${currentStep.building} ${l10n.indoor_departure}';
       }
     } else {
-      return '길찾기'; // 🔥 실외에서는 단순하게 "길찾기"만 표시
+      return l10n.navigation; // 🔥 실외에서는 단순하게 "길찾기"만 표시
     }
   }
 
   // 🔥 실외에서는 버튼만, 실내에서는 기존 방식
   Widget _buildSimpleBottomBar(_StepData currentStep, bool isLastStep) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
@@ -199,7 +203,7 @@ class _UnifiedNavigationStepperPageState extends State<UnifiedNavigationStepperP
               backgroundColor: Colors.grey.shade600,
               foregroundColor: Colors.white,
             ),
-            child: const Text('이전'),
+            child: Text(l10n.previous),
           ),
           
           // 🔥 다음/완료 버튼
@@ -210,7 +214,7 @@ class _UnifiedNavigationStepperPageState extends State<UnifiedNavigationStepperP
                 backgroundColor: Colors.indigo, // 실내/실외 모두 동일 색상 적용
                 foregroundColor: Colors.white,
               ),
-              child: const Text('다음'),
+              child: Text(l10n.next),
             ),
           if (isLastStep)
             ElevatedButton(
@@ -219,7 +223,7 @@ class _UnifiedNavigationStepperPageState extends State<UnifiedNavigationStepperP
                 backgroundColor: Colors.green,
                 foregroundColor: Colors.white,
               ),
-              child: const Text('완료'),
+              child: Text(l10n.complete),
             ),
         ],
       ),

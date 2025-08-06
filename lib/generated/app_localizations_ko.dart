@@ -969,7 +969,82 @@ class AppLocalizationsKo extends AppLocalizations {
   String get minutes => '분';
 
   @override
-  String get meters => '미터';
+  String get hours => '운영시간';
+
+  @override
+  String get within_minute => '1분 이내';
+
+  @override
+  String minutes_only(Object minutes) {
+    return '$minutes분';
+  }
+
+  @override
+  String hours_only(Object hours) {
+    return '$hours시간';
+  }
+
+  @override
+  String hours_and_minutes(Object hours, Object minutes) {
+    return '$hours시간 $minutes분';
+  }
+
+  @override
+  String get calculation_failed => '계산 불가';
+
+  @override
+  String get current_location_departure => '현재 위치에서 출발';
+
+  @override
+  String get current_location => '현재위치';
+
+  @override
+  String get available => '사용가능';
+
+  @override
+  String get start_navigation_from_current_location => '현재 위치에서 길찾기를 시작합니다';
+
+  @override
+  String get my_location_set_as_start => '내 위치가 출발지로 자동 설정되었습니다';
+
+  @override
+  String get current_location_departure_default => '현재 위치에서 출발 (기본 위치)';
+
+  @override
+  String get default_location_set_as_start => '기본 위치가 출발지로 설정되었습니다';
+
+  @override
+  String get start_navigation => '길찾기 시작';
+
+  @override
+  String get navigation_ended => '길찾기가 종료되었습니다';
+
+  @override
+  String get departure => '출발';
+
+  @override
+  String get arrival => '도착';
+
+  @override
+  String get destination => '도착지';
+
+  @override
+  String get outdoor_movement_distance => '실외 이동 거리';
+
+  @override
+  String get indoor_arrival => '실내 도착';
+
+  @override
+  String get indoor_departure => '실내 출발';
+
+  @override
+  String get previous => '이전';
+
+  @override
+  String get next => '다음';
+
+  @override
+  String get complete => '완료';
 
   @override
   String get findRoute => '경로 찾기';
@@ -1552,9 +1627,6 @@ class AppLocalizationsKo extends AppLocalizations {
   String get status => '상태';
 
   @override
-  String get hours => '운영시간';
-
-  @override
   String get floor_plan => '도면';
 
   @override
@@ -1653,12 +1725,6 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get friend_request_sent_success => '친구 요청이 성공적으로 전송되었습니다';
-
-  @override
-  String get available_user_list => '사용 가능한 사용자 목록:';
-
-  @override
-  String get refresh_user_list => '사용자 목록 새로고침';
 
   @override
   String get already_adding_friend => '이미 친구 추가 중입니다. 중복 제출 방지';

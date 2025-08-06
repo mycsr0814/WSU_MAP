@@ -127,6 +127,11 @@ class FriendsController extends ChangeNotifier {
         _handleFriendLocationUpdate(message);
         break;
 
+      // 🔥 위치 공유 상태 변경 처리 추가
+      case 'friend_location_share_status_change':
+        _handleFriendLocationShareStatusChange(message);
+        break;
+
       // 🔥 온라인 사용자 목록 업데이트 처리
       case 'online_users_update':
         if (message['users'] != null) {
@@ -493,6 +498,33 @@ class FriendsController extends ChangeNotifier {
 
     // 🔥 즉시 UI 업데이트
     debugPrint('🔄 UI 업데이트 트리거 - 친구 로그인');
+    notifyListeners();
+  }
+
+  // 🔥 위치 공유 상태 변경 처리
+  void _handleFriendLocationShareStatusChange(Map<String, dynamic> message) {
+    final userId = message['userId'];
+    final isLocationPublic = message['isLocationPublic'] ?? false;
+
+    debugPrint('📍 친구 위치 공유 상태 변경: $userId - ${isLocationPublic ? '공개' : '비공개'}');
+
+    // 친구 목록에서 해당 사용자의 위치 공유 상태 업데이트
+    for (int i = 0; i < friends.length; i++) {
+      if (friends[i].userId == userId) {
+        friends[i] = Friend(
+          userId: friends[i].userId,
+          userName: friends[i].userName,
+          profileImage: friends[i].profileImage,
+          phone: friends[i].phone,
+          isLogin: friends[i].isLogin,
+          lastLocation: friends[i].lastLocation,
+          isLocationPublic: isLocationPublic,
+        );
+        debugPrint('✅ ${friends[i].userName} 위치 공유 상태 변경: $isLocationPublic');
+        break;
+      }
+    }
+
     notifyListeners();
   }
 

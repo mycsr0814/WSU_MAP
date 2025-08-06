@@ -158,7 +158,6 @@
     "basic_info",
     "category",
     "status",
-    "hours",
     "floor_plan",
     "search_hint",
     "searchHint",

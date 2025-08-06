@@ -989,7 +989,86 @@ class AppLocalizationsEn extends AppLocalizations {
   String get minutes => 'minutes';
 
   @override
-  String get meters => 'meters';
+  String get hours => 'Hours';
+
+  @override
+  String get within_minute => 'within 1 minute';
+
+  @override
+  String minutes_only(Object minutes) {
+    return '$minutes minutes';
+  }
+
+  @override
+  String hours_only(Object hours) {
+    return '$hours hours';
+  }
+
+  @override
+  String hours_and_minutes(Object hours, Object minutes) {
+    return '$hours hours $minutes minutes';
+  }
+
+  @override
+  String get calculation_failed => 'Calculation failed';
+
+  @override
+  String get current_location_departure => 'Depart from current location';
+
+  @override
+  String get current_location => 'Current Location';
+
+  @override
+  String get available => 'Available';
+
+  @override
+  String get start_navigation_from_current_location =>
+      'Start navigation from current location';
+
+  @override
+  String get my_location_set_as_start =>
+      'My location has been set as the starting point';
+
+  @override
+  String get current_location_departure_default =>
+      'Depart from current location (default)';
+
+  @override
+  String get default_location_set_as_start =>
+      'Default location has been set as the starting point';
+
+  @override
+  String get start_navigation => 'Start Navigation';
+
+  @override
+  String get navigation_ended => 'Navigation has ended';
+
+  @override
+  String get departure => 'Departure';
+
+  @override
+  String get arrival => 'Arrival';
+
+  @override
+  String get destination => 'Destination';
+
+  @override
+  String get outdoor_movement_distance => 'Outdoor Movement Distance';
+
+  @override
+  String get indoor_arrival => 'Indoor Arrival';
+
+  @override
+  String get indoor_departure => 'Indoor Departure';
+
+  @override
+  String get previous => 'Previous';
+
+  @override
+  String get next => 'Next';
+
+  @override
+  String get complete => 'Complete';
 
   @override
   String get findRoute => 'Find Route';
@@ -1584,9 +1663,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get status => 'Status';
 
   @override
-  String get hours => 'Hours';
-
-  @override
   String get floor_plan => 'Floor Plan';
 
   @override
@@ -1686,12 +1762,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get friend_request_sent_success => 'Friend request sent successfully';
-
-  @override
-  String get available_user_list => 'Available user list:';
-
-  @override
-  String get refresh_user_list => 'Refresh user list';
 
   @override
   String get already_adding_friend =>

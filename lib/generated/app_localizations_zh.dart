@@ -967,7 +967,82 @@ class AppLocalizationsZh extends AppLocalizations {
   String get minutes => '分钟';
 
   @override
-  String get meters => '米';
+  String get hours => '小时';
+
+  @override
+  String get within_minute => '1分钟内';
+
+  @override
+  String minutes_only(Object minutes) {
+    return '$minutes分钟';
+  }
+
+  @override
+  String hours_only(Object hours) {
+    return '$hours小时';
+  }
+
+  @override
+  String hours_and_minutes(Object hours, Object minutes) {
+    return '$hours小时$minutes分钟';
+  }
+
+  @override
+  String get calculation_failed => '计算失败';
+
+  @override
+  String get current_location_departure => '从当前位置出发';
+
+  @override
+  String get current_location => '当前位置';
+
+  @override
+  String get available => '可用';
+
+  @override
+  String get start_navigation_from_current_location => '从当前位置开始导航';
+
+  @override
+  String get my_location_set_as_start => '我的位置已设为起点';
+
+  @override
+  String get current_location_departure_default => '从当前位置出发（默认）';
+
+  @override
+  String get default_location_set_as_start => '默认位置已设为起点';
+
+  @override
+  String get start_navigation => '开始导航';
+
+  @override
+  String get navigation_ended => '导航已结束';
+
+  @override
+  String get departure => '出发';
+
+  @override
+  String get arrival => '到达';
+
+  @override
+  String get destination => '目的地';
+
+  @override
+  String get outdoor_movement_distance => '室外移动距离';
+
+  @override
+  String get indoor_arrival => '室内到达';
+
+  @override
+  String get indoor_departure => '室内出发';
+
+  @override
+  String get previous => '上一个';
+
+  @override
+  String get next => '下一个';
+
+  @override
+  String get complete => '完成';
 
   @override
   String get findRoute => '查找路线';
@@ -1562,9 +1637,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get status => 'Status';
 
   @override
-  String get hours => 'Hours';
-
-  @override
   String get floor_plan => 'Floor Plan';
 
   @override
@@ -1663,12 +1735,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get friend_request_sent_success => '好友请求发送成功';
-
-  @override
-  String get available_user_list => '可用用户列表:';
-
-  @override
-  String get refresh_user_list => '刷新用户列表';
 
   @override
   String get already_adding_friend => '正在添加好友，防止重复提交';

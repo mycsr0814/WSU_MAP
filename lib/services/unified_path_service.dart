@@ -304,7 +304,7 @@ static Future<UnifiedPathResponse?> getPathBetweenBuildings({
   }) async {
     
     // 🔥 "내 위치"인 경우 좌표 기반 요청으로 변경
-    if (fromBuilding.name == '내 위치') {
+    if (fromBuilding.name == '내 위치' || fromBuilding.name == 'My Location' || fromBuilding.name == '当前位置') {
       debugPrint('🔄 "내 위치"를 좌표 기반 요청으로 변경');
       debugPrint('   좌표: (${fromBuilding.lat}, ${fromBuilding.lng})');
       
@@ -367,7 +367,7 @@ static Future<UnifiedPathResponse?> getPathBetweenBuildings({
   }) async {
     
     // 🔥 "내 위치"인 경우 좌표 기반 요청으로 변경
-    if (fromBuilding.name == '내 위치') {
+    if (fromBuilding.name == '내 위치' || fromBuilding.name == 'My Location' || fromBuilding.name == '当前位置') {
       debugPrint('🔄 "내 위치"를 좌표 기반 요청으로 변경');
       debugPrint('   좌표: (${fromBuilding.lat}, ${fromBuilding.lng})');
       

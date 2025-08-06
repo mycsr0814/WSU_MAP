@@ -659,14 +659,14 @@ class _ProfileActionPageState extends State<ProfileActionPage> {
     try {
       final wsService = WebSocketService();
       if (wsService.isConnected) {
-        // 🔥 웹소켓 메시지 전송 (나중에 구현)
-        // wsService.sendMessage({
-        //   'type': 'friend_location_share_status_change',
-        //   'userId': userId,
-        //   'isLocationPublic': isLocationPublic,
-        //   'message': '친구의 위치 공유 상태가 변경되었습니다.',
-        //   'timestamp': DateTime.now().toIso8601String(),
-        // });
+        // 🔥 웹소켓 메시지 전송
+        wsService.sendMessage({
+          'type': 'friend_location_share_status_change',
+          'userId': userId,
+          'isLocationPublic': isLocationPublic,
+          'message': '친구의 위치 공유 상태가 변경되었습니다.',
+          'timestamp': DateTime.now().toIso8601String(),
+        });
         debugPrint('📍 위치 공유 상태 변경 알림 전송: $userId - ${isLocationPublic ? '공유' : '비공유'}');
       } else {
         debugPrint('⚠️ 웹소켓이 연결되지 않아 알림을 전송할 수 없습니다.');

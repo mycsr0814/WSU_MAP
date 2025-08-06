@@ -65,60 +65,35 @@ class FriendsTabs {
 
             const SizedBox(height: 20),
 
-            // 사용자 목록 표시
-            if (userList.isNotEmpty) ...[
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    AppLocalizations.of(context)!.available_user_list,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.grey,
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.refresh, size: 16),
-                    onPressed: onRefreshUserList,
-                    tooltip: AppLocalizations.of(context)!.refresh_user_list,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Container(
-                constraints: const BoxConstraints(maxHeight: 200),
-                decoration: BoxDecoration(
-                  color: Colors.grey[50],
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.grey[300]!),
-                ),
-                child: ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: userList.length,
-                  itemBuilder: (context, index) {
-                    final user = userList[index];
-                    return ListTile(
-                      dense: true,
-                      title: Text(
-                        '${user['name']} (${user['id']})',
-                        style: const TextStyle(fontSize: 14),
-                      ),
-                      onTap: () {
-                        addController.text = user['id']!;
-                        setModalState(() {});
-                      },
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(height: 20),
-            ],
-
             SizedBox(
               width: double.infinity,
               child: WoosongButton(
-                onPressed: isAddingFriend ? null : onAddFriend,
+                onPressed: isAddingFriend ? null : () {
+                  // 백그라운드에서 사용자 목록을 확인하여 유효성 검증
+                  final enteredId = addController.text.trim();
+                  if (enteredId.isEmpty) {
+                    return;
+                  }
+                  
+                  // 사용자 목록에서 입력된 ID가 존재하는지 확인
+                  final isValidUser = userList.any((user) => user['id'] == enteredId);
+                  if (!isValidUser) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(AppLocalizations.of(context)!.user_not_found),
+                        backgroundColor: const Color(0xFFEF4444),
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                    );
+                    return;
+                  }
+                  
+                  // 유효한 사용자인 경우 친구 추가 진행
+                  onAddFriend();
+                },
                 child: isAddingFriend
                     ? const SizedBox(
                         width: 20,

@@ -1960,11 +1960,149 @@ abstract class AppLocalizations {
   /// **'minutes'**
   String get minutes;
 
-  /// No description provided for @meters.
+  /// No description provided for @hours.
   ///
   /// In en, this message translates to:
-  /// **'meters'**
-  String get meters;
+  /// **'Hours'**
+  String get hours;
+
+  /// No description provided for @within_minute.
+  ///
+  /// In en, this message translates to:
+  /// **'within 1 minute'**
+  String get within_minute;
+
+  /// No description provided for @minutes_only.
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes} minutes'**
+  String minutes_only(Object minutes);
+
+  /// No description provided for @hours_only.
+  ///
+  /// In en, this message translates to:
+  /// **'{hours} hours'**
+  String hours_only(Object hours);
+
+  /// No description provided for @hours_and_minutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{hours} hours {minutes} minutes'**
+  String hours_and_minutes(Object hours, Object minutes);
+
+  /// No description provided for @calculation_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Calculation failed'**
+  String get calculation_failed;
+
+  /// No description provided for @current_location_departure.
+  ///
+  /// In en, this message translates to:
+  /// **'Depart from current location'**
+  String get current_location_departure;
+
+  /// No description provided for @current_location.
+  ///
+  /// In en, this message translates to:
+  /// **'Current Location'**
+  String get current_location;
+
+  /// No description provided for @available.
+  ///
+  /// In en, this message translates to:
+  /// **'Available'**
+  String get available;
+
+  /// No description provided for @start_navigation_from_current_location.
+  ///
+  /// In en, this message translates to:
+  /// **'Start navigation from current location'**
+  String get start_navigation_from_current_location;
+
+  /// No description provided for @my_location_set_as_start.
+  ///
+  /// In en, this message translates to:
+  /// **'My location has been set as the starting point'**
+  String get my_location_set_as_start;
+
+  /// No description provided for @current_location_departure_default.
+  ///
+  /// In en, this message translates to:
+  /// **'Depart from current location (default)'**
+  String get current_location_departure_default;
+
+  /// No description provided for @default_location_set_as_start.
+  ///
+  /// In en, this message translates to:
+  /// **'Default location has been set as the starting point'**
+  String get default_location_set_as_start;
+
+  /// No description provided for @start_navigation.
+  ///
+  /// In en, this message translates to:
+  /// **'Start Navigation'**
+  String get start_navigation;
+
+  /// No description provided for @navigation_ended.
+  ///
+  /// In en, this message translates to:
+  /// **'Navigation has ended'**
+  String get navigation_ended;
+
+  /// No description provided for @departure.
+  ///
+  /// In en, this message translates to:
+  /// **'Departure'**
+  String get departure;
+
+  /// No description provided for @arrival.
+  ///
+  /// In en, this message translates to:
+  /// **'Arrival'**
+  String get arrival;
+
+  /// No description provided for @destination.
+  ///
+  /// In en, this message translates to:
+  /// **'Destination'**
+  String get destination;
+
+  /// No description provided for @outdoor_movement_distance.
+  ///
+  /// In en, this message translates to:
+  /// **'Outdoor Movement Distance'**
+  String get outdoor_movement_distance;
+
+  /// No description provided for @indoor_arrival.
+  ///
+  /// In en, this message translates to:
+  /// **'Indoor Arrival'**
+  String get indoor_arrival;
+
+  /// No description provided for @indoor_departure.
+  ///
+  /// In en, this message translates to:
+  /// **'Indoor Departure'**
+  String get indoor_departure;
+
+  /// No description provided for @previous.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous'**
+  String get previous;
+
+  /// No description provided for @next.
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get next;
+
+  /// No description provided for @complete.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete'**
+  String get complete;
 
   /// No description provided for @findRoute.
   ///
@@ -3058,12 +3196,6 @@ abstract class AppLocalizations {
   /// **'Status'**
   String get status;
 
-  /// No description provided for @hours.
-  ///
-  /// In en, this message translates to:
-  /// **'Hours'**
-  String get hours;
-
   /// No description provided for @floor_plan.
   ///
   /// In en, this message translates to:
@@ -3255,18 +3387,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Friend request sent successfully'**
   String get friend_request_sent_success;
-
-  /// No description provided for @available_user_list.
-  ///
-  /// In en, this message translates to:
-  /// **'Available user list:'**
-  String get available_user_list;
-
-  /// No description provided for @refresh_user_list.
-  ///
-  /// In en, this message translates to:
-  /// **'Refresh user list'**
-  String get refresh_user_list;
 
   /// No description provided for @already_adding_friend.
   ///

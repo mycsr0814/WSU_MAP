@@ -1413,18 +1413,26 @@ class _MyInquiriesTabState extends State<MyInquiriesTab> {
   String _getLocalizedCategory(String category) {
     final l10n = AppLocalizations.of(context)!;
     switch (category) {
-      case '버그 신고':
-        return l10n.inquiry_category_bug;
-      case '기능 요청':
-        return l10n.inquiry_category_feature;
-      case '개선 사항':
-        return l10n.inquiry_category_improvement;
-      case '기타 문의':
-        return l10n.inquiry_category_other;
-      case '경로 안내 오류':
-        return l10n.inquiry_category_route_error;
       case '장소/정보 오류':
+      case 'Place/Info Error':
+      case '地点/信息错误':
         return l10n.inquiry_category_place_error;
+      case '버그 신고':
+      case 'Bug Report':
+      case '错误报告':
+        return l10n.inquiry_category_bug;
+      case '기능 제안':
+      case 'Feature Request':
+      case '功能建议':
+        return l10n.inquiry_category_feature;
+      case '경로 안내 오류':
+      case 'Route Guidance Error':
+      case '路线指导错误':
+        return l10n.inquiry_category_route_error;
+      case '기타 문의':
+      case 'Other Inquiry':
+      case '其他咨询':
+        return l10n.inquiry_category_other;
       default:
         return category;
     }

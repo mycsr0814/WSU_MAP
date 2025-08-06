@@ -29,9 +29,12 @@ class _CategoryChipsState extends State<CategoryChips> {
   final ScrollController _scrollController = ScrollController();
   double _lastScrollPosition = 0.0;
   bool _isInitialized = false; // 🔥 초기화 완료 플래그 추가
+  bool _isDisposed = false; // 🔥 dispose 상태 추적
 
   // 외부에서 카테고리 선택을 위한 메서드
   void selectCategory(String category) {
+    if (_isDisposed) return; // dispose된 상태에서는 무시
+    
     debugPrint('🎯 selectCategory 호출됨: $category');
     debugPrint('🎯 현재 사용 가능한 카테고리: $_categories');
     
@@ -52,18 +55,23 @@ class _CategoryChipsState extends State<CategoryChips> {
   @override
   void initState() {
     super.initState();
+    _isDisposed = false;
     _selectedCategory = widget.selectedCategory;
     
     // 🔥 즉시 fallback 데이터로 초기화하여 버튼이 사라지지 않도록 함
-    _categories = CategoryFallbackData.getCategories();
-    _isLoading = false;
-    _useServerData = false;
-    _isInitialized = true;
+    setState(() {
+      _categories = CategoryFallbackData.getCategories();
+      _isLoading = false;
+      _useServerData = false;
+      _isInitialized = true;
+    });
     debugPrint('✅ CategoryChips 초기화 완료 - fallback 데이터 로드됨: ${_categories.length}개');
     
     // 🔥 백그라운드에서 서버 데이터 시도 (UI에 영향 없음)
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadCategoriesInBackground();
+      if (!_isDisposed) {
+        _loadCategoriesInBackground();
+      }
     });
   }
 
@@ -77,8 +85,30 @@ class _CategoryChipsState extends State<CategoryChips> {
     }
   }
 
+  @override
+  void dispose() {
+    _isDisposed = true;
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void refresh() {
+    if (mounted && !_isDisposed) {
+      debugPrint('🔄 카테고리 새로고침 시작 (기존 버튼 유지)');
+      setState(() {
+        _isLoading = true;
+        _useServerData = true;
+      });
+      
+      // 백그라운드에서 서버 데이터만 시도 (UI에 영향 없음)
+      _loadCategoriesInBackground();
+    }
+  }
+
   /// 🔥 백그라운드에서 서버 데이터 로드 (UI에 영향 없음)
   Future<void> _loadCategoriesInBackground() async {
+    if (_isDisposed) return; // dispose된 상태에서는 무시
+    
     try {
       debugPrint('🔄 백그라운드에서 서버 카테고리 로드 시작...');
       
@@ -89,19 +119,30 @@ class _CategoryChipsState extends State<CategoryChips> {
           .toSet()
           .toList();
 
-      if (categoryNames.isNotEmpty && mounted) {
+      if (categoryNames.isNotEmpty && mounted && !_isDisposed) {
         debugPrint('✅ 서버에서 카테고리 로딩 성공: ${categoryNames.length}개');
         setState(() {
           _categories = categoryNames;
           _useServerData = true;
+          _isLoading = false;
         });
         debugPrint('✅ 서버 데이터로 카테고리 업데이트 완료');
       } else {
         debugPrint('⚠️ 서버에서 빈 카테고리 목록 반환, fallback 유지');
+        if (mounted && !_isDisposed) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
       }
     } catch (e) {
       debugPrint('❌ 서버 카테고리 로딩 실패: $e');
       debugPrint('🔄 fallback 데이터 유지');
+      if (mounted && !_isDisposed) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -109,7 +150,7 @@ class _CategoryChipsState extends State<CategoryChips> {
     try {
       if (!mounted) return;
 
-      // 🔥 이미 초기화되어 있으면 서버 데이터만 시도
+      // 🔥 이미 초기화되어 있으면 서버 데이터만 시도 (기존 버튼 유지)
       if (_isInitialized) {
         debugPrint('🔄 기존 카테고리 유지하면서 서버 데이터 시도...');
         
@@ -145,10 +186,20 @@ class _CategoryChipsState extends State<CategoryChips> {
           _useServerData = false;
         }
 
-        setState(() {
-          _categories = categoryNames;
-          _isLoading = false;
-        });
+        // 🔥 기존 카테고리가 있으면 유지하고, 새로운 데이터로 업데이트
+        if (_categories.isNotEmpty) {
+          debugPrint('🔄 기존 카테고리 유지하면서 업데이트');
+          setState(() {
+            _categories = categoryNames;
+            _isLoading = false;
+          });
+        } else {
+          // 🔥 카테고리가 없을 때만 즉시 설정
+          setState(() {
+            _categories = categoryNames;
+            _isLoading = false;
+          });
+        }
 
         debugPrint('카테고리 로딩 완료: $_categories (서버 데이터: $_useServerData)');
       } else {
@@ -272,15 +323,13 @@ class _CategoryChipsState extends State<CategoryChips> {
     }
   }
 
-  void refresh() {
-    if (mounted) {
-      _useServerData = true;
-      _loadCategories();
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
+    // 🔥 dispose된 상태에서는 빈 컨테이너 반환
+    if (_isDisposed) {
+      return Container(height: 40);
+    }
+    
     // 🔥 카테고리가 비어있고 아직 초기화되지 않았을 때만 로딩 표시
     if (_categories.isEmpty && !_isInitialized) {
       return Container(
@@ -335,13 +384,27 @@ class _CategoryChipsState extends State<CategoryChips> {
       );
     }
 
-    // 🔥 카테고리가 비어있으면 fallback 데이터 사용
+    // 🔥 카테고리가 비어있으면 fallback 데이터 사용 (setState로 안전하게 처리)
     if (_categories.isEmpty) {
       debugPrint('⚠️ 카테고리가 비어있음, fallback 데이터 사용');
-      _categories = CategoryFallbackData.getCategories();
-      _isInitialized = true;
+      // setState 없이 직접 수정하지 않고, 다음 프레임에서 처리
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && !_isDisposed && _categories.isEmpty) {
+          setState(() {
+            _categories = CategoryFallbackData.getCategories();
+            _isInitialized = true;
+          });
+        }
+      });
+      // 임시로 fallback 데이터 반환
+      return _buildCategoryList(CategoryFallbackData.getCategories());
     }
 
+    return _buildCategoryList(_categories);
+  }
+
+  /// 🔥 카테고리 리스트 위젯 분리
+  Widget _buildCategoryList(List<String> categories) {
     return Container(
       height: 40,
       margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -388,7 +451,7 @@ class _CategoryChipsState extends State<CategoryChips> {
                 ],
               ),
             ),
-          // 🔥 서버 데이터를 사용하지 않을 때 경고 표시
+          
           if (!_useServerData && _isInitialized)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -435,15 +498,15 @@ class _CategoryChipsState extends State<CategoryChips> {
                 ],
               ),
             ),
-          // 🔥 카테고리 버튼들은 항상 표시
+          // 🔥 카테고리 버튼들은 항상 표시 (로딩 중에도 유지)
           Expanded(
             child: ListView.separated(
               controller: _scrollController,
               scrollDirection: Axis.horizontal,
-              itemCount: _categories.length,
+              itemCount: categories.length,
               separatorBuilder: (context, index) => const SizedBox(width: 6),
               itemBuilder: (context, index) {
-                final category = _categories[index];
+                final category = categories[index];
                 return _buildCategoryChip(category);
               },
             ),

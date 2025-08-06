@@ -693,17 +693,18 @@ int _safeExtractFloorNumber(Map<String, dynamic> roomInfo, String key) {
     final double timeInHours = totalDistance / 1000 / walkingSpeedKmh;
     final int timeInMinutes = (timeInHours * 60).round();
     
+    // 🔥 시간 표시를 로컬라이제이션으로 변경
     if (timeInMinutes <= 0) {
       _estimatedTime = '1분 이내';
     } else if (timeInMinutes < 60) {
-      _estimatedTime = '도보 ${timeInMinutes}분';
+      _estimatedTime = '${timeInMinutes}분';
     } else {
       final int hours = timeInMinutes ~/ 60;
       final int minutes = timeInMinutes % 60;
       if (minutes == 0) {
-        _estimatedTime = '도보 ${hours}시간';
+        _estimatedTime = '${hours}시간';
       } else {
-        _estimatedTime = '도보 ${hours}시간 ${minutes}분';
+        _estimatedTime = '${hours}시간 ${minutes}분';
       }
     }
 
@@ -730,7 +731,8 @@ int _safeExtractFloorNumber(Map<String, dynamic> roomInfo, String key) {
 
   // 🔥 "내 위치" 관련 검색은 건너뛰기
   final lowercaseQuery = query.toLowerCase();
-  if (lowercaseQuery.contains('내 위치') || 
+  final l10n = AppLocalizations.of(context)!;
+  if (lowercaseQuery.contains(l10n.myLocation.toLowerCase()) || 
       lowercaseQuery.contains('내위치') || 
       lowercaseQuery.contains('현재위치') || 
       lowercaseQuery.contains('현재 위치') ||
@@ -869,7 +871,7 @@ void _onSearchResultSelected(SearchResult result) {
       });
       debugPrint('✅ 도착지 설정: ${building.name}');
       
-      // 🔥 도착지 설정 시 출발지가 비어있으면 내 위치 자동 설정
+      // 🔥 출발지가 비어있으면 내 위치 자동 설정
       if (_startBuilding == null) {
         debugPrint('📍 출발지가 비어있어서 내 위치 자동 설정');
         debugPrint('📍 도착지: ${building.name}');
@@ -964,7 +966,7 @@ void _onSearchResultSelected(SearchResult result) {
       });
       debugPrint('✅ 도착지 건물 설정: ${cleanBuilding.name}');
       
-      // 🔥 도착지 설정 시 출발지가 비어있으면 내 위치 자동 설정
+      // 🔥 출발지가 비어있으면 내 위치 자동 설정
       if (_startBuilding == null) {
         debugPrint('📍 출발지가 비어있어서 내 위치 자동 설정');
         debugPrint('📍 도착지: ${cleanBuilding.name}');
@@ -1011,19 +1013,20 @@ Future<void> _setMyLocationAsStartAsync() async {
     debugPrint('📍 내 위치를 출발지로 자동 설정 (비동기)');
     
     final locationManager = Provider.of<LocationManager>(context, listen: false);
+    final l10n = AppLocalizations.of(context)!;
     
     if (locationManager.hasValidLocation && locationManager.currentLocation != null) {
       final myLocationBuilding = Building(
-        name: '내 위치',
-        info: '현재 위치에서 출발',
+        name: l10n.myLocation,
+        info: l10n.current_location_departure,
         lat: locationManager.currentLocation!.latitude!,
         lng: locationManager.currentLocation!.longitude!,
-        category: '현재위치',
-        baseStatus: '사용가능',
+        category: l10n.current_location,
+        baseStatus: l10n.available,
         hours: '',
         phone: '',
         imageUrl: '',
-        description: '현재 위치에서 길찾기를 시작합니다',
+        description: l10n.start_navigation_from_current_location,
       );
 
       setState(() {
@@ -1043,7 +1046,7 @@ Future<void> _setMyLocationAsStartAsync() async {
                 size: 16,
               ),
               const SizedBox(width: 8),
-              const Text('내 위치가 출발지로 자동 설정되었습니다'),
+              Text(l10n.my_location_set_as_start),
             ],
           ),
           backgroundColor: const Color(0xFF10B981),
@@ -1059,16 +1062,16 @@ Future<void> _setMyLocationAsStartAsync() async {
       // 위치 정보가 없으면 기본 위치 사용
       debugPrint('⚠️ 위치 정보가 없어서 기본 위치 사용');
       final defaultLocationBuilding = Building(
-        name: '내 위치',
-        info: '현재 위치에서 출발 (기본 위치)',
+        name: l10n.myLocation,
+        info: l10n.current_location_departure_default,
         lat: 36.338133,
         lng: 127.446423,
-        category: '현재위치',
-        baseStatus: '사용가능',
+        category: l10n.current_location,
+        baseStatus: l10n.available,
         hours: '',
         phone: '',
         imageUrl: '',
-        description: '현재 위치에서 길찾기를 시작합니다',
+        description: l10n.start_navigation_from_current_location,
       );
 
       setState(() {
@@ -1088,7 +1091,7 @@ Future<void> _setMyLocationAsStartAsync() async {
                 size: 16,
               ),
               const SizedBox(width: 8),
-              const Text('기본 위치가 출발지로 설정되었습니다'),
+              Text(l10n.default_location_set_as_start),
             ],
           ),
           backgroundColor: Colors.orange,
@@ -1112,19 +1115,20 @@ void _setMyLocationAsStart() {
     debugPrint('📍 내 위치를 출발지로 자동 설정');
     
     final locationManager = Provider.of<LocationManager>(context, listen: false);
+    final l10n = AppLocalizations.of(context)!;
     
     if (locationManager.hasValidLocation && locationManager.currentLocation != null) {
       final myLocationBuilding = Building(
-        name: '내 위치',
-        info: '현재 위치에서 출발',
+        name: l10n.myLocation,
+        info: l10n.current_location_departure,
         lat: locationManager.currentLocation!.latitude!,
         lng: locationManager.currentLocation!.longitude!,
-        category: '현재위치',
-        baseStatus: '사용가능',
+        category: l10n.current_location,
+        baseStatus: l10n.available,
         hours: '',
         phone: '',
         imageUrl: '',
-        description: '현재 위치에서 길찾기를 시작합니다',
+        description: l10n.start_navigation_from_current_location,
       );
 
       setState(() {
@@ -1151,7 +1155,7 @@ void _setMyLocationAsStart() {
                 size: 16,
               ),
               const SizedBox(width: 8),
-              const Text('내 위치가 출발지로 자동 설정되었습니다'),
+              Text(l10n.my_location_set_as_start),
             ],
           ),
           backgroundColor: const Color(0xFF10B981),
@@ -1167,16 +1171,16 @@ void _setMyLocationAsStart() {
       // 위치 정보가 없으면 기본 위치 사용
       debugPrint('⚠️ 위치 정보가 없어서 기본 위치 사용');
       final defaultLocationBuilding = Building(
-        name: '내 위치',
-        info: '현재 위치에서 출발 (기본 위치)',
+        name: l10n.myLocation,
+        info: l10n.current_location_departure_default,
         lat: 36.338133,
         lng: 127.446423,
-        category: '현재위치',
-        baseStatus: '사용가능',
+        category: l10n.current_location,
+        baseStatus: l10n.available,
         hours: '',
         phone: '',
         imageUrl: '',
-        description: '현재 위치에서 길찾기를 시작합니다',
+        description: l10n.start_navigation_from_current_location,
       );
 
       setState(() {
@@ -1203,7 +1207,7 @@ void _setMyLocationAsStart() {
                 size: 16,
               ),
               const SizedBox(width: 8),
-              const Text('기본 위치가 출발지로 설정되었습니다'),
+              Text(l10n.default_location_set_as_start),
             ],
           ),
           backgroundColor: Colors.orange,
@@ -1223,17 +1227,18 @@ void _setMyLocationAsStart() {
 
   // 🔥 기본 내위치 Building 객체 반환
   Building _getDefaultMyLocation() {
+    final l10n = AppLocalizations.of(context)!;
     return Building(
-      name: '내 위치',
-      info: '현재 위치에서 출발',
+      name: l10n.myLocation,
+      info: l10n.current_location_departure,
       lat: 36.338133, // 기본 위도
       lng: 127.446423, // 기본 경도
-      category: '현재위치',
-      baseStatus: '사용가능',
+      category: l10n.current_location,
+      baseStatus: l10n.available,
       hours: '',
       phone: '',
       imageUrl: '',
-      description: '현재 위치에서 길찾기를 시작합니다',
+      description: l10n.start_navigation_from_current_location,
     );
   }
 
@@ -1335,13 +1340,14 @@ void _proceedWithNavigation() {
     debugPrint('✅ 경로 데이터로 네비게이션 시작');
 
     // 🔥 통합 네비게이션 데이터 구성
+    final l10n = AppLocalizations.of(context)!;
     final unifiedNavigationData = {
       'type': 'unified_navigation',
       'start': _startBuilding,
       'end': _endBuilding,
       'startRoomInfo': _startRoomInfo,
       'endRoomInfo': _endRoomInfo,
-      'useCurrentLocation': _startBuilding!.name == '내 위치',
+      'useCurrentLocation': _startBuilding!.name == l10n.myLocation,
       'estimatedDistance': _estimatedDistance,
       'estimatedTime': _estimatedTime,
       'pathResponse': _previewResponse,
@@ -1467,10 +1473,10 @@ void _handleNavigationFailure() {
     });
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('길찾기가 종료되었습니다'),
+      SnackBar(
+        content: Text(AppLocalizations.of(context)!.navigation_ended),
         backgroundColor: Colors.grey,
-        duration: Duration(seconds: 2),
+        duration: const Duration(seconds: 2),
       ),
     );
   }
@@ -2206,7 +2212,7 @@ void _showBuildingInfoForRoom(SearchResult result) {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  l10n.start_unified_navigation,
+                  l10n.start_navigation,
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -2313,12 +2319,6 @@ void _showBuildingInfoForRoom(SearchResult result) {
                 color: Colors.blue.shade200,
               ),
               _buildSummaryItem(l10n.estimated_time, _estimatedTime),
-              Container(
-                width: 1,
-                height: 30,
-                color: Colors.blue.shade200,
-              ),
-              _buildSummaryItem(l10n.route_type, _getRouteTypeDescription()),
             ],
           ),
         ),
@@ -2517,10 +2517,31 @@ void _showBuildingInfoForRoom(SearchResult result) {
   }
 
   Widget _buildSummaryItem(String label, String value) {
+    final l10n = AppLocalizations.of(context)!;
+    
+    // 🔥 시간 표시를 로컬라이제이션으로 변경
+    String displayValue = value;
+    if (value.contains('분') || value.contains('시간')) {
+      if (value == '1분 이내') {
+        displayValue = l10n.within_minute;
+      } else if (value.contains('분') && !value.contains('시간')) {
+        final minutes = value.replaceAll('분', '');
+        displayValue = l10n.minutes_only(int.parse(minutes));
+      } else if (value.contains('시간') && !value.contains('분')) {
+        final hours = value.replaceAll('시간', '');
+        displayValue = l10n.hours_only(int.parse(hours));
+      } else if (value.contains('시간') && value.contains('분')) {
+        final parts = value.split(' ');
+        final hours = parts[0].replaceAll('시간', '');
+        final minutes = parts[1].replaceAll('분', '');
+        displayValue = l10n.hours_and_minutes(int.parse(hours), int.parse(minutes));
+      }
+    }
+    
     return Column(
       children: [
         Text(
-          value,
+          displayValue,
           style: const TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,
