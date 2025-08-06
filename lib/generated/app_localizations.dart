@@ -895,7 +895,7 @@ abstract class AppLocalizations {
   /// No description provided for @clear_all.
   ///
   /// In en, this message translates to:
-  /// **'Clear All'**
+  /// **'All'**
   String get clear_all;
 
   /// No description provided for @searching.

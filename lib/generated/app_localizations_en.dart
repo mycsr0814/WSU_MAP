@@ -419,7 +419,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get recent_searches => 'Recent Searches';
 
   @override
-  String get clear_all => 'Clear All';
+  String get clear_all => 'All';
 
   @override
   String get searching => 'Searching...';
