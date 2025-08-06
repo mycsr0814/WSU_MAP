@@ -282,7 +282,9 @@ class _CategoryChipsState extends State<CategoryChips> {
 
   Widget _buildCategoryChip(String category) {
     final isSelected = _selectedCategory == category;
-    final icon = CategoryFallbackData.getCategoryIcon(category);
+    // 🔥 카테고리 이름을 영어 ID로 변환하여 아이콘 가져오기
+    final categoryId = _getCategoryId(category);
+    final icon = CategoryFallbackData.getCategoryIcon(categoryId);
 
     return InkWell(
       onTap: () {
@@ -364,5 +366,49 @@ class _CategoryChipsState extends State<CategoryChips> {
         ),
       ),
     );
+  }
+
+  /// 🔥 카테고리 이름을 영어 ID로 변환
+  String _getCategoryId(String categoryName) {
+    // 한국어 카테고리 이름을 영어 ID로 매핑
+    switch (categoryName.toLowerCase().trim()) {
+      case '카페':
+        return 'cafe';
+      case '식당':
+        return 'restaurant';
+      case '편의점':
+        return 'convenience';
+      case '자판기':
+        return 'vending';
+      case '화장실':
+      case '정수기':
+        return 'water';
+      case '프린터':
+        return 'printer';
+      case '복사기':
+        return 'copier';
+      case 'atm':
+      case '은행(atm)':
+        return 'atm';
+      case '의료':
+      case '보건소':
+        return 'medical';
+      case '도서관':
+        return 'library';
+      case '체육관':
+      case '헬스장':
+        return 'gym';
+      case '라운지':
+        return 'lounge';
+      case '소화기':
+        return 'extinguisher';
+      case '서점':
+        return 'bookstore';
+      case '우체국':
+        return 'post';
+      default:
+        // 이미 영어 ID인 경우 그대로 반환
+        return categoryName;
+    }
   }
 }
