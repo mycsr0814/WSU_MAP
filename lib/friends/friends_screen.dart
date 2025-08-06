@@ -309,9 +309,9 @@ class _FriendsScreenState extends State<FriendsScreen>
       backgroundColor: Colors.transparent,
       builder: (ctx) => StatefulBuilder(
         builder: (context, setModalState) => DraggableScrollableSheet(
-          initialChildSize: 0.7,
-          minChildSize: 0.5,
-          maxChildSize: 0.95,
+          initialChildSize: 0.85, // 0.7에서 0.85로 증가
+          minChildSize: 0.6, // 0.5에서 0.6으로 증가
+          maxChildSize: 0.95, // 0.95에서 0.95로 유지
           expand: false,
           builder: (context, scrollController) => Padding(
             padding: EdgeInsets.only(

@@ -49,24 +49,72 @@ class _OutdoorMapPageState extends State<OutdoorMapPage> {
 
                 // 🔥 간단한 점 마커들 (showMarkers가 true일 때만)
                 if (widget.showMarkers) {
-                  // 초록색 출발점
+                  // 파란색 출발점 (화살표 모양)
                   await controller.addOverlay(NCircleOverlay(
                     id: 'start_point',
                     center: widget.path.first,
-                    radius: 8,
-                    color: Colors.green,
+                    radius: 10,
+                    color: const Color(0xFF3B82F6), // 파란색으로 변경
                     outlineColor: Colors.white,
                     outlineWidth: 2,
                   ));
 
-                  // 빨간색 도착점
+                  // 빨간색 도착점 (깃발 모양)
                   await controller.addOverlay(NCircleOverlay(
                     id: 'end_point',
                     center: widget.path.last,
-                    radius: 8,
-                    color: Colors.red,
+                    radius: 12,
+                    color: const Color(0xFFEF4444), // 빨간색 유지
                     outlineColor: Colors.white,
                     outlineWidth: 2,
+                  ));
+
+                  // 출발점 화살표 아이콘 추가
+                  await controller.addOverlay(NMarker(
+                    id: 'start_arrow',
+                    position: widget.path.first,
+                    icon: await NOverlayImage.fromWidget(
+                      context: context,
+                      widget: Container(
+                        width: 20,
+                        height: 20,
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.arrow_forward,
+                          color: Color(0xFF3B82F6),
+                          size: 12,
+                        ),
+                      ),
+                      size: const Size(20, 20),
+                    ),
+                    size: const Size(20, 20),
+                  ));
+
+                  // 도착점 깃발 아이콘 추가
+                  await controller.addOverlay(NMarker(
+                    id: 'end_flag',
+                    position: widget.path.last,
+                    icon: await NOverlayImage.fromWidget(
+                      context: context,
+                      widget: Container(
+                        width: 24,
+                        height: 24,
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.flag,
+                          color: Color(0xFFEF4444),
+                          size: 14,
+                        ),
+                      ),
+                      size: const Size(24, 24),
+                    ),
+                    size: const Size(24, 24),
                   ));
                 }
               }
@@ -115,7 +163,7 @@ class _OutdoorMapPageState extends State<OutdoorMapPage> {
                         width: 12,
                         height: 12,
                         decoration: const BoxDecoration(
-                          color: Colors.green,
+                          color: Color(0xFF3B82F6), // 파란색으로 변경
                           shape: BoxShape.circle,
                         ),
                       ),
@@ -154,7 +202,7 @@ class _OutdoorMapPageState extends State<OutdoorMapPage> {
                         width: 12,
                         height: 12,
                         decoration: const BoxDecoration(
-                          color: Colors.red,
+                          color: Color(0xFFEF4444), // 빨간색 유지
                           shape: BoxShape.circle,
                         ),
                       ),
