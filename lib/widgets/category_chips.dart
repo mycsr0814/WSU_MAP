@@ -30,6 +30,7 @@ class _CategoryChipsState extends State<CategoryChips> {
   double _lastScrollPosition = 0.0;
   bool _isInitialized = false; // 🔥 초기화 완료 플래그 추가
   bool _isDisposed = false; // 🔥 dispose 상태 추적
+  bool _hasTriedServer = false; // 🔥 서버 시도 여부 추적
 
   // 외부에서 카테고리 선택을 위한 메서드
   void selectCategory(String category) {
@@ -67,9 +68,9 @@ class _CategoryChipsState extends State<CategoryChips> {
     });
     debugPrint('✅ CategoryChips 초기화 완료 - fallback 데이터 로드됨: ${_categories.length}개');
     
-    // 🔥 백그라운드에서 서버 데이터 시도 (UI에 영향 없음)
+    // 🔥 백그라운드에서 서버 데이터 시도 (UI에 영향 없음, 한 번만)
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!_isDisposed) {
+      if (!_isDisposed && !_hasTriedServer) {
         _loadCategoriesInBackground();
       }
     });
@@ -98,6 +99,7 @@ class _CategoryChipsState extends State<CategoryChips> {
       setState(() {
         _isLoading = true;
         _useServerData = true;
+        _hasTriedServer = false; // 서버 재시도 허용
       });
       
       // 백그라운드에서 서버 데이터만 시도 (UI에 영향 없음)
@@ -105,9 +107,11 @@ class _CategoryChipsState extends State<CategoryChips> {
     }
   }
 
-  /// 🔥 백그라운드에서 서버 데이터 로드 (UI에 영향 없음)
+  /// 🔥 백그라운드에서 서버 데이터 로드 (UI에 영향 없음, 한 번만)
   Future<void> _loadCategoriesInBackground() async {
-    if (_isDisposed) return; // dispose된 상태에서는 무시
+    if (_isDisposed || _hasTriedServer) return; // 이미 시도했으면 무시
+    
+    _hasTriedServer = true; // 시도 표시
     
     try {
       debugPrint('🔄 백그라운드에서 서버 카테고리 로드 시작...');
@@ -384,18 +388,16 @@ class _CategoryChipsState extends State<CategoryChips> {
       );
     }
 
-    // 🔥 카테고리가 비어있으면 fallback 데이터 사용 (setState로 안전하게 처리)
+    // 🔥 카테고리가 비어있으면 fallback 데이터 사용 (안전하게 처리)
     if (_categories.isEmpty) {
       debugPrint('⚠️ 카테고리가 비어있음, fallback 데이터 사용');
-      // setState 없이 직접 수정하지 않고, 다음 프레임에서 처리
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted && !_isDisposed && _categories.isEmpty) {
-          setState(() {
-            _categories = CategoryFallbackData.getCategories();
-            _isInitialized = true;
-          });
-        }
-      });
+      // 즉시 fallback 데이터로 설정
+      if (!_isDisposed) {
+        setState(() {
+          _categories = CategoryFallbackData.getCategories();
+          _isInitialized = true;
+        });
+      }
       // 임시로 fallback 데이터 반환
       return _buildCategoryList(CategoryFallbackData.getCategories());
     }

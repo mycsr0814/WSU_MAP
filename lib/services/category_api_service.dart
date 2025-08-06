@@ -9,37 +9,45 @@ import '../models/category.dart';
 class CategoryApiService {
   static final String baseUrl = ApiConfig.categoryBase;
 
-  // 🔥 연결 상태 캐시
+  // 🔥 연결 상태 캐시 (더 긴 시간으로 변경)
   static bool? _lastConnectionStatus;
   static DateTime? _lastConnectionCheck;
-  static const Duration _connectionCacheTime = Duration(minutes: 5);
+  static const Duration _connectionCacheTime = Duration(minutes: 10); // 5분 → 10분으로 증가
 
-  // 🔥 카테고리/건물 캐시
+  // 🔥 카테고리/건물 캐시 (더 오래 유지)
   static List<Category>? _cachedCategories;
   static Map<String, List<String>> _cachedBuildingNames = {};
+  static DateTime? _lastCategoryCacheTime;
+  static const Duration _categoryCacheTime = Duration(minutes: 15); // 카테고리 캐시 15분
 
   /// 🔥 카테고리 목록 조회 (메모리 캐시 활용, fallback 지원)
   static Future<List<Category>> getCategories({bool forceRefresh = false}) async {
-    if (!forceRefresh && _cachedCategories != null) {
-      debugPrint('✔️ 캐시된 카테고리 반환');
-      return _cachedCategories!;
+    // 캐시가 유효하고 강제 새로고침이 아닌 경우 캐시 반환
+    if (!forceRefresh && _cachedCategories != null && _lastCategoryCacheTime != null) {
+      final timeDiff = DateTime.now().difference(_lastCategoryCacheTime!);
+      if (timeDiff < _categoryCacheTime) {
+        debugPrint('✔️ 유효한 캐시된 카테고리 반환 (${timeDiff.inMinutes}분 전)');
+        return _cachedCategories!;
+      }
     }
 
     try {
       debugPrint('🔍 getCategories 시작');
 
+      // 연결 상태 확인 (캐시 활용)
       final isConnected = await _checkConnection();
       if (!isConnected) {
         debugPrint('⚠️ 서버 연결 불가, fallback 데이터 사용');
         final fallback = _getFallbackCategories();
         _cachedCategories = fallback;
+        _lastCategoryCacheTime = DateTime.now();
         return fallback;
       }
 
       final response = await http.get(
         Uri.parse(baseUrl),
         headers: {'Content-Type': 'application/json'},
-      ).timeout(const Duration(seconds: 8));
+      ).timeout(const Duration(seconds: 10)); // 타임아웃 증가
 
       debugPrint('🔍 getCategories 응답: ${response.statusCode}');
 
@@ -63,11 +71,13 @@ class CategoryApiService {
           final categories = categoryNames.map((name) => Category(categoryName: name)).toList();
           debugPrint('✅ 서버에서 카테고리 로딩 성공: ${categories.length}개');
           _cachedCategories = categories;
+          _lastCategoryCacheTime = DateTime.now();
           return categories;
         } else {
           debugPrint('⚠️ 서버 응답은 성공했지만 카테고리가 비어있음');
           final fallback = _getFallbackCategories();
           _cachedCategories = fallback;
+          _lastCategoryCacheTime = DateTime.now();
           return fallback;
         }
 
@@ -75,12 +85,14 @@ class CategoryApiService {
         debugPrint('❌ 서버 응답 오류: ${response.statusCode}');
         final fallback = _getFallbackCategories();
         _cachedCategories = fallback;
+        _lastCategoryCacheTime = DateTime.now();
         return fallback;
       }
     } catch (e) {
       debugPrint('🚨 getCategories 에러: $e');
       final fallback = _getFallbackCategories();
       _cachedCategories = fallback;
+      _lastCategoryCacheTime = DateTime.now();
       return fallback;
     }
   }
@@ -250,6 +262,7 @@ class CategoryApiService {
   static void clearCache() {
     _cachedCategories = null;
     _cachedBuildingNames.clear();
+    _lastCategoryCacheTime = null;
     debugPrint('🗑️ 전체 데이터 캐시 비움');
   }
 
