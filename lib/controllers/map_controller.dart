@@ -893,6 +893,7 @@ class MapScreenController extends ChangeNotifier {
 
     _selectedCategory = category;
     _isCategoryLoading = true;
+    // 🔥 카테고리 선택 시에는 UI 업데이트만 (마커 표시 후에 notifyListeners 호출)
     notifyListeners();
 
     _mapService?.saveLastCategorySelection(category, buildingInfoList.map((e) => e['Building_Name'] as String).toList());
@@ -910,6 +911,7 @@ class MapScreenController extends ChangeNotifier {
       await clearCategorySelection();
     } finally {
       _isCategoryLoading = false;
+      // 🔥 마커 표시 완료 후에만 UI 업데이트
       notifyListeners();
     }
   }

@@ -25,10 +25,11 @@ class _CategoryChipsState extends State<CategoryChips> {
   String? _selectedCategory;
   bool _isLoading = false;
   bool _isApiCalling = false;
+  bool _isDisposed = false;
 
   // 외부에서 카테고리 선택을 위한 메서드
   void selectCategory(String category) {
-    if (!mounted) return;
+    if (!mounted || _isDisposed) return;
     
     debugPrint('🎯 selectCategory 호출됨: $category');
     
@@ -51,32 +52,46 @@ class _CategoryChipsState extends State<CategoryChips> {
     // 🔥 즉시 fallback 데이터로 초기화하여 버튼이 사라지지 않도록 함
     _categories = CategoryFallbackData.getCategories();
     
-    // 🔥 백그라운드에서 서버 데이터 시도
+    // 🔥 백그라운드에서 서버 데이터 시도 (지연 실행)
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadCategoriesFromServer();
+      if (mounted && !_isDisposed) {
+        _loadCategoriesFromServer();
+      }
     });
   }
 
   @override
   void didUpdateWidget(CategoryChips oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.selectedCategory != oldWidget.selectedCategory) {
+    if (widget.selectedCategory != oldWidget.selectedCategory && mounted && !_isDisposed) {
       setState(() {
         _selectedCategory = widget.selectedCategory;
       });
     }
   }
 
+  @override
+  void dispose() {
+    _isDisposed = true;
+    super.dispose();
+  }
+
   void refresh() {
-    if (mounted) {
+    if (mounted && !_isDisposed) {
       debugPrint('🔄 카테고리 새로고침');
       _loadCategoriesFromServer();
     }
   }
 
-  /// 🔥 서버에서 카테고리 로드 (백그라운드에서 실행)
+  /// 🔥 서버에서 카테고리 로드 (백그라운드에서 실행) - 안정성 개선
   Future<void> _loadCategoriesFromServer() async {
-    if (!mounted) return;
+    if (!mounted || _isDisposed) return;
+
+    // 이미 로딩 중이면 중복 실행 방지
+    if (_isLoading) {
+      debugPrint('⚠️ 이미 로딩 중이므로 서버 요청 건너뜀');
+      return;
+    }
 
     setState(() {
       _isLoading = true;
@@ -92,7 +107,7 @@ class _CategoryChipsState extends State<CategoryChips> {
           .toSet()
           .toList();
 
-      if (categoryNames.isNotEmpty && mounted) {
+      if (categoryNames.isNotEmpty && mounted && !_isDisposed) {
         debugPrint('✅ 서버에서 카테고리 로딩 성공: ${categoryNames.length}개');
         setState(() {
           _categories = categoryNames;
@@ -100,7 +115,7 @@ class _CategoryChipsState extends State<CategoryChips> {
         });
       } else {
         debugPrint('⚠️ 서버에서 빈 카테고리 목록 반환, fallback 유지');
-        if (mounted) {
+        if (mounted && !_isDisposed) {
           setState(() {
             _isLoading = false;
           });
@@ -108,7 +123,7 @@ class _CategoryChipsState extends State<CategoryChips> {
       }
     } catch (e) {
       debugPrint('❌ 서버 카테고리 로딩 실패: $e, fallback 유지');
-      if (mounted) {
+      if (mounted && !_isDisposed) {
         setState(() {
           _isLoading = false;
         });
@@ -119,15 +134,17 @@ class _CategoryChipsState extends State<CategoryChips> {
   void _onCategoryTap(String? category) async {
     debugPrint('🎯 카테고리 탭: $category');
 
-    if (_isApiCalling || !mounted) {
+    if (_isApiCalling || !mounted || _isDisposed) {
       debugPrint('⚠️ API 호출 중이거나 위젯이 dispose됨');
       return;
     }
 
     if (category == null) {
-      setState(() {
-        _selectedCategory = null;
-      });
+      if (mounted && !_isDisposed) {
+        setState(() {
+          _selectedCategory = null;
+        });
+      }
       widget.onCategorySelected('', []);
       return;
     }
@@ -135,18 +152,22 @@ class _CategoryChipsState extends State<CategoryChips> {
     if (_selectedCategory == category) {
       // 같은 카테고리를 다시 누르면 선택 해제
       debugPrint('🎯 같은 카테고리 재선택 → 해제: $category');
-      setState(() {
-        _selectedCategory = null;
-      });
+      if (mounted && !_isDisposed) {
+        setState(() {
+          _selectedCategory = null;
+        });
+      }
       widget.onCategorySelected('', []);
       return;
     }
 
     _isApiCalling = true;
 
-    setState(() {
-      _selectedCategory = category;
-    });
+    if (mounted && !_isDisposed) {
+      setState(() {
+        _selectedCategory = category;
+      });
+    }
 
     try {
       debugPrint('📡 카테고리 선택: $category');
@@ -156,12 +177,12 @@ class _CategoryChipsState extends State<CategoryChips> {
 
       debugPrint('📡 카테고리 선택 완료: $category, 건물 수: ${buildingInfoList.length}');
 
-      if (mounted) {
+      if (mounted && !_isDisposed) {
         widget.onCategorySelected(category, buildingInfoList);
       }
     } catch (e) {
       debugPrint('❌ 카테고리 선택 오류: $e');
-      if (mounted) {
+      if (mounted && !_isDisposed) {
         setState(() {
           _selectedCategory = null;
         });
@@ -192,6 +213,9 @@ class _CategoryChipsState extends State<CategoryChips> {
 
   @override
   Widget build(BuildContext context) {
+    // 🔥 카테고리가 비어있으면 fallback 데이터 사용
+    final displayCategories = _categories.isNotEmpty ? _categories : CategoryFallbackData.getCategories();
+    
     return Container(
       height: 40,
       margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -243,10 +267,10 @@ class _CategoryChipsState extends State<CategoryChips> {
           Expanded(
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
-              itemCount: _categories.length,
+              itemCount: displayCategories.length,
               separatorBuilder: (context, index) => const SizedBox(width: 6),
               itemBuilder: (context, index) {
-                final category = _categories[index];
+                final category = displayCategories[index];
                 return _buildCategoryChip(category);
               },
             ),
@@ -262,7 +286,7 @@ class _CategoryChipsState extends State<CategoryChips> {
 
     return InkWell(
       onTap: () {
-        if (mounted) {
+        if (mounted && !_isDisposed) {
           _onCategoryTap(category);
         }
       },
