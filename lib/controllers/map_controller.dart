@@ -1045,49 +1045,71 @@ class MapScreenController extends ChangeNotifier {
     }
   }
 
-  /// 기존 _getCategoryIcon 메서드는 그대로 유지
+  /// 🔥 향상된 카테고리 아이콘 가져오기 - 더 정확한 매칭
   IconData _getCategoryIcon(String category) {
     debugPrint('==== [카테고리 아이콘 함수 진입] 넘어온 category: "$category"');
-    switch (category) {
+    
+    // 카테고리 이름 정규화 (소문자 변환 및 공백 제거)
+    final normalizedCategory = category.toLowerCase().trim();
+    
+    switch (normalizedCategory) {
+      // 한국어 카테고리
       case '카페':
+      case 'cafe':
         return Icons.local_cafe;
       case '식당':
+      case 'restaurant':
         return Icons.restaurant;
       case '편의점':
+      case 'convenience':
         return Icons.store;
       case '자판기':
+      case 'vending':
         return Icons.local_drink;
       case '화장실':
+      case 'water':
         return Icons.wc;
       case '프린터':
+      case 'printer':
         return Icons.print;
       case '복사기':
+      case 'copier':
         return Icons.content_copy;
-      case 'ATM':
+      case 'atm':
       case '은행(atm)':
         return Icons.atm;
       case '의료':
+      case 'medical':
+        return Icons.local_hospital;
       case '보건소':
+      case 'health_center':
         return Icons.local_hospital;
       case '도서관':
+      case 'library':
         return Icons.local_library;
       case '체육관':
+      case 'gym':
+        return Icons.fitness_center;
       case '헬스장':
         return Icons.fitness_center;
       case '주차장':
         return Icons.local_parking;
       case '라운지':
+      case 'lounge':
         return Icons.weekend;
       case '소화기':
+      case 'extinguisher':
         return Icons.fire_extinguisher;
       case '정수기':
         return Icons.water_drop;
       case '서점':
+      case 'bookstore':
         return Icons.menu_book;
       case '우체국':
       case 'post_office':
         return Icons.local_post_office;
       default:
+        debugPrint('⚠️ 알 수 없는 카테고리: "$category" -> 기본 아이콘 사용');
         return Icons.category;
     }
   }

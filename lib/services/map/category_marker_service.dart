@@ -44,14 +44,18 @@ class CategoryMarkerService {
 
   /// 카테고리 아이콘 마커 표시 (항상 기존 마커 완전 제거 후 추가)
   Future<void> showCategoryIconMarkers(List<CategoryMarkerData> categoryData, BuildContext context) async {
-    if (!_iconsPreGenerated) {
-      debugPrint('❌ 마커 아이콘이 사전 생성되지 않음. preGenerateMarkerIcons() 먼저 호출 필요');
-      return;
-    }
+    debugPrint('🎯 카테고리 아이콘 마커 표시 시작: ${categoryData.length}개');
+    
     // 1. 기존 카테고리 마커 완전 제거
     await clearCategoryMarkers();
 
-    // 2. 새 마커 추가
+    // 2. 아이콘이 사전 생성되지 않았다면 동적으로 생성
+    if (!_iconsPreGenerated) {
+      debugPrint('⚠️ 아이콘이 사전 생성되지 않음 - 동적 생성 시도');
+      await _generateIconsDynamically(context, categoryData);
+    }
+
+    // 3. 새 마커 추가
     for (final data in categoryData) {
       try {
         final iconImage = _getPreGeneratedIcon(data.category);
@@ -81,13 +85,45 @@ class CategoryMarkerService {
         if (_mapController != null) {
           await _mapController!.addOverlay(marker);
           _categoryMarkers.add(marker);
-          debugPrint('✅ 카테고리 마커 추가 완료: ${data.buildingName}');
+          debugPrint('✅ 카테고리 마커 추가 완료: ${data.buildingName} (${data.category})');
         }
       } catch (e) {
         debugPrint('❌ 개별 카테고리 마커 생성 실패: ${data.buildingName} - $e');
       }
     }
     debugPrint('✅ 카테고리 아이콘 마커 표시 완료: ${_categoryMarkers.length}개');
+  }
+
+  /// 🔥 동적 아이콘 생성 (사전 생성 실패 시 대안)
+  Future<void> _generateIconsDynamically(BuildContext context, List<CategoryMarkerData> categoryData) async {
+    try {
+      debugPrint('🔄 동적 아이콘 생성 시작...');
+      
+      // 현재 카테고리들만 동적으로 생성
+      final categories = categoryData.map((data) => data.category).toSet().toList();
+      
+      for (final category in categories) {
+        if (!_preGeneratedIcons.containsKey(category)) {
+          try {
+            final iconImage = await CategoryMarkerWidget.generateSingleMarkerIcon(context, category);
+            if (iconImage != null) {
+              _preGeneratedIcons[category] = iconImage;
+              debugPrint('✅ 동적 아이콘 생성 성공: $category');
+            }
+          } catch (e) {
+            debugPrint('❌ 동적 아이콘 생성 실패: $category - $e');
+            // 기본 아이콘 사용
+            _preGeneratedIcons[category] = const NOverlayImage.fromAssetImage('lib/asset/building_marker_blue.png');
+          }
+        }
+      }
+      
+      _iconsPreGenerated = true;
+      debugPrint('✅ 동적 아이콘 생성 완료: ${_preGeneratedIcons.length}개');
+    } catch (e) {
+      debugPrint('❌ 동적 아이콘 생성 실패: $e');
+      _iconsPreGenerated = false;
+    }
   }
 
   /// 사전 생성된 아이콘 가져오기
