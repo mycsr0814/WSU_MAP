@@ -1116,49 +1116,49 @@ class AppLocalizationsKo extends AppLocalizations {
   String get delete_account_success => '계정이 성공적으로 삭제되었습니다';
 
   @override
-  String get convenience_store => 'Convenience Store';
+  String get convenience_store => '편의점';
 
   @override
-  String get vending_machine => 'Vending Machine';
+  String get vending_machine => '자판기';
 
   @override
-  String get printer => 'Printer';
+  String get printer => '프린터';
 
   @override
-  String get copier => 'Copier';
+  String get copier => '복사기';
 
   @override
   String get atm => 'ATM';
 
   @override
-  String get bank_atm => 'Bank(ATM)';
+  String get bank_atm => '은행(ATM)';
 
   @override
-  String get medical => 'Medical';
+  String get medical => '의료';
 
   @override
-  String get health_center => 'Health Center';
+  String get health_center => '보건소';
 
   @override
-  String get gym => 'Gym';
+  String get gym => '체육관';
 
   @override
-  String get fitness_center => 'Fitness Center';
+  String get fitness_center => '헬스장';
 
   @override
-  String get lounge => 'Lounge';
+  String get lounge => '라운지';
 
   @override
-  String get extinguisher => 'Extinguisher';
+  String get extinguisher => '소화기';
 
   @override
-  String get water_purifier => 'Water Purifier';
+  String get water_purifier => '정수기';
 
   @override
-  String get bookstore => 'Bookstore';
+  String get bookstore => '서점';
 
   @override
-  String get post_office => 'Post Office';
+  String get post_office => '우체국';
 
   @override
   String instructionMoveToDestination(String place) {

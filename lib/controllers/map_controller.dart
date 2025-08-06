@@ -1,8 +1,6 @@
 // lib/controllers/map_controller.dart - 로그아웃 후 재로그인 마커 문제 해결 완전 버전
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
 import 'package:flutter_application_1/controllers/location_controllers.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:location/location.dart' as loc;
@@ -15,8 +13,7 @@ import 'package:flutter_application_1/services/map/friend_location_marker_servic
 import 'package:flutter_application_1/friends/friend.dart';
 import 'package:flutter_application_1/core/result.dart';
 import 'package:flutter_application_1/friends/friends_controller.dart';
-import 'package:flutter_application_1/generated/app_localizations.dart';
-
+import 'package:flutter_application_1/data/category_fallback_data.dart';
 
 class MapScreenController extends ChangeNotifier {
   MapService? _mapService;
@@ -170,9 +167,7 @@ class MapScreenController extends ChangeNotifier {
       _buildingRepository.addDataChangeListener(_onBuildingDataChanged);
 
       // 병렬 초기화 - 서버 연결 테스트 제거
-      await Future.wait([
-        _mapService!.loadMarkerIcons(),
-      ], eagerError: false);
+      await Future.wait([_mapService!.loadMarkerIcons()], eagerError: false);
 
       debugPrint('✅ MapController 초기화 완료 (학교 중심)');
     } catch (e) {
@@ -391,10 +386,12 @@ class MapScreenController extends ChangeNotifier {
   }
 
   /// 🔥 모든 친구 위치 표시
-  Future<void> showAllFriendLocations(FriendsController friendsController) async {
+  Future<void> showAllFriendLocations(
+    FriendsController friendsController,
+  ) async {
     try {
       debugPrint('=== 모든 친구 위치 표시 시작 ===');
-      
+
       // 1. 지도 컨트롤러 확인
       final mapController = _mapService?.getController();
       if (mapController == null) {
@@ -402,20 +399,16 @@ class MapScreenController extends ChangeNotifier {
         throw Exception('지도가 아직 준비되지 않았습니다');
       }
 
-      // 2. FriendsController는 인자로 받음
-      if (friendsController == null) {
-        debugPrint('❌ FriendsController를 찾을 수 없음');
-        throw Exception('친구 데이터에 접근할 수 없습니다');
-      }
-
       // 3. 친구 데이터 강제 새로고침
       debugPrint('친구 데이터 새로고침 중...');
       await friendsController.loadAll();
-      
+
       // 4. 친구 목록 확인
       debugPrint('친구 목록 확인: ${friendsController.friends.length}명');
       for (final friend in friendsController.friends) {
-        debugPrint('친구: ${friend.userName}, 온라인: ${friend.isLogin}, 위치: ${friend.lastLocation}');
+        debugPrint(
+          '친구: ${friend.userName}, 온라인: ${friend.isLogin}, 위치: ${friend.lastLocation}',
+        );
       }
 
       // 5. 기존 친구 마커들 모두 제거
@@ -430,7 +423,7 @@ class MapScreenController extends ChangeNotifier {
       int locationSharedCount = 0;
       List<String> offlineFriends = [];
       List<String> noLocationShareFriends = [];
-      
+
       for (final friend in friendsController.friends) {
         if (friend.isLogin) {
           onlineCount++;
@@ -438,7 +431,9 @@ class MapScreenController extends ChangeNotifier {
             // 🔥 위치 공유 상태 확인
             if (friend.isLocationPublic) {
               try {
-                await _friendLocationMarkerService.addFriendLocationMarker(friend);
+                await _friendLocationMarkerService.addFriendLocationMarker(
+                  friend,
+                );
                 addedCount++;
                 debugPrint('✅ 친구 위치 마커 추가: ${friend.userName}');
               } catch (e) {
@@ -465,16 +460,16 @@ class MapScreenController extends ChangeNotifier {
 
       // 7. UI 업데이트
       notifyListeners();
-      
+
       // 8. 결과 메시지 표시
       if (_currentContext != null) {
         String message;
         Color backgroundColor;
         IconData icon;
-        
+
         if (friendsController.friends.isEmpty) {
           // 친구가 없는 경우
-          message = AppLocalizations.of(_currentContext!)!.no_friends_message;
+          message = '친구가 없습니다.\n친구를 추가한 후 다시 시도해주세요.';
           backgroundColor = const Color(0xFF6B7280); // 회색 (정보)
           icon = Icons.info;
         } else if (offlineCount > 0 || locationSharedCount > 0) {
@@ -483,34 +478,38 @@ class MapScreenController extends ChangeNotifier {
             // 위치를 표시할 수 있는 친구가 있는 경우
             String detailMessage = '';
             if (offlineCount > 0 && locationSharedCount > 0) {
-              detailMessage = AppLocalizations.of(_currentContext!)!.both_offline_and_location_denied(offlineCount, locationSharedCount);
+              detailMessage =
+                  '\n오프라인 친구 $offlineCount명, 위치 공유 미허용 친구 $locationSharedCount명은 표시되지 않습니다.';
             } else if (offlineCount > 0) {
-              detailMessage = AppLocalizations.of(_currentContext!)!.offline_friends_not_displayed(offlineCount);
+              detailMessage = '\n오프라인 친구 $offlineCount명은 표시되지 않습니다.';
             } else if (locationSharedCount > 0) {
-              detailMessage = AppLocalizations.of(_currentContext!)!.location_denied_friends_not_displayed(locationSharedCount);
+              detailMessage =
+                  '\n위치 공유 미허용 친구 $locationSharedCount명은 표시되지 않습니다.';
             }
-            message = AppLocalizations.of(_currentContext!)!.friends_location_displayed(addedCount) + detailMessage;
+            message = '친구 $addedCount명의 위치를 표시했습니다.$detailMessage';
             backgroundColor = const Color(0xFFF59E0B); // 주황색 (경고)
             icon = Icons.warning;
           } else {
             // 모든 친구가 오프라인이거나 위치 공유를 허용하지 않는 경우
             if (offlineCount > 0 && locationSharedCount > 0) {
-              message = AppLocalizations.of(_currentContext!)!.all_friends_offline_or_location_denied;
+              message =
+                  '모든 친구가 오프라인이거나 위치 공유를 허용하지 않습니다.\n친구가 온라인에 접속하고 위치 공유를 허용하면 위치를 확인할 수 있습니다.';
             } else if (offlineCount > 0) {
-              message = AppLocalizations.of(_currentContext!)!.all_friends_offline;
+              message = '모든 친구가 오프라인 상태입니다.\n친구가 온라인에 접속하면 위치를 확인할 수 있습니다.';
             } else {
-              message = AppLocalizations.of(_currentContext!)!.all_friends_location_denied;
+              message =
+                  '모든 친구가 위치 공유를 허용하지 않습니다.\n친구가 위치 공유를 허용하면 위치를 확인할 수 있습니다.';
             }
             backgroundColor = const Color(0xFFEF4444); // 빨간색 (오류)
             icon = Icons.offline_bolt;
           }
         } else {
           // 모든 친구가 온라인이고 위치 공유를 허용하는 경우
-          message = AppLocalizations.of(_currentContext!)!.friends_location_display_success(addedCount);
+          message = '친구 $addedCount명의 위치를 지도에 표시했습니다.';
           backgroundColor = const Color(0xFF10B981); // 초록색 (성공)
           icon = Icons.people;
         }
-        
+
         ScaffoldMessenger.of(_currentContext!).showSnackBar(
           SnackBar(
             content: Row(
@@ -536,7 +535,7 @@ class MapScreenController extends ChangeNotifier {
             duration: const Duration(seconds: 4),
           ),
         );
-        
+
         // 오프라인 친구가 있는 경우 추가 다이얼로그 표시
         if (offlineCount > 0 && addedCount == 0) {
           // 모든 친구가 오프라인인 경우에만 다이얼로그 표시
@@ -566,9 +565,12 @@ class MapScreenController extends ChangeNotifier {
   }
 
   /// 🔥 오프라인 친구 다이얼로그 표시
-  void _showOfflineFriendsDialog(List<String> offlineFriends, int offlineCount) {
+  void _showOfflineFriendsDialog(
+    List<String> offlineFriends,
+    int offlineCount,
+  ) {
     if (_currentContext == null) return;
-    
+
     showDialog(
       context: _currentContext!,
       builder: (BuildContext context) {
@@ -620,7 +622,7 @@ class MapScreenController extends ChangeNotifier {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              AppLocalizations.of(context)!.offline_friends_dialog_title,
+                              '오프라인 친구',
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.w600,
@@ -629,7 +631,7 @@ class MapScreenController extends ChangeNotifier {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              AppLocalizations.of(context)!.offline_friends_dialog_subtitle(offlineCount),
+                              '현재 접속하지 않은 친구 $offlineCount명',
                               style: TextStyle(
                                 fontSize: 14,
                                 color: Colors.grey[600],
@@ -646,7 +648,10 @@ class MapScreenController extends ChangeNotifier {
                   constraints: BoxConstraints(
                     maxHeight: MediaQuery.of(context).size.height * 0.3,
                   ),
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 16,
+                  ),
                   child: SingleChildScrollView(
                     child: Column(
                       children: offlineFriends.map((friendName) {
@@ -677,13 +682,16 @@ class MapScreenController extends ChangeNotifier {
                                 ),
                               ),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
                                 decoration: BoxDecoration(
                                   color: Colors.grey[300],
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Text(
-                                  AppLocalizations.of(context)!.offline,
+                                  '오프라인',
                                   style: TextStyle(
                                     fontSize: 10,
                                     color: Colors.grey[600],
@@ -701,7 +709,10 @@ class MapScreenController extends ChangeNotifier {
                 // 확인 버튼
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 16,
+                  ),
                   child: ElevatedButton(
                     onPressed: () => Navigator.of(context).pop(),
                     style: ElevatedButton.styleFrom(
@@ -712,7 +723,7 @@ class MapScreenController extends ChangeNotifier {
                       ),
                     ),
                     child: Text(
-                      AppLocalizations.of(context)!.confirm,
+                      '확인',
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 16,
@@ -893,13 +904,16 @@ class MapScreenController extends ChangeNotifier {
 
     _selectedCategory = category;
     _isCategoryLoading = true;
-    // 🔥 카테고리 선택 시에는 UI 업데이트 제한 (마커 표시 완료 후에만)
+    notifyListeners();
 
-    _mapService?.saveLastCategorySelection(category, buildingInfoList.map((e) => e['Building_Name'] as String).toList());
+    _mapService?.saveLastCategorySelection(
+      category,
+      buildingInfoList.map((e) => e['Building_Name'] as String).toList(),
+    );
 
     try {
       debugPrint('기존 건물 마커들 숨기기...');
-      _hideAllBuildingMarkers(); // 반드시 빌딩 마커 숨기기
+      await _hideAllBuildingMarkers(); // 반드시 빌딩 마커 숨기기
 
       debugPrint('카테고리 아이콘 마커들 표시...');
       await _showCategoryIconMarkers(buildingInfoList, category, context);
@@ -910,7 +924,6 @@ class MapScreenController extends ChangeNotifier {
       await clearCategorySelection();
     } finally {
       _isCategoryLoading = false;
-      // 🔥 마커 표시 완료 후에만 UI 업데이트
       notifyListeners();
     }
   }
@@ -947,7 +960,9 @@ class MapScreenController extends ChangeNotifier {
 
     for (final info in buildingInfoList) {
       final buildingName = info['Building_Name'] as String? ?? '';
-      final floors = (info['Floor_Numbers'] as List<dynamic>? ?? []).map((e) => e.toString()).toList();
+      final floors = (info['Floor_Numbers'] as List<dynamic>? ?? [])
+          .map((e) => e.toString())
+          .toList();
       debugPrint('🔍 건물 검색 중: "$buildingName" (floors: $floors)');
       final building = _findBuildingByName(buildingName, allBuildings);
       if (building != null) {
@@ -962,8 +977,9 @@ class MapScreenController extends ChangeNotifier {
             floors: floors,
           ),
         );
-        debugPrint('✅ 카테고리 마커 추가: ${building.name} - $category 아이콘, floors: $floors');
-        debugPrint('🔍 CategoryMarkerData 생성 - category: $category, buildingName: ${building.name}');
+        debugPrint(
+          '✅ 카테고리 마커 추가: ${building.name} - $category 아이콘, floors: $floors',
+        );
       }
     }
 
@@ -979,7 +995,10 @@ class MapScreenController extends ChangeNotifier {
     }
 
     debugPrint('📍 카테고리 마커 표시 시작...');
-    await _mapService?.showCategoryIconMarkers(categoryMarkerLocations, context);
+    await _mapService?.showCategoryIconMarkers(
+      categoryMarkerLocations,
+      context,
+    );
 
     debugPrint('✅ 카테고리 아이콘 마커 표시 완료: ${categoryMarkerLocations.length}개');
     debugPrint('🔍 === 카테고리 매칭 디버깅 끝 ===');
@@ -1037,81 +1056,78 @@ class MapScreenController extends ChangeNotifier {
           [];
 
       if (savedBuildingNames.isNotEmpty) {
-        final infoList = savedBuildingNames.map((name) => {'Building_Name': name, 'Floor_Numbers': <String>[]}).toList();
+        final infoList = savedBuildingNames
+            .map((name) => {'Building_Name': name, 'Floor_Numbers': <String>[]})
+            .toList();
         Future.microtask(
-          () =>
-              _showCategoryIconMarkers(infoList, _selectedCategory!, _currentContext!),
+          () => _showCategoryIconMarkers(
+            infoList,
+            _selectedCategory!,
+            _currentContext!,
+          ),
         );
       }
     }
   }
 
-  /// 🔥 향상된 카테고리 아이콘 가져오기 - 더 정확한 매칭
+  /// 카테고리 아이콘 반환 - CategoryFallbackData 사용
   IconData _getCategoryIcon(String category) {
     debugPrint('==== [카테고리 아이콘 함수 진입] 넘어온 category: "$category"');
-    
-    // 카테고리 이름 정규화 (소문자 변환 및 공백 제거)
-    final normalizedCategory = category.toLowerCase().trim();
-    
-    switch (normalizedCategory) {
-      // 한국어 카테고리
+
+    // 한국어 카테고리 이름을 영어 ID로 변환
+    String categoryId = _convertToEnglishId(category);
+    debugPrint('==== 변환된 categoryId: "$categoryId"');
+
+    // CategoryFallbackData에서 아이콘 가져오기
+    final iconData = CategoryFallbackData.getCategoryIcon(categoryId);
+    debugPrint('==== 반환된 아이콘: $iconData');
+
+    return iconData;
+  }
+
+  /// 한국어 카테고리 이름을 영어 ID로 변환
+  String _convertToEnglishId(String koreanCategory) {
+    switch (koreanCategory) {
       case '카페':
-      case 'cafe':
-        return Icons.local_cafe;
+        return 'cafe';
       case '식당':
-      case 'restaurant':
-        return Icons.restaurant;
+        return 'restaurant';
       case '편의점':
-      case 'convenience':
-        return Icons.store;
+        return 'convenience';
       case '자판기':
-      case 'vending':
-        return Icons.local_drink;
+        return 'vending';
       case '화장실':
-      case 'water':
-        return Icons.wc;
+        return 'wc';
       case '프린터':
-      case 'printer':
-        return Icons.print;
+        return 'printer';
       case '복사기':
-      case 'copier':
-        return Icons.content_copy;
-      case 'atm':
+        return 'copier';
+      case 'ATM':
       case '은행(atm)':
-        return Icons.atm;
+        return 'atm';
       case '의료':
-      case 'medical':
-        return Icons.local_hospital;
       case '보건소':
-      case 'health_center':
-        return Icons.local_hospital;
+        return 'medical';
       case '도서관':
-      case 'library':
-        return Icons.local_library;
+        return 'library';
       case '체육관':
-      case 'gym':
-        return Icons.fitness_center;
       case '헬스장':
-        return Icons.fitness_center;
+        return 'fitness';
       case '주차장':
-        return Icons.local_parking;
+        return 'parking';
       case '라운지':
-      case 'lounge':
-        return Icons.weekend;
+        return 'lounge';
       case '소화기':
-      case 'extinguisher':
-        return Icons.fire_extinguisher;
+        return 'extinguisher';
       case '정수기':
-        return Icons.water_drop;
+        return 'water';
       case '서점':
-      case 'bookstore':
-        return Icons.menu_book;
+        return 'bookstore';
       case '우체국':
       case 'post_office':
-        return Icons.local_post_office;
+        return 'post';
       default:
-        debugPrint('⚠️ 알 수 없는 카테고리: "$category" -> 기본 아이콘 사용');
-        return Icons.category;
+        return koreanCategory.toLowerCase();
     }
   }
 
@@ -1130,21 +1146,24 @@ class MapScreenController extends ChangeNotifier {
     }
     _selectedCategory = null;
     _isCategoryLoading = false;
+
     debugPrint('모든 건물 마커 다시 표시 시작...');
-    _showAllBuildingMarkers(); // 해제 시에만 빌딩 마커 다시 보이기
+
+    // 1. 건물 마커 다시 표시
+    await _showAllBuildingMarkers();
+
     debugPrint('✅ 카테고리 선택 해제 완료');
-    // 🔥 UI 업데이트는 한 번만
-    notifyListeners();
+    notifyListeners(); // UI 업데이트를 위해 다시 추가
   }
 
   /// 🔥 모든 건물 마커 다시 표시
-  void _showAllBuildingMarkers() {
-    _mapService?.showAllBuildingMarkers();
+  Future<void> _showAllBuildingMarkers() async {
+    await _mapService?.showAllBuildingMarkers();
   }
 
   /// 🔥 모든 건물 마커 숨기기
-  void _hideAllBuildingMarkers() {
-    _mapService?.hideAllBuildingMarkers();
+  Future<void> _hideAllBuildingMarkers() async {
+    await _mapService?.clearAllBuildingMarkers();
   }
 
   /// 위치 업데이트 리스너 (단순화됨)
@@ -1159,7 +1178,9 @@ class MapScreenController extends ChangeNotifier {
     // 🔥 현재 선택된 카테고리가 있으면 재매칭
     if (_selectedCategory != null && _selectedCategory == category) {
       debugPrint('🔁 서버 데이터 도착 후 카테고리 재매칭: $_selectedCategory');
-      final infoList = buildingNames.map((name) => {'Building_Name': name, 'Floor_Numbers': <String>[]}).toList();
+      final infoList = buildingNames
+          .map((name) => {'Building_Name': name, 'Floor_Numbers': <String>[]})
+          .toList();
       _showCategoryIconMarkers(infoList, category, _currentContext!);
     }
   }
@@ -1176,7 +1197,7 @@ class MapScreenController extends ChangeNotifier {
   void selectBuilding(Building building) async {
     _selectedBuilding = building;
     notifyListeners();
-    
+
     // 🔥 해당 건물의 마커를 찾아서 하이라이트
     try {
       final marker = _mapService?.findMarkerForBuilding(building);

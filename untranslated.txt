@@ -1,21 +1,6 @@
 {
   "ko": [
     "cafeteria",
-    "convenience_store",
-    "vending_machine",
-    "printer",
-    "copier",
-    "atm",
-    "bank_atm",
-    "medical",
-    "health_center",
-    "gym",
-    "fitness_center",
-    "lounge",
-    "extinguisher",
-    "water_purifier",
-    "bookstore",
-    "post_office",
     "educational_facility",
     "operating"
   ],

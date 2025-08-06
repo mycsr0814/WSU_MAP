@@ -507,7 +507,6 @@ class WebSocketService {
     }
 
     debugPrint('👥 온라인 사용자 목록 업데이트: ${onlineUsers.length}명');
-    debugPrint('온라인 사용자: $onlineUsers');
 
     // 온라인 사용자 스트림으로 전달
     _onlineUsersController.add(onlineUsers);
@@ -546,51 +545,28 @@ class WebSocketService {
 
   // 📤 메시지 전송 (연결 상태 체크 포함)
   void _sendMessage(Map<String, dynamic> message) {
-    debugPrint('📤 메시지 전송 시도: ${message['type']}');
-    debugPrint('📤 연결 상태: $_isConnected');
-    debugPrint('📤 채널 상태: ${_channel != null}');
-    debugPrint('📤 채널 준비 상태: ${_channel?.ready}');
-    debugPrint('📤 메시지 내용: $message');
-
     if (_isConnected && _channel != null) {
       try {
         final jsonMessage = jsonEncode(message);
-        debugPrint('📤 JSON 메시지: $jsonMessage');
-        debugPrint('📤 채널 sink 상태: ${_channel!.sink}');
-
         _channel!.sink.add(jsonMessage);
         debugPrint('✅ 메시지 전송 성공: ${message['type']}');
       } catch (e) {
         debugPrint('❌ 메시지 전송 실패: $e');
-        debugPrint('❌ 오류 타입: ${e.runtimeType}');
-        debugPrint('❌ 오류 상세: ${e.toString()}');
       }
     } else {
       debugPrint('⚠️ 웹소켓 연결되지 않음 - 메시지 전송 실패');
-      debugPrint('⚠️ isConnected: $_isConnected');
-      debugPrint('⚠️ channel: ${_channel != null}');
-      debugPrint('⚠️ channel ready: ${_channel?.ready}');
     }
   }
 
   // 📤 메시지 직접 전송 (연결 상태 체크 없음)
   void _sendMessageDirectly(Map<String, dynamic> message) {
-    debugPrint('📤 메시지 직접 전송 시도: ${message['type']}');
-    debugPrint('📤 채널 상태: ${_channel != null}');
-    debugPrint('📤 메시지 내용: $message');
-
     if (_channel != null) {
       try {
         final jsonMessage = jsonEncode(message);
-        debugPrint('📤 JSON 메시지: $jsonMessage');
-        debugPrint('📤 채널 sink 상태: ${_channel!.sink}');
-
         _channel!.sink.add(jsonMessage);
         debugPrint('✅ 메시지 직접 전송 성공: ${message['type']}');
       } catch (e) {
         debugPrint('❌ 메시지 직접 전송 실패: $e');
-        debugPrint('❌ 오류 타입: ${e.runtimeType}');
-        debugPrint('❌ 오류 상세: ${e.toString()}');
       }
     } else {
       debugPrint('⚠️ 채널이 없음 - 메시지 직접 전송 실패');
@@ -680,7 +656,7 @@ class WebSocketService {
     _reconnectTimer?.cancel();
 
     await _subscription?.cancel();
-    await _channel?.sink.close(status.goingAway);
+    await _channel?.sink.close(status.normalClosure);
 
     _subscription = null;
     _channel = null;
@@ -699,13 +675,7 @@ class WebSocketService {
 
   // 🔍 연결 상태 테스트 메서드
   void testConnection() {
-    debugPrint('🔍 웹소켓 연결 상태 테스트');
-    debugPrint('🔍 isConnected: $_isConnected');
-    debugPrint('🔍 isConnecting: $_isConnecting');
-    debugPrint('🔍 hasChannel: ${_channel != null}');
-    debugPrint('🔍 hasSubscription: ${_subscription != null}');
-    debugPrint('🔍 userId: $_userId');
-    debugPrint('🔍 connectionInfo: $connectionInfo');
+    debugPrint('🔍 웹소켓 연결 상태: $_isConnected');
 
     if (_isConnected && _channel != null) {
       debugPrint('✅ 웹소켓 연결됨 - 테스트 메시지 전송');

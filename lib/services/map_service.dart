@@ -55,7 +55,8 @@ class MapService {
   bool get buildingMarkersVisible =>
       _buildingMarkerService.buildingMarkersVisible;
   List<NMarker> get buildingMarkers => _buildingMarkerService.buildingMarkers;
-  NMarker? findMarkerForBuilding(Building building) => _buildingMarkerService.findMarkerForBuilding(building);
+  NMarker? findMarkerForBuilding(Building building) =>
+      _buildingMarkerService.findMarkerForBuilding(building);
 
   // 🔥 4. 메서드들
 
@@ -196,6 +197,10 @@ class MapService {
 
   Future<void> clearBuildingMarkers() async {
     await _buildingMarkerService.clearBuildingMarkers();
+  }
+
+  Future<void> clearAllBuildingMarkers() async {
+    await _buildingMarkerService.clearAllMarkers();
   }
 
   Future<void> hideAllBuildingMarkers() async {
