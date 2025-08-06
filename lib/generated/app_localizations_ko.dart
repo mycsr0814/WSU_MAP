@@ -1609,4 +1609,137 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get set_room => '방 설정하기';
+
+  @override
+  String friend_location_permission_denied(String name) {
+    return '$name님이 위치 공유를 허용하지 않았습니다.';
+  }
+
+  @override
+  String get friend_location_display_error => '친구 위치를 표시할 수 없습니다.';
+
+  @override
+  String get friend_location_remove_error => '위치를 제거할 수 없습니다.';
+
+  @override
+  String get phone_app_error => '전화앱을 열 수 없습니다.';
+
+  @override
+  String get add_friend_error => '친구 추가 중 오류가 발생했습니다';
+
+  @override
+  String get user_not_found => '존재하지 않는 사용자입니다';
+
+  @override
+  String get already_friend => '이미 친구인 사용자입니다';
+
+  @override
+  String get already_requested => '이미 친구 요청을 보낸 사용자입니다';
+
+  @override
+  String get cannot_add_self => '자기 자신을 친구로 추가할 수 없습니다';
+
+  @override
+  String get invalid_user_id => '잘못된 사용자 ID입니다';
+
+  @override
+  String get server_error_retry => '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요';
+
+  @override
+  String get cancel_request_description => '보낸 친구 요청을 취소합니다';
+
+  @override
+  String get enter_id_prompt => '아이디를 입력하세요';
+
+  @override
+  String get friend_request_sent_success => '친구 요청이 성공적으로 전송되었습니다';
+
+  @override
+  String get available_user_list => '사용 가능한 사용자 목록:';
+
+  @override
+  String get refresh_user_list => '사용자 목록 새로고침';
+
+  @override
+  String get already_adding_friend => '이미 친구 추가 중입니다. 중복 제출 방지';
+
+  @override
+  String get no_friends_message => '친구가 없습니다.\n친구를 추가한 후 다시 시도해주세요.';
+
+  @override
+  String friends_location_displayed(int count) {
+    return '친구 $count명의 위치를 표시했습니다.';
+  }
+
+  @override
+  String offline_friends_not_displayed(int count) {
+    return '\n오프라인 친구 $count명은 표시되지 않습니다.';
+  }
+
+  @override
+  String location_denied_friends_not_displayed(int count) {
+    return '\n위치 공유 미허용 친구 $count명은 표시되지 않습니다.';
+  }
+
+  @override
+  String both_offline_and_location_denied(int offlineCount, int locationCount) {
+    return '\n오프라인 친구 $offlineCount명, 위치 공유 미허용 친구 $locationCount명은 표시되지 않습니다.';
+  }
+
+  @override
+  String get all_friends_offline_or_location_denied =>
+      '모든 친구가 오프라인이거나 위치 공유를 허용하지 않습니다.\n친구가 온라인에 접속하고 위치 공유를 허용하면 위치를 확인할 수 있습니다.';
+
+  @override
+  String get all_friends_offline =>
+      '모든 친구가 오프라인 상태입니다.\n친구가 온라인에 접속하면 위치를 확인할 수 있습니다.';
+
+  @override
+  String get all_friends_location_denied =>
+      '모든 친구가 위치 공유를 허용하지 않습니다.\n친구가 위치 공유를 허용하면 위치를 확인할 수 있습니다.';
+
+  @override
+  String friends_location_display_success(int count) {
+    return '친구 $count명의 위치를 지도에 표시했습니다.';
+  }
+
+  @override
+  String friends_location_display_error(String error) {
+    return '친구 위치를 표시할 수 없습니다: $error';
+  }
+
+  @override
+  String get offline_friends_dialog_title => '오프라인 친구';
+
+  @override
+  String offline_friends_dialog_subtitle(int count) {
+    return '현재 접속하지 않은 친구 $count명';
+  }
+
+  @override
+  String friendRequestCancelled(String name) {
+    return '$name님에게 보낸 친구 요청을 취소했습니다.';
+  }
+
+  @override
+  String get friendRequestCancelError => '친구 요청 취소 중 오류가 발생했습니다.';
+
+  @override
+  String friendRequestAccepted(String name) {
+    return '$name님의 친구 요청을 수락했습니다.';
+  }
+
+  @override
+  String get friendRequestAcceptError => '친구 요청 수락 중 오류가 발생했습니다.';
+
+  @override
+  String friendRequestRejected(String name) {
+    return '$name님의 친구 요청을 거절했습니다.';
+  }
+
+  @override
+  String get friendRequestRejectError => '친구 요청 거절 중 오류가 발생했습니다.';
+
+  @override
+  String get friendLocationRemovedFromMap => '친구 위치를 지도에서 제거했습니다.';
 }

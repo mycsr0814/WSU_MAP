@@ -7,6 +7,7 @@ import 'package:flutter_application_1/friends/friends_controller.dart';
 import 'package:flutter_application_1/friends/friends_screen.dart';
 import 'package:flutter_application_1/friends/friends_dialogs.dart';
 import 'package:flutter_application_1/friends/friends_tiles.dart';
+import 'package:flutter_application_1/friends/friend.dart';
 import 'package:flutter_application_1/generated/app_localizations.dart';
 import 'package:flutter_application_1/services/auth_service.dart';
 
@@ -70,7 +71,7 @@ class FriendsTabs {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    '사용 가능한 사용자 목록:',
+                    AppLocalizations.of(context)!.available_user_list,
                     style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
@@ -80,7 +81,7 @@ class FriendsTabs {
                   IconButton(
                     icon: const Icon(Icons.refresh, size: 16),
                     onPressed: onRefreshUserList,
-                    tooltip: '사용자 목록 새로고침',
+                    tooltip: AppLocalizations.of(context)!.refresh_user_list,
                   ),
                 ],
               ),
@@ -146,7 +147,7 @@ class FriendsTabs {
     StateSetter setModalState,
     ScrollController scrollController,
     FriendsController controller,
-    VoidCallback onCancelRequest,
+    Function(SentFriendRequest) onCancelRequest,
   ) {
     return ListView(
       controller: scrollController,
@@ -216,7 +217,7 @@ class FriendsTabs {
             (request) => FriendsTiles.buildSentRequestTile(
               context,
               request,
-              () => onCancelRequest(),
+              () => onCancelRequest(request),
             ),
           ),
       ],
@@ -229,8 +230,8 @@ class FriendsTabs {
     StateSetter setModalState,
     ScrollController scrollController,
     FriendsController controller,
-    VoidCallback onAcceptRequest,
-    VoidCallback onRejectRequest,
+    Function(FriendRequest) onAcceptRequest,
+    Function(FriendRequest) onRejectRequest,
   ) {
     return ListView(
       controller: scrollController,
@@ -308,8 +309,8 @@ class FriendsTabs {
             (request) => FriendsTiles.buildReceivedRequestTile(
               context,
               request,
-              onAcceptRequest,
-              onRejectRequest,
+              () => onAcceptRequest(request),
+              () => onRejectRequest(request),
             ),
           ),
       ],

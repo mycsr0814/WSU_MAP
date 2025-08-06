@@ -53,15 +53,18 @@ class _CategoryChipsState extends State<CategoryChips> {
   void initState() {
     super.initState();
     _selectedCategory = widget.selectedCategory;
+    
     // 🔥 즉시 fallback 데이터로 초기화하여 버튼이 사라지지 않도록 함
     _categories = CategoryFallbackData.getCategories();
     _isLoading = false;
     _useServerData = false;
     _isInitialized = true;
-    debugPrint('✅ CategoryChips 초기화 완료 - fallback 데이터 로드됨');
+    debugPrint('✅ CategoryChips 초기화 완료 - fallback 데이터 로드됨: ${_categories.length}개');
     
-    // 🔥 백그라운드에서 서버 데이터 시도
-    _loadCategoriesInBackground();
+    // 🔥 백그라운드에서 서버 데이터 시도 (UI에 영향 없음)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadCategoriesInBackground();
+    });
   }
 
   @override
@@ -330,6 +333,13 @@ class _CategoryChipsState extends State<CategoryChips> {
           ),
         ),
       );
+    }
+
+    // 🔥 카테고리가 비어있으면 fallback 데이터 사용
+    if (_categories.isEmpty) {
+      debugPrint('⚠️ 카테고리가 비어있음, fallback 데이터 사용');
+      _categories = CategoryFallbackData.getCategories();
+      _isInitialized = true;
     }
 
     return Container(

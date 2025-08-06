@@ -689,5 +689,122 @@
   "inquiry_category_bug": "Bug Report",
   "inquiry_category_feature": "Feature Request",
   "inquiry_category_route_error": "Route Guidance Error",
-  "inquiry_category_other": "Other Inquiry"
+  "inquiry_category_other": "Other Inquiry",
+  "friend_location_permission_denied": "{name} has not allowed location sharing.",
+  "@friend_location_permission_denied": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "friend_location_display_error": "Cannot display friend location.",
+  "friend_location_remove_error": "Cannot remove location.",
+  "phone_app_error": "Cannot open phone app.",
+  "add_friend_error": "Error occurred while adding friend",
+  "user_not_found": "User not found",
+  "already_friend": "User is already a friend",
+  "already_requested": "Friend request already sent to this user",
+  "cannot_add_self": "Cannot add yourself as a friend",
+  "invalid_user_id": "Invalid user ID",
+  "server_error_retry": "Server error occurred. Please try again later",
+  "cancel_request_description": "Cancel sent friend request",
+  "enter_id_prompt": "Please enter ID",
+  "friend_request_sent_success": "Friend request sent successfully",
+  "available_user_list": "Available user list:",
+  "refresh_user_list": "Refresh user list",
+  "already_adding_friend": "Already adding friend. Preventing duplicate submission",
+  "no_friends_message": "You have no friends.\nPlease add friends and try again.",
+  "friends_location_displayed": "Displayed location of {count} friends.",
+  "@friends_location_displayed": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "offline_friends_not_displayed": "\n{count} offline friends are not displayed.",
+  "@offline_friends_not_displayed": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "location_denied_friends_not_displayed": "\n{count} friends who denied location sharing are not displayed.",
+  "@location_denied_friends_not_displayed": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "both_offline_and_location_denied": "\n{offlineCount} offline friends and {locationCount} friends who denied location sharing are not displayed.",
+  "@both_offline_and_location_denied": {
+    "placeholders": {
+      "offlineCount": {
+        "type": "int"
+      },
+      "locationCount": {
+        "type": "int"
+      }
+    }
+  },
+  "all_friends_offline_or_location_denied": "All friends are offline or have denied location sharing.\nYou can check their location when they come online and allow location sharing.",
+  "all_friends_offline": "All friends are offline.\nYou can check their location when they come online.",
+  "all_friends_location_denied": "All friends have denied location sharing.\nYou can check their location when they allow location sharing.",
+  "friends_location_display_success": "Displayed location of {count} friends on the map.",
+  "@friends_location_display_success": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "friends_location_display_error": "Cannot display friend locations: {error}",
+  "@friends_location_display_error": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "offline_friends_dialog_title": "Offline Friends",
+  "offline_friends_dialog_subtitle": "{count} friends currently offline",
+  "@offline_friends_dialog_subtitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "offline": "Offline",
+  "friendRequestCancelled": "Cancelled friend request sent to {name}.",
+  "@friendRequestCancelled": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "friendRequestCancelError": "Error occurred while cancelling friend request.",
+  "friendRequestAccepted": "Accepted friend request from {name}.",
+  "@friendRequestAccepted": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "friendRequestAcceptError": "Error occurred while accepting friend request.",
+  "friendRequestRejected": "Rejected friend request from {name}.",
+  "@friendRequestRejected": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "friendRequestRejectError": "Error occurred while rejecting friend request.",
+  "friendLocationRemovedFromMap": "Friend locations have been removed from the map."
 }

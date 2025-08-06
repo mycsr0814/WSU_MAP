@@ -1619,4 +1619,136 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get set_room => '设置房间';
+
+  @override
+  String friend_location_permission_denied(String name) {
+    return '$name未允许位置共享。';
+  }
+
+  @override
+  String get friend_location_display_error => '无法显示好友位置。';
+
+  @override
+  String get friend_location_remove_error => '无法移除位置。';
+
+  @override
+  String get phone_app_error => '无法打开电话应用。';
+
+  @override
+  String get add_friend_error => '添加好友时发生错误';
+
+  @override
+  String get user_not_found => '用户不存在';
+
+  @override
+  String get already_friend => '用户已经是好友';
+
+  @override
+  String get already_requested => '已向该用户发送好友请求';
+
+  @override
+  String get cannot_add_self => '无法将自己添加为好友';
+
+  @override
+  String get invalid_user_id => '无效的用户ID';
+
+  @override
+  String get server_error_retry => '服务器错误，请稍后重试';
+
+  @override
+  String get cancel_request_description => '取消已发送的好友请求';
+
+  @override
+  String get enter_id_prompt => '请输入ID';
+
+  @override
+  String get friend_request_sent_success => '好友请求发送成功';
+
+  @override
+  String get available_user_list => '可用用户列表:';
+
+  @override
+  String get refresh_user_list => '刷新用户列表';
+
+  @override
+  String get already_adding_friend => '正在添加好友，防止重复提交';
+
+  @override
+  String get no_friends_message => '您还没有好友。\n请添加好友后重试。';
+
+  @override
+  String friends_location_displayed(int count) {
+    return '显示了 $count 位好友的位置。';
+  }
+
+  @override
+  String offline_friends_not_displayed(int count) {
+    return '\n$count 位离线好友未显示。';
+  }
+
+  @override
+  String location_denied_friends_not_displayed(int count) {
+    return '\n$count 位拒绝位置共享的好友未显示。';
+  }
+
+  @override
+  String both_offline_and_location_denied(int offlineCount, int locationCount) {
+    return '\n$offlineCount 位离线好友和 $locationCount 位拒绝位置共享的好友未显示。';
+  }
+
+  @override
+  String get all_friends_offline_or_location_denied =>
+      '所有好友都离线或拒绝位置共享。\n当好友上线并允许位置共享时，您可以查看他们的位置。';
+
+  @override
+  String get all_friends_offline => '所有好友都离线。\n当好友上线时，您可以查看他们的位置。';
+
+  @override
+  String get all_friends_location_denied =>
+      '所有好友都拒绝位置共享。\n当好友允许位置共享时，您可以查看他们的位置。';
+
+  @override
+  String friends_location_display_success(int count) {
+    return '在地图上显示了 $count 位好友的位置。';
+  }
+
+  @override
+  String friends_location_display_error(String error) {
+    return '无法显示好友位置: $error';
+  }
+
+  @override
+  String get offline_friends_dialog_title => '离线好友';
+
+  @override
+  String offline_friends_dialog_subtitle(int count) {
+    return '当前离线的 $count 位好友';
+  }
+
+  @override
+  String friendRequestCancelled(String name) {
+    return '已取消发送给 $name 的好友请求。';
+  }
+
+  @override
+  String get friendRequestCancelError => '取消好友请求时发生错误。';
+
+  @override
+  String friendRequestAccepted(String name) {
+    return '已接受 $name 的好友请求。';
+  }
+
+  @override
+  String get friendRequestAcceptError => '接受好友请求时发生错误。';
+
+  @override
+  String friendRequestRejected(String name) {
+    return '已拒绝 $name 的好友请求。';
+  }
+
+  @override
+  String get friendRequestRejectError => '拒绝好友请求时发生错误。';
+
+  @override
+  String get friendLocationRemovedFromMap => '已从地图中移除好友位置。';
 }

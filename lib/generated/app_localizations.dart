@@ -3171,6 +3171,222 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Set Room'**
   String get set_room;
+
+  /// No description provided for @friend_location_permission_denied.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} has not allowed location sharing.'**
+  String friend_location_permission_denied(String name);
+
+  /// No description provided for @friend_location_display_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Cannot display friend location.'**
+  String get friend_location_display_error;
+
+  /// No description provided for @friend_location_remove_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Cannot remove location.'**
+  String get friend_location_remove_error;
+
+  /// No description provided for @phone_app_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Cannot open phone app.'**
+  String get phone_app_error;
+
+  /// No description provided for @add_friend_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Error occurred while adding friend'**
+  String get add_friend_error;
+
+  /// No description provided for @user_not_found.
+  ///
+  /// In en, this message translates to:
+  /// **'User not found'**
+  String get user_not_found;
+
+  /// No description provided for @already_friend.
+  ///
+  /// In en, this message translates to:
+  /// **'User is already a friend'**
+  String get already_friend;
+
+  /// No description provided for @already_requested.
+  ///
+  /// In en, this message translates to:
+  /// **'Friend request already sent to this user'**
+  String get already_requested;
+
+  /// No description provided for @cannot_add_self.
+  ///
+  /// In en, this message translates to:
+  /// **'Cannot add yourself as a friend'**
+  String get cannot_add_self;
+
+  /// No description provided for @invalid_user_id.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid user ID'**
+  String get invalid_user_id;
+
+  /// No description provided for @server_error_retry.
+  ///
+  /// In en, this message translates to:
+  /// **'Server error occurred. Please try again later'**
+  String get server_error_retry;
+
+  /// No description provided for @cancel_request_description.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel sent friend request'**
+  String get cancel_request_description;
+
+  /// No description provided for @enter_id_prompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter ID'**
+  String get enter_id_prompt;
+
+  /// No description provided for @friend_request_sent_success.
+  ///
+  /// In en, this message translates to:
+  /// **'Friend request sent successfully'**
+  String get friend_request_sent_success;
+
+  /// No description provided for @available_user_list.
+  ///
+  /// In en, this message translates to:
+  /// **'Available user list:'**
+  String get available_user_list;
+
+  /// No description provided for @refresh_user_list.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh user list'**
+  String get refresh_user_list;
+
+  /// No description provided for @already_adding_friend.
+  ///
+  /// In en, this message translates to:
+  /// **'Already adding friend. Preventing duplicate submission'**
+  String get already_adding_friend;
+
+  /// No description provided for @no_friends_message.
+  ///
+  /// In en, this message translates to:
+  /// **'You have no friends.\nPlease add friends and try again.'**
+  String get no_friends_message;
+
+  /// No description provided for @friends_location_displayed.
+  ///
+  /// In en, this message translates to:
+  /// **'Displayed location of {count} friends.'**
+  String friends_location_displayed(int count);
+
+  /// No description provided for @offline_friends_not_displayed.
+  ///
+  /// In en, this message translates to:
+  /// **'\n{count} offline friends are not displayed.'**
+  String offline_friends_not_displayed(int count);
+
+  /// No description provided for @location_denied_friends_not_displayed.
+  ///
+  /// In en, this message translates to:
+  /// **'\n{count} friends who denied location sharing are not displayed.'**
+  String location_denied_friends_not_displayed(int count);
+
+  /// No description provided for @both_offline_and_location_denied.
+  ///
+  /// In en, this message translates to:
+  /// **'\n{offlineCount} offline friends and {locationCount} friends who denied location sharing are not displayed.'**
+  String both_offline_and_location_denied(int offlineCount, int locationCount);
+
+  /// No description provided for @all_friends_offline_or_location_denied.
+  ///
+  /// In en, this message translates to:
+  /// **'All friends are offline or have denied location sharing.\nYou can check their location when they come online and allow location sharing.'**
+  String get all_friends_offline_or_location_denied;
+
+  /// No description provided for @all_friends_offline.
+  ///
+  /// In en, this message translates to:
+  /// **'All friends are offline.\nYou can check their location when they come online.'**
+  String get all_friends_offline;
+
+  /// No description provided for @all_friends_location_denied.
+  ///
+  /// In en, this message translates to:
+  /// **'All friends have denied location sharing.\nYou can check their location when they allow location sharing.'**
+  String get all_friends_location_denied;
+
+  /// No description provided for @friends_location_display_success.
+  ///
+  /// In en, this message translates to:
+  /// **'Displayed location of {count} friends on the map.'**
+  String friends_location_display_success(int count);
+
+  /// No description provided for @friends_location_display_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Cannot display friend locations: {error}'**
+  String friends_location_display_error(String error);
+
+  /// No description provided for @offline_friends_dialog_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline Friends'**
+  String get offline_friends_dialog_title;
+
+  /// No description provided for @offline_friends_dialog_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} friends currently offline'**
+  String offline_friends_dialog_subtitle(int count);
+
+  /// No description provided for @friendRequestCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancelled friend request sent to {name}.'**
+  String friendRequestCancelled(String name);
+
+  /// No description provided for @friendRequestCancelError.
+  ///
+  /// In en, this message translates to:
+  /// **'Error occurred while cancelling friend request.'**
+  String get friendRequestCancelError;
+
+  /// No description provided for @friendRequestAccepted.
+  ///
+  /// In en, this message translates to:
+  /// **'Accepted friend request from {name}.'**
+  String friendRequestAccepted(String name);
+
+  /// No description provided for @friendRequestAcceptError.
+  ///
+  /// In en, this message translates to:
+  /// **'Error occurred while accepting friend request.'**
+  String get friendRequestAcceptError;
+
+  /// No description provided for @friendRequestRejected.
+  ///
+  /// In en, this message translates to:
+  /// **'Rejected friend request from {name}.'**
+  String friendRequestRejected(String name);
+
+  /// No description provided for @friendRequestRejectError.
+  ///
+  /// In en, this message translates to:
+  /// **'Error occurred while rejecting friend request.'**
+  String get friendRequestRejectError;
+
+  /// No description provided for @friendLocationRemovedFromMap.
+  ///
+  /// In en, this message translates to:
+  /// **'Friend locations have been removed from the map.'**
+  String get friendLocationRemovedFromMap;
 }
 
 class _AppLocalizationsDelegate

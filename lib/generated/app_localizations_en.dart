@@ -1641,4 +1641,144 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get set_room => 'Set Room';
+
+  @override
+  String friend_location_permission_denied(String name) {
+    return '$name has not allowed location sharing.';
+  }
+
+  @override
+  String get friend_location_display_error => 'Cannot display friend location.';
+
+  @override
+  String get friend_location_remove_error => 'Cannot remove location.';
+
+  @override
+  String get phone_app_error => 'Cannot open phone app.';
+
+  @override
+  String get add_friend_error => 'Error occurred while adding friend';
+
+  @override
+  String get user_not_found => 'User not found';
+
+  @override
+  String get already_friend => 'User is already a friend';
+
+  @override
+  String get already_requested => 'Friend request already sent to this user';
+
+  @override
+  String get cannot_add_self => 'Cannot add yourself as a friend';
+
+  @override
+  String get invalid_user_id => 'Invalid user ID';
+
+  @override
+  String get server_error_retry =>
+      'Server error occurred. Please try again later';
+
+  @override
+  String get cancel_request_description => 'Cancel sent friend request';
+
+  @override
+  String get enter_id_prompt => 'Please enter ID';
+
+  @override
+  String get friend_request_sent_success => 'Friend request sent successfully';
+
+  @override
+  String get available_user_list => 'Available user list:';
+
+  @override
+  String get refresh_user_list => 'Refresh user list';
+
+  @override
+  String get already_adding_friend =>
+      'Already adding friend. Preventing duplicate submission';
+
+  @override
+  String get no_friends_message =>
+      'You have no friends.\nPlease add friends and try again.';
+
+  @override
+  String friends_location_displayed(int count) {
+    return 'Displayed location of $count friends.';
+  }
+
+  @override
+  String offline_friends_not_displayed(int count) {
+    return '\n$count offline friends are not displayed.';
+  }
+
+  @override
+  String location_denied_friends_not_displayed(int count) {
+    return '\n$count friends who denied location sharing are not displayed.';
+  }
+
+  @override
+  String both_offline_and_location_denied(int offlineCount, int locationCount) {
+    return '\n$offlineCount offline friends and $locationCount friends who denied location sharing are not displayed.';
+  }
+
+  @override
+  String get all_friends_offline_or_location_denied =>
+      'All friends are offline or have denied location sharing.\nYou can check their location when they come online and allow location sharing.';
+
+  @override
+  String get all_friends_offline =>
+      'All friends are offline.\nYou can check their location when they come online.';
+
+  @override
+  String get all_friends_location_denied =>
+      'All friends have denied location sharing.\nYou can check their location when they allow location sharing.';
+
+  @override
+  String friends_location_display_success(int count) {
+    return 'Displayed location of $count friends on the map.';
+  }
+
+  @override
+  String friends_location_display_error(String error) {
+    return 'Cannot display friend locations: $error';
+  }
+
+  @override
+  String get offline_friends_dialog_title => 'Offline Friends';
+
+  @override
+  String offline_friends_dialog_subtitle(int count) {
+    return '$count friends currently offline';
+  }
+
+  @override
+  String friendRequestCancelled(String name) {
+    return 'Cancelled friend request sent to $name.';
+  }
+
+  @override
+  String get friendRequestCancelError =>
+      'Error occurred while cancelling friend request.';
+
+  @override
+  String friendRequestAccepted(String name) {
+    return 'Accepted friend request from $name.';
+  }
+
+  @override
+  String get friendRequestAcceptError =>
+      'Error occurred while accepting friend request.';
+
+  @override
+  String friendRequestRejected(String name) {
+    return 'Rejected friend request from $name.';
+  }
+
+  @override
+  String get friendRequestRejectError =>
+      'Error occurred while rejecting friend request.';
+
+  @override
+  String get friendLocationRemovedFromMap =>
+      'Friend locations have been removed from the map.';
 }

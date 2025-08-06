@@ -508,5 +508,122 @@
   "inquiry_category_bug": "错误报告",
   "inquiry_category_feature": "功能建议",
   "inquiry_category_route_error": "路线指导错误",
-  "inquiry_category_other": "其他咨询"
+  "inquiry_category_other": "其他咨询",
+  "friend_location_permission_denied": "{name}未允许位置共享。",
+  "@friend_location_permission_denied": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "friend_location_display_error": "无法显示好友位置。",
+  "friend_location_remove_error": "无法移除位置。",
+  "phone_app_error": "无法打开电话应用。",
+  "add_friend_error": "添加好友时发生错误",
+  "user_not_found": "用户不存在",
+  "already_friend": "用户已经是好友",
+  "already_requested": "已向该用户发送好友请求",
+  "cannot_add_self": "无法将自己添加为好友",
+  "invalid_user_id": "无效的用户ID",
+  "server_error_retry": "服务器错误，请稍后重试",
+  "cancel_request_description": "取消已发送的好友请求",
+  "enter_id_prompt": "请输入ID",
+  "friend_request_sent_success": "好友请求发送成功",
+  "available_user_list": "可用用户列表:",
+  "refresh_user_list": "刷新用户列表",
+  "already_adding_friend": "正在添加好友，防止重复提交",
+  "no_friends_message": "您还没有好友。\n请添加好友后重试。",
+  "friends_location_displayed": "显示了 {count} 位好友的位置。",
+  "@friends_location_displayed": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "offline_friends_not_displayed": "\n{count} 位离线好友未显示。",
+  "@offline_friends_not_displayed": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "location_denied_friends_not_displayed": "\n{count} 位拒绝位置共享的好友未显示。",
+  "@location_denied_friends_not_displayed": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "both_offline_and_location_denied": "\n{offlineCount} 位离线好友和 {locationCount} 位拒绝位置共享的好友未显示。",
+  "@both_offline_and_location_denied": {
+    "placeholders": {
+      "offlineCount": {
+        "type": "int"
+      },
+      "locationCount": {
+        "type": "int"
+      }
+    }
+  },
+  "all_friends_offline_or_location_denied": "所有好友都离线或拒绝位置共享。\n当好友上线并允许位置共享时，您可以查看他们的位置。",
+  "all_friends_offline": "所有好友都离线。\n当好友上线时，您可以查看他们的位置。",
+  "all_friends_location_denied": "所有好友都拒绝位置共享。\n当好友允许位置共享时，您可以查看他们的位置。",
+  "friends_location_display_success": "在地图上显示了 {count} 位好友的位置。",
+  "@friends_location_display_success": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "friends_location_display_error": "无法显示好友位置: {error}",
+  "@friends_location_display_error": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "offline_friends_dialog_title": "离线好友",
+  "offline_friends_dialog_subtitle": "当前离线的 {count} 位好友",
+  "@offline_friends_dialog_subtitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "offline": "离线",
+  "friendRequestCancelled": "已取消发送给 {name} 的好友请求。",
+  "@friendRequestCancelled": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "friendRequestCancelError": "取消好友请求时发生错误。",
+  "friendRequestAccepted": "已接受 {name} 的好友请求。",
+  "@friendRequestAccepted": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "friendRequestAcceptError": "接受好友请求时发生错误。",
+  "friendRequestRejected": "已拒绝 {name} 的好友请求。",
+  "@friendRequestRejected": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "friendRequestRejectError": "拒绝好友请求时发生错误。",
+  "friendLocationRemovedFromMap": "已从地图中移除好友位置。"
 }
