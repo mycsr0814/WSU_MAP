@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/services/category_api_service.dart';
 import 'package:flutter_application_1/data/category_fallback_data.dart';
 import 'package:flutter_application_1/utils/CategoryLocalization.dart';
 
@@ -21,11 +20,27 @@ class CategoryChips extends StatefulWidget {
 }
 
 class _CategoryChipsState extends State<CategoryChips> {
-  List<String> _categories = [];
   String? _selectedCategory;
-  bool _isLoading = false;
-  bool _isApiCalling = false;
-  final ScrollController _scrollController = ScrollController();
+
+  // 🔥 고정된 카테고리 목록 (서버 요청 없이)
+  final List<String> _categories = [
+    'cafe',
+    'restaurant', 
+    'convenience',
+    'vending',
+    'water',
+    'printer',
+    'copier',
+    'atm',
+    'extinguisher',
+    'library',
+    'bookstore',
+    'gym',
+    'post_office',
+    'medical',
+    'health_center',
+    'lounge',
+  ];
 
   // 외부에서 카테고리 선택을 위한 메서드
   void selectCategory(String category) {
@@ -48,7 +63,6 @@ class _CategoryChipsState extends State<CategoryChips> {
   void initState() {
     super.initState();
     _selectedCategory = widget.selectedCategory;
-    _loadCategories();
   }
 
   @override
@@ -61,82 +75,13 @@ class _CategoryChipsState extends State<CategoryChips> {
     }
   }
 
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    super.dispose();
-  }
-
   void refresh() {
-    if (mounted) {
-      debugPrint('🔄 카테고리 새로고침 시작');
-      _loadCategories();
-    }
-  }
-
-  /// 카테고리 로드 (간단한 구조)
-  Future<void> _loadCategories() async {
-    if (!mounted) return;
-
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      debugPrint('🔄 카테고리 로드 시작...');
-      
-      // 먼저 fallback 데이터로 초기화
-      _categories = CategoryFallbackData.getCategories();
-      
-      // 서버에서 데이터 가져오기 시도
-      try {
-        final categories = await CategoryApiService.getCategories();
-        final categoryNames = categories
-            .map((category) => category.categoryName)
-            .where((name) => name.isNotEmpty)
-            .toSet()
-            .toList();
-
-        if (categoryNames.isNotEmpty && mounted) {
-          debugPrint('✅ 서버에서 카테고리 로딩 성공: ${categoryNames.length}개');
-          setState(() {
-            _categories = categoryNames;
-            _isLoading = false;
-          });
-        } else {
-          debugPrint('⚠️ 서버에서 빈 카테고리 목록 반환, fallback 유지');
-          if (mounted) {
-            setState(() {
-              _isLoading = false;
-            });
-          }
-        }
-      } catch (e) {
-        debugPrint('❌ 서버 카테고리 로딩 실패: $e');
-        debugPrint('🔄 fallback 데이터 유지');
-        if (mounted) {
-          setState(() {
-            _isLoading = false;
-          });
-        }
-      }
-    } catch (e) {
-      debugPrint('❌ 카테고리 로드 중 오류: $e');
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
+    // 🔥 새로고침 기능 제거 (고정된 버튼이므로 불필요)
+    debugPrint('🔄 새로고침 호출됨 (고정된 카테고리이므로 무시)');
   }
 
   void _onCategoryTap(String? category) async {
     debugPrint('🎯 카테고리 탭: $category');
-
-    if (_isApiCalling || !mounted) {
-      debugPrint('⚠️ API 호출 중이거나 위젯이 dispose됨');
-      return;
-    }
 
     if (category == null) {
       setState(() {
@@ -156,8 +101,6 @@ class _CategoryChipsState extends State<CategoryChips> {
       return;
     }
 
-    _isApiCalling = true;
-
     setState(() {
       _selectedCategory = category;
     });
@@ -165,8 +108,8 @@ class _CategoryChipsState extends State<CategoryChips> {
     try {
       debugPrint('📡 카테고리 선택: $category');
 
-      // 🔥 카테고리 선택 시 해당 카테고리의 건물 정보 가져오기
-      final buildingInfoList = await _getCategoryBuildingInfoList(category);
+      // 🔥 고정된 건물 정보 사용 (서버 요청 없이)
+      final buildingInfoList = _getFixedBuildingInfoList(category);
 
       debugPrint('📡 카테고리 선택 완료: $category, 건물 수: ${buildingInfoList.length}');
 
@@ -181,17 +124,15 @@ class _CategoryChipsState extends State<CategoryChips> {
         });
         widget.onCategorySelected('', []);
       }
-    } finally {
-      _isApiCalling = false;
     }
   }
 
-  /// 🔥 카테고리별 건물 정보 가져오기
-  Future<List<Map<String, dynamic>>> _getCategoryBuildingInfoList(String category) async {
+  /// 🔥 고정된 건물 정보 반환 (서버 요청 없이)
+  List<Map<String, dynamic>> _getFixedBuildingInfoList(String category) {
     try {
-      debugPrint('🔍 카테고리 건물 정보 조회: $category');
+      debugPrint('🔍 고정된 건물 정보 조회: $category');
       
-      final buildingNames = await CategoryApiService.getCategoryBuildingNames(category);
+      final buildingNames = CategoryFallbackData.getBuildingsByCategory(category);
       debugPrint('🏢 건물 목록: $buildingNames');
       
       return buildingNames.map((name) => {
@@ -204,178 +145,19 @@ class _CategoryChipsState extends State<CategoryChips> {
     }
   }
 
-  // 🔥 더 이상 사용하지 않는 메서드 제거
-  // Future<List<Map<String, dynamic>>> _getCategoryBuildingInfoList(String category) async {
-  //   try {
-  //     final buildingNames = await CategoryApiService.getCategoryBuildingNames(category);
-  //     return buildingNames.map((name) => {
-  //       'Building_Name': name,
-  //       'Floor_Numbers': <String>[],
-  //     }).toList();
-  //   } catch (e) {
-  //     debugPrint('❌ 건물 정보 가져오기 실패: $e');
-  //     return [];
-  //   }
-  // }
-
   @override
   Widget build(BuildContext context) {
-    if (_categories.isEmpty) {
-      return Container(
-        height: 40,
-        margin: const EdgeInsets.symmetric(horizontal: 16),
-        child: Center(
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Colors.orange.shade50,
-                  Colors.orange.shade100,
-                ],
-              ),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: Colors.orange.shade200,
-                width: 1,
-              ),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: Colors.orange.shade100,
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Icon(
-                    Icons.warning_amber_rounded,
-                    color: Colors.orange.shade600,
-                    size: 14,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  '카테고리 로딩 중...',
-                  style: TextStyle(
-                    color: Colors.orange.shade700,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                _buildRetryButton(),
-              ],
-            ),
-          ),
-        ),
-      );
-    }
-
     return Container(
       height: 40,
       margin: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
-        children: [
-          // 로딩 인디케이터
-          if (_isLoading)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              margin: const EdgeInsets.only(bottom: 4),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    const Color(0xFF1E3A8A).withValues(alpha: 0.1),
-                    const Color(0xFF3B82F6).withValues(alpha: 0.05),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                  color: const Color(0xFF1E3A8A).withValues(alpha: 0.2),
-                  width: 1,
-                ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const SizedBox(
-                    width: 14,
-                    height: 14,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF1E3A8A)),
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    '카테고리 업데이트 중...',
-                    style: TextStyle(
-                      color: const Color(0xFF1E3A8A),
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          
-          // 카테고리 버튼들
-          Expanded(
-            child: ListView.separated(
-              controller: _scrollController,
-              scrollDirection: Axis.horizontal,
-              itemCount: _categories.length,
-              separatorBuilder: (context, index) => const SizedBox(width: 6),
-              itemBuilder: (context, index) {
-                final category = _categories[index];
-                return _buildCategoryChip(category);
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildRetryButton() {
-    return InkWell(
-      onTap: refresh,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              const Color(0xFF1E3A8A).withValues(alpha: 0.1),
-              const Color(0xFF3B82F6).withValues(alpha: 0.05),
-            ],
-          ),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: const Color(0xFF1E3A8A).withValues(alpha: 0.3),
-            width: 1,
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.refresh,
-              size: 16,
-              color: const Color(0xFF1E3A8A),
-            ),
-            const SizedBox(width: 4),
-            Text(
-              '재시도',
-              style: TextStyle(
-                fontSize: 12,
-                color: const Color(0xFF1E3A8A),
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: _categories.length,
+        separatorBuilder: (context, index) => const SizedBox(width: 6),
+        itemBuilder: (context, index) {
+          final category = _categories[index];
+          return _buildCategoryChip(category);
+        },
       ),
     );
   }
