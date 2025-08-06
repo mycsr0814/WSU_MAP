@@ -58,6 +58,10 @@ flutter:
 
   assets:
     - lib/asset/building_marker_blue.png
+    - lib/asset/1.png
+    - lib/asset/2.png
+    - lib/asset/3.png
+    - lib/asset/4.png
     - assets/timetable/tutorial/1.png
     - assets/timetable/tutorial/2.png
     - assets/timetable/tutorial/3.png
