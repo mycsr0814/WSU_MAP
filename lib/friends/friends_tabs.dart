@@ -1,13 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
 import 'package:flutter_application_1/components/woosong_button.dart';
 import 'package:flutter_application_1/components/woosong_input_field.dart';
 import 'package:flutter_application_1/friends/friends_controller.dart';
-import 'package:flutter_application_1/friends/friends_screen.dart';
-import 'package:flutter_application_1/friends/friends_dialogs.dart';
 import 'package:flutter_application_1/friends/friends_tiles.dart';
-import 'package:flutter_application_1/friends/friend.dart';
 import 'package:flutter_application_1/generated/app_localizations.dart';
 import 'package:flutter_application_1/services/auth_service.dart';
 
@@ -64,6 +59,56 @@ class FriendsTabs {
             ),
 
             const SizedBox(height: 20),
+
+            // 사용자 목록 표시
+            if (userList.isNotEmpty) ...[
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    '사용 가능한 사용자 목록:',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.refresh, size: 16),
+                    onPressed: onRefreshUserList,
+                    tooltip: '사용자 목록 새로고침',
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Container(
+                constraints: const BoxConstraints(maxHeight: 200),
+                decoration: BoxDecoration(
+                  color: Colors.grey[50],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey[300]!),
+                ),
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: userList.length,
+                  itemBuilder: (context, index) {
+                    final user = userList[index];
+                    return ListTile(
+                      dense: true,
+                      title: Text(
+                        '${user['name']} (${user['id']})',
+                        style: const TextStyle(fontSize: 14),
+                      ),
+                      onTap: () {
+                        addController.text = user['id']!;
+                        setModalState(() {});
+                      },
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 20),
+            ],
 
             SizedBox(
               width: double.infinity,
@@ -122,7 +167,7 @@ class FriendsTabs {
     StateSetter setModalState,
     ScrollController scrollController,
     FriendsController controller,
-    Function(SentFriendRequest) onCancelRequest,
+    Future<void> Function(String userId, String userName) onCancelRequest,
   ) {
     return ListView(
       controller: scrollController,
@@ -192,7 +237,7 @@ class FriendsTabs {
             (request) => FriendsTiles.buildSentRequestTile(
               context,
               request,
-              () => onCancelRequest(request),
+              () => onCancelRequest(request.toUserId, request.toUserName),
             ),
           ),
       ],
@@ -205,8 +250,8 @@ class FriendsTabs {
     StateSetter setModalState,
     ScrollController scrollController,
     FriendsController controller,
-    Function(FriendRequest) onAcceptRequest,
-    Function(FriendRequest) onRejectRequest,
+    Future<void> Function(String userId, String userName) onAcceptRequest,
+    Future<void> Function(String userId, String userName) onRejectRequest,
   ) {
     return ListView(
       controller: scrollController,
@@ -284,8 +329,8 @@ class FriendsTabs {
             (request) => FriendsTiles.buildReceivedRequestTile(
               context,
               request,
-              () => onAcceptRequest(request),
-              () => onRejectRequest(request),
+              () => onAcceptRequest(request.fromUserId, request.fromUserName),
+              () => onRejectRequest(request.fromUserId, request.fromUserName),
             ),
           ),
       ],
