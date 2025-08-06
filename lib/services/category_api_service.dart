@@ -61,8 +61,8 @@ class CategoryApiService {
           if (item is Map<String, dynamic> && item.containsKey('Category_Name')) {
             final categoryName = item['Category_Name']?.toString();
             if (categoryName != null && categoryName.isNotEmpty) {
-              // ✅ 한글 → 영어 ID 변환
-              categoryNames.add(CategoryNameMapper.toCategoryId(categoryName));
+              // 🔥 원본 카테고리 이름 그대로 사용 (언어 설정에 따라 표시됨)
+              categoryNames.add(categoryName);
             }
           }
         }
@@ -70,6 +70,7 @@ class CategoryApiService {
         if (categoryNames.isNotEmpty) {
           final categories = categoryNames.map((name) => Category(categoryName: name)).toList();
           debugPrint('✅ 서버에서 카테고리 로딩 성공: ${categories.length}개');
+          debugPrint('📋 카테고리 목록: $categoryNames');
           _cachedCategories = categories;
           _lastCategoryCacheTime = DateTime.now();
           return categories;
