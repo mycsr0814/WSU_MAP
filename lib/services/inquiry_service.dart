@@ -21,7 +21,7 @@ class InquiryService {
     try {
       debugPrint('=== 문의하기 작성 시작 ===');
       debugPrint('사용자 ID: $userId');
-      debugPrint('카테고리: $category');
+      debugPrint('카테고리 (서버 전송용): $category');
       debugPrint('제목: $title');
       debugPrint('내용: $content');
       debugPrint('이미지 파일: ${imageFile?.path ?? "없음"}');

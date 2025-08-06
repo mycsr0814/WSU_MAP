@@ -6,6 +6,42 @@ import '../services/inquiry_service.dart';
 import '../auth/user_auth.dart';
 import 'inquiry_detail_page.dart';
 
+/// 문의하기 카테고리 매핑 클래스
+class InquiryCategoryMapper {
+  /// 다국어 텍스트를 한국어 카테고리 코드로 변환
+  static String getKoreanCategory(String localizedText) {
+    switch (localizedText) {
+      case '장소/정보 오류':
+      case 'Place/Info Error':
+      case '地点/信息错误':
+        return 'place_error';
+      case '버그 신고':
+      case 'Bug Report':
+      case '错误报告':
+        return 'bug';
+      case '기능 요청':
+      case '기능 제안':
+      case 'Feature Request':
+      case '功能请求':
+      case '功能建议':
+        return 'feature';
+      case '경로 안내 오류':
+      case 'Route Guidance Error':
+      case '路线指导错误':
+        return 'route_error';
+      case '기타':
+      case '기타 문의':
+      case 'Other':
+      case 'Other Inquiry':
+      case '其他':
+      case '其他咨询':
+        return 'other';
+      default:
+        return 'other'; // 기본값
+    }
+  }
+}
+
 class InquiryPage extends StatefulWidget {
   final UserAuth userAuth;
 
@@ -814,9 +850,16 @@ class _CreateInquiryTabState extends State<CreateInquiryTab> {
     );
 
     try {
+      // 카테고리 변환 로그 추가
+      final originalCategory = _selectedInquiryType!;
+      final koreanCategory = InquiryCategoryMapper.getKoreanCategory(originalCategory);
+      debugPrint('=== 문의하기 카테고리 변환 ===');
+      debugPrint('원본 카테고리 (다국어): $originalCategory');
+      debugPrint('변환된 카테고리 (한국어): $koreanCategory');
+
       final success = await InquiryService.createInquiry(
         userId: widget.userAuth.userId!,
-        category: _selectedInquiryType!,
+        category: koreanCategory,
         title: _titleController.text.trim(),
         content: _contentController.text.trim(),
         imageFile: _selectedImages.isNotEmpty ? _selectedImages.first : null,
