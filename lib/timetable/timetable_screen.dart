@@ -4,7 +4,8 @@ import '../generated/app_localizations.dart';
 import 'timetable_item.dart';
 import 'timetable_api_service.dart';
 import '../map/widgets/directions_screen.dart'; // 폴더 구조에 맞게 경로 수정!
-import 'package:url_launcher/url_launcher.dart';
+
+import 'package:wakelock_plus/wakelock_plus.dart';
 import 'excel_import_service.dart';
 
 class ScheduleScreen extends StatefulWidget {
@@ -55,6 +56,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   int _getCurrentYear() => DateTime.now().year;
 
   Future<void> _loadScheduleItems() async {
+    debugPrint('📅 시간표 새로고침 시작 - userId: ${widget.userId}');
     setState(() => _isLoading = true);
     try {
       // 🔥 게스트 사용자 체크
@@ -92,8 +94,13 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       }
 
       final items = await _apiService.fetchScheduleItems(widget.userId);
-      if (mounted) setState(() => _scheduleItems = items);
+      debugPrint('📅 서버에서 받은 시간표 개수: ${items.length}');
+      if (mounted) {
+        setState(() => _scheduleItems = items);
+        debugPrint('📅 시간표 UI 업데이트 완료');
+      }
     } catch (e) {
+      debugPrint('❌ 시간표 로드 오류: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -1970,7 +1977,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   }
 
   void _showExcelImportDialog() {
-    _showExcelUploadChoiceDialog(context, widget.userId);
+    _showSimpleExcelUploadDialog(context, widget.userId, _loadScheduleItems);
   }
 
   void _showEditScheduleDialog(ScheduleItem item) {
@@ -2723,247 +2730,710 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   }
 }
 
-// 튜토리얼 다이얼로그 호출 함수
-void _showExcelTutorialDialog(BuildContext context, String userId) {
+
+
+// 간단하고 직관적인 엑셀 업로드 다이얼로그
+void _showSimpleExcelUploadDialog(BuildContext context, String userId, Future<void> Function() refreshCallback) {
   showDialog(
     context: context,
-    barrierDismissible: false,
-    builder: (context) => _ExcelTutorialDialog(userId: userId),
+    barrierDismissible: true, // 사용자가 외부 클릭으로 닫을 수 있도록 허용
+    builder: (context) => _SimpleExcelUploadDialog(
+      userId: userId,
+      refreshCallback: refreshCallback,
+    ),
   );
 }
 
-// 튜토리얼 다이얼로그 위젯 개선
-class _ExcelTutorialDialog extends StatefulWidget {
+// 상태를 가진 간단한 엑셀 업로드 다이얼로그
+class _SimpleExcelUploadDialog extends StatefulWidget {
   final String userId;
-  const _ExcelTutorialDialog({required this.userId});
+  final Future<void> Function() refreshCallback;
+  
+  const _SimpleExcelUploadDialog({
+    required this.userId,
+    required this.refreshCallback,
+  });
+  
   @override
-  State<_ExcelTutorialDialog> createState() => _ExcelTutorialDialogState();
+  State<_SimpleExcelUploadDialog> createState() => _SimpleExcelUploadDialogState();
 }
 
-class _ExcelTutorialDialogState extends State<_ExcelTutorialDialog> {
-  int _page = 0;
-
-  List<Widget> get _pages => [
-    // 안내 텍스트 페이지
-    Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Text(
-            '우송대학교 대학정보시스템에 로그인 해주세요',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 8),
-          GestureDetector(
-            onTap: () => launchUrl(Uri.parse('https://wsinfo.wsu.ac.kr')),
-            child: const Text(
-              'https://wsinfo.wsu.ac.kr',
-              style: TextStyle(
-                color: Colors.blue,
-                decoration: TextDecoration.underline,
-                fontSize: 15,
-              ),
-            ),
-          ),
-        ],
-      ),
-    ),
-    // 이미지 페이지들
-    ...List.generate(
-      5,
-      (i) => _buildImagePage('assets/timetable/tutorial/${i + 1}.png'),
-    ),
-  ];
-
-  static Widget _buildImagePage(String assetPath) {
-    return Expanded(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
-        child: Image.asset(
-          assetPath,
-          fit: BoxFit.contain,
-          width: double.infinity,
-          height: double.infinity,
-        ),
-      ),
-    );
-  }
-
+class _SimpleExcelUploadDialogState extends State<_SimpleExcelUploadDialog> {
+  bool _isUploading = false;
+  bool _showTutorial = false;
+  bool _uploadSuccess = false;
+  int _tutorialPage = 0;
+  
   @override
   Widget build(BuildContext context) {
     return Dialog(
       backgroundColor: Colors.transparent,
       child: Container(
-        width: MediaQuery.of(context).size.width * 0.98,
-        height: MediaQuery.of(context).size.height * 0.8,
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+        width: MediaQuery.of(context).size.width * 0.85,
+        height: _showTutorial 
+            ? MediaQuery.of(context).size.height * 0.75  // 튜토리얼일 때 더 큰 높이
+            : null,  // 기본 업로드 화면일 때는 내용에 맞춤
+        padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            // 페이지 내용
-            Expanded(child: _pages[_page]),
-            const SizedBox(height: 8),
+            // 제목
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                if (_page > 0)
-                  TextButton(
-                    onPressed: () => setState(() => _page--),
-                    child: const Text('이전'),
-                  )
-                else
-                  const SizedBox(width: 60),
-                if (_page < _pages.length - 1)
-                  TextButton(
-                    onPressed: () => setState(() => _page++),
-                    child: const Text('다음'),
-                  )
-                else
-                  ElevatedButton(
-                    onPressed: () async {
-                      Navigator.pop(context);
-                      try {
-                        final success =
-                            await ExcelImportService.uploadExcelToServer(
-                              widget.userId,
-                            );
-                        if (context.mounted) {
-                          if (success) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('엑셀 파일 업로드 성공'),
-                                backgroundColor: Colors.green,
-                              ),
-                            );
-                                                  // 업로드 성공 후 시간표 새로고침
-                      // 화면을 다시 빌드하여 시간표가 새로고침되도록 함
-                      if (context.mounted) {
-                        Navigator.of(context).pushReplacement(
-                          MaterialPageRoute(
-                            builder: (context) => ScheduleScreen(userId: widget.userId),
-                          ),
-                        );
-                      }
-                          } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('파일 선택이 취소되었습니다.'),
-                                backgroundColor: Colors.orange,
-                              ),
-                            );
-                          }
-                        }
-                      } catch (e) {
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('엑셀 파일 업로드 실패: $e'),
-                              backgroundColor: Colors.red,
-                            ),
-                          );
-                        }
-                      }
-                    },
-                    child: const Text('엑셀 파일 선택'),
+                const Icon(Icons.file_upload_outlined, color: Color(0xFF1E3A8A), size: 24),
+                const SizedBox(width: 8),
+                const Expanded(
+                  child: Text(
+                    '시간표 엑셀 파일 업로드',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF1E3A8A),
+                    ),
+                  ),
+                ),
+                if (!_isUploading && !_uploadSuccess)
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close, size: 20),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
                   ),
               ],
             ),
+            const SizedBox(height: 16),
+            
+            if (_isUploading) ...[
+              // 업로드 중 표시
+              const CircularProgressIndicator(color: Color(0xFF1E3A8A)),
+              const SizedBox(height: 16),
+              const Text(
+                '엑셀 파일을 업로드하고 있습니다...',
+                style: TextStyle(fontSize: 14, color: Colors.grey),
+                textAlign: TextAlign.center,
+              ),
+            ] else if (_uploadSuccess) ...[
+              // 업로드 성공 표시
+              const Icon(
+                Icons.check_circle,
+                color: Colors.green,
+                size: 64,
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                '업로드 완료!',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.green,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                '시간표를 새로고침하고 있습니다...',
+                style: TextStyle(fontSize: 14, color: Colors.grey),
+                textAlign: TextAlign.center,
+              ),
+            ] else if (_showTutorial) ...[
+              // 튜토리얼 표시
+              Expanded(
+                child: Container(
+                  width: double.infinity,
+                  color: Colors.white,
+                  child: Column(
+                    children: [
+                      // 헤더
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(16),
+                        color: Colors.grey.shade50,
+                        child: Row(
+                          children: [
+                            IconButton(
+                              onPressed: () {
+                                debugPrint('뒤로가기 버튼 클릭');
+                                setState(() => _showTutorial = false);
+                              },
+                              icon: const Icon(Icons.arrow_back, size: 20),
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                '엑셀 파일 다운로드 방법 (${_tutorialPage + 1}/6)',
+                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      
+                                            // 콘텐츠 영역
+                      Expanded(
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(16),
+                          child: _buildTutorialPage(_tutorialPage),
+                        ),
+                      ),
+                      
+                      // 네비게이션
+                      Container(
+                        height: 60,
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            if (_tutorialPage > 0)
+                              OutlinedButton(
+                                onPressed: () => setState(() => _tutorialPage--),
+                                child: const Text('이전'),
+                              )
+                            else
+                              const SizedBox(width: 80),
+                            
+                            Row(
+                              children: List.generate(
+                                6,
+                                (index) => Container(
+                                  margin: const EdgeInsets.symmetric(horizontal: 3),
+                                  width: 8,
+                                  height: 8,
+                                  decoration: BoxDecoration(
+                                    color: index == _tutorialPage 
+                                        ? const Color(0xFF1E3A8A) 
+                                        : Colors.grey.shade300,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            
+                            if (_tutorialPage < 5)
+                              OutlinedButton(
+                                onPressed: () => setState(() => _tutorialPage++),
+                                child: const Text('다음'),
+                              )
+                            else
+                              OutlinedButton(
+                                onPressed: _uploadExcelFile,
+                                child: const Text('파일 선택'),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: Colors.white,
+                                  backgroundColor: const Color(0xFF1E3A8A),
+                                  side: const BorderSide(color: Color(0xFF1E3A8A)),
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ] else ...[
+              // 기본 업로드 화면
+              _buildUploadContent(),
+            ],
           ],
         ),
       ),
     );
   }
-}
-
-// 엑셀 업로드 버튼을 누르면 아래 다이얼로그를 띄우도록 변경
-void _showExcelUploadChoiceDialog(BuildContext context, String userId) {
-  showDialog(
-    context: context,
-    builder: (context) => Dialog(
-      backgroundColor: Colors.transparent,
-      child: Container(
-        width: MediaQuery.of(context).size.width * 0.8,
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
+  
+  Widget _buildUploadContent() {
+    return Column(
+      children: [
+        const Text(
+          '우송대학교 시간표 엑셀 파일(.xlsx)을 선택해주세요',
+          style: TextStyle(fontSize: 14, color: Colors.grey),
+          textAlign: TextAlign.center,
         ),
+        const SizedBox(height: 20),
+        
+        // 엑셀 파일 선택 버튼
+        SizedBox(
+          width: double.infinity,
+          height: 48,
+          child: ElevatedButton.icon(
+            onPressed: _uploadExcelFile,
+            icon: const Icon(Icons.folder_open, size: 20),
+            label: const Text('엑셀 파일 선택', style: TextStyle(fontSize: 16)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF1E3A8A),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          ),
+        ),
+        
+        const SizedBox(height: 12),
+        
+        // 튜토리얼 보기 버튼
+        SizedBox(
+          width: double.infinity,
+          height: 42,
+          child: OutlinedButton.icon(
+            onPressed: () => setState(() => _showTutorial = true),
+            icon: const Icon(Icons.help_outline, size: 18),
+            label: const Text('사용법 보기', style: TextStyle(fontSize: 14)),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: const Color(0xFF1E3A8A),
+              side: const BorderSide(color: Color(0xFF1E3A8A)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+  
+  Widget _buildTutorialContent() {
+    debugPrint('=== 튜토리얼 콘텐츠 빌드 시작 ===');
+    debugPrint('현재 페이지: $_tutorialPage');
+    
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      color: Colors.red.shade100, // 빨간색 배경으로 테스트
+      child: Column(
+        children: [
+          // 헤더
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            color: Colors.blue.shade100, // 파란색 배경으로 테스트
+            child: Row(
+              children: [
+                IconButton(
+                  onPressed: () {
+                    debugPrint('뒤로가기 버튼 클릭');
+                    setState(() => _showTutorial = false);
+                  },
+                  icon: const Icon(Icons.arrow_back, size: 20),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    '엑셀 파일 다운로드 방법',
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          
+          // 테스트 콘텐츠
+          Expanded(
+            child: Container(
+              width: double.infinity,
+              color: Colors.green.shade100, // 초록색 배경으로 테스트
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      width: 100,
+                      height: 100,
+                      color: Colors.yellow.shade400,
+                      child: const Center(
+                        child: Text(
+                          '테스트\n박스',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      '튜토리얼 테스트',
+                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '현재 페이지: $_tutorialPage',
+                      style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
+                    ),
+                    const SizedBox(height: 24),
+                    ElevatedButton(
+                      onPressed: () {
+                        debugPrint('파일 선택 버튼 클릭');
+                        _uploadExcelFile();
+                      },
+                      child: const Text('파일 선택'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  List<Widget> _getTutorialPages() {
+    return [
+      // 페이지 0: 안내 텍스트
+      _buildTextPage(),
+      
+      // 페이지 1-5: 이미지들 (테스트용)
+      _buildTestImagePage('assets/timetable/tutorial/1.png'),
+      _buildTestImagePage('assets/timetable/tutorial/2.png'),
+      _buildTestImagePage('assets/timetable/tutorial/3.png'),
+      _buildTestImagePage('assets/timetable/tutorial/4.png'),
+      _buildTestImagePage('assets/timetable/tutorial/5.png'),
+    ];
+  }
+  
+  Widget _buildTestImagePage(String assetPath) {
+    debugPrint('=== 이미지 테스트 시작: $assetPath ===');
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            '테스트: $assetPath',
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 20),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Image.asset(
+                assetPath,
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) {
+                  debugPrint('❌ 이미지 로드 실패: $assetPath');
+                  debugPrint('❌ 에러: $error');
+                  return Container(
+                    color: Colors.red.shade100,
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.error, size: 48, color: Colors.red.shade400),
+                          const SizedBox(height: 8),
+                          Text(
+                            '이미지 로드 실패',
+                            style: TextStyle(color: Colors.red.shade600),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            assetPath,
+                            style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Error: $error',
+                            style: TextStyle(fontSize: 10, color: Colors.red.shade400),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  Widget _buildTextPage() {
+    return Container(
+      width: double.infinity,
+      constraints: const BoxConstraints(minHeight: 300),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                minimumSize: const Size.fromHeight(48),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              onPressed: () {
-                Navigator.pop(context);
-                _showExcelTutorialDialog(context, userId);
-              },
-              child: Text(AppLocalizations.of(context)!.excel_file_tutorial),
+            Icon(
+              Icons.info_outline,
+              size: 48,
+              color: const Color(0xFF1E3A8A),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              '1. 우송대학교 대학정보시스템에 로그인',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                minimumSize: const Size.fromHeight(48),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.blue.shade50,
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: Colors.blue.shade200),
               ),
-              onPressed: () async {
-                Navigator.pop(context);
-                try {
-                  final success = await ExcelImportService.uploadExcelToServer(
-                    userId,
-                  );
-                  if (context.mounted) {
-                    if (success) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('엑셀 파일 업로드 성공'),
-                          backgroundColor: Colors.green,
-                        ),
-                      );
-                      // 업로드 성공 후 시간표 새로고침
-                      // 화면을 다시 빌드하여 시간표가 새로고침되도록 함
-                      if (context.mounted) {
-                        Navigator.of(context).pushReplacement(
-                          MaterialPageRoute(
-                            builder: (context) => ScheduleScreen(userId: userId),
-                          ),
-                        );
-                      }
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('파일 선택이 취소되었습니다.'),
-                          backgroundColor: Colors.orange,
-                        ),
-                      );
-                    }
-                  }
-                } catch (e) {
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('엑셀 파일 업로드 실패: $e'),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                  }
-                }
-              },
-              child: const Text('엑셀 파일 선택'),
+              child: const Text(
+                'https://wsinfo.wsu.ac.kr',
+                style: TextStyle(fontSize: 14, color: Colors.blue, fontWeight: FontWeight.w500),
+                textAlign: TextAlign.center,
+              ),
             ),
+            const SizedBox(height: 16),
+
           ],
         ),
       ),
-    ),
-  );
+    );
+  }
+  
+  Widget _buildTutorialPage(int page) {
+    debugPrint('튜토리얼 페이지 빌드: $page');
+    
+    switch (page) {
+      case 0:
+        return _buildTextPage();
+      case 1:
+        return _buildSimpleImagePage('assets/timetable/tutorial/1.png');
+      case 2:
+        return _buildSimpleImagePage('assets/timetable/tutorial/2.png');
+      case 3:
+        return _buildSimpleImagePage('assets/timetable/tutorial/3.png');
+      case 4:
+        return _buildSimpleImagePage('assets/timetable/tutorial/4.png');
+      case 5:
+        return _buildSimpleImagePage('assets/timetable/tutorial/5.png');
+      default:
+        return Container(
+          color: Colors.red.shade100,
+          child: const Center(
+            child: Text('알 수 없는 페이지'),
+          ),
+        );
+    }
+  }
+  
+  Widget _buildSimpleImagePage(String assetPath) {
+    debugPrint('간단한 이미지 페이지: $assetPath');
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Image.asset(
+          assetPath,
+          fit: BoxFit.contain,
+          errorBuilder: (context, error, stackTrace) {
+            debugPrint('이미지 로드 실패: $assetPath - $error');
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.error, size: 48, color: Colors.red.shade400),
+                  const SizedBox(height: 8),
+                  Text(
+                    '이미지 로드 실패',
+                    style: TextStyle(color: Colors.red.shade600),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    assetPath,
+                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+  
+  Widget _buildErrorWidget(String assetPath, String error) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.image_not_supported,
+            size: 48,
+            color: Colors.grey.shade400,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '이미지를 불러올 수 없습니다',
+            style: TextStyle(
+              color: Colors.grey.shade600,
+              fontSize: 14,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            assetPath,
+            style: TextStyle(
+              color: Colors.grey.shade500,
+              fontSize: 12,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Error: $error',
+            style: TextStyle(
+              color: Colors.red.shade400,
+              fontSize: 10,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  Future<void> _uploadExcelFile() async {
+    setState(() => _isUploading = true);
+    
+    // 업로드 중 화면이 꺼지지 않도록 설정
+    await WakelockPlus.enable();
+    debugPrint('🔓 업로드 중 화면 잠금 해제 활성화');
+    
+    try {
+      final success = await ExcelImportService.uploadExcelToServer(widget.userId);
+      
+      if (mounted) {
+        if (success) {
+          // 업로드 성공 상태 표시
+          setState(() {
+            _isUploading = false;
+            _uploadSuccess = true;
+          });
+          
+          debugPrint('📤 엑셀 업로드 성공 후 리프레시 콜백 호출');
+          
+          // 백그라운드에서 새로고침 실행
+          widget.refreshCallback().then((_) {
+            // 새로고침 완료 후 다이얼로그 부드럽게 닫기
+            if (mounted) {
+              Navigator.pop(context);
+              
+              // 성공 메시지 표시
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Row(
+                    children: [
+                      Icon(Icons.check_circle, color: Colors.white, size: 20),
+                      SizedBox(width: 12),
+                      Text('시간표가 업데이트되었습니다!'),
+                    ],
+                  ),
+                  backgroundColor: Colors.green,
+                  behavior: SnackBarBehavior.floating,
+                  duration: Duration(seconds: 2),
+                ),
+              );
+            }
+          }).catchError((error) {
+            // 새로고침 실패 시 처리
+            if (mounted) {
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Row(
+                    children: [
+                      const Icon(Icons.warning, color: Colors.white, size: 20),
+                      const SizedBox(width: 12),
+                      Expanded(child: Text('새로고침 실패: $error')),
+                    ],
+                  ),
+                  backgroundColor: Colors.orange,
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            }
+          }).whenComplete(() async {
+            // 작업 완료 후 wakelock 해제
+            await WakelockPlus.disable();
+            debugPrint('🔒 업로드 완료 후 화면 잠금 해제 비활성화');
+          });
+        } else {
+          // 파일 선택 취소
+          setState(() => _isUploading = false);
+          Navigator.pop(context);
+          
+          // wakelock 해제
+          await WakelockPlus.disable();
+          debugPrint('🔒 파일 선택 취소 후 화면 잠금 해제 비활성화');
+          
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Row(
+                children: [
+                  Icon(Icons.info_outline, color: Colors.white, size: 20),
+                  SizedBox(width: 12),
+                  Text('파일 선택이 취소되었습니다.'),
+                ],
+              ),
+              backgroundColor: Colors.orange,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isUploading = false);
+        Navigator.pop(context);
+        
+        // 에러 시에도 wakelock 해제
+        await WakelockPlus.disable();
+        debugPrint('🔒 업로드 에러 후 화면 잠금 해제 비활성화');
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.error_outline, color: Colors.white, size: 20),
+                const SizedBox(width: 12),
+                Expanded(child: Text('업로드 실패: $e')),
+              ],
+            ),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
 }
