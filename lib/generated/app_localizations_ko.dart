@@ -739,13 +739,10 @@ class AppLocalizationsKo extends AppLocalizations {
   String get inquiry_category_bug => '버그 신고';
 
   @override
-  String get inquiry_category_feature => '기능 제안';
+  String get inquiry_category_feature => '기능 요청';
 
   @override
-  String get inquiry_category_improvement => '개선 제안';
-
-  @override
-  String get inquiry_category_other => '기타 문의';
+  String get inquiry_category_other => '기타';
 
   @override
   String get inquiry_category_route_error => '경로 안내 오류';

@@ -1534,16 +1534,10 @@ abstract class AppLocalizations {
   /// **'Feature Request'**
   String get inquiry_category_feature;
 
-  /// No description provided for @inquiry_category_improvement.
-  ///
-  /// In en, this message translates to:
-  /// **'Improvement Suggestion'**
-  String get inquiry_category_improvement;
-
   /// No description provided for @inquiry_category_other.
   ///
   /// In en, this message translates to:
-  /// **'Other Inquiry'**
+  /// **'Other'**
   String get inquiry_category_other;
 
   /// No description provided for @inquiry_category_route_error.

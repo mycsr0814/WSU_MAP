@@ -284,7 +284,6 @@
   "inquiry_error_occurred": "An error occurred while processing your inquiry",
   "inquiry_category_bug": "Bug Report",
   "inquiry_category_feature": "Feature Request",
-  "inquiry_category_improvement": "Improvement Suggestion",
   "inquiry_category_other": "Other",
   "inquiry_category_route_error": "Route Guidance Error",
   "inquiry_category_place_error": "Place/Info Error",
@@ -708,11 +707,6 @@
     }
   },
   "set_room": "Set Room",
-  "inquiry_category_place_error": "Place/Info Error",
-  "inquiry_category_bug": "Bug Report",
-  "inquiry_category_feature": "Feature Request",
-  "inquiry_category_route_error": "Route Guidance Error",
-  "inquiry_category_other": "Other Inquiry",
   "friend_location_permission_denied": "{name} has not allowed location sharing.",
   "@friend_location_permission_denied": {
     "placeholders": {

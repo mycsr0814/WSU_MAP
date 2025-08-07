@@ -737,13 +737,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get inquiry_category_bug => '错误报告';
 
   @override
-  String get inquiry_category_feature => '功能建议';
+  String get inquiry_category_feature => '功能请求';
 
   @override
-  String get inquiry_category_improvement => '改进建议';
-
-  @override
-  String get inquiry_category_other => '其他咨询';
+  String get inquiry_category_other => '其他';
 
   @override
   String get inquiry_category_route_error => '路线指导错误';

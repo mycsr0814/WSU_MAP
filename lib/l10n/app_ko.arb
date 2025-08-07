@@ -284,7 +284,6 @@
   "inquiry_error_occurred": "문의 처리 중 오류가 발생했습니다",
   "inquiry_category_bug": "버그 신고",
   "inquiry_category_feature": "기능 요청",
-  "inquiry_category_improvement": "개선 제안",
   "inquiry_category_other": "기타",
   "inquiry_category_route_error": "경로 안내 오류",
   "inquiry_category_place_error": "장소/정보 오류",
@@ -605,11 +604,6 @@
     }
   },
   "set_room": "방 설정하기",
-  "inquiry_category_place_error": "장소/정보 오류",
-  "inquiry_category_bug": "버그 신고",
-  "inquiry_category_feature": "기능 제안",
-  "inquiry_category_route_error": "경로 안내 오류",
-  "inquiry_category_other": "기타 문의",
   "friend_location_permission_denied": "{name}님이 위치 공유를 허용하지 않았습니다.",
   "@friend_location_permission_denied": {
     "placeholders": {

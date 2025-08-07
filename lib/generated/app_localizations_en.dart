@@ -761,10 +761,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get inquiry_category_feature => 'Feature Request';
 
   @override
-  String get inquiry_category_improvement => 'Improvement Suggestion';
-
-  @override
-  String get inquiry_category_other => 'Other Inquiry';
+  String get inquiry_category_other => 'Other';
 
   @override
   String get inquiry_category_route_error => 'Route Guidance Error';

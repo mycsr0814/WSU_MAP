@@ -284,7 +284,6 @@
   "inquiry_error_occurred": "处理您的咨询时发生错误",
   "inquiry_category_bug": "错误报告",
   "inquiry_category_feature": "功能请求",
-  "inquiry_category_improvement": "改进建议",
   "inquiry_category_other": "其他",
   "inquiry_category_route_error": "路线指导错误",
   "inquiry_category_place_error": "地点/信息错误",
@@ -527,11 +526,6 @@
     }
   },
   "set_room": "设置房间",
-  "inquiry_category_place_error": "地点/信息错误",
-  "inquiry_category_bug": "错误报告",
-  "inquiry_category_feature": "功能建议",
-  "inquiry_category_route_error": "路线指导错误",
-  "inquiry_category_other": "其他咨询",
   "friend_location_permission_denied": "{name}未允许位置共享。",
   "@friend_location_permission_denied": {
     "placeholders": {
