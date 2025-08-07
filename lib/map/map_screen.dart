@@ -58,6 +58,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
   
   // 🔥 튜토리얼 관련 변수
   bool _hasShownTutorial = false;
+  bool _isShowingTutorial = false; // 튜토리얼 표시 중인지 확인
 
   @override
   void initState() {
@@ -132,8 +133,8 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     final userAuth = context.watch<UserAuth>();
     final currentUserId = userAuth.userId;
 
-    // 🔥 새 사용자 로그인 감지 시 플래그 리셋
-    if (currentUserId != _lastUserId) {
+    // 🔥 새 사용자 로그인 감지 시 플래그 리셋 (로그아웃 시에는 리셋하지 않음)
+    if (currentUserId != _lastUserId && currentUserId != null) {
       _lastUserId = currentUserId;
       _hasProcessedTimetableBuilding = false; // 🔥 플래그 리셋
       _hasShownTutorial = false; // 🔥 튜토리얼 플래그 리셋
@@ -611,19 +612,26 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
 
   /// 🔥 튜토리얼 표시 메서드
   void _showTutorialIfNeeded() async {
-    // 이미 표시했거나 화면이 마운트되지 않았으면 표시하지 않음
-    if (_hasShownTutorial || !mounted) {
-      debugPrint('ℹ️ 튜토리얼 표시 건너뜀 - 이미 표시됨: $_hasShownTutorial, 마운트됨: $mounted');
+    // 이미 표시했거나 화면이 마운트되지 않았거나 현재 표시 중이면 표시하지 않음
+    if (_hasShownTutorial || !mounted || _isShowingTutorial) {
+      debugPrint('ℹ️ 튜토리얼 표시 건너뜀 - 이미 표시됨: $_hasShownTutorial, 마운트됨: $mounted, 표시중: $_isShowingTutorial');
       return;
     }
     
     final userAuth = context.read<UserAuth>();
+    
+    // 로그인되지 않았으면 튜토리얼 표시하지 않음
+    if (!userAuth.isLoggedIn) {
+      debugPrint('ℹ️ 로그인되지 않음 - 튜토리얼 표시하지 않음');
+      return;
+    }
+    
     bool shouldShowTutorial = false;
     
-    if (userAuth.isLoggedIn && !userAuth.userId!.startsWith('guest_')) {
+    if (!userAuth.userId!.startsWith('guest_')) {
       // 로그인된 사용자는 서버의 Is_Tutorial 설정에 따라
       shouldShowTutorial = userAuth.isTutorial;
-      debugPrint('🔍 로그인 사용자 튜토리얼 확인: $shouldShowTutorial');
+      debugPrint('🔍 로그인 사용자 튜토리얼 확인: $shouldShowTutorial (서버 설정: ${userAuth.isTutorial})');
     } else {
       // 게스트는 로컬 설정을 확인
       try {
@@ -638,6 +646,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     
     if (shouldShowTutorial && mounted) {
       _hasShownTutorial = true;
+      _isShowingTutorial = true; // 표시 중 플래그 설정
       debugPrint('✅ 튜토리얼 표시 시작');
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
@@ -646,7 +655,11 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
             MaterialPageRoute(
               builder: (context) => const TutorialScreen(),
             ),
-          );
+          ).then((_) {
+            // 튜토리얼 화면이 닫힌 후 플래그 리셋
+            _isShowingTutorial = false;
+            debugPrint('✅ 튜토리얼 화면 닫힘');
+          });
         }
       });
     } else {
