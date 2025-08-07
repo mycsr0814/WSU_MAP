@@ -59,6 +59,9 @@ class _InquiryPageState extends State<InquiryPage>
   late TabController _tabController;
   final GlobalKey<_MyInquiriesTabState> _myInquiriesTabKey =
       GlobalKey<_MyInquiriesTabState>();
+  
+  // 🔥 위젯 생명주기 관리
+  bool _isDisposed = false;
 
   @override
   void initState() {
@@ -68,6 +71,7 @@ class _InquiryPageState extends State<InquiryPage>
 
   @override
   void dispose() {
+    _isDisposed = true;
     _tabController.dispose();
     super.dispose();
   }
@@ -156,6 +160,9 @@ class _CreateInquiryTabState extends State<CreateInquiryTab> {
 
   // 🔥 제출 상태 관리 추가
   bool _isSubmitting = false;
+  
+  // 🔥 위젯 생명주기 관리
+  bool _isDisposed = false;
 
   // 🔥 문의 유형 매핑 (한국어 코드 ↔ 다국어 텍스트)
   late Map<String, String> _inquiryTypeMapping;
@@ -172,6 +179,8 @@ class _CreateInquiryTabState extends State<CreateInquiryTab> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    if (_isDisposed) return;
+    
     final l10n = AppLocalizations.of(context)!;
     
     // 🔥 한국어 코드와 다국어 텍스트 매핑
@@ -201,6 +210,7 @@ class _CreateInquiryTabState extends State<CreateInquiryTab> {
 
   @override
   void dispose() {
+    _isDisposed = true;
     _titleController.dispose();
     _contentController.dispose();
     super.dispose();
@@ -370,6 +380,8 @@ class _CreateInquiryTabState extends State<CreateInquiryTab> {
               );
             }).toList(),
             onChanged: (String? newValue) {
+              if (_isDisposed) return;
+              
               debugPrint('=== 드롭다운 선택 변경 ===');
               debugPrint('선택된 값: $newValue');
               if (newValue != null) {
@@ -850,6 +862,8 @@ class _CreateInquiryTabState extends State<CreateInquiryTab> {
   }
 
   Future<void> _submitInquiry() async {
+    if (_isDisposed) return;
+    
     final l10n = AppLocalizations.of(context)!;
     if (!_formKey.currentState!.validate()) {
       return;
@@ -951,14 +965,25 @@ class MyInquiriesTab extends StatefulWidget {
 class _MyInquiriesTabState extends State<MyInquiriesTab> {
   List<InquiryItem> _inquiries = [];
   bool _isLoading = false;
+  
+  // 🔥 위젯 생명주기 관리
+  bool _isDisposed = false;
 
   @override
   void initState() {
     super.initState();
     _loadInquiries();
   }
+  
+  @override
+  void dispose() {
+    _isDisposed = true;
+    super.dispose();
+  }
 
   Future<void> _loadInquiries() async {
+    if (_isDisposed) return;
+    
     setState(() {
       _isLoading = true;
     });
@@ -977,22 +1002,28 @@ class _MyInquiriesTabState extends State<MyInquiriesTab> {
         '받아온 문의 목록: ${inquiries.map((e) => '${e.title} (${e.status})').toList()}',
       );
 
-      setState(() {
-        _inquiries = inquiries;
-        debugPrint('setState 후 _inquiries 길이: ${_inquiries.length}');
-      });
+      if (!_isDisposed) {
+        setState(() {
+          _inquiries = inquiries;
+          debugPrint('setState 후 _inquiries 길이: ${_inquiries.length}');
+        });
+      }
     } catch (e) {
       debugPrint('문의 목록 로드 중 오류: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('문의 목록을 불러오는데 실패했습니다: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (!_isDisposed) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('문의 목록을 불러오는데 실패했습니다: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (!_isDisposed) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
