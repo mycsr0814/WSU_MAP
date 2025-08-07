@@ -384,9 +384,17 @@ class _CreateInquiryTabState extends State<CreateInquiryTab> {
               
               debugPrint('=== 드롭다운 선택 변경 ===');
               debugPrint('선택된 값: $newValue');
+              debugPrint('선택된 값의 타입: ${newValue.runtimeType}');
+              debugPrint('선택된 값의 길이: ${newValue?.length}');
+              debugPrint('선택된 값의 바이트: ${newValue?.codeUnits}');
               if (newValue != null) {
                 debugPrint('선택된 값의 표시 텍스트: ${_inquiryTypeMapping[newValue]}');
+                debugPrint('매핑에서 해당 키가 존재하는지: ${_inquiryTypeMapping.containsKey(newValue)}');
               }
+              debugPrint('현재 매핑 전체:');
+              _inquiryTypeMapping.forEach((key, value) {
+                debugPrint('  "$key" -> "$value"');
+              });
               debugPrint('========================');
               setState(() {
                 _selectedInquiryType = newValue;
@@ -887,14 +895,18 @@ class _CreateInquiryTabState extends State<CreateInquiryTab> {
       final category = _selectedInquiryType!;
       debugPrint('=== 문의하기 카테고리 디버그 ===');
       debugPrint('선택된 카테고리 (한국어 코드): $category');
+      debugPrint('카테고리 타입: ${category.runtimeType}');
+      debugPrint('카테고리 길이: ${category.length}');
+      debugPrint('카테고리 바이트: ${category.codeUnits}');
       debugPrint('카테고리 매핑 확인:');
       _inquiryTypeMapping.forEach((key, value) {
-        debugPrint('  $key -> $value');
+        debugPrint('  "$key" -> "$value"');
       });
       
       // 🔥 선택된 카테고리의 실제 표시 텍스트 확인
       final selectedDisplayText = _inquiryTypeMapping[category];
       debugPrint('선택된 카테고리 표시 텍스트: $selectedDisplayText');
+      debugPrint('매핑에서 해당 키가 존재하는지: ${_inquiryTypeMapping.containsKey(category)}');
       debugPrint('서버로 전송될 카테고리: $category');
       debugPrint('================================');
 
