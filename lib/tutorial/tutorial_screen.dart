@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../generated/app_localizations.dart';
 import 'package:provider/provider.dart';
 import '../auth/user_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class TutorialScreen extends StatefulWidget {
   const TutorialScreen({super.key});
@@ -70,21 +71,37 @@ class _TutorialScreenState extends State<TutorialScreen> {
     super.dispose();
   }
 
+  /// 🔥 게스트 튜토리얼 설정 저장
+  Future<void> _saveGuestTutorialSetting(bool showTutorial) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('guest_tutorial_show', showTutorial);
+      debugPrint('✅ 게스트 튜토리얼 설정 저장: $showTutorial');
+    } catch (e) {
+      debugPrint('❌ 게스트 튜토리얼 설정 저장 오류: $e');
+    }
+  }
+
   /// 🔥 튜토리얼 완료 처리
   Future<void> _finishTutorial() async {
     final userAuth = context.read<UserAuth>();
     
-    // 로그인된 사용자이고 다시 보지 않기가 체크되어 있으면 서버에 설정 업데이트
-    if (_dontShowAgain && userAuth.isLoggedIn) {
-      try {
-        final success = await userAuth.updateTutorial(showTutorial: false);
-        if (success) {
-          debugPrint('✅ 튜토리얼 설정 업데이트 성공');
-        } else {
-          debugPrint('❌ 튜토리얼 설정 업데이트 실패');
+    if (_dontShowAgain) {
+      if (userAuth.isLoggedIn) {
+        // 로그인된 사용자는 서버에 설정 업데이트
+        try {
+          final success = await userAuth.updateTutorial(showTutorial: false);
+          if (success) {
+            debugPrint('✅ 로그인 사용자 튜토리얼 설정 업데이트 성공');
+          } else {
+            debugPrint('❌ 로그인 사용자 튜토리얼 설정 업데이트 실패');
+          }
+        } catch (e) {
+          debugPrint('❌ 로그인 사용자 튜토리얼 설정 업데이트 오류: $e');
         }
-      } catch (e) {
-        debugPrint('❌ 튜토리얼 설정 업데이트 오류: $e');
+      } else {
+        // 게스트는 로컬에 설정 저장
+        await _saveGuestTutorialSetting(false);
       }
     }
     
@@ -167,8 +184,8 @@ class _TutorialScreenState extends State<TutorialScreen> {
               padding: const EdgeInsets.all(24),
               child: Column(
                 children: [
-                  // 다시 보지 않기 체크박스 (마지막 페이지에서만 표시, 로그인된 사용자에게만)
-                  if (isLastPage && context.read<UserAuth>().isLoggedIn)
+                  // 다시 보지 않기 체크박스 (마지막 페이지에서만 표시)
+                  if (isLastPage)
                     Container(
                       margin: const EdgeInsets.only(bottom: 16),
                       child: Row(

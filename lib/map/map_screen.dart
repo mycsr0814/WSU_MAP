@@ -26,6 +26,7 @@ import '../auth/user_auth.dart';
 import 'package:flutter_application_1/managers/location_manager.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 import '../tutorial/tutorial_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:flutter_application_1/map/building_data.dart';
 import 'package:flutter_application_1/models/building.dart';
@@ -603,10 +604,10 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
   }
 
   /// 🔥 튜토리얼 표시 메서드
-  void _showTutorialIfNeeded() {
+  void _showTutorialIfNeeded() async {
     final userAuth = context.read<UserAuth>();
     
-    // 로그인된 사용자는 서버 설정에 따라, 게스트는 항상 튜토리얼 표시
+    // 아직 보지 않았고 화면이 마운트된 상태일 때만 확인
     if (!_hasShownTutorial && mounted) {
       bool shouldShowTutorial = false;
       
@@ -614,8 +615,14 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
         // 로그인된 사용자는 서버의 Is_Tutorial 설정에 따라
         shouldShowTutorial = userAuth.isTutorial;
       } else {
-        // 게스트는 항상 튜토리얼 표시
-        shouldShowTutorial = true;
+        // 게스트는 로컬 설정을 확인
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          shouldShowTutorial = prefs.getBool('guest_tutorial_show') ?? true; // 기본값은 true
+        } catch (e) {
+          debugPrint('❌ 게스트 튜토리얼 설정 확인 오류: $e');
+          shouldShowTutorial = true; // 오류 시 기본적으로 표시
+        }
       }
       
       if (shouldShowTutorial) {
