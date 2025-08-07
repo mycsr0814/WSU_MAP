@@ -855,14 +855,20 @@ class _CreateInquiryTabState extends State<CreateInquiryTab> {
     );
 
     try {
-      // 🔥 이미 한국어 코드를 사용하므로 변환 불필요
+      // 🔥 서버로 전송되는 카테고리 확인
       final category = _selectedInquiryType!;
-      debugPrint('=== 문의하기 카테고리 ===');
+      debugPrint('=== 문의하기 카테고리 디버그 ===');
       debugPrint('선택된 카테고리 (한국어 코드): $category');
+      debugPrint('카테고리 매핑 확인:');
+      _inquiryTypeMapping.forEach((key, value) {
+        debugPrint('  $key -> $value');
+      });
+      debugPrint('서버로 전송될 카테고리: $category');
+      debugPrint('================================');
 
       final success = await InquiryService.createInquiry(
         userId: widget.userAuth.userId!,
-        category: category, // 이미 한국어 코드
+        category: category, // 한국어 코드 (place_error, bug, feature, route_error, other)
         title: _titleController.text.trim(),
         content: _contentController.text.trim(),
         imageFile: _selectedImages.isNotEmpty ? _selectedImages.first : null,
