@@ -133,21 +133,20 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     final userAuth = context.watch<UserAuth>();
     final currentUserId = userAuth.userId;
 
-    // 🔥 새 사용자 로그인 감지 시 플래그 리셋 (로그아웃 시에는 리셋하지 않음)
+    // 🔥 새 사용자 로그인 감지 시에만 처리
     if (currentUserId != _lastUserId && currentUserId != null) {
       _lastUserId = currentUserId;
       _hasProcessedTimetableBuilding = false; // 🔥 플래그 리셋
       _hasShownTutorial = false; // 🔥 튜토리얼 플래그 리셋
-      debugPrint('🔄 새 사용자 감지 - 시간표 건물 정보 플래그 및 튜토리얼 플래그 리셋');
+      _isShowingTutorial = false; // 🔥 표시 중 플래그 리셋
+      debugPrint('🔄 새 사용자 감지 - 모든 플래그 리셋');
       
-      // 🔥 새 사용자일 때 튜토리얼 표시 (한 번만)
-      if (mounted) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted && !_hasShownTutorial) {
-            _showTutorialIfNeeded();
-          }
-        });
-      }
+      // 🔥 새 사용자일 때 튜토리얼 표시 (지연 실행으로 중복 방지)
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (mounted && !_hasShownTutorial && !_isShowingTutorial) {
+          _showTutorialIfNeeded();
+        }
+      });
     }
 
     // 🔥 시간표에서 전달받은 건물 정보 처리
@@ -632,6 +631,13 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
       // 로그인된 사용자는 서버의 Is_Tutorial 설정에 따라
       shouldShowTutorial = userAuth.isTutorial;
       debugPrint('🔍 로그인 사용자 튜토리얼 확인: $shouldShowTutorial (서버 설정: ${userAuth.isTutorial})');
+      
+      // 서버 설정이 false면 튜토리얼 표시하지 않음
+      if (!shouldShowTutorial) {
+        debugPrint('ℹ️ 서버 설정에 따라 튜토리얼 표시하지 않음 (Is_Tutorial: false)');
+        _hasShownTutorial = true; // 표시하지 않았지만 표시했다고 표시
+        return;
+      }
     } else {
       // 게스트는 로컬 설정을 확인
       try {
@@ -648,7 +654,9 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
       _hasShownTutorial = true;
       _isShowingTutorial = true; // 표시 중 플래그 설정
       debugPrint('✅ 튜토리얼 표시 시작');
-      WidgetsBinding.instance.addPostFrameCallback((_) {
+      
+      // 즉시 표시하지 않고 약간의 지연 후 표시
+      Future.delayed(const Duration(milliseconds: 200), () {
         if (mounted) {
           Navigator.push(
             context,
@@ -664,6 +672,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
       });
     } else {
       debugPrint('ℹ️ 튜토리얼 표시하지 않음 (설정에 따라)');
+      _hasShownTutorial = true; // 표시하지 않았지만 표시했다고 표시
     }
   }
 
