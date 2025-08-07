@@ -23,6 +23,8 @@ class InquiryService {
       debugPrint('사용자 ID: $userId');
       debugPrint('카테고리 (서버 전송용): $category');
       debugPrint('카테고리 타입 확인: ${category.runtimeType}');
+      debugPrint('카테고리 길이: ${category.length}');
+      debugPrint('카테고리 바이트: ${category.codeUnits}');
       debugPrint('제목: $title');
       debugPrint('내용: $content');
       debugPrint('이미지 파일: ${imageFile?.path ?? "없음"}');

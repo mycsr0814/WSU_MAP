@@ -863,6 +863,10 @@ class _CreateInquiryTabState extends State<CreateInquiryTab> {
       _inquiryTypeMapping.forEach((key, value) {
         debugPrint('  $key -> $value');
       });
+      
+      // 🔥 선택된 카테고리의 실제 표시 텍스트 확인
+      final selectedDisplayText = _inquiryTypeMapping[category];
+      debugPrint('선택된 카테고리 표시 텍스트: $selectedDisplayText');
       debugPrint('서버로 전송될 카테고리: $category');
       debugPrint('================================');
 
