@@ -59,6 +59,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
   // 🔥 튜토리얼 관련 변수
   bool _hasShownTutorial = false;
   bool _isShowingTutorial = false; // 튜토리얼 표시 중인지 확인
+  bool _isTutorialCheckInProgress = false; // 튜토리얼 확인 진행 중인지 확인
 
   @override
   void initState() {
@@ -139,11 +140,12 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
       _hasProcessedTimetableBuilding = false; // 🔥 플래그 리셋
       _hasShownTutorial = false; // 🔥 튜토리얼 플래그 리셋
       _isShowingTutorial = false; // 🔥 표시 중 플래그 리셋
+      _isTutorialCheckInProgress = false; // 🔥 확인 진행 중 플래그 리셋
       debugPrint('🔄 새 사용자 감지 - 모든 플래그 리셋');
       
       // 🔥 새 사용자일 때 튜토리얼 표시 (지연 실행으로 중복 방지)
       Future.delayed(const Duration(milliseconds: 100), () {
-        if (mounted && !_hasShownTutorial && !_isShowingTutorial) {
+        if (mounted && !_hasShownTutorial && !_isShowingTutorial && !_isTutorialCheckInProgress) {
           _showTutorialIfNeeded();
         }
       });
@@ -594,7 +596,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
   //   }
   // }
 
-  /// 🔥 건물명에서 건물 코드 추출 헬퍼 메서드
+  /// �� 건물명에서 건물 코드 추출 헬퍼 메서드
   String _extractBuildingCode(String buildingName) {
     final regex = RegExp(r'\(([^)]+)\)');
     final match = regex.firstMatch(buildingName);
@@ -611,17 +613,20 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
 
   /// 🔥 튜토리얼 표시 메서드
   void _showTutorialIfNeeded() async {
-    // 이미 표시했거나 화면이 마운트되지 않았거나 현재 표시 중이면 표시하지 않음
-    if (_hasShownTutorial || !mounted || _isShowingTutorial) {
-      debugPrint('ℹ️ 튜토리얼 표시 건너뜀 - 이미 표시됨: $_hasShownTutorial, 마운트됨: $mounted, 표시중: $_isShowingTutorial');
+    // 이미 표시했거나 화면이 마운트되지 않았거나 현재 표시 중이거나 확인 진행 중이면 표시하지 않음
+    if (_hasShownTutorial || !mounted || _isShowingTutorial || _isTutorialCheckInProgress) {
+      debugPrint('ℹ️ 튜토리얼 표시 건너뜀 - 이미 표시됨: $_hasShownTutorial, 마운트됨: $mounted, 표시중: $_isShowingTutorial, 확인중: $_isTutorialCheckInProgress');
       return;
     }
+    
+    _isTutorialCheckInProgress = true; // 확인 진행 중 플래그 설정
     
     final userAuth = context.read<UserAuth>();
     
     // 로그인되지 않았으면 튜토리얼 표시하지 않음
     if (!userAuth.isLoggedIn) {
       debugPrint('ℹ️ 로그인되지 않음 - 튜토리얼 표시하지 않음');
+      _isTutorialCheckInProgress = false;
       return;
     }
     
@@ -636,6 +641,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
       if (!shouldShowTutorial) {
         debugPrint('ℹ️ 서버 설정에 따라 튜토리얼 표시하지 않음 (Is_Tutorial: false)');
         _hasShownTutorial = true; // 표시하지 않았지만 표시했다고 표시
+        _isTutorialCheckInProgress = false;
         return;
       }
     } else {
@@ -653,6 +659,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     if (shouldShowTutorial && mounted) {
       _hasShownTutorial = true;
       _isShowingTutorial = true; // 표시 중 플래그 설정
+      _isTutorialCheckInProgress = false; // 확인 완료
       debugPrint('✅ 튜토리얼 표시 시작');
       
       // 즉시 표시하지 않고 약간의 지연 후 표시
@@ -673,6 +680,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     } else {
       debugPrint('ℹ️ 튜토리얼 표시하지 않음 (설정에 따라)');
       _hasShownTutorial = true; // 표시하지 않았지만 표시했다고 표시
+      _isTutorialCheckInProgress = false; // 확인 완료
     }
   }
 
