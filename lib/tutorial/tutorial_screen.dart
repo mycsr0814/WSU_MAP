@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../generated/app_localizations.dart';
+import 'package:provider/provider.dart';
+import '../auth/user_auth.dart';
 
 class TutorialScreen extends StatefulWidget {
   const TutorialScreen({super.key});
@@ -66,6 +68,30 @@ class _TutorialScreenState extends State<TutorialScreen> {
   void dispose() {
     _pageController.dispose();
     super.dispose();
+  }
+
+  /// 🔥 튜토리얼 완료 처리
+  Future<void> _finishTutorial() async {
+    final userAuth = context.read<UserAuth>();
+    
+    // 다시 보지 않기가 체크되어 있으면 서버에 설정 업데이트
+    if (_dontShowAgain && userAuth.isLoggedIn) {
+      try {
+        final success = await userAuth.updateTutorial(showTutorial: false);
+        if (success) {
+          debugPrint('✅ 튜토리얼 설정 업데이트 성공');
+        } else {
+          debugPrint('❌ 튜토리얼 설정 업데이트 실패');
+        }
+      } catch (e) {
+        debugPrint('❌ 튜토리얼 설정 업데이트 오류: $e');
+      }
+    }
+    
+    // 튜토리얼 화면 닫기
+    if (mounted) {
+      Navigator.of(context).pop();
+    }
   }
 
   @override
@@ -173,7 +199,7 @@ class _TutorialScreenState extends State<TutorialScreen> {
                     height: 48,
                     child: ElevatedButton(
                       onPressed: isLastPage ? () {
-                        Navigator.of(context).pop();
+                        _finishTutorial();
                       } : null,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: isLastPage 

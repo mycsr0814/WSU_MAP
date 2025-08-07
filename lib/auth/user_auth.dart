@@ -73,6 +73,7 @@ class UserAuth extends ChangeNotifier {
   String? _userId;
   String? _userName;
   bool _isLoggedIn = false;
+  bool _isTutorial = true; // 튜토리얼 표시 여부
 
   // 상태 관리
   bool _isLoading = false;
@@ -92,6 +93,9 @@ class UserAuth extends ChangeNotifier {
 
   /// 로그인 상태
   bool get isLoggedIn => _isLoggedIn;
+
+  /// 튜토리얼 표시 여부
+  bool get isTutorial => _isTutorial;
 
   /// 로딩 상태
   bool get isLoading => _isLoading;
@@ -320,6 +324,7 @@ class UserAuth extends ChangeNotifier {
           _userRole = UserRole.studentProfessor;
           _isLoggedIn = true;
           _isFirstLaunch = false;
+          _isTutorial = result.isTutorial ?? true; // 서버에서 받은 튜토리얼 정보
 
           // 로그인 성공 시 항상 비밀번호 저장 (프로필 수정 시 확인용)
           await _saveLoginInfo(rememberMe: rememberMe, password: password);
@@ -756,6 +761,33 @@ class UserAuth extends ChangeNotifier {
   /// 일반 에러 메시지 설정
   void setError(String message) {
     _setError(message);
+  }
+
+  /// 🔥 튜토리얼 표시 여부 업데이트
+  Future<bool> updateTutorial({required bool showTutorial}) async {
+    try {
+      if (_userId == null || _userId == 'guest' || _userId!.startsWith('guest_')) {
+        debugPrint('⚠️ 게스트 사용자는 튜토리얼 설정을 업데이트할 수 없습니다.');
+        return false;
+      }
+
+      debugPrint('🔄 튜토리얼 설정 업데이트 시도 - 사용자: $_userId, 표시: $showTutorial');
+
+      final result = await AuthService.updateTutorial(id: _userId!);
+
+      if (result.isSuccess) {
+        _isTutorial = showTutorial;
+        notifyListeners();
+        debugPrint('✅ 튜토리얼 설정 업데이트 성공');
+        return true;
+      } else {
+        debugPrint('❌ 튜토리얼 설정 업데이트 실패: ${result.message}');
+        return false;
+      }
+    } catch (e) {
+      debugPrint('❌ 튜토리얼 설정 업데이트 오류: $e');
+      return false;
+    }
   }
 
   // Private helper methods

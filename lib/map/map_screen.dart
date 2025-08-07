@@ -606,8 +606,8 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
   void _showTutorialIfNeeded() {
     final userAuth = context.read<UserAuth>();
     
-    // 로그인된 사용자이거나 게스트이고, 아직 튜토리얼을 보지 않았을 때만 표시
-    if (!_hasShownTutorial && mounted && (userAuth.isLoggedIn || userAuth.isGuest)) {
+    // 로그인된 사용자이고, 서버에서 튜토리얼을 표시하도록 설정되어 있고, 아직 보지 않았을 때만 표시
+    if (!_hasShownTutorial && mounted && userAuth.isLoggedIn && userAuth.isTutorial) {
       _hasShownTutorial = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {

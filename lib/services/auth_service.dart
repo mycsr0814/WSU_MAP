@@ -111,6 +111,7 @@ class AuthService {
             userId: data['id'],
             userName: data['name'],
             isLogin: data['islogin'] ?? data['isLogin'] ?? data['online'] ?? true,
+            isTutorial: data['Is_Tutorial'] ?? true, // 튜토리얼 표시 여부
           );
         case 400:
           return LoginResult.failure('아이디와 비밀번호를 입력하세요.');
@@ -546,6 +547,48 @@ class AuthService {
       return false;
     }
   }
+
+  /// 튜토리얼 표시 여부 업데이트 API 호출
+  static Future<AuthResult> updateTutorial({required String id}) async {
+    try {
+      debugPrint('=== 튜토리얼 업데이트 API 요청 ===');
+      debugPrint('URL: $baseUrl/update_tutorial');
+      debugPrint('아이디: $id');
+
+      final requestBody = {'id': id};
+
+      final response = await http
+          .put(
+            Uri.parse('$baseUrl/update_tutorial'),
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
+            body: jsonEncode(requestBody),
+          )
+          .timeout(const Duration(seconds: 10));
+
+      debugPrint('=== 튜토리얼 업데이트 API 응답 ===');
+      debugPrint('상태코드: ${response.statusCode}');
+      debugPrint('응답 내용: ${response.body}');
+
+      switch (response.statusCode) {
+        case 200:
+          return AuthResult.success(message: '튜토리얼 설정이 업데이트되었습니다.');
+        case 404:
+          return AuthResult.failure('존재하지 않는 사용자입니다.');
+        case 500:
+          return AuthResult.failure('튜토리얼 업데이트 중 서버 오류가 발생했습니다.');
+        default:
+          return AuthResult.failure(
+            '알 수 없는 오류가 발생했습니다. (${response.statusCode})',
+          );
+      }
+    } catch (e) {
+      debugPrint('튜토리얼 업데이트 네트워크 오류: $e');
+      return AuthResult.failure('네트워크 연결에 실패했습니다.');
+    }
+  }
 }
 
 /// 인증 결과를 나타내는 클래스
@@ -569,6 +612,7 @@ class LoginResult extends AuthResult {
   final String? userId;
   final String? userName;
   final bool? isLogin;
+  final bool? isTutorial;
 
   LoginResult._({
     required super.isSuccess,
@@ -576,12 +620,14 @@ class LoginResult extends AuthResult {
     this.userId,
     this.userName,
     this.isLogin,
+    this.isTutorial,
   }) : super._();
 
   factory LoginResult.success({
     required String userId,
     required String userName,
     required bool isLogin,
+    required bool isTutorial,
   }) {
     return LoginResult._(
       isSuccess: true,
@@ -589,6 +635,7 @@ class LoginResult extends AuthResult {
       userId: userId,
       userName: userName,
       isLogin: isLogin,
+      isTutorial: isTutorial,
     );
   }
 
