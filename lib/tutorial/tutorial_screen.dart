@@ -97,7 +97,23 @@ class _TutorialScreenState extends State<TutorialScreen> {
               ),
             ),
             
-            // 페이지 인디케이터
+            // 페이지뷰 (중앙에 위치)
+            Expanded(
+              child: PageView.builder(
+                controller: _pageController,
+                onPageChanged: (index) {
+                  setState(() {
+                    _currentPage = index;
+                  });
+                },
+                itemCount: tutorialItems.length,
+                itemBuilder: (context, index) {
+                  return _buildTutorialPage(tutorialItems[index]);
+                },
+              ),
+            ),
+            
+            // 페이지 인디케이터 (아래쪽에 위치)
             Container(
               padding: const EdgeInsets.symmetric(vertical: 16),
               child: Row(
@@ -116,22 +132,6 @@ class _TutorialScreenState extends State<TutorialScreen> {
                     ),
                   ),
                 ),
-              ),
-            ),
-            
-            // 페이지뷰
-            Expanded(
-              child: PageView.builder(
-                controller: _pageController,
-                onPageChanged: (index) {
-                  setState(() {
-                    _currentPage = index;
-                  });
-                },
-                itemCount: tutorialItems.length,
-                itemBuilder: (context, index) {
-                  return _buildTutorialPage(tutorialItems[index]);
-                },
               ),
             ),
             
