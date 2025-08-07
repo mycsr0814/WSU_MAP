@@ -11,6 +11,7 @@ class TutorialScreen extends StatefulWidget {
 class _TutorialScreenState extends State<TutorialScreen> {
   int _currentPage = 0;
   late PageController _pageController;
+  bool _dontShowAgain = false;
 
   final List<TutorialItem> tutorialItems = [
     TutorialItem(
@@ -22,8 +23,8 @@ class _TutorialScreenState extends State<TutorialScreen> {
       isIntro: true,
     ),
     TutorialItem(
-      title: '세부 검색',
-      description: '건물명, 강의실 번호, 편의시설까지\n정확하고 빠른 검색으로 원하는 곳을 찾아보세요',
+      title: '디테일한 검색 기능',
+      description: '우송대에서는 건물뿐만이 아닌 강의실도 검색이 가능해요!\n강의실의 위치부터 편의시설까지 디테일하게 검색해 보세요 😊',
       imagePath: 'lib/asset/1.png',
       icon: Icons.search,
       color: const Color(0xFF3B82F6),
@@ -70,125 +71,133 @@ class _TutorialScreenState extends State<TutorialScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final isLastPage = _currentPage == tutorialItems.length - 1;
     
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: Text(
-          l10n.tutorial,
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        backgroundColor: const Color(0xFF1E3A8A),
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-      ),
-      body: Column(
-        children: [
-          // 페이지 인디케이터
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(
-                tutorialItems.length,
-                (index) => Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 4),
-                  width: 8,
-                  height: 8,
-                  decoration: BoxDecoration(
-                    color: index == _currentPage 
-                        ? const Color(0xFF1E3A8A) 
-                        : Colors.grey.shade300,
-                    shape: BoxShape.circle,
+      body: SafeArea(
+        child: Column(
+          children: [
+            // 헤더 (뒤로가기 버튼 없음)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      l10n.tutorial,
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1E3A8A),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            
+            // 페이지 인디케이터
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(
+                  tutorialItems.length,
+                  (index) => Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: index == _currentPage 
+                          ? const Color(0xFF1E3A8A) 
+                          : Colors.grey.shade300,
+                      shape: BoxShape.circle,
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-          
-          // 페이지뷰
-          Expanded(
-            child: PageView.builder(
-              controller: _pageController,
-              onPageChanged: (index) {
-                setState(() {
-                  _currentPage = index;
-                });
-              },
-              itemCount: tutorialItems.length,
-              itemBuilder: (context, index) {
-                return _buildTutorialPage(tutorialItems[index]);
-              },
+            
+            // 페이지뷰
+            Expanded(
+              child: PageView.builder(
+                controller: _pageController,
+                onPageChanged: (index) {
+                  setState(() {
+                    _currentPage = index;
+                  });
+                },
+                itemCount: tutorialItems.length,
+                itemBuilder: (context, index) {
+                  return _buildTutorialPage(tutorialItems[index]);
+                },
+              ),
             ),
-          ),
-          
-          // 네비게이션 버튼
-          Container(
-            padding: const EdgeInsets.all(24),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                if (_currentPage > 0)
-                  OutlinedButton(
-                    onPressed: () {
-                      _pageController.previousPage(
-                        duration: const Duration(milliseconds: 300),
-                        curve: Curves.easeInOut,
-                      );
-                    },
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFF1E3A8A),
-                      side: const BorderSide(color: Color(0xFF1E3A8A)),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+            
+            // 하단 버튼 영역
+            Container(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                children: [
+                  // 다시 보지 않기 체크박스 (마지막 페이지에서만 표시)
+                  if (isLastPage)
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 16),
+                      child: Row(
+                        children: [
+                          Checkbox(
+                            value: _dontShowAgain,
+                            onChanged: (value) {
+                              setState(() {
+                                _dontShowAgain = value ?? false;
+                              });
+                            },
+                            activeColor: const Color(0xFF1E3A8A),
+                          ),
+                          const Text(
+                            '다시 보지 않기',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    child: Text(l10n.previous),
-                  )
-                else
-                  const SizedBox(width: 80),
-                
-                if (_currentPage < tutorialItems.length - 1)
-                  ElevatedButton(
-                    onPressed: () {
-                      _pageController.nextPage(
-                        duration: const Duration(milliseconds: 300),
-                        curve: Curves.easeInOut,
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF1E3A8A),
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                  
+                  // 돌아가기 버튼 (마지막 페이지에서만 활성화)
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: ElevatedButton(
+                      onPressed: isLastPage ? () {
+                        Navigator.of(context).pop();
+                      } : null,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: isLastPage 
+                            ? const Color(0xFF1E3A8A)
+                            : Colors.grey.shade300,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: Text(
+                        '돌아가기',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: isLastPage ? Colors.white : Colors.grey.shade500,
+                        ),
                       ),
                     ),
-                    child: Text(l10n.next),
-                  )
-                else
-                  ElevatedButton(
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF1E3A8A),
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: Text(l10n.finish),
                   ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

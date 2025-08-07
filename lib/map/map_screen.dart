@@ -618,16 +618,6 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     }
   }
 
-  /// 🔥 사용법 버튼 클릭 메서드
-  void _showTutorial() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const TutorialScreen(),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     // 🔥 UserAuth 상태 변화를 감지
@@ -777,56 +767,6 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                     },
                   ),
                 ],
-              ),
-            ),
-            // 🔥 사용법 버튼 (우측 상단)
-            Positioned(
-              top: MediaQuery.of(context).padding.top + 10,
-              right: 16,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    onTap: _showTutorial,
-                    borderRadius: BorderRadius.circular(12),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.help_outline,
-                            size: 18,
-                            color: Colors.grey[700],
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            AppLocalizations.of(context)!.tutorial,
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.grey[700],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
               ),
             ),
             // 네비게이션 상태 카드
