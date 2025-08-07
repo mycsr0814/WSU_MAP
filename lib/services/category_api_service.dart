@@ -12,16 +12,26 @@ class CategoryApiService {
   // 🔥 연결 상태 캐시 (더 긴 시간으로 변경)
   static bool? _lastConnectionStatus;
   static DateTime? _lastConnectionCheck;
-  static const Duration _connectionCacheTime = Duration(minutes: 10); // 5분 → 10분으로 증가
+  static const Duration _connectionCacheTime = Duration(minutes: 15); // 10분 → 15분으로 증가
 
   // 🔥 카테고리/건물 캐시 (더 오래 유지)
   static List<Category>? _cachedCategories;
   static Map<String, List<String>> _cachedBuildingNames = {};
   static DateTime? _lastCategoryCacheTime;
-  static const Duration _categoryCacheTime = Duration(minutes: 15); // 카테고리 캐시 15분
+  static const Duration _categoryCacheTime = Duration(minutes: 30); // 카테고리 캐시 30분으로 증가
 
-  /// 🔥 카테고리 목록 조회 (메모리 캐시 활용, fallback 지원)
+  // 🔥 요청 중복 방지
+  static bool _isLoadingCategories = false;
+  static Future<List<Category>>? _currentCategoryRequest;
+
+  /// 🔥 카테고리 목록 조회 (메모리 캐시 활용, fallback 지원) - 안정성 개선
   static Future<List<Category>> getCategories({bool forceRefresh = false}) async {
+    // 🔥 중복 요청 방지
+    if (_isLoadingCategories && _currentCategoryRequest != null) {
+      debugPrint('⚠️ 카테고리 요청 중복 방지 - 기존 요청 대기');
+      return await _currentCategoryRequest!;
+    }
+
     // 캐시가 유효하고 강제 새로고침이 아닌 경우 캐시 반환
     if (!forceRefresh && _cachedCategories != null && _lastCategoryCacheTime != null) {
       final timeDiff = DateTime.now().difference(_lastCategoryCacheTime!);
@@ -31,6 +41,21 @@ class CategoryApiService {
       }
     }
 
+    // 🔥 요청 시작
+    _isLoadingCategories = true;
+    _currentCategoryRequest = _fetchCategoriesFromServer(forceRefresh);
+    
+    try {
+      final result = await _currentCategoryRequest!;
+      return result;
+    } finally {
+      _isLoadingCategories = false;
+      _currentCategoryRequest = null;
+    }
+  }
+
+  /// 🔥 서버에서 카테고리 가져오기 (내부 메서드)
+  static Future<List<Category>> _fetchCategoriesFromServer(bool forceRefresh) async {
     try {
       debugPrint('🔍 getCategories 시작');
 
@@ -47,7 +72,7 @@ class CategoryApiService {
       final response = await http.get(
         Uri.parse(baseUrl),
         headers: {'Content-Type': 'application/json'},
-      ).timeout(const Duration(seconds: 10)); // 타임아웃 증가
+      ).timeout(const Duration(seconds: 12)); // 타임아웃 증가
 
       debugPrint('🔍 getCategories 응답: ${response.statusCode}');
 
@@ -61,8 +86,8 @@ class CategoryApiService {
           if (item is Map<String, dynamic> && item.containsKey('Category_Name')) {
             final categoryName = item['Category_Name']?.toString();
             if (categoryName != null && categoryName.isNotEmpty) {
-              // ✅ 한글 → 영어 ID 변환
-              categoryNames.add(CategoryNameMapper.toCategoryId(categoryName));
+              // 🔥 원본 카테고리 이름 그대로 사용 (언어 설정에 따라 표시됨)
+              categoryNames.add(categoryName);
             }
           }
         }
@@ -70,6 +95,7 @@ class CategoryApiService {
         if (categoryNames.isNotEmpty) {
           final categories = categoryNames.map((name) => Category(categoryName: name)).toList();
           debugPrint('✅ 서버에서 카테고리 로딩 성공: ${categories.length}개');
+          debugPrint('📋 카테고리 목록: $categoryNames');
           _cachedCategories = categories;
           _lastCategoryCacheTime = DateTime.now();
           return categories;
@@ -263,6 +289,8 @@ class CategoryApiService {
     _cachedCategories = null;
     _cachedBuildingNames.clear();
     _lastCategoryCacheTime = null;
+    _isLoadingCategories = false;
+    _currentCategoryRequest = null;
     debugPrint('🗑️ 전체 데이터 캐시 비움');
   }
 

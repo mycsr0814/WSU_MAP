@@ -6,7 +6,9 @@ import '../services/inquiry_service.dart';
 import '../auth/user_auth.dart';
 import 'inquiry_detail_page.dart';
 
-/// 문의하기 카테고리 매핑 클래스
+/// 문의하기 카테고리 매핑 클래스 (더 이상 사용하지 않음)
+/// 현재는 드롭다운에서 직접 한국어 코드를 사용하므로 불필요
+/*
 class InquiryCategoryMapper {
   /// 다국어 텍스트를 한국어 카테고리 코드로 변환
   static String getKoreanCategory(String localizedText) {
@@ -41,6 +43,7 @@ class InquiryCategoryMapper {
     }
   }
 }
+*/
 
 class InquiryPage extends StatefulWidget {
   final UserAuth userAuth;
@@ -154,8 +157,8 @@ class _CreateInquiryTabState extends State<CreateInquiryTab> {
   // 🔥 제출 상태 관리 추가
   bool _isSubmitting = false;
 
-  // 문의 유형 목록 - 다국어 지원을 위해 빌드 시점에 설정
-  late List<String> _inquiryTypes;
+  // 🔥 문의 유형 매핑 (한국어 코드 ↔ 다국어 텍스트)
+  late Map<String, String> _inquiryTypeMapping;
 
   @override
   void initState() {
@@ -170,13 +173,15 @@ class _CreateInquiryTabState extends State<CreateInquiryTab> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     final l10n = AppLocalizations.of(context)!;
-    _inquiryTypes = [
-      l10n.inquiry_category_place_error,
-      l10n.inquiry_category_bug,
-      l10n.inquiry_category_feature,
-      l10n.inquiry_category_route_error,
-      l10n.inquiry_category_other,
-    ];
+    
+    // 🔥 한국어 코드와 다국어 텍스트 매핑
+    _inquiryTypeMapping = {
+      'place_error': l10n.inquiry_category_place_error,
+      'bug': l10n.inquiry_category_bug,
+      'feature': l10n.inquiry_category_feature,
+      'route_error': l10n.inquiry_category_route_error,
+      'other': l10n.inquiry_category_other,
+    };
   }
 
   /// 서버 경로 테스트
@@ -342,11 +347,11 @@ class _CreateInquiryTabState extends State<CreateInquiryTab> {
               color: Colors.grey[600],
               size: 20,
             ),
-            items: _inquiryTypes.map((String type) {
+            items: _inquiryTypeMapping.entries.map((entry) {
               return DropdownMenuItem<String>(
-                value: type,
+                value: entry.key,
                 child: Text(
-                  type,
+                  entry.value,
                   style: const TextStyle(
                     fontSize: 14,
                     color: Color(0xFF1E3A8A),
@@ -850,16 +855,14 @@ class _CreateInquiryTabState extends State<CreateInquiryTab> {
     );
 
     try {
-      // 카테고리 변환 로그 추가
-      final originalCategory = _selectedInquiryType!;
-      final koreanCategory = InquiryCategoryMapper.getKoreanCategory(originalCategory);
-      debugPrint('=== 문의하기 카테고리 변환 ===');
-      debugPrint('원본 카테고리 (다국어): $originalCategory');
-      debugPrint('변환된 카테고리 (한국어): $koreanCategory');
+      // 🔥 이미 한국어 코드를 사용하므로 변환 불필요
+      final category = _selectedInquiryType!;
+      debugPrint('=== 문의하기 카테고리 ===');
+      debugPrint('선택된 카테고리 (한국어 코드): $category');
 
       final success = await InquiryService.createInquiry(
         userId: widget.userAuth.userId!,
-        category: koreanCategory,
+        category: category, // 이미 한국어 코드
         title: _titleController.text.trim(),
         content: _contentController.text.trim(),
         imageFile: _selectedImages.isNotEmpty ? _selectedImages.first : null,

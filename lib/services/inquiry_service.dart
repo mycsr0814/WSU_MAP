@@ -4,7 +4,6 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 import '../config/api_config.dart';
-import '../auth/user_auth.dart';
 
 class InquiryService {
   // 서버 라우터 구조에 맞게 URL 수정
@@ -21,7 +20,7 @@ class InquiryService {
     try {
       debugPrint('=== 문의하기 작성 시작 ===');
       debugPrint('사용자 ID: $userId');
-      debugPrint('카테고리 (서버 전송용): $category');
+      debugPrint('카테고리: $category');
       debugPrint('제목: $title');
       debugPrint('내용: $content');
       debugPrint('이미지 파일: ${imageFile?.path ?? "없음"}');
@@ -45,8 +44,14 @@ class InquiryService {
       }
 
       // 먼저 multipart 요청 시도
-      bool success = await _tryMultipartRequest(userId, category, title, content, imageFile);
-      
+      bool success = await _tryMultipartRequest(
+        userId,
+        category,
+        title,
+        content,
+        imageFile,
+      );
+
       if (!success) {
         debugPrint('multipart 요청 실패, JSON 요청 시도...');
         success = await _tryJsonRequest(userId, category, title, content);
@@ -69,30 +74,31 @@ class InquiryService {
   ) async {
     try {
       debugPrint('=== multipart 요청 시도 ===');
-      
+
       // 서버 라우트: router.post('/:id', inquiryController.createInquiry)
       final List<String> possibleUrls = [
-        '${ApiConfig.baseHost}:3001/user/inquiry/$userId',  // /user/inquiry/:id (서버 라우트에 맞는 경로)
-        '${ApiConfig.baseHost}:3001/inquiry/$userId',       // 대안 경로
-        '${ApiConfig.baseHost}:3001/user/inquiry',          // /user/inquiry (body에 id 포함)
-        '${ApiConfig.baseHost}:3001/inquiry',               // /inquiry (body에 id 포함)
+        '${ApiConfig.baseHost}:3001/user/inquiry/$userId', // /user/inquiry/:id (서버 라우트에 맞는 경로)
+        '${ApiConfig.baseHost}:3001/inquiry/$userId', // 대안 경로
+        '${ApiConfig.baseHost}:3001/user/inquiry', // /user/inquiry (body에 id 포함)
+        '${ApiConfig.baseHost}:3001/inquiry', // /inquiry (body에 id 포함)
       ];
 
       for (int i = 0; i < possibleUrls.length; i++) {
         final url = possibleUrls[i];
         debugPrint('URL 시도 ${i + 1}: $url');
-        
+
         // multipart 요청 생성
         final request = http.MultipartRequest('POST', Uri.parse(url));
 
         // 헤더 추가
         request.headers['Content-Type'] = 'multipart/form-data';
+        request.headers['Accept-Language'] = 'ko-KR';
 
         // 텍스트 필드 추가
         request.fields['category'] = category;
         request.fields['title'] = title;
         request.fields['content'] = content;
-        
+
         // URL이 /user/inquiry 또는 /inquiry로 끝나는 경우 body에 id 추가
         if (url.endsWith('/user/inquiry') || url.endsWith('/inquiry')) {
           request.fields['id'] = userId;
@@ -111,14 +117,15 @@ class InquiryService {
           try {
             final imageStream = http.ByteStream(imageFile.openRead());
             final imageLength = await imageFile.length();
-            
+
             final multipartFile = http.MultipartFile(
               'image',
               imageStream,
               imageLength,
-              filename: 'inquiry_image_${DateTime.now().millisecondsSinceEpoch}.jpg',
+              filename:
+                  'inquiry_image_${DateTime.now().millisecondsSinceEpoch}.jpg',
             );
-            
+
             request.files.add(multipartFile);
             debugPrint('이미지 파일 추가됨: ${imageFile.path}');
             debugPrint('이미지 파일 크기: $imageLength bytes');
@@ -153,7 +160,9 @@ class InquiryService {
             debugPrint('❌ 모든 multipart URL 시도 실패');
           }
         } else {
-          debugPrint('❌ multipart 문의하기 작성 실패 (URL: $url): ${response.statusCode}');
+          debugPrint(
+            '❌ multipart 문의하기 작성 실패 (URL: $url): ${response.statusCode}',
+          );
           if (i < possibleUrls.length - 1) {
             debugPrint('다음 URL 시도...');
           } else {
@@ -161,7 +170,7 @@ class InquiryService {
           }
         }
       }
-      
+
       debugPrint('❌ 모든 multipart URL 시도 실패');
       return false;
     } catch (e) {
@@ -179,35 +188,36 @@ class InquiryService {
   ) async {
     try {
       debugPrint('=== JSON 요청 시도 ===');
-      
+
       // 서버 라우트: router.post('/:id', inquiryController.createInquiry)
       final List<String> possibleUrls = [
-        '${ApiConfig.baseHost}:3001/user/inquiry/$userId',  // /user/inquiry/:id (서버 라우트에 맞는 경로)
-        '${ApiConfig.baseHost}:3001/inquiry/$userId',       // 대안 경로
-        '${ApiConfig.baseHost}:3001/user/inquiry',          // /user/inquiry (body에 id 포함)
-        '${ApiConfig.baseHost}:3001/inquiry',               // /inquiry (body에 id 포함)
+        '${ApiConfig.baseHost}:3001/user/inquiry/$userId', // /user/inquiry/:id (서버 라우트에 맞는 경로)
+        '${ApiConfig.baseHost}:3001/inquiry/$userId', // 대안 경로
+        '${ApiConfig.baseHost}:3001/user/inquiry', // /user/inquiry (body에 id 포함)
+        '${ApiConfig.baseHost}:3001/inquiry', // /inquiry (body에 id 포함)
       ];
 
       for (int i = 0; i < possibleUrls.length; i++) {
         final url = possibleUrls[i];
         debugPrint('JSON URL 시도 ${i + 1}: $url');
-        
+
         // 요청 바디 준비
         Map<String, dynamic> requestBody = {
           'category': category,
           'title': title,
           'content': content,
         };
-        
+
         // URL이 /user/inquiry 또는 /inquiry로 끝나는 경우 body에 id 추가
         if (url.endsWith('/user/inquiry') || url.endsWith('/inquiry')) {
           requestBody['id'] = userId;
         }
-        
+
         final response = await http.post(
           Uri.parse(url),
           headers: {
             'Content-Type': 'application/json',
+            'Accept-Language': 'ko-KR',
           },
           body: jsonEncode(requestBody),
         );
@@ -236,7 +246,7 @@ class InquiryService {
           }
         }
       }
-      
+
       debugPrint('❌ 모든 JSON URL 시도 실패');
       return false;
     } catch (e) {
@@ -246,7 +256,9 @@ class InquiryService {
   }
 
   /// 문의하기 목록 조회 (필요시 구현)
-  static Future<List<Map<String, dynamic>>> getInquiryList(String userId) async {
+  static Future<List<Map<String, dynamic>>> getInquiryList(
+    String userId,
+  ) async {
     try {
       debugPrint('=== 문의하기 목록 조회 시작 ===');
       debugPrint('사용자 ID: $userId');
@@ -255,6 +267,7 @@ class InquiryService {
         Uri.parse('$baseUrl/list/$userId'),
         headers: {
           'Content-Type': 'application/json',
+          'Accept-Language': 'ko-KR',
         },
       );
 
@@ -276,7 +289,9 @@ class InquiryService {
   }
 
   /// 문의하기 상세 조회 (필요시 구현)
-  static Future<Map<String, dynamic>?> getInquiryDetail(String inquiryId) async {
+  static Future<Map<String, dynamic>?> getInquiryDetail(
+    String inquiryId,
+  ) async {
     try {
       debugPrint('=== 문의하기 상세 조회 시작 ===');
       debugPrint('문의 ID: $inquiryId');
@@ -285,6 +300,7 @@ class InquiryService {
         Uri.parse('$baseUrl/detail/$inquiryId'),
         headers: {
           'Content-Type': 'application/json',
+          'Accept-Language': 'ko-KR',
         },
       );
 
@@ -308,7 +324,7 @@ class InquiryService {
   /// 서버에서 사용 가능한 경로 테스트
   static Future<void> testServerRoutes(String userId) async {
     debugPrint('=== 서버 경로 테스트 시작 ===');
-    
+
     final List<String> testUrls = [
       '${ApiConfig.baseHost}:3001/user/inquiry',
       '${ApiConfig.baseHost}:3001/inquiry/$userId',
@@ -319,19 +335,22 @@ class InquiryService {
     for (int i = 0; i < testUrls.length; i++) {
       final url = testUrls[i];
       debugPrint('테스트 URL ${i + 1}: $url');
-      
+
       try {
         final response = await http.get(Uri.parse(url));
-        debugPrint('GET ${url}: ${response.statusCode}');
-        
+        debugPrint('GET $url: ${response.statusCode}');
+
         final postResponse = await http.post(
           Uri.parse(url),
-          headers: {'Content-Type': 'application/json'},
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept-Language': 'ko-KR',
+          },
           body: jsonEncode({'test': 'test'}),
         );
-        debugPrint('POST ${url}: ${postResponse.statusCode}');
+        debugPrint('POST $url: ${postResponse.statusCode}');
       } catch (e) {
-        debugPrint('오류 ${url}: $e');
+        debugPrint('오류 $url: $e');
       }
     }
   }
@@ -344,8 +363,8 @@ class InquiryService {
       debugPrint('API 기본 URL: ${ApiConfig.baseHost}:3001');
 
       final List<String> possibleUrls = [
-        '${ApiConfig.baseHost}:3001/inquiry/$userId',       // 서버 라우트: router.get('/:id', inquiryController.getInquiry)
-        '${ApiConfig.baseHost}:3001/user/inquiry/$userId',  // 대안 경로
+        '${ApiConfig.baseHost}:3001/inquiry/$userId', // 서버 라우트: router.get('/:id', inquiryController.getInquiry)
+        '${ApiConfig.baseHost}:3001/user/inquiry/$userId', // 대안 경로
         '${ApiConfig.baseHost}:3001/user/inquiry?userId=$userId',
         '${ApiConfig.baseHost}:3001/inquiry?userId=$userId',
       ];
@@ -359,6 +378,7 @@ class InquiryService {
             Uri.parse(url),
             headers: {
               'Content-Type': 'application/json',
+              'Accept-Language': 'ko-KR',
             },
           );
 
@@ -380,34 +400,36 @@ class InquiryService {
             final List<InquiryItem> inquiries = data.map((item) {
               debugPrint('=== 개별 문의 파싱 시작 ===');
               debugPrint('원본 데이터: $item');
-              
+
               // 서버 상태값을 한국어로 변환
               String status = item['Status']?.toString() ?? 'pending';
               String displayStatus = _convertStatusToKorean(status);
               debugPrint('상태 변환: $status → $displayStatus');
-              
+
               // 날짜 포맷팅
               String createdAt = '';
               if (item['Created_At'] != null) {
                 try {
                   DateTime date = DateTime.parse(item['Created_At']);
-                  createdAt = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+                  createdAt =
+                      '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
                 } catch (e) {
                   createdAt = item['Created_At'].toString();
                 }
               }
-              
+
               // 답변일 포맷팅
               String? answeredAt;
               if (item['Answered_At'] != null) {
                 try {
                   DateTime date = DateTime.parse(item['Answered_At']);
-                  answeredAt = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+                  answeredAt =
+                      '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
                 } catch (e) {
                   answeredAt = item['Answered_At'].toString();
                 }
               }
-              
+
               final inquiryItem = InquiryItem(
                 id: item['Inquiry_Code']?.toString() ?? '',
                 category: item['Category']?.toString() ?? '',
@@ -415,17 +437,18 @@ class InquiryService {
                 content: item['Content']?.toString() ?? '',
                 status: displayStatus,
                 createdAt: createdAt,
-                hasImage: item['Image_Path'] != null && item['Image_Path'].toString().isNotEmpty,
+                hasImage:
+                    item['Image_Path'] != null &&
+                    item['Image_Path'].toString().isNotEmpty,
                 inquiryCode: item['Inquiry_Code']?.toString() ?? '',
                 answer: item['Answer']?.toString(),
                 answeredAt: answeredAt,
                 imagePath: item['Image_Path']?.toString(),
               );
-              
-              debugPrint('파싱된 문의: ${inquiryItem.title} (${inquiryItem.status})');
-              debugPrint('  - Image_Path: ${item['Image_Path']}');
-              debugPrint('  - hasImage: ${inquiryItem.hasImage}');
-              debugPrint('  - inquiryCode: ${inquiryItem.inquiryCode}');
+
+              debugPrint(
+                '파싱된 문의: ${inquiryItem.title} (${inquiryItem.status})',
+              );
               return inquiryItem;
             }).toList();
 
@@ -442,7 +465,7 @@ class InquiryService {
       // 모든 URL 시도가 실패한 경우 빈 리스트 반환 (테스트 데이터 비활성화)
       debugPrint('⚠️ 모든 API URL 시도가 실패했습니다. 빈 리스트를 반환합니다.');
       return [];
-      
+
       return [];
     } catch (e) {
       debugPrint('❌ 문의 목록 조회 오류: $e');
@@ -479,17 +502,13 @@ class InquiryService {
         debugPrint('URL 시도 ${i + 1}: $url');
 
         try {
-          final requestBody = {
-            'inquiry_code': inquiryCode,
-          };
-          debugPrint('요청 본문: $requestBody');
-          
           final response = await http.delete(
             Uri.parse(url),
             headers: {
               'Content-Type': 'application/json',
+              'Accept-Language': 'ko-KR',
             },
-            body: jsonEncode(requestBody),
+            body: jsonEncode({'inquiry_code': inquiryCode}),
           );
 
           debugPrint('응답 상태: ${response.statusCode}');
@@ -500,7 +519,6 @@ class InquiryService {
             return true;
           } else {
             debugPrint('❌ 문의 삭제 실패: ${response.statusCode}');
-            debugPrint('❌ 실패 응답: ${response.body}');
           }
         } catch (e) {
           debugPrint('❌ URL 시도 ${i + 1} 실패: $e');
@@ -543,4 +561,4 @@ class InquiryItem {
     this.answeredAt,
     this.imagePath,
   });
-} 
+}

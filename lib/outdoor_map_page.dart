@@ -119,10 +119,89 @@ class _OutdoorMapPageState extends State<OutdoorMapPage> {
     _mapController!.addOverlay(currentLocationMarker);
   }
 
+  /// 위치 변화 감지 설정
+  void _setupLocationListener() {
+    _locationManager = Provider.of<LocationManager>(context, listen: false);
+    _locationManager?.addListener(_onLocationChanged);
+  }
+
+  /// 위치 변화 시 호출되는 콜백
+  void _onLocationChanged() {
+    if (_locationManager?.hasValidLocation == true && 
+        _locationManager?.currentLocation != null) {
+      final newLocation = NLatLng(
+        _locationManager!.currentLocation!.latitude!,
+        _locationManager!.currentLocation!.longitude!,
+      );
+      
+      // 위치가 실제로 변경되었는지 확인
+      if (_currentLocation == null || 
+          _currentLocation!.latitude != newLocation.latitude ||
+          _currentLocation!.longitude != newLocation.longitude) {
+        setState(() {
+          _currentLocation = newLocation;
+        });
+        _showCurrentLocation();
+      }
+    }
+  }
+
+  /// 현재 위치 가져오기
+  Future<void> _getCurrentLocation() async {
+    final locationManager = Provider.of<LocationManager>(context, listen: false);
+    if (locationManager.hasValidLocation && locationManager.currentLocation != null) {
+      setState(() {
+        _currentLocation = NLatLng(
+          locationManager.currentLocation!.latitude!,
+          locationManager.currentLocation!.longitude!,
+        );
+      });
+      await _showCurrentLocation();
+    }
+  }
+
+  /// 현재 위치 표시
+  Future<void> _showCurrentLocation() async {
+    if (_mapController == null || _currentLocation == null) return;
+
+    // 기존 현재 위치 마커 제거
+    _mapController!.deleteOverlay(NOverlayInfo(
+      type: NOverlayType.marker,
+      id: 'current_location',
+    ));
+
+    // 현재 위치 마커 추가
+    final currentLocationMarker = NMarker(
+      id: 'current_location',
+      position: _currentLocation!,
+      icon: await NOverlayImage.fromWidget(
+        context: context,
+        widget: Container(
+          width: 24,
+          height: 24,
+          decoration: BoxDecoration(
+            color: const Color(0xFF3B82F6),
+            shape: BoxShape.circle,
+            border: Border.all(color: Colors.white, width: 2),
+          ),
+          child: const Icon(
+            Icons.my_location,
+            color: Colors.white,
+            size: 14,
+          ),
+        ),
+        size: const Size(24, 24),
+      ),
+      size: const Size(24, 24),
+    );
+
+    _mapController!.addOverlay(currentLocationMarker);
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    
+
     return Scaffold(
       body: Stack(
         children: [
@@ -137,6 +216,8 @@ class _OutdoorMapPageState extends State<OutdoorMapPage> {
               _mapController = controller;
               await _getCurrentLocation();
               _drawPath();
+              await _addRouteMarkers();
+              _showCurrentLocation();
             },
           ),
           // 하단 정보 패널
@@ -171,13 +252,13 @@ class _OutdoorMapPageState extends State<OutdoorMapPage> {
                               width: 12,
                               height: 12,
                               decoration: const BoxDecoration(
-                                color: Color(0xFF10B981), // 초록색 유지
+                                color: Color(0xFF3B82F6), // 파란색으로 변경
                                 shape: BoxShape.circle,
                               ),
                             ),
                             const SizedBox(width: 8),
                             Text(
-                              l10n.departure,
+                              '출발지',
                               style: const TextStyle(
                                 fontSize: 12,
                                 color: Colors.grey,
@@ -187,7 +268,7 @@ class _OutdoorMapPageState extends State<OutdoorMapPage> {
                             const SizedBox(width: 4),
                             Expanded(
                               child: Text(
-                                widget.startLabel ?? l10n.myLocation,
+                                '출발지',
                                 style: const TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
@@ -215,7 +296,7 @@ class _OutdoorMapPageState extends State<OutdoorMapPage> {
                             ),
                             const SizedBox(width: 8),
                             Text(
-                              l10n.arrival,
+                              '도착지',
                               style: const TextStyle(
                                 fontSize: 12,
                                 color: Colors.grey,
@@ -225,7 +306,7 @@ class _OutdoorMapPageState extends State<OutdoorMapPage> {
                             const SizedBox(width: 4),
                             Expanded(
                               child: Text(
-                                widget.endLabel ?? l10n.destination,
+                                '도착지',
                                 style: const TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
@@ -260,27 +341,210 @@ class _OutdoorMapPageState extends State<OutdoorMapPage> {
 
   void _drawPath() {
     if (_mapController == null || widget.path.isEmpty) return;
-    
+
     // 기존 경로 오버레이 제거
     for (var overlayId in _pathOverlayIds) {
-      _mapController!.deleteOverlay(NOverlayInfo(
-        type: NOverlayType.polylineOverlay,
-        id: overlayId,
-      ));
+      _mapController!.deleteOverlay(
+        NOverlayInfo(type: NOverlayType.polylineOverlay, id: overlayId),
+      );
     }
     _pathOverlayIds.clear();
-    
+
+    // 🔥 동적 경로 두께 계산
+    final dynamicWidth = _calculateDynamicPathWidth(widget.path);
+
     // 새로운 경로 그리기
     if (widget.path.length > 1) {
       final pathOverlay = NPolylineOverlay(
         id: 'outdoor_path',
         coords: widget.path,
         color: const Color(0xFF3B82F6),
-        width: 8,
+        width: dynamicWidth,
       );
       _mapController!.addOverlay(pathOverlay);
       _pathOverlayIds.add('outdoor_path');
     }
+  }
+
+  /// 🔥 동적 경로 두께 계산
+  double _calculateDynamicPathWidth(List<NLatLng> pathCoordinates) {
+    // 경로 길이에 따른 동적 두께 계산
+    final pathLength = _calculatePathLength(pathCoordinates);
+
+    if (pathLength < 100) {
+      return 8.0; // 짧은 경로: 두꺼운 선
+    } else if (pathLength < 300) {
+      return 6.0; // 중간 경로: 보통 두께
+    } else if (pathLength < 500) {
+      return 5.0; // 긴 경로: 얇은 선
+    } else {
+      return 4.0; // 매우 긴 경로: 가장 얇은 선
+    }
+  }
+
+  /// 🔥 경로 길이 계산 (미터 단위)
+  double _calculatePathLength(List<NLatLng> coordinates) {
+    if (coordinates.length < 2) return 0.0;
+
+    double totalDistance = 0.0;
+    for (int i = 0; i < coordinates.length - 1; i++) {
+      totalDistance += _calculateDistance(
+        coordinates[i].latitude,
+        coordinates[i].longitude,
+        coordinates[i + 1].latitude,
+        coordinates[i + 1].longitude,
+      );
+    }
+    return totalDistance;
+  }
+
+  /// 🔥 두 좌표 간 거리 계산 (미터 단위)
+  double _calculateDistance(
+    double lat1,
+    double lon1,
+    double lat2,
+    double lon2,
+  ) {
+    const double earthRadius = 6371000; // 지구 반지름 (미터)
+
+    final double dLat = _degreesToRadians(lat2 - lat1);
+    final double dLon = _degreesToRadians(lon2 - lon1);
+
+    final double a =
+        sin(dLat / 2) * sin(dLat / 2) +
+        cos(_degreesToRadians(lat1)) *
+            cos(_degreesToRadians(lat2)) *
+            sin(dLon / 2) *
+            sin(dLon / 2);
+
+    final double c = 2 * atan2(sqrt(a), sqrt(1 - a));
+
+    return earthRadius * c;
+  }
+
+  /// 🔥 도를 라디안으로 변환
+  double _degreesToRadians(double degrees) {
+    return degrees * (pi / 180);
+  }
+
+  /// 출발지와 도착지 마커 추가
+  Future<void> _addRouteMarkers() async {
+    debugPrint('🎯 _addRouteMarkers 시작');
+    debugPrint('MapController: ${_mapController != null ? "있음" : "없음"}');
+    debugPrint('Path 길이: ${widget.path.length}');
+    debugPrint('showMarkers: ${widget.showMarkers}');
+    debugPrint('startLabel: ${widget.startLabel}');
+    debugPrint('endLabel: ${widget.endLabel}');
+
+    if (_mapController == null || widget.path.isEmpty) {
+      debugPrint('❌ MapController가 없거나 경로가 비어있음');
+      return;
+    }
+
+    // 🔥 showMarkers가 false면 마커를 추가하지 않음
+    if (!widget.showMarkers) {
+      debugPrint('⚠️ showMarkers가 false로 설정되어 마커를 표시하지 않습니다');
+      return;
+    }
+
+    // 기존 마커 제거
+    _clearRouteMarkers();
+
+    try {
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+
+      // 🔥 출발점 마커 (start_marker.png 사용)
+      if (widget.path.isNotEmpty) {
+        final startMarkerId = 'route_start_$timestamp';
+        final startMarker = NMarker(
+          id: startMarkerId,
+          position: widget.path.first,
+          icon: NOverlayImage.fromAssetImage('lib/asset/start_marker.png'),
+          caption: NOverlayCaption(
+            text: '출발지',
+            color: Colors.white,
+            haloColor: const Color(0xFF3B82F6),
+            textSize: 12,
+          ),
+        );
+
+        await _mapController!.addOverlay(startMarker);
+        _markerOverlayIds.add(startMarkerId);
+        debugPrint(
+          '✅ 출발지 마커 추가 성공: ${widget.path.first.latitude}, ${widget.path.first.longitude}',
+        );
+        debugPrint('출발지 마커 ID: $startMarkerId');
+      }
+
+      // 🔥 도착점 마커 (end_marker.png 사용)
+      if (widget.path.length > 1) {
+        final endMarkerId = 'route_end_$timestamp';
+        final endMarker = NMarker(
+          id: endMarkerId,
+          position: widget.path.last,
+          icon: NOverlayImage.fromAssetImage('lib/asset/end_marker.png'),
+          caption: NOverlayCaption(
+            text: '도착지',
+            color: Colors.white,
+            haloColor: const Color(0xFFEF4444),
+            textSize: 12,
+          ),
+        );
+
+        await _mapController!.addOverlay(endMarker);
+        _markerOverlayIds.add(endMarkerId);
+        debugPrint(
+          '✅ 도착지 마커 추가 성공: ${widget.path.last.latitude}, ${widget.path.last.longitude}',
+        );
+        debugPrint('도착지 마커 ID: $endMarkerId');
+      }
+
+      debugPrint('✅ 경로 마커 추가 완료 - 총 ${_markerOverlayIds.length}개 마커');
+
+      // 🔥 마커가 추가되지 않았으면 다시 시도
+      if (_markerOverlayIds.isEmpty) {
+        debugPrint('⚠️ 마커가 추가되지 않음. 1초 후 재시도...');
+        Future.delayed(const Duration(seconds: 1), () {
+          if (mounted) {
+            _addRouteMarkers();
+          }
+        });
+      }
+    } catch (e) {
+      debugPrint('❌ 경로 마커 추가 실패: $e');
+
+      // 🔥 실패 시에도 재시도
+      Future.delayed(const Duration(seconds: 2), () {
+        if (mounted) {
+          debugPrint('🔄 마커 추가 재시도...');
+          _addRouteMarkers();
+        }
+      });
+    }
+  }
+
+  /// 현재 위치 표시
+  void _showCurrentLocation() async {
+    try {
+      await _locationController.requestCurrentLocation();
+      debugPrint('✅ 현재 위치 요청 완료');
+    } catch (e) {
+      debugPrint('❌ 현재 위치 요청 실패: $e');
+    }
+  }
+
+  /// 경로 마커 제거
+  void _clearRouteMarkers() {
+    for (var markerId in _markerOverlayIds) {
+      try {
+        _mapController!.deleteOverlay(
+          NOverlayInfo(type: NOverlayType.marker, id: markerId),
+        );
+      } catch (e) {
+        debugPrint('마커 제거 오류 (무시): $markerId - $e');
+      }
+    }
+    _markerOverlayIds.clear();
   }
 
   @override
@@ -291,10 +555,9 @@ class _OutdoorMapPageState extends State<OutdoorMapPage> {
     // 오버레이 정리
     if (_mapController != null) {
       for (var overlayId in _pathOverlayIds) {
-        _mapController!.deleteOverlay(NOverlayInfo(
-          type: NOverlayType.polylineOverlay,
-          id: overlayId,
-        ));
+        _mapController!.deleteOverlay(
+          NOverlayInfo(type: NOverlayType.polylineOverlay, id: overlayId),
+        );
       }
       // 현재 위치 마커 정리
       _mapController!.deleteOverlay(NOverlayInfo(
@@ -302,6 +565,11 @@ class _OutdoorMapPageState extends State<OutdoorMapPage> {
         id: 'current_location',
       ));
     }
+
+    // 서비스 정리
+    _mapLocationService.dispose();
+    _locationController.dispose();
+
     super.dispose();
   }
 }

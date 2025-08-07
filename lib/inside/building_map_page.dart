@@ -19,7 +19,7 @@ import '../services/unified_path_service.dart';
 import '../controllers/unified_navigation_controller.dart';
 import '../data/category_fallback_data.dart'; // CategoryUtils를 위한 import
 import '../utils/CategoryLocalization.dart'; // CategoryLocalization을 위한 import
-import '../generated/app_localizations.dart'; // AppLocalizations를 위한 import
+import '../controllers/location_controllers.dart'; // 현재 위치 표시를 위한 import
 
 class BuildingMapPage extends StatefulWidget {
   final String buildingName;
@@ -29,7 +29,7 @@ class BuildingMapPage extends StatefulWidget {
   final String? targetRoomId;
   final int? targetFloorNumber;
   final String? locationType; // 출발지/도착지 설정용
-  final String? initialCategory; // 🔥 초기 카테고리 정보 추가
+  final String? initialCategory; // 🔥 초기 카테고리 설정용
 
   const BuildingMapPage({
     super.key,
@@ -40,7 +40,7 @@ class BuildingMapPage extends StatefulWidget {
     this.targetRoomId,
     this.targetFloorNumber,
     this.locationType, // 출발지/도착지 설정용
-    this.initialCategory, // 🔥 초기 카테고리 정보 추가
+    this.initialCategory, // 🔥 초기 카테고리 설정용
   });
 
   @override
@@ -65,7 +65,8 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
   String? _selectedRoomId;
 
   final ApiService _apiService = ApiService();
-  final TransformationController _transformationController = TransformationController();
+  final TransformationController _transformationController =
+      TransformationController();
   Timer? _resetTimer;
   static const double svgScale = 0.9;
   bool _showTransitionPrompt = false;
@@ -89,8 +90,13 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
 
   // 🔥 디버그 정보 표시용 상태 변수들 - 초기값 설정
   String _debugInfo = '노드 매칭 대기 중...';
-  List<String> _matchedNodes = [];
-  List<String> _failedNodes = [];
+  final List<String> _matchedNodes = [];
+  final List<String> _failedNodes = [];
+
+  // 🔥 현재 위치 표시 관련 상태 변수들
+  late LocationController _locationController;
+  bool _showCurrentLocation = false;
+  Offset? _currentLocationOffset;
   // 2/10 계속...
 
   @override
@@ -98,31 +104,18 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
     super.initState();
     _isNavigationMode = widget.navigationNodeIds != null;
 
-    // 🔥 초기 카테고리 설정
-    if (widget.initialCategory != null) {
-      debugPrint('🎯 BuildingMapPage 초기 카테고리 설정: ${widget.initialCategory}');
-      
-      // 🔥 카테고리 데이터가 로드된 후 매핑 및 필터링 적용
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted && _categoryData.isNotEmpty) {
-          final mappedCategory = _mapExternalCategoryToIndoor(widget.initialCategory!);
-          if (mappedCategory != null) {
-            debugPrint('✅ 카테고리 매핑 성공: ${widget.initialCategory} -> $mappedCategory');
-            _selectedCategories.add(mappedCategory);
-            _isCategoryFiltering = true;
-            _updateCategoryFiltering();
-          } else {
-            debugPrint('❌ 카테고리 매핑 실패: ${widget.initialCategory}');
-          }
-        }
-      });
-    } else {
-      debugPrint('⚠️ BuildingMapPage 초기 카테고리 없음');
-    }
+    // 🔥 위치 컨트롤러 초기화
+    _locationController = LocationController();
 
     // 검색 결과에서 온 경우 자동 선택 준비
     _shouldAutoSelectRoom = widget.targetRoomId != null;
     _autoSelectRoomId = widget.targetRoomId;
+
+    // 🔥 초기 카테고리 설정
+    if (widget.initialCategory != null && widget.initialCategory!.isNotEmpty) {
+      _selectedCategories.add(widget.initialCategory!);
+      debugPrint('🔥 초기 카테고리 설정: ${widget.initialCategory}');
+    }
 
     // 로딩 시작 알림
     if (_shouldAutoSelectRoom && widget.targetRoomId != null) {
@@ -171,11 +164,31 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
     }
   }
 
+  // 🔥 현재 위치 표시 메서드
+  void _showCurrentLocationOnMap() async {
+    try {
+      await _locationController.requestCurrentLocation();
+
+      // 현재 위치를 SVG 좌표로 변환 (간단한 예시)
+      // 실제로는 건물의 실제 좌표와 SVG 좌표 간의 매핑이 필요
+      if (_selectedFloor != null) {
+        // 임시로 화면 중앙에 위치 표시
+        final size = MediaQuery.of(context).size;
+        _currentLocationOffset = Offset(size.width / 2, size.height / 2);
+        _showCurrentLocation = true;
+        setState(() {});
+        debugPrint('✅ 실내 지도에서 현재 위치 표시 완료');
+      }
+    } catch (e) {
+      debugPrint('❌ 실내 지도에서 현재 위치 표시 실패: $e');
+    }
+  }
+
   // 🔥 검색 결과 호실 자동 선택 처리
   void _handleAutoRoomSelection() {
     try {
-      if (!_shouldAutoSelectRoom || 
-          _autoSelectRoomId == null || 
+      if (!_shouldAutoSelectRoom ||
+          _autoSelectRoomId == null ||
           _autoSelectRoomId!.isEmpty ||
           _buttonData.isEmpty) {
         debugPrint('⚠️ 자동 선택 조건 불충족');
@@ -185,8 +198,8 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
       debugPrint('🎯 자동 호실 선택 시도: $_autoSelectRoomId');
 
       // 'R' 접두사 확인 및 추가
-      final targetRoomId = _autoSelectRoomId!.startsWith('R') 
-          ? _autoSelectRoomId! 
+      final targetRoomId = _autoSelectRoomId!.startsWith('R')
+          ? _autoSelectRoomId!
           : 'R$_autoSelectRoomId';
 
       // 안전한 버튼 찾기
@@ -205,11 +218,11 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
 
       if (targetButton != null && targetButton.isNotEmpty) {
         debugPrint('✅ 자동 선택할 호실 찾음: $targetRoomId');
-        
+
         setState(() {
           _selectedRoomId = targetRoomId;
         });
-        
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -232,25 +245,25 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
             ),
           );
         }
-        
+
         Future.delayed(const Duration(milliseconds: 100), () {
           if (mounted) {
             _focusOnRoom(targetButton!);
           }
         });
-        
+
         Future.delayed(const Duration(milliseconds: 800), () {
           if (mounted) {
             ScaffoldMessenger.of(context).hideCurrentSnackBar();
             _showRoomInfoSheet(context, targetRoomId);
           }
         });
-        
+
         _shouldAutoSelectRoom = false;
         _autoSelectRoomId = null;
       } else {
         debugPrint('❌ 자동 선택할 호실을 찾지 못함: $targetRoomId');
-        
+
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -262,7 +275,7 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
             );
           }
         });
-        
+
         _shouldAutoSelectRoom = false;
         _autoSelectRoomId = null;
       }
@@ -270,7 +283,7 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
       debugPrint('❌ _handleAutoRoomSelection 전체 오류: $e');
       _shouldAutoSelectRoom = false;
       _autoSelectRoomId = null;
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -304,30 +317,29 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
         debugPrint('❌ bounds 계산 오류: $e');
         return;
       }
-      
+
       if (bounds == null) {
         debugPrint('❌ bounds가 null');
         return;
       }
-      
+
       final centerX = bounds.center.dx;
       final centerY = bounds.center.dy;
-      
+
       debugPrint('📍 호실 중심점: ($centerX, $centerY)');
-      
+
       try {
         final targetScale = 1.8;
         final translation = Matrix4.identity()
           ..scale(targetScale)
           ..translate(-centerX + 150, -centerY + 150);
-        
+
         _transformationController.value = translation;
-        
+
         _resetScaleAfterDelay(duration: 2000);
       } catch (e) {
         debugPrint('❌ 변환 매트릭스 적용 오류: $e');
       }
-      
     } catch (e) {
       debugPrint('❌ _focusOnRoom 전체 오류: $e');
     }
@@ -337,7 +349,9 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
     debugPrint('🧭 네비게이션 모드 설정');
     debugPrint('   노드 개수: ${widget.navigationNodeIds?.length}');
     debugPrint('   도착 네비게이션: ${widget.isArrivalNavigation}');
-    debugPrint('   전체 노드 ID들: ${widget.navigationNodeIds?.join(', ') ?? 'null'}');
+    debugPrint(
+      '   전체 노드 ID들: ${widget.navigationNodeIds?.join(', ') ?? 'null'}',
+    );
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (widget.navigationNodeIds != null) {
@@ -353,7 +367,7 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
 
       final currentFloorNum = _selectedFloor?['Floor_Number'].toString() ?? '1';
       debugPrint('🗺️ 현재 선택된 층: $currentFloorNum');
-      
+
       Map<String, Map<String, Offset>> floorNodesMap = {};
       await _loadNodesForFloor(currentFloorNum, floorNodesMap);
 
@@ -376,7 +390,9 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
         });
 
         debugPrint('✅ 네비게이션 경로 표시 완료: ${pathOffsets.length}개 좌표');
-        debugPrint('✅ 경로 좌표들: ${pathOffsets.map((p) => '(${p.dx.toStringAsFixed(1)}, ${p.dy.toStringAsFixed(1)})').join(' -> ')}');
+        debugPrint(
+          '✅ 경로 좌표들: ${pathOffsets.map((p) => '(${p.dx.toStringAsFixed(1)}, ${p.dy.toStringAsFixed(1)})').join(' -> ')}',
+        );
       } else {
         debugPrint('❌ 네비게이션 경로 변환 실패 - 좌표를 찾을 수 없음');
       }
@@ -387,174 +403,187 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
   // 4/10 계속...
 
   // 🔥 강화된 노드 ID 변환 로직 - 디버그 정보 포함
-  List<Offset> _convertNodeIdsToOffsets(List<String> nodeIds, String floorNum, Map<String, Map<String, Offset>> floorNodesMap) {
-  try {
-    _matchedNodes.clear();
-    _failedNodes.clear();
-    
-    debugPrint('🚀 === 노드 변환 시작 (단순화 버전) ===');
-    debugPrint('🚀 받은 노드 ID들: ${nodeIds.join(', ')}');
-    debugPrint('🚀 대상 층: $floorNum');
-    
-    if (nodeIds.isEmpty) {
-      _debugInfo = '⚠️ nodeIds가 비어있음';
-      debugPrint(_debugInfo);
-      if (mounted) setState(() {});
-      return [];
-    }
-    
-    final nodeMap = floorNodesMap[floorNum];
-    if (nodeMap == null || nodeMap.isEmpty) {
-      _debugInfo = '⚠️ 층 $floorNum의 노드 맵이 비어있음';
-      debugPrint(_debugInfo);
-      debugPrint('🗺️ 사용 가능한 층들: ${floorNodesMap.keys.toList()}');
-      if (mounted) setState(() {});
-      return [];
-    }
+  List<Offset> _convertNodeIdsToOffsets(
+    List<String> nodeIds,
+    String floorNum,
+    Map<String, Map<String, Offset>> floorNodesMap,
+  ) {
+    try {
+      _matchedNodes.clear();
+      _failedNodes.clear();
 
-    debugPrint('🗺️ 현재 층 노드 개수: ${nodeMap.length}개');
-    debugPrint('🗺️ 노드 샘플: ${nodeMap.keys.take(10).toList()}');
+      debugPrint('🚀 === 노드 변환 시작 (단순화 버전) ===');
+      debugPrint('🚀 받은 노드 ID들: ${nodeIds.join(', ')}');
+      debugPrint('🚀 대상 층: $floorNum');
 
-    final offsets = <Offset>[];
-    
-    for (String nodeId in nodeIds) {
-      debugPrint('🔍 === 노드 처리: $nodeId ===');
-      
-      if (nodeId.isEmpty) {
-        debugPrint('⚠️ 빈 nodeId 건너뛰기');
-        continue;
+      if (nodeIds.isEmpty) {
+        _debugInfo = '⚠️ nodeIds가 비어있음';
+        debugPrint(_debugInfo);
+        if (mounted) setState(() {});
+        return [];
       }
 
-      Offset? foundOffset = _findNodeOffset(nodeId, nodeMap);
-      
-      if (foundOffset != null) {
-        offsets.add(foundOffset);
-        _matchedNodes.add(nodeId);
-        debugPrint('✅ 매칭 성공: $nodeId -> $foundOffset');
+      final nodeMap = floorNodesMap[floorNum];
+      if (nodeMap == null || nodeMap.isEmpty) {
+        _debugInfo = '⚠️ 층 $floorNum의 노드 맵이 비어있음';
+        debugPrint(_debugInfo);
+        debugPrint('🗺️ 사용 가능한 층들: ${floorNodesMap.keys.toList()}');
+        if (mounted) setState(() {});
+        return [];
+      }
+
+      debugPrint('🗺️ 현재 층 노드 개수: ${nodeMap.length}개');
+      debugPrint('🗺️ 노드 샘플: ${nodeMap.keys.take(10).toList()}');
+
+      final offsets = <Offset>[];
+
+      for (String nodeId in nodeIds) {
+        debugPrint('🔍 === 노드 처리: $nodeId ===');
+
+        if (nodeId.isEmpty) {
+          debugPrint('⚠️ 빈 nodeId 건너뛰기');
+          continue;
+        }
+
+        Offset? foundOffset = _findNodeOffset(nodeId, nodeMap);
+
+        if (foundOffset != null) {
+          offsets.add(foundOffset);
+          _matchedNodes.add(nodeId);
+          debugPrint('✅ 매칭 성공: $nodeId -> $foundOffset');
+        } else {
+          _failedNodes.add(nodeId);
+          debugPrint('❌ 매칭 실패: $nodeId');
+
+          // 🔥 실패한 노드의 가능한 형태들을 로그로 출력
+          List<String> tried = _generateSearchCandidates(nodeId);
+          debugPrint('   시도한 형태들: ${tried.join(', ')}');
+          debugPrint(
+            '   사용 가능한 노드 중 유사한 것: ${_findSimilarNodes(nodeId, nodeMap)}',
+          );
+        }
+      }
+
+      _debugInfo = '노드 매칭: ${_matchedNodes.length}/${nodeIds.length} 성공';
+      if (mounted) setState(() {});
+
+      debugPrint('📊 === 노드 변환 완료 ===');
+      debugPrint(
+        '📊 성공: ${offsets.length}개, 실패: ${nodeIds.length - offsets.length}개',
+      );
+
+      return offsets;
+    } catch (e) {
+      _debugInfo = '❌ 노드 변환 오류: $e';
+      if (mounted) setState(() {});
+      debugPrint('❌ _convertNodeIdsToOffsets 전체 오류: $e');
+      return [];
+    }
+  }
+
+  /// 🔥 단일 노드의 오프셋 찾기 - 단계별 매칭
+  /// 🔥 단순화된 노드 오프셋 찾기
+  Offset? _findNodeOffset(String nodeId, Map<String, Offset> nodeMap) {
+    debugPrint('🔍 노드 오프셋 찾기: $nodeId');
+
+    // 후보들을 순서대로 확인
+    List<String> candidates = _generateSearchCandidates(nodeId);
+
+    for (String candidate in candidates) {
+      if (nodeMap.containsKey(candidate)) {
+        debugPrint(
+          '   ✅ 매칭 성공: $nodeId -> $candidate -> ${nodeMap[candidate]}',
+        );
+        return nodeMap[candidate];
       } else {
-        _failedNodes.add(nodeId);
-        debugPrint('❌ 매칭 실패: $nodeId');
-        
-        // 🔥 실패한 노드의 가능한 형태들을 로그로 출력
-        List<String> tried = _generateSearchCandidates(nodeId);
-        debugPrint('   시도한 형태들: ${tried.join(', ')}');
-        debugPrint('   사용 가능한 노드 중 유사한 것: ${_findSimilarNodes(nodeId, nodeMap)}');
+        debugPrint('   ❌ 후보 실패: $candidate');
       }
     }
 
-    _debugInfo = '노드 매칭: ${_matchedNodes.length}/${nodeIds.length} 성공';
-    if (mounted) setState(() {});
+    debugPrint('   💀 모든 후보 실패: $nodeId');
 
-    debugPrint('📊 === 노드 변환 완료 ===');
-    debugPrint('📊 성공: ${offsets.length}개, 실패: ${nodeIds.length - offsets.length}개');
-    
-    return offsets;
-    
-  } catch (e) {
-    _debugInfo = '❌ 노드 변환 오류: $e';
-    if (mounted) setState(() {});
-    debugPrint('❌ _convertNodeIdsToOffsets 전체 오류: $e');
-    return [];
-  }
-}
+    // 🔍 디버깅: 유사한 노드들 찾기
+    final similar = nodeMap.keys
+        .where((key) {
+          String target = nodeId.split('@').last.toLowerCase();
+          return key.toLowerCase().contains(target) ||
+              target.contains(key.toLowerCase());
+        })
+        .take(3)
+        .toList();
 
-
-
-/// 🔥 단일 노드의 오프셋 찾기 - 단계별 매칭
-/// 🔥 단순화된 노드 오프셋 찾기
-Offset? _findNodeOffset(String nodeId, Map<String, Offset> nodeMap) {
-  debugPrint('🔍 노드 오프셋 찾기: $nodeId');
-  
-  // 후보들을 순서대로 확인
-  List<String> candidates = _generateSearchCandidates(nodeId);
-  
-  for (String candidate in candidates) {
-    if (nodeMap.containsKey(candidate)) {
-      debugPrint('   ✅ 매칭 성공: $nodeId -> $candidate -> ${nodeMap[candidate]}');
-      return nodeMap[candidate];
-    } else {
-      debugPrint('   ❌ 후보 실패: $candidate');
+    if (similar.isNotEmpty) {
+      debugPrint('   💡 유사한 노드들: ${similar.join(', ')}');
     }
-  }
-  
-  debugPrint('   💀 모든 후보 실패: $nodeId');
-  
-  // 🔍 디버깅: 유사한 노드들 찾기
-  final similar = nodeMap.keys.where((key) {
-    String target = nodeId.split('@').last.toLowerCase();
-    return key.toLowerCase().contains(target) || target.contains(key.toLowerCase());
-  }).take(3).toList();
-  
-  if (similar.isNotEmpty) {
-    debugPrint('   💡 유사한 노드들: ${similar.join(', ')}');
-  }
-  
-  return null;
-}
 
+    return null;
+  }
 
-/// 🔥 검색 후보 생성 - 명확하고 순서가 있는 로직
-/// 🔥 긴급 수정: API 노드 형태에 맞춘 검색 후보 생성
-/// 🔥 간단한 노드 매칭: @ 뒤의 마지막 부분만 추출
-/// 🔥 최종 수정: @ 구분자로 정확히 분할
-List<String> _generateSearchCandidates(String nodeId) {
-  final candidates = <String>[];
-  
-  debugPrint('🔍 후보 생성: $nodeId');
-  
-  // 1. 원본 그대로
-  candidates.add(nodeId);
-  
-  // 2. @ 기호로 분할하여 각 부분 추출
-  if (nodeId.contains('@')) {
-    List<String> parts = nodeId.split('@');
-    
-    // 마지막 부분이 가장 중요 (실제 노드 ID)
-    if (parts.isNotEmpty) {
-      String lastPart = parts.last;
-      candidates.add(lastPart);
-      debugPrint('   핵심 노드: $lastPart');
-      
-      // R 접두사 버전도 시도
-      if (!lastPart.startsWith('R')) {
-        candidates.add('R$lastPart');
+  /// 🔥 검색 후보 생성 - 명확하고 순서가 있는 로직
+  /// 🔥 긴급 수정: API 노드 형태에 맞춘 검색 후보 생성
+  /// 🔥 간단한 노드 매칭: @ 뒤의 마지막 부분만 추출
+  /// 🔥 최종 수정: @ 구분자로 정확히 분할
+  List<String> _generateSearchCandidates(String nodeId) {
+    final candidates = <String>[];
+
+    debugPrint('🔍 후보 생성: $nodeId');
+
+    // 1. 원본 그대로
+    candidates.add(nodeId);
+
+    // 2. @ 기호로 분할하여 각 부분 추출
+    if (nodeId.contains('@')) {
+      List<String> parts = nodeId.split('@');
+
+      // 마지막 부분이 가장 중요 (실제 노드 ID)
+      if (parts.isNotEmpty) {
+        String lastPart = parts.last;
+        candidates.add(lastPart);
+        debugPrint('   핵심 노드: $lastPart');
+
+        // R 접두사 버전도 시도
+        if (!lastPart.startsWith('R')) {
+          candidates.add('R$lastPart');
+        }
+      }
+
+      // 모든 부분도 시도 (혹시 몰라서)
+      for (String part in parts) {
+        if (part.isNotEmpty && part != nodeId) {
+          candidates.add(part);
+        }
       }
     }
-    
-    // 모든 부분도 시도 (혹시 몰라서)
-    for (String part in parts) {
-      if (part.isNotEmpty && part != nodeId) {
-        candidates.add(part);
-      }
-    }
+
+    // 중복 제거
+    final uniqueCandidates = candidates.toSet().toList();
+    debugPrint('   시도할 후보들: ${uniqueCandidates.join(', ')}');
+
+    return uniqueCandidates;
   }
-  
-  // 중복 제거
-  final uniqueCandidates = candidates.toSet().toList();
-  debugPrint('   시도할 후보들: ${uniqueCandidates.join(', ')}');
-  
-  return uniqueCandidates;
-}
 
-/// 🔥 유사한 노드 찾기 (디버깅용)
-List<String> _findSimilarNodes(String targetId, Map<String, Offset> nodeMap) {
-  final target = targetId.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
-  
-  return nodeMap.keys
-      .where((nodeId) {
-        final node = nodeId.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
-        return node.contains(target) || target.contains(node);
-      })
-      .take(3)
-      .toList();
-}
+  /// 🔥 유사한 노드 찾기 (디버깅용)
+  List<String> _findSimilarNodes(String targetId, Map<String, Offset> nodeMap) {
+    final target = targetId.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
 
+    return nodeMap.keys
+        .where((nodeId) {
+          final node = nodeId.toLowerCase().replaceAll(
+            RegExp(r'[^a-z0-9]'),
+            '',
+          );
+          return node.contains(target) || target.contains(node);
+        })
+        .take(3)
+        .toList();
+  }
 
   void _onFloorChanged(Map<String, dynamic> newFloor) {
     final newFloorNumber = newFloor['Floor_Number'].toString();
 
-    if (_selectedFloor?['Floor_Id'] == newFloor['Floor_Id'] && _error == null)
+    if (_selectedFloor?['Floor_Id'] == newFloor['Floor_Id'] && _error == null) {
       return;
+    }
 
     setState(() {
       _selectedFloor = newFloor;
@@ -648,8 +677,9 @@ List<String> _findSimilarNodes(String targetId, Map<String, Offset> nodeMap) {
 
     try {
       final svgUrl = floorInfo['File'] as String?;
-      if (svgUrl == null || svgUrl.isEmpty)
+      if (svgUrl == null || svgUrl.isEmpty) {
         throw Exception('SVG URL이 유효하지 않습니다.');
+      }
 
       final svgResponse = await http
           .get(Uri.parse(svgUrl))
@@ -660,12 +690,15 @@ List<String> _findSimilarNodes(String targetId, Map<String, Offset> nodeMap) {
             },
           );
 
-      if (svgResponse.statusCode != 200)
+      if (svgResponse.statusCode != 200) {
         throw Exception('SVG 파일을 다운로드할 수 없습니다');
+      }
 
       final svgContent = svgResponse.body;
       final buttons = SvgDataParser.parseButtonData(svgContent);
-      final categories = SvgDataParser.parseCategoryData(svgContent); // 🔥 카테고리 데이터 로드
+      final categories = SvgDataParser.parseCategoryData(
+        svgContent,
+      ); // 🔥 카테고리 데이터 로드
 
       if (mounted) {
         setState(() {
@@ -677,20 +710,6 @@ List<String> _findSimilarNodes(String targetId, Map<String, Offset> nodeMap) {
 
         // 🔥 카테고리 추출 및 필터링 초기화
         _extractCategoriesFromCategoryData();
-
-        // 🔥 초기 카테고리가 설정되어 있으면 필터링 적용
-        if (widget.initialCategory != null) {
-          final mappedCategory = _mapExternalCategoryToIndoor(widget.initialCategory!);
-          if (mappedCategory != null) {
-            debugPrint('✅ _loadMapData에서 카테고리 매핑 성공: ${widget.initialCategory} -> $mappedCategory');
-            _selectedCategories.clear();
-            _selectedCategories.add(mappedCategory);
-            _isCategoryFiltering = true;
-            _updateCategoryFiltering();
-          } else {
-            debugPrint('❌ _loadMapData에서 카테고리 매핑 실패: ${widget.initialCategory}');
-          }
-        }
 
         if (_shouldAutoSelectRoom) {
           _handleAutoRoomSelection();
@@ -715,78 +734,20 @@ List<String> _findSimilarNodes(String targetId, Map<String, Offset> nodeMap) {
         categories.add(categoryName);
       }
     }
-    
+
     // 메인과 동일하게 알파벳 순으로 정렬
     _availableCategories = categories.toList()..sort();
     debugPrint('🎯 사용 가능한 카테고리: $_availableCategories');
   }
-
-  /// 🔥 외부 카테고리 ID를 실내 카테고리 ID로 매핑
-  String? _mapExternalCategoryToIndoor(String externalCategory) {
-    debugPrint('🔍 카테고리 매핑 시도: $externalCategory');
-    
-    // 사용 가능한 카테고리들 중에서 매칭되는 것 찾기
-    for (final availableCategory in _availableCategories) {
-      // 정확히 일치하는 경우
-      if (availableCategory == externalCategory) {
-        debugPrint('✅ 정확한 매칭: $externalCategory -> $availableCategory');
-        return availableCategory;
-      }
-      
-      // 숫자 제거 후 매칭 (예: lounge-1 -> lounge)
-      final cleanAvailable = _cleanCategoryId(availableCategory);
-      if (cleanAvailable == externalCategory) {
-        debugPrint('✅ 정리 후 매칭: $externalCategory -> $availableCategory');
-        return availableCategory;
-      }
-      
-      // 부분 매칭 (예: fire_extinguisher -> extinguisher)
-      if (availableCategory.contains(externalCategory) || 
-          externalCategory.contains(availableCategory)) {
-        debugPrint('✅ 부분 매칭: $externalCategory -> $availableCategory');
-        return availableCategory;
-      }
-    }
-    
-    debugPrint('❌ 매칭 실패: $externalCategory');
-    return null;
-  }
-
-  /// 🔥 카테고리 ID 정리 (숫자 부분 제거)
-  String _cleanCategoryId(String id) {
-    // "-숫자" 패턴 제거
-    final regex = RegExp(r'^(.+?)-\d+$');
-    final match = regex.firstMatch(id);
-    if (match != null) {
-      return match.group(1) ?? id;
-    }
-    return id;
-  }
-
-  /// 🔥 카테고리 필터링 상태 업데이트
-  void _updateCategoryFiltering() {
-    if (_selectedCategories.isEmpty) {
-      _showAllCategories = true;
-      _isCategoryFiltering = false;
-      _filteredCategoryData = _categoryData;
-    } else {
-      _showAllCategories = false;
-      _isCategoryFiltering = true;
-      _filteredCategoryData = _categoryData.where((cat) {
-        final catName = cat['category']?.toString() ?? '';
-        return _selectedCategories.contains(catName);
-      }).toList();
-    }
-    debugPrint('🎯 카테고리 필터링 상태 업데이트: $_selectedCategories -> ${_filteredCategoryData.length}개 카테고리');
-  }
-
 
   Future<void> _loadNodesForFloor(
     String floorNumber,
     Map<String, Map<String, Offset>> targetMap,
   ) async {
     if (targetMap.containsKey(floorNumber)) {
-      debugPrint('🔄 층 $floorNumber 노드는 이미 로드됨 (${targetMap[floorNumber]?.length}개)');
+      debugPrint(
+        '🔄 층 $floorNumber 노드는 이미 로드됨 (${targetMap[floorNumber]?.length}개)',
+      );
       return;
     }
 
@@ -800,7 +761,7 @@ List<String> _findSimilarNodes(String targetId, Map<String, Offset> nodeMap) {
     if (floorInfo != null) {
       final svgUrl = floorInfo['File'] as String?;
       debugPrint('🔍 층 $floorNumber SVG URL: $svgUrl');
-      
+
       if (svgUrl != null && svgUrl.isNotEmpty) {
         try {
           final svgResponse = await http.get(Uri.parse(svgUrl));
@@ -820,7 +781,9 @@ List<String> _findSimilarNodes(String targetId, Map<String, Offset> nodeMap) {
       }
     } else {
       debugPrint('❌ 층 $floorNumber 정보를 찾을 수 없음');
-      debugPrint('사용 가능한 층들: ${_floorList.map((f) => f['Floor_Number'].toString()).toList()}');
+      debugPrint(
+        '사용 가능한 층들: ${_floorList.map((f) => f['Floor_Number'].toString()).toList()}',
+      );
     }
   }
   // 7/10 계속...
@@ -888,9 +851,9 @@ List<String> _findSimilarNodes(String targetId, Map<String, Offset> nodeMap) {
       await _processUnifiedPathResponse(response, fromFloor, toFloor);
     } catch (e) {
       _clearAllPathInfo();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('통합 길찾기 중 오류가 발생했습니다: $e'))
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('통합 길찾기 중 오류가 발생했습니다: $e')));
       debugPrint('❌ 통합 길찾기 오류: $e');
     } finally {
       if (mounted) setState(() => _isMapLoading = false);
@@ -942,7 +905,9 @@ List<String> _findSimilarNodes(String targetId, Map<String, Offset> nodeMap) {
 
     if (departureIndoor != null && outdoor != null && arrivalIndoor != null) {
       debugPrint('🏢 다른 건물 간 호실 이동');
-      final depNodeIds = UnifiedPathService.extractIndoorNodeIds(departureIndoor);
+      final depNodeIds = UnifiedPathService.extractIndoorNodeIds(
+        departureIndoor,
+      );
       debugPrint('🏢 출발지 노드 ID들: ${depNodeIds.join(', ')}');
       await _processIndoorPath(depNodeIds, fromFloor, true);
       _showOutdoorTransitionMessage(outdoor);
@@ -956,7 +921,10 @@ List<String> _findSimilarNodes(String targetId, Map<String, Offset> nodeMap) {
     }
   }
 
-  Future<void> _handleRoomToBuildingResponse(PathResult result, int fromFloor) async {
+  Future<void> _handleRoomToBuildingResponse(
+    PathResult result,
+    int fromFloor,
+  ) async {
     final departureIndoor = result.departureIndoor;
     final outdoor = result.outdoor;
 
@@ -970,7 +938,10 @@ List<String> _findSimilarNodes(String targetId, Map<String, Offset> nodeMap) {
     }
   }
 
-  Future<void> _handleBuildingToRoomResponse(PathResult result, int toFloor) async {
+  Future<void> _handleBuildingToRoomResponse(
+    PathResult result,
+    int toFloor,
+  ) async {
     final outdoor = result.outdoor;
     final arrivalIndoor = result.arrivalIndoor;
 
@@ -1002,7 +973,11 @@ List<String> _findSimilarNodes(String targetId, Map<String, Offset> nodeMap) {
     Map<String, Map<String, Offset>> floorNodesMap = {};
     await _loadNodesForFloor(floorNumStr, floorNodesMap);
 
-    final pathOffsets = _convertNodeIdsToOffsets(nodeIds, floorNumStr, floorNodesMap);
+    final pathOffsets = _convertNodeIdsToOffsets(
+      nodeIds,
+      floorNumStr,
+      floorNodesMap,
+    );
 
     setState(() {
       if (isDeparture) {
@@ -1033,31 +1008,47 @@ List<String> _findSimilarNodes(String targetId, Map<String, Offset> nodeMap) {
     if (isCrossFloor) {
       await _loadNodesForFloor(toFloorStr, floorNodesMap);
 
-      int splitIndex = nodeIds.indexWhere((id) => id.split('@')[1] != fromFloorStr);
+      int splitIndex = nodeIds.indexWhere(
+        (id) => id.split('@')[1] != fromFloorStr,
+      );
       if (splitIndex == -1) splitIndex = nodeIds.length;
 
       final depOffsets = _convertNodeIdsToOffsets(
-        nodeIds.sublist(0, splitIndex), fromFloorStr, floorNodesMap);
+        nodeIds.sublist(0, splitIndex),
+        fromFloorStr,
+        floorNodesMap,
+      );
       final arrOffsets = _convertNodeIdsToOffsets(
-        nodeIds.sublist(splitIndex), toFloorStr, floorNodesMap);
+        nodeIds.sublist(splitIndex),
+        toFloorStr,
+        floorNodesMap,
+      );
 
       setState(() {
         _departurePath = depOffsets;
         _arrivalPath = arrOffsets;
-        _currentShortestPath = _selectedFloor?['Floor_Number'].toString() == fromFloorStr
-            ? depOffsets : arrOffsets;
+        _currentShortestPath =
+            _selectedFloor?['Floor_Number'].toString() == fromFloorStr
+            ? depOffsets
+            : arrOffsets;
         _transitionInfo = {"from": fromFloorStr, "to": toFloorStr};
       });
 
       _showAndFadePrompt();
     } else {
-      final sameFloorOffsets = _convertNodeIdsToOffsets(nodeIds, fromFloorStr, floorNodesMap);
+      final sameFloorOffsets = _convertNodeIdsToOffsets(
+        nodeIds,
+        fromFloorStr,
+        floorNodesMap,
+      );
       setState(() => _currentShortestPath = sameFloorOffsets);
     }
   }
 
   void _showOutdoorTransitionMessage(OutdoorPathData outdoorData) {
-    final coordinates = UnifiedPathService.extractOutdoorCoordinates(outdoorData);
+    final coordinates = UnifiedPathService.extractOutdoorCoordinates(
+      outdoorData,
+    );
     final distance = outdoorData.path.distance;
 
     debugPrint('🌍 실외 경로 정보: ${coordinates.length}개 좌표, 거리: ${distance}m');
@@ -1072,154 +1063,156 @@ List<String> _findSimilarNodes(String targetId, Map<String, Offset> nodeMap) {
   }
   // 8/10 계속...
 
-   void _showRoomInfoSheet(BuildContext context, String roomId) async {
-  // 네비게이션 모드에서는 호실 정보 시트를 다르게 표시
-  if (_isNavigationMode) {
-    _showNavigationRoomSheet(context, roomId);
-    return;
-  }
+  void _showRoomInfoSheet(BuildContext context, String roomId) async {
+    // 네비게이션 모드에서는 호실 정보 시트를 다르게 표시
+    if (_isNavigationMode) {
+      _showNavigationRoomSheet(context, roomId);
+      return;
+    }
 
-  setState(() => _selectedRoomId = roomId);
-  String roomIdNoR = roomId.startsWith('R') ? roomId.substring(1) : roomId;
-  
-  // 🔥 JSON 데이터에서 호실 정보 찾기
-  Map<String, dynamic>? roomData;
-  try {
-    // 실제 JSON 데이터에서 해당 호실 정보 검색
-    roomData = await _findRoomDataFromServer(
-      buildingName: widget.buildingName,
-      floorNumber: _selectedFloor?['Floor_Number']?.toString() ?? '',
-      roomName: roomIdNoR,
-    );
-  } catch (e) {
-    debugPrint('호실 데이터 검색 실패: $e');
-    roomData = null;
-  }
+    setState(() => _selectedRoomId = roomId);
+    String roomIdNoR = roomId.startsWith('R') ? roomId.substring(1) : roomId;
 
-  // 🔥 실제 데이터가 있으면 사용하고, 없으면 기본값 사용
-  String roomDesc = '';
-  List<String> roomUsers = [];
-  List<String>? userPhones;
-  List<String>? userEmails;
-
-  if (roomData != null) {
-    // JSON 데이터에서 정보 추출
-    roomDesc = roomData['Room_Description'] ?? '';
-    roomUsers = _parseStringList(roomData['Room_User']);
-    userPhones = _parseStringListNullable(roomData['User_Phone']);
-    userEmails = _parseStringListNullable(roomData['User_Email']);
-    
-    debugPrint('🔍 호실 정보 찾음: $roomIdNoR');
-    debugPrint('   설명: $roomDesc');
-    debugPrint('   담당자: $roomUsers');
-    debugPrint('   전화: $userPhones');
-    debugPrint('   이메일: $userEmails');
-  } else {
-    // 기존 방식으로 설명만 가져오기
+    // 🔥 JSON 데이터에서 호실 정보 찾기
+    Map<String, dynamic>? roomData;
     try {
-      roomDesc = await _apiService.fetchRoomDescription(
+      // 실제 JSON 데이터에서 해당 호실 정보 검색
+      roomData = await _findRoomDataFromServer(
         buildingName: widget.buildingName,
         floorNumber: _selectedFloor?['Floor_Number']?.toString() ?? '',
         roomName: roomIdNoR,
       );
     } catch (e) {
-      debugPrint(e.toString());
-      roomDesc = '설명을 불러오지 못했습니다.';
+      debugPrint('호실 데이터 검색 실패: $e');
+      roomData = null;
     }
-    
-    debugPrint('⚠️ 호실 정보 없음, 기본 설명만 사용: $roomDesc');
-    roomUsers = [];
-    userPhones = null;
-    userEmails = null;
-  }
 
-  await showModalBottomSheet(
-    context: context,
-    backgroundColor: Colors.transparent,
-    builder: (context) => RoomInfoSheet(
-      roomInfo: RoomInfo(
-        id: roomId,
-        name: roomIdNoR,
-        desc: roomDesc,
-        users: roomUsers,
-        phones: userPhones,
-        emails: userEmails,
-      ),
-      onDeparture: () => _setPoint('start', roomId),
-      onArrival: () => _setPoint('end', roomId),
-      buildingName: widget.buildingName,
-      floorNumber: _selectedFloor?['Floor_Number'],
-    ),
-  );
+    // 🔥 실제 데이터가 있으면 사용하고, 없으면 기본값 사용
+    String roomDesc = '';
+    List<String> roomUsers = [];
+    List<String>? userPhones;
+    List<String>? userEmails;
 
-  if (mounted) setState(() => _selectedRoomId = null);
-}
+    if (roomData != null) {
+      // JSON 데이터에서 정보 추출
+      roomDesc = roomData['Room_Description'] ?? '';
+      roomUsers = _parseStringList(roomData['Room_User']);
+      userPhones = _parseStringListNullable(roomData['User_Phone']);
+      userEmails = _parseStringListNullable(roomData['User_Email']);
 
-List<String> _parseStringList(dynamic value) {
-  if (value == null) return [];
-  if (value is List) {
-    return value
-        .where((item) => item != null && item.toString().trim().isNotEmpty)
-        .map((item) => item.toString().trim())
-        .toList();
-  }
-  return [];
-}
-
-// 🔥 서버에서 호실 데이터를 찾는 메서드 추가
-Future<Map<String, dynamic>?> _findRoomDataFromServer({
-  required String buildingName,
-  required String floorNumber,
-  required String roomName,
-}) async {
-  try {
-    debugPrint('🔍 호실 검색: $buildingName $floorNumber층 $roomName호');
-    
-    // 🔥 실제 작동하는 API 메서드 사용
-    final List<Map<String, dynamic>> allRooms = await _apiService.fetchAllRooms();
-    
-    debugPrint('📊 전체 호실 수: ${allRooms.length}개');
-    
-    // 🔥 해당 호실 찾기
-    for (final room in allRooms) {
-      final roomBuildingName = room['Building_Name']?.toString() ?? '';
-      final roomFloorNumber = room['Floor_Number']?.toString() ?? '';
-      final roomRoomName = room['Room_Name']?.toString() ?? '';
-      
-      debugPrint('🏠 비교: $roomBuildingName vs $buildingName, $roomFloorNumber vs $floorNumber, $roomRoomName vs $roomName');
-      
-      if (roomBuildingName == buildingName &&
-          roomFloorNumber == floorNumber &&
-          roomRoomName == roomName) {
-        debugPrint('✅ 호실 찾음!');
-        debugPrint('   설명: ${room['Room_Description']}');
-        debugPrint('   담당자: ${room['Room_User']}');
-        debugPrint('   전화: ${room['User_Phone']}');
-        debugPrint('   이메일: ${room['User_Email']}');
-        return room;
+      debugPrint('🔍 호실 정보 찾음: $roomIdNoR');
+      debugPrint('   설명: $roomDesc');
+      debugPrint('   담당자: $roomUsers');
+      debugPrint('   전화: $userPhones');
+      debugPrint('   이메일: $userEmails');
+    } else {
+      // 기존 방식으로 설명만 가져오기
+      try {
+        roomDesc = await _apiService.fetchRoomDescription(
+          buildingName: widget.buildingName,
+          floorNumber: _selectedFloor?['Floor_Number']?.toString() ?? '',
+          roomName: roomIdNoR,
+        );
+      } catch (e) {
+        debugPrint(e.toString());
+        roomDesc = '설명을 불러오지 못했습니다.';
       }
-    }
-    
-    debugPrint('❌ 호실을 찾지 못함: $buildingName $floorNumber층 $roomName호');
-    return null;
-    
-  } catch (e) {
-    debugPrint('❌ _findRoomDataFromServer 오류: $e');
-    return null;
-  }
-}
 
-List<String>? _parseStringListNullable(dynamic value) {
-  if (value == null) return null;
-  if (value is List) {
-    final filtered = value
-        .where((item) => item != null && item.toString().trim().isNotEmpty)
-        .map((item) => item.toString().trim())
-        .toList();
-    return filtered.isEmpty ? null : filtered;
+      debugPrint('⚠️ 호실 정보 없음, 기본 설명만 사용: $roomDesc');
+      roomUsers = [];
+      userPhones = null;
+      userEmails = null;
+    }
+
+    await showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => RoomInfoSheet(
+        roomInfo: RoomInfo(
+          id: roomId,
+          name: roomIdNoR,
+          desc: roomDesc,
+          users: roomUsers,
+          phones: userPhones,
+          emails: userEmails,
+        ),
+        onDeparture: () => _setPoint('start', roomId),
+        onArrival: () => _setPoint('end', roomId),
+        buildingName: widget.buildingName,
+        floorNumber: _selectedFloor?['Floor_Number'],
+      ),
+    );
+
+    if (mounted) setState(() => _selectedRoomId = null);
   }
-  return null;
-}
+
+  List<String> _parseStringList(dynamic value) {
+    if (value == null) return [];
+    if (value is List) {
+      return value
+          .where((item) => item != null && item.toString().trim().isNotEmpty)
+          .map((item) => item.toString().trim())
+          .toList();
+    }
+    return [];
+  }
+
+  // 🔥 서버에서 호실 데이터를 찾는 메서드 추가
+  Future<Map<String, dynamic>?> _findRoomDataFromServer({
+    required String buildingName,
+    required String floorNumber,
+    required String roomName,
+  }) async {
+    try {
+      debugPrint('🔍 호실 검색: $buildingName $floorNumber층 $roomName호');
+
+      // 🔥 실제 작동하는 API 메서드 사용
+      final List<Map<String, dynamic>> allRooms = await _apiService
+          .fetchAllRooms();
+
+      debugPrint('📊 전체 호실 수: ${allRooms.length}개');
+
+      // 🔥 해당 호실 찾기
+      for (final room in allRooms) {
+        final roomBuildingName = room['Building_Name']?.toString() ?? '';
+        final roomFloorNumber = room['Floor_Number']?.toString() ?? '';
+        final roomRoomName = room['Room_Name']?.toString() ?? '';
+
+        debugPrint(
+          '🏠 비교: $roomBuildingName vs $buildingName, $roomFloorNumber vs $floorNumber, $roomRoomName vs $roomName',
+        );
+
+        if (roomBuildingName == buildingName &&
+            roomFloorNumber == floorNumber &&
+            roomRoomName == roomName) {
+          debugPrint('✅ 호실 찾음!');
+          debugPrint('   설명: ${room['Room_Description']}');
+          debugPrint('   담당자: ${room['Room_User']}');
+          debugPrint('   전화: ${room['User_Phone']}');
+          debugPrint('   이메일: ${room['User_Email']}');
+          return room;
+        }
+      }
+
+      debugPrint('❌ 호실을 찾지 못함: $buildingName $floorNumber층 $roomName호');
+      return null;
+    } catch (e) {
+      debugPrint('❌ _findRoomDataFromServer 오류: $e');
+      return null;
+    }
+  }
+
+  List<String>? _parseStringListNullable(dynamic value) {
+    if (value == null) return null;
+    if (value is List) {
+      final filtered = value
+          .where((item) => item != null && item.toString().trim().isNotEmpty)
+          .map((item) => item.toString().trim())
+          .toList();
+      return filtered.isEmpty ? null : filtered;
+    }
+    return null;
+  }
 
   void _showNavigationRoomSheet(BuildContext context, String roomId) {
     showModalBottomSheet(
@@ -1321,8 +1314,9 @@ List<String>? _parseStringListNullable(dynamic value) {
   }
 
   Widget _buildBodyContent() {
-    if (_isFloorListLoading)
+    if (_isFloorListLoading) {
       return const Center(child: Text('층 목록을 불러오는 중...'));
+    }
     if (_error != null) {
       return Center(
         child: Padding(
@@ -1438,7 +1432,8 @@ List<String>? _parseStringListNullable(dynamic value) {
                     ),
                   ),
 
-                  if (_currentShortestPath.isNotEmpty || _navigationPath.isNotEmpty)
+                  if (_currentShortestPath.isNotEmpty ||
+                      _navigationPath.isNotEmpty)
                     Positioned(
                       left: leftOffset,
                       top: topOffset,
@@ -1482,24 +1477,27 @@ List<String>? _parseStringListNullable(dynamic value) {
                               ),
                             ),
                           );
-                        })
-                        .toList(),
+                        }),
 
                   // 🔥 카테고리 마커 표시 (다중 선택 지원)
                   if (_isCategoryFiltering && _selectedCategories.isNotEmpty)
                     ..._filteredCategoryData.map((category) {
                       final rect = category['rect'] as Rect;
-                      final categoryName = category['category']?.toString() ?? '';
-                      
+                      final categoryName =
+                          category['category']?.toString() ?? '';
+
                       // 🔥 마커 위치를 rect의 중심으로 설정
                       final centerX = rect.left + rect.width / 2;
                       final centerY = rect.top + rect.height / 2;
                       final markerSize = 7.0; // 🔥 마커 크기 아주 조금 더 줄임 (9 -> 7)
-                      
-                      final scaledCenterX = leftOffset + centerX * totalScale * svgScale;
-                      final scaledCenterY = topOffset + centerY * totalScale * svgScale;
-                      final scaledMarkerSize = markerSize * totalScale * svgScale;
-                      
+
+                      final scaledCenterX =
+                          leftOffset + centerX * totalScale * svgScale;
+                      final scaledCenterY =
+                          topOffset + centerY * totalScale * svgScale;
+                      final scaledMarkerSize =
+                          markerSize * totalScale * svgScale;
+
                       final markerRect = Rect.fromCenter(
                         center: Offset(scaledCenterX, scaledCenterY),
                         width: scaledMarkerSize,
@@ -1511,7 +1509,9 @@ List<String>? _parseStringListNullable(dynamic value) {
                         child: IgnorePointer(
                           child: Container(
                             decoration: BoxDecoration(
-                              color: _getCategoryColor(categoryName), // 🔥 각 카테고리별 색상 사용
+                              color: _getCategoryColor(
+                                categoryName,
+                              ), // 🔥 각 카테고리별 색상 사용
                               shape: BoxShape.circle,
                               border: Border.all(
                                 color: Colors.white,
@@ -1519,21 +1519,25 @@ List<String>? _parseStringListNullable(dynamic value) {
                               ),
                               boxShadow: [
                                 BoxShadow(
-                                  color: _getCategoryColor(categoryName).withOpacity(0.15), // 🔥 각 카테고리별 색상 사용
+                                  color: _getCategoryColor(
+                                    categoryName,
+                                  ).withOpacity(0.15), // 🔥 각 카테고리별 색상 사용
                                   blurRadius: 2,
                                   offset: const Offset(0, 0.5),
                                 ),
                               ],
                             ),
                             child: Icon(
-                              _getCategoryIcon(categoryName), // 🔥 각 카테고리별 아이콘 사용
+                              _getCategoryIcon(
+                                categoryName,
+                              ), // 🔥 각 카테고리별 아이콘 사용
                               color: Colors.white,
                               size: scaledMarkerSize * 0.7, // 아이콘 크기 유지
                             ),
                           ),
                         ),
                       );
-                    }).toList(),
+                    }),
                 ],
               ),
             ),
@@ -1570,14 +1574,19 @@ List<String>? _parseStringListNullable(dynamic value) {
                     ],
                   ),
                   child: IconButton(
-                    icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black87),
+                    icon: const Icon(
+                      Icons.arrow_back_ios_new,
+                      color: Colors.black87,
+                    ),
                     onPressed: () => Navigator.of(context).pop(),
                     padding: const EdgeInsets.all(12),
                   ),
                 ),
-                
+
                 // 🔥 카테고리 필터링 버튼들을 뒤로가기 버튼 옆으로 이동
-                if (!_isFloorListLoading && _error == null && _availableCategories.isNotEmpty)
+                if (!_isFloorListLoading &&
+                    _error == null &&
+                    _availableCategories.isNotEmpty)
                   Expanded(
                     child: Container(
                       height: 50,
@@ -1585,11 +1594,14 @@ List<String>? _parseStringListNullable(dynamic value) {
                       child: _buildCategoryChips(),
                     ),
                   ),
-                
+
                 // 자동선택 버튼을 더 작게 만들거나 조건부로 표시
                 if (_shouldAutoSelectRoom)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.blue.withOpacity(0.9),
                       borderRadius: BorderRadius.circular(16),
@@ -1602,12 +1614,14 @@ List<String>? _parseStringListNullable(dynamic value) {
                           height: 12,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
                           ),
                         ),
                         const SizedBox(width: 6),
                         Text(
-                          '${_autoSelectRoomId}',
+                          '$_autoSelectRoomId',
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 12,
@@ -1617,24 +1631,80 @@ List<String>? _parseStringListNullable(dynamic value) {
                       ],
                     ),
                   ),
+
+                // 🔥 현재 위치 표시 버튼
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.9),
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: IconButton(
+                    icon: Icon(
+                      _showCurrentLocation
+                          ? Icons.my_location
+                          : Icons.my_location_outlined,
+                      color: _showCurrentLocation
+                          ? Colors.blue
+                          : Colors.black87,
+                    ),
+                    onPressed: _showCurrentLocationOnMap,
+                    padding: const EdgeInsets.all(12),
+                  ),
+                ),
               ],
             ),
           ),
-          
+
           Expanded(
             child: Stack(
               children: [
                 _buildBodyContent(),
-                
-                if (!_isFloorListLoading && _error == null && _floorList.length > 1)
+
+                // 🔥 현재 위치 마커 표시
+                if (_showCurrentLocation && _currentLocationOffset != null)
+                  Positioned(
+                    left: _currentLocationOffset!.dx - 12,
+                    top: _currentLocationOffset!.dy - 12,
+                    child: Container(
+                      width: 24,
+                      height: 24,
+                      decoration: BoxDecoration(
+                        color: Colors.blue,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 2),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.3),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.my_location,
+                        color: Colors.white,
+                        size: 12,
+                      ),
+                    ),
+                  ),
+
+                if (!_isFloorListLoading &&
+                    _error == null &&
+                    _floorList.length > 1)
                   Positioned(
                     left: 16,
                     bottom: 20,
                     child: _buildFloorSelector(),
                   ),
-                
-                if (_showTransitionPrompt)
-                  _buildTransitionPrompt(),
+
+                if (_showTransitionPrompt) _buildTransitionPrompt(),
               ],
             ),
           ),
@@ -1645,22 +1715,15 @@ List<String>? _parseStringListNullable(dynamic value) {
 
   /// 🔥 카테고리 칩 위젯 (컴팩트 버전)
   Widget _buildCategoryChips() {
-    // 언어 변경 감지를 위해 AppLocalizations 사용
-    final l10n = AppLocalizations.of(context);
-    
     return ListView.builder(
       scrollDirection: Axis.horizontal,
       itemCount: _availableCategories.length + 1, // +1 for "전체" 버튼
       itemBuilder: (context, index) {
         if (index == 0) {
-          // "전체" 버튼 - 다국어 지원
+          // "전체" 버튼
           return Padding(
             padding: const EdgeInsets.only(right: 4),
-            child: _buildCategoryChip(
-              _getCategoryDisplayName(null), // null을 전달하여 "전체" 텍스트 가져오기
-              null,
-              _showAllCategories,
-            ),
+            child: _buildCategoryChip('전체', null, _showAllCategories),
           );
         } else {
           final category = _availableCategories[index - 1];
@@ -1679,13 +1742,18 @@ List<String>? _parseStringListNullable(dynamic value) {
   }
 
   /// 🔥 카테고리 칩 (컴팩트 버전)
-  Widget _buildCategoryChip(String displayName, String? category, bool isSelected) {
+  Widget _buildCategoryChip(
+    String displayName,
+    String? category,
+    bool isSelected,
+  ) {
     return GestureDetector(
       onTap: () {
         setState(() {
           if (category == null) {
             // 전체 버튼 클릭
-            if (_showAllCategories || _selectedCategories.length == _availableCategories.length) {
+            if (_showAllCategories ||
+                _selectedCategories.length == _availableCategories.length) {
               // 전체가 이미 선택되어 있으면 모두 해제
               _selectedCategories.clear();
               _showAllCategories = false;
@@ -1719,7 +1787,8 @@ List<String>? _parseStringListNullable(dynamic value) {
             } else {
               // 새로운 카테고리 추가
               _selectedCategories.add(category);
-              _showAllCategories = _selectedCategories.length == _availableCategories.length;
+              _showAllCategories =
+                  _selectedCategories.length == _availableCategories.length;
               _isCategoryFiltering = true;
               _filteredCategoryData = _categoryData.where((cat) {
                 final catName = cat['category']?.toString() ?? '';
@@ -1728,18 +1797,36 @@ List<String>? _parseStringListNullable(dynamic value) {
             }
           }
         });
-        debugPrint('🎯 카테고리 선택 변경: $_selectedCategories -> ${_filteredCategoryData.length}개 카테고리');
+        debugPrint(
+          '🎯 카테고리 선택 변경: $_selectedCategories -> ${_filteredCategoryData.length}개 카테고리',
+        );
       },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF1E3A8A) : Colors.white.withOpacity(0.9),
+          color: isSelected
+              ? const Color(0xFF1E3A8A)
+              : Colors.white.withOpacity(0.9),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected ? const Color(0xFF1E3A8A) : Colors.grey.shade300,
             width: isSelected ? 1.5 : 1.0,
           ),
-
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: const Color(0xFF1E3A8A).withOpacity(0.2),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -1766,18 +1853,11 @@ List<String>? _parseStringListNullable(dynamic value) {
 
   /// 🔥 카테고리 표시 이름 가져오기 (메인 화면과 동일)
   String _getCategoryDisplayName(String? category) {
-    if (category == null) {
-      // 다국어 지원으로 "전체" 버튼 처리
-      final l10n = AppLocalizations.of(context);
-      if (l10n != null) {
-        return l10n.clear_all;
-      }
-      return '전체';
-    }
-    
+    if (category == null) return '전체';
+
     // bank를 atm으로 매핑 (SVG의 bank ID를 ATM으로 표시)
     final displayCategory = category == 'bank' ? 'atm' : category;
-    
+
     // 메인 화면과 동일하게 CategoryLocalization 사용
     return CategoryLocalization.getLabel(context, displayCategory);
   }
@@ -1785,18 +1865,21 @@ List<String>? _parseStringListNullable(dynamic value) {
   /// 🔥 카테고리 아이콘 가져오기 (메인 화면과 동일)
   IconData _getCategoryIcon(String? category) {
     if (category == null) return Icons.list;
-    
+
     // bank를 atm으로 매핑 (SVG의 bank ID를 ATM으로 표시)
     final mappedCategory = category == 'bank' ? 'atm' : category;
-    
+
     return CategoryFallbackData.getCategoryIcon(mappedCategory);
   }
 
   /// 🔥 카테고리 정보 시트 표시
-  void _showCategoryInfoSheet(BuildContext context, Map<String, dynamic> categoryData) {
+  void _showCategoryInfoSheet(
+    BuildContext context,
+    Map<String, dynamic> categoryData,
+  ) {
     final categoryName = categoryData['category']?.toString() ?? '알 수 없음';
     final categoryDesc = categoryData['description']?.toString() ?? '설명이 없습니다.';
-    
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -2054,6 +2137,10 @@ List<String>? _parseStringListNullable(dynamic value) {
     _transformationController.dispose();
     _resetTimer?.cancel();
     _promptTimer?.cancel();
+
+    // 🔥 위치 컨트롤러 정리
+    _locationController.dispose();
+
     super.dispose();
   }
 }

@@ -895,7 +895,7 @@ abstract class AppLocalizations {
   /// No description provided for @clear_all.
   ///
   /// In en, this message translates to:
-  /// **'Clear All'**
+  /// **'All'**
   String get clear_all;
 
   /// No description provided for @searching.
@@ -3201,6 +3201,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Floor Plan'**
   String get floor_plan;
+
+  /// No description provided for @floor.
+  ///
+  /// In en, this message translates to:
+  /// **'Floor'**
+  String get floor;
+
+  /// No description provided for @indoorMap.
+  ///
+  /// In en, this message translates to:
+  /// **'Indoor Map'**
+  String get indoorMap;
+
+  /// No description provided for @showBuildingMarker.
+  ///
+  /// In en, this message translates to:
+  /// **'Show Building Marker'**
+  String get showBuildingMarker;
 
   /// No description provided for @search_hint.
   ///

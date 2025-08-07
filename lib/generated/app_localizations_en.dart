@@ -419,7 +419,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get recent_searches => 'Recent Searches';
 
   @override
-  String get clear_all => 'Clear All';
+  String get clear_all => 'All';
 
   @override
   String get searching => 'Searching...';
@@ -1664,6 +1664,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get floor_plan => 'Floor Plan';
+
+  @override
+  String get floor => 'Floor';
+
+  @override
+  String get indoorMap => 'Indoor Map';
+
+  @override
+  String get showBuildingMarker => 'Show Building Marker';
 
   @override
   String get search_hint => 'Search campus buildings';

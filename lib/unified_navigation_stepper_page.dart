@@ -3,6 +3,7 @@ import 'package:flutter_application_1/inside/building_map_page.dart';
 import 'package:flutter_application_1/outdoor_map_page.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:flutter_application_1/generated/app_localizations.dart';
+import 'package:flutter_application_1/controllers/location_controllers.dart';
 
 List<NLatLng> convertToNLatLngList(List<Map<String, dynamic>> path) {
   return path.map((point) {
@@ -37,10 +38,16 @@ class UnifiedNavigationStepperPage extends StatefulWidget {
 class _UnifiedNavigationStepperPageState extends State<UnifiedNavigationStepperPage> {
   final List<_StepData> _steps = [];
   int _currentStepIndex = 0;
+  
+  // 위치 컨트롤러 추가
+  late LocationController _locationController;
 
   @override
   void initState() {
     super.initState();
+    
+    // 위치 컨트롤러 초기화
+    _locationController = LocationController();
 
     // 출발 실내 경로가 있다면 층별로 분리하여 단계 추가 (서버 순서대로)
     if (widget.departureNodeIds.isNotEmpty) {
@@ -122,19 +129,12 @@ class _UnifiedNavigationStepperPageState extends State<UnifiedNavigationStepperP
         isArrivalNavigation: currentStep.isArrival,
       );
     } else {
-      String startLabel = l10n.myLocation;
-      String endLabel = widget.arrivalBuilding;
-      
-      if (widget.departureBuilding.isNotEmpty) {
-        startLabel = widget.departureBuilding;
-      }
-      
       content = OutdoorMapPage(
         path: convertToNLatLngList(currentStep.outdoorPath!),
         distance: currentStep.outdoorDistance!,
         showMarkers: true,
-        startLabel: startLabel,
-        endLabel: endLabel,
+        startLabel: '출발지',
+        endLabel: '도착지',
       );
     }
 
@@ -228,6 +228,13 @@ class _UnifiedNavigationStepperPageState extends State<UnifiedNavigationStepperP
         ],
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    // 위치 컨트롤러 정리
+    _locationController.dispose();
+    super.dispose();
   }
 }
 

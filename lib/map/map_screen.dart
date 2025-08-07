@@ -1,7 +1,6 @@
 // lib/map/map_screen.dart - 로그아웃/재로그인 마커 문제 해결 버전
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_application_1/controllers/location_controllers.dart';
 import 'package:flutter_application_1/friends/friends_screen.dart';
 import 'package:flutter_application_1/friends/friend.dart';
@@ -51,7 +50,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
 
   // 🔥 사용자 ID 추적용
   String? _lastUserId;
-  
+
   // 🔥 시간표에서 전달받은 건물 정보 처리 플래그
   bool _hasProcessedTimetableBuilding = false;
 
@@ -66,7 +65,8 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     // 지도 진입 시 Welcome에서 받아온 위치가 있으면 즉시 표시
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final locationManager = context.read<LocationManager>();
-      if (locationManager.hasValidLocation && locationManager.currentLocation != null) {
+      if (locationManager.hasValidLocation &&
+          locationManager.currentLocation != null) {
         debugPrint('✅ Welcome에서 받아온 위치를 지도에 즉시 표시');
         _controller.updateUserLocationMarker(
           NLatLng(
@@ -170,7 +170,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
       // 🔥 위치 공유 상태 확인
       if (!friend.isLocationPublic) {
         debugPrint('❌ 위치 공유가 허용되지 않은 친구: ${friend.userName}');
-        
+
         // 1. 지도 화면으로 전환
         setState(() {
           _currentNavIndex = 0;
@@ -325,29 +325,31 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     if (_hasProcessedTimetableBuilding) {
       return;
     }
-    
-    final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+
+    final args =
+        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
     if (args != null && args.containsKey('showBuilding')) {
       final buildingName = args['showBuilding'] as String;
       final buildingInfo = args['buildingInfo'] as Map<String, dynamic>?;
-      
+
       debugPrint('🏢 외부에서 건물 정보 받음: $buildingName');
       debugPrint('🏢 건물 상세 정보: $buildingInfo');
-      
+
       // 🔥 처리 플래그 설정
       _hasProcessedTimetableBuilding = true;
-      
+
       // 지도가 준비된 후 건물 정보 표시
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _showBuildingFromTimetable(buildingName, buildingInfo);
       });
-      
+
       // �� arguments 클리어 (다음 화면 전환 시 중복 처리 방지)
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted && ModalRoute.of(context) != null) {
           final route = ModalRoute.of(context)!;
           if (route.settings.arguments is Map<String, dynamic>) {
-            final currentArgs = route.settings.arguments as Map<String, dynamic>;
+            final currentArgs =
+                route.settings.arguments as Map<String, dynamic>;
             if (currentArgs.containsKey('showBuilding')) {
               // arguments에서 showBuilding 제거
               currentArgs.remove('showBuilding');
@@ -361,10 +363,13 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
   }
 
   /// 🔥 외부에서 전달받은 건물 정보로 건물 선택 및 정보창 표시
-  Future<void> _showBuildingFromTimetable(String buildingName, Map<String, dynamic>? buildingInfo) async {
+  Future<void> _showBuildingFromTimetable(
+    String buildingName,
+    Map<String, dynamic>? buildingInfo,
+  ) async {
     try {
       debugPrint('🏢 시간표 건물 정보 표시 시작: $buildingName');
-      
+
       // 1. 지도가 완전히 로드될 때까지 대기
       int retryCount = 0;
       while (!_controller.isMapReady && retryCount < 10) {
@@ -372,82 +377,79 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
         retryCount++;
         debugPrint('🗺️ 지도 로딩 대기 중... ($retryCount/10)');
       }
-      
+
       if (!_controller.isMapReady) {
         debugPrint('❌ 지도 로딩 시간 초과');
         return;
       }
-      
+
       // 2. 건물 데이터에서 해당 건물 찾기
       final buildings = BuildingDataProvider.getBuildingData(context);
       debugPrint('🏢 전체 건물 수: ${buildings.length}');
       debugPrint('🏢 찾을 건물 이름: $buildingName');
-      
+
       // 모든 건물 이름 출력 (디버깅용)
       for (int i = 0; i < buildings.length; i++) {
         debugPrint('🏢 건물 $i: ${buildings[i].name}');
       }
-      
+
       // 건물 이름 매칭 로직
       Building? targetBuilding;
-      
+
       // 1차: 정확한 이름 매칭
       try {
         targetBuilding = buildings.firstWhere(
-          (building) => building.name.toLowerCase() == buildingName.toLowerCase(),
+          (building) =>
+              building.name.toLowerCase() == buildingName.toLowerCase(),
         );
         debugPrint('✅ 정확한 이름 매칭 성공: ${targetBuilding.name}');
       } catch (e) {
         debugPrint('❌ 정확한 이름 매칭 실패: $e');
       }
-      
+
       // 2차: 건물 코드 매칭 (W1, W2 등)
       if (targetBuilding == null) {
         try {
           final searchCode = _extractBuildingCode(buildingName);
           debugPrint('🏢 추출된 건물 코드: $searchCode');
-          
-          targetBuilding = buildings.firstWhere(
-            (building) {
-              final buildingCode = _extractBuildingCode(building.name);
-              return buildingCode.toLowerCase() == searchCode.toLowerCase();
-            },
-          );
+
+          targetBuilding = buildings.firstWhere((building) {
+            final buildingCode = _extractBuildingCode(building.name);
+            return buildingCode.toLowerCase() == searchCode.toLowerCase();
+          });
           debugPrint('✅ 건물 코드 매칭 성공: ${targetBuilding.name}');
         } catch (e) {
           debugPrint('❌ 건물 코드 매칭 실패: $e');
         }
       }
-      
+
       // 3차: 부분 매칭 (포함 관계)
       if (targetBuilding == null) {
         try {
-          targetBuilding = buildings.firstWhere(
-            (building) {
-              final buildingNameLower = building.name.toLowerCase();
-              final searchNameLower = buildingName.toLowerCase();
-              
-              return buildingNameLower.contains(searchNameLower) || 
-                     searchNameLower.contains(buildingNameLower);
-            },
-          );
+          targetBuilding = buildings.firstWhere((building) {
+            final buildingNameLower = building.name.toLowerCase();
+            final searchNameLower = buildingName.toLowerCase();
+
+            return buildingNameLower.contains(searchNameLower) ||
+                searchNameLower.contains(buildingNameLower);
+          });
           debugPrint('✅ 부분 매칭 성공: ${targetBuilding.name}');
         } catch (e) {
           debugPrint('❌ 부분 매칭 실패: $e');
         }
       }
-      
+
       // 4차: 첫 번째 건물 사용
       if (targetBuilding == null) {
         targetBuilding = buildings.first;
         debugPrint('⚠️ 기본 건물 사용: ${targetBuilding.name}');
       }
-      
+
       debugPrint('🏢 최종 선택된 건물: ${targetBuilding.name}');
-      
+
       // 3. 건물 선택
       _controller.selectBuilding(targetBuilding);
-      
+
       // 4. 카테고리 자동 선택 로직 제거
       // if (buildingInfo != null && buildingInfo.containsKey('category')) {
       //   final category = buildingInfo['category'] as String?;
@@ -456,10 +458,10 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
       //     _selectCategoryAutomatically(category);
       //   }
       // }
-      
+
       // 5. 잠시 후 정보창 표시 (지도 업데이트 대기)
       await Future.delayed(const Duration(milliseconds: 1500));
-      
+
       // 6. 정보창 표시
       if (mounted) {
         if (!_infoWindowController.isShowing) {
@@ -469,7 +471,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
           debugPrint('ℹ️ 정보창이 이미 표시 중');
         }
       }
-      
+
       // 6. 성공 메시지 표시
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -480,7 +482,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    buildingInfo != null 
+                    buildingInfo != null
                         ? '${buildingInfo['name']} ${buildingInfo['floorNumber']}층 ${buildingInfo['roomName']}호 위치를 표시했습니다.'
                         : '$buildingName 위치를 표시했습니다.',
                     style: const TextStyle(
@@ -500,7 +502,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
           ),
         );
       }
-      
+
       debugPrint('✅ 시간표 건물 정보 표시 완료');
     } catch (e) {
       debugPrint('❌ 시간표 건물 정보 표시 실패: $e');
@@ -511,11 +513,11 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
   // void _selectCategoryAutomatically(String category) {
   //   try {
   //     debugPrint('🎯 카테고리 자동 선택 시작: $category');
-  //     
+  //
   //     // 서버 카테고리명을 카테고리 ID로 변환
   //     final categoryId = _mapCategoryName(category);
   //     debugPrint('🎯 매핑된 카테고리: $category → $categoryId');
-  //     
+  //
   //     // CategoryChips 위젯에 카테고리 선택 이벤트 전달
   //     WidgetsBinding.instance.addPostFrameCallback((_) {
   //       if (mounted) {
@@ -650,7 +652,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
 
     return Consumer<LocationManager>(
       builder: (context, locationManager, child) {
-        if (locationManager != null && locationManager.hasValidLocation) {
+        if (locationManager.hasValidLocation) {
           controller.updateUserLocationMarker(
             NLatLng(
               locationManager.currentLocation!.latitude!,
@@ -691,27 +693,53 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                   ),
                   const SizedBox(height: 12),
                   CategoryChips(
-                    key: CategoryChips.globalKey,
+                    key: ValueKey('category_chips_${_controller.hashCode}'),
                     selectedCategory: _controller.selectedCategory,
                     onCategorySelected: (category, buildingInfoList) async {
-                      debugPrint('카테고리 선택: $category, 건물 정보들: $buildingInfoList');
-                      
+                      debugPrint('🎯 === 카테고리 선택 콜백 시작 ===');
+                      debugPrint(
+                        '🎯 카테고리: "$category", 건물 정보 개수: ${buildingInfoList.length}',
+                      );
+
                       if (category.isEmpty) {
-                        // 카테고리 해제 시에만 마커 제거
-                        debugPrint('🎯 카테고리 해제 처리 시작');
-                        await _buildingMarkerService.clearAllMarkers();
-                        await _controller.clearCategorySelection(); // 카테고리 마커도 제거
+                        // "건물" 버튼 클릭 또는 카테고리 해제
+                        debugPrint('🎯 "건물" 버튼 클릭 - 모든 건물 마커 표시 시작');
+
+                        // 1. 카테고리 마커 제거
+                        await _controller.clearCategorySelection();
+
+                        // 2. 건물 마커가 없다면 다시 로드
+                        if (!_buildingMarkerService.hasMarkers) {
+                          debugPrint('⚠️ 건물 마커가 없음 - 다시 로드 시작');
+                          await _controller.loadDefaultMarkers();
+                        } else {
+                          debugPrint('✅ 건물 마커가 이미 존재함 - 가시성만 변경');
+                        }
+
+                        // 3. UI 상태 정리
                         _controller.clearSelectedBuilding();
                         _controller.closeInfoWindow(_infoWindowController);
-                        debugPrint('✅ 카테고리 해제 처리 완료');
+
+                        debugPrint('✅ "건물" 버튼 처리 완료 - 모든 건물 마커 표시됨');
                       } else {
-                        // 카테고리 선택 시에는 기존 마커 유지하고 카테고리 마커만 추가
+                        // 특정 카테고리 선택
                         debugPrint('🎯 카테고리 선택 처리 시작: $category');
+
+                        // 1. UI 상태 정리
                         _controller.clearSelectedBuilding();
                         _controller.closeInfoWindow(_infoWindowController);
-                        _controller.selectCategoryByNames(category, buildingInfoList, context);
+
+                        // 2. 카테고리 마커 표시 (기존 건물 마커는 자동으로 숨겨짐)
+                        await _controller.selectCategoryByNames(
+                          category,
+                          buildingInfoList,
+                          context,
+                        );
+
                         debugPrint('✅ 카테고리 선택 처리 완료: $category');
                       }
+
+                      debugPrint('🎯 === 카테고리 선택 콜백 끝 ===');
                     },
                   ),
                 ],
@@ -1265,9 +1293,8 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => BuildingMapPage(
-                  buildingName: building.name,
-                ),
+                builder: (context) =>
+                    BuildingMapPage(buildingName: building.name),
               ),
             );
           },
