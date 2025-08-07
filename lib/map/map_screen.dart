@@ -80,7 +80,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
         );
       }
       
-      // 🔥 튜토리얼 표시 (로그인/게스트 진입 시)
+      // 🔥 튜토리얼 표시 (로그인/게스트 진입 시에만)
       _showTutorialIfNeeded();
     });
   }
@@ -140,13 +140,6 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
       _hasProcessedTimetableBuilding = false; // 🔥 플래그 리셋
       _hasShownTutorial = false; // 🔥 튜토리얼 플래그 리셋
       debugPrint('🔄 새 사용자 감지 - 시간표 건물 정보 플래그 및 튜토리얼 플래그 리셋');
-      
-      // 🔥 새 사용자일 때 튜토리얼 표시
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          _showTutorialIfNeeded();
-        }
-      });
     }
 
     // 🔥 시간표에서 전달받은 건물 정보 처리
@@ -611,7 +604,10 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
 
   /// 🔥 튜토리얼 표시 메서드
   void _showTutorialIfNeeded() {
-    if (!_hasShownTutorial && mounted) {
+    final userAuth = context.read<UserAuth>();
+    
+    // 로그인된 사용자이거나 게스트이고, 아직 튜토리얼을 보지 않았을 때만 표시
+    if (!_hasShownTutorial && mounted && (userAuth.isLoggedIn || userAuth.isGuest)) {
       _hasShownTutorial = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
