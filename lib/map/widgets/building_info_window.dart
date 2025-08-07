@@ -303,14 +303,14 @@ class _BuildingInfoWindowState extends State<BuildingInfoWindow> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
-            color: Colors.green.withValues(alpha: 0.1),
+            color: widget.building.statusColor.withOpacity(0.1),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Text(
             widget.building.getLocalizedStatus(context),
             style: TextStyle(
               fontSize: 12,
-              color: Colors.green[700],
+              color: widget.building.statusColor,
               fontWeight: FontWeight.w600,
             ),
           ),

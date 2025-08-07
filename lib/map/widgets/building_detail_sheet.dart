@@ -274,6 +274,10 @@ class BuildingDetailSheet extends StatelessWidget {
   }
 
   Widget _buildInfoRow(IconData icon, String label, String value) {
+    // 상태 정보인 경우 색상 적용
+    final isStatusInfo = label == 'Status' || label == '상태';
+    final textColor = isStatusInfo ? building.statusColor : Colors.black87;
+    
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
@@ -292,7 +296,11 @@ class BuildingDetailSheet extends StatelessWidget {
           Expanded(
             child: Text(
               value,
-              style: const TextStyle(fontSize: 13, color: Colors.black87),
+              style: TextStyle(
+                fontSize: 13, 
+                color: textColor,
+                fontWeight: isStatusInfo ? FontWeight.w600 : FontWeight.normal,
+              ),
             ),
           ),
         ],
