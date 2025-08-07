@@ -144,8 +144,8 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
       _isTutorialCheckInProgress = false; // 🔥 확인 진행 중 플래그 리셋
       debugPrint('🔄 새 사용자 감지 - 모든 플래그 리셋');
       
-      // 🔥 새 사용자일 때 튜토리얼 표시 (지연 실행으로 중복 방지)
-      Future.delayed(const Duration(milliseconds: 100), () {
+      // �� 새 사용자일 때 튜토리얼 표시 (더 긴 지연으로 중복 방지)
+      Future.delayed(const Duration(milliseconds: 500), () {
         if (mounted && !_hasShownTutorial && !_isShowingTutorial && !_isTutorialCheckInProgress) {
           debugPrint('🔄 튜토리얼 표시 시도');
           _showTutorialIfNeeded();

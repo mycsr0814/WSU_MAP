@@ -28,6 +28,9 @@ class _AuthSelectionViewState extends State<AuthSelectionView>
   late Animation<Offset> _slideAnimation;
   late Animation<double> _floatingAnimation;
 
+  // 🔥 카테고리 로드 중복 방지 플래그
+  bool _isLoadingCategories = false;
+
   @override
   void initState() {
     super.initState();
@@ -672,32 +675,54 @@ Navigator.of(context).pushAndRemoveUntil(
   }
 
   void _navigateToSignUp() async {
+    // 🔥 중복 로드 방지
+    if (_isLoadingCategories) {
+      debugPrint('ℹ️ 카테고리 로드 중 - 회원가입 네비게이션 건너뜀');
+      return;
+    }
+    
+    _isLoadingCategories = true;
     final categoryProvider = Provider.of<CategoryProvider>(context, listen: false);
     
-    // 🔥 회원가입 화면으로 이동하면서 카테고리 로드
-    await categoryProvider.loadCategoriesFromServer();
-    
-    if (mounted) {
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (context) => const SignUpView(),
-        ),
-      );
+    try {
+      // 🔥 회원가입 화면으로 이동하면서 카테고리 로드
+      await categoryProvider.loadCategoriesFromServer();
+      
+      if (mounted) {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => const SignUpView(),
+          ),
+        );
+      }
+    } finally {
+      _isLoadingCategories = false;
     }
   }
 
   void _navigateToLogin() async {
+    // 🔥 중복 로드 방지
+    if (_isLoadingCategories) {
+      debugPrint('ℹ️ 카테고리 로드 중 - 로그인 네비게이션 건너뜀');
+      return;
+    }
+    
+    _isLoadingCategories = true;
     final categoryProvider = Provider.of<CategoryProvider>(context, listen: false);
     
-    // 🔥 로그인 화면으로 이동하면서 카테고리 로드
-    await categoryProvider.loadCategoriesFromServer();
-    
-    if (mounted) {
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (context) => const LoginFormView(),
-        ),
-      );
+    try {
+      // 🔥 로그인 화면으로 이동하면서 카테고리 로드
+      await categoryProvider.loadCategoriesFromServer();
+      
+      if (mounted) {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => const LoginFormView(),
+          ),
+        );
+      }
+    } finally {
+      _isLoadingCategories = false;
     }
   }
 
