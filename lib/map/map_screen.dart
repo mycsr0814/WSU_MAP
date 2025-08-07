@@ -82,9 +82,6 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
           ),
         );
       }
-      
-      // 🔥 튜토리얼 표시 (한 번만)
-      _showTutorialIfNeeded();
     });
   }
 
@@ -146,6 +143,16 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
       _isShowingTutorial = false; // 🔥 표시 중 플래그 리셋
       _isTutorialCheckInProgress = false; // 🔥 확인 진행 중 플래그 리셋
       debugPrint('🔄 새 사용자 감지 - 모든 플래그 리셋');
+      
+      // 🔥 새 사용자일 때 튜토리얼 표시 (지연 실행으로 중복 방지)
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (mounted && !_hasShownTutorial && !_isShowingTutorial && !_isTutorialCheckInProgress) {
+          debugPrint('🔄 튜토리얼 표시 시도');
+          _showTutorialIfNeeded();
+        } else {
+          debugPrint('ℹ️ 튜토리얼 표시 시도 건너뜀 - 플래그 상태 확인');
+        }
+      });
     }
 
     // 🔥 시간표에서 전달받은 건물 정보 처리
@@ -621,6 +628,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     
     final userAuth = context.read<UserAuth>();
     debugPrint('🔍 현재 사용자: ${userAuth.userId}, 로그인 상태: ${userAuth.isLoggedIn}, 튜토리얼 설정: ${userAuth.isTutorial}');
+    debugPrint('🔍 사용자 ID 타입: ${userAuth.userId.runtimeType}, 튜토리얼 설정 타입: ${userAuth.isTutorial.runtimeType}');
     
     // 로그인되지 않았으면 튜토리얼 표시하지 않음
     if (!userAuth.isLoggedIn) {
@@ -635,6 +643,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
       // 로그인된 사용자는 서버의 Is_Tutorial 설정에 따라
       shouldShowTutorial = userAuth.isTutorial;
       debugPrint('🔍 로그인 사용자 튜토리얼 확인: $shouldShowTutorial (서버 설정: ${userAuth.isTutorial})');
+      debugPrint('🔍 shouldShowTutorial 타입: ${shouldShowTutorial.runtimeType}');
       
       // 서버 설정이 false면 튜토리얼 표시하지 않음
       if (!shouldShowTutorial) {
