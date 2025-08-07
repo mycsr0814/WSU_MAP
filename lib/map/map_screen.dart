@@ -80,9 +80,6 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
           ),
         );
       }
-      
-      // 🔥 튜토리얼 표시 (로그인/게스트 진입 시에만)
-      _showTutorialIfNeeded();
     });
   }
 
@@ -141,6 +138,13 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
       _hasProcessedTimetableBuilding = false; // 🔥 플래그 리셋
       _hasShownTutorial = false; // 🔥 튜토리얼 플래그 리셋
       debugPrint('🔄 새 사용자 감지 - 시간표 건물 정보 플래그 및 튜토리얼 플래그 리셋');
+      
+      // 🔥 새 사용자일 때 튜토리얼 표시
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _showTutorialIfNeeded();
+        }
+      });
     }
 
     // 🔥 시간표에서 전달받은 건물 정보 처리
@@ -607,37 +611,44 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
   void _showTutorialIfNeeded() async {
     final userAuth = context.read<UserAuth>();
     
-    // 아직 보지 않았고 화면이 마운트된 상태일 때만 확인
-    if (!_hasShownTutorial && mounted) {
-      bool shouldShowTutorial = false;
-      
-      if (userAuth.isLoggedIn) {
-        // 로그인된 사용자는 서버의 Is_Tutorial 설정에 따라
-        shouldShowTutorial = userAuth.isTutorial;
-      } else {
-        // 게스트는 로컬 설정을 확인
-        try {
-          final prefs = await SharedPreferences.getInstance();
-          shouldShowTutorial = prefs.getBool('guest_tutorial_show') ?? true; // 기본값은 true
-        } catch (e) {
-          debugPrint('❌ 게스트 튜토리얼 설정 확인 오류: $e');
-          shouldShowTutorial = true; // 오류 시 기본적으로 표시
+    // 이미 표시했거나 화면이 마운트되지 않았으면 표시하지 않음
+    if (_hasShownTutorial || !mounted) {
+      return;
+    }
+    
+    bool shouldShowTutorial = false;
+    
+    if (userAuth.isLoggedIn && !userAuth.userId!.startsWith('guest_')) {
+      // 로그인된 사용자는 서버의 Is_Tutorial 설정에 따라
+      shouldShowTutorial = userAuth.isTutorial;
+      debugPrint('🔍 로그인 사용자 튜토리얼 확인: $shouldShowTutorial');
+    } else {
+      // 게스트는 로컬 설정을 확인
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        shouldShowTutorial = prefs.getBool('guest_tutorial_show') ?? true; // 기본값은 true
+        debugPrint('🔍 게스트 튜토리얼 확인: $shouldShowTutorial');
+      } catch (e) {
+        debugPrint('❌ 게스트 튜토리얼 설정 확인 오류: $e');
+        shouldShowTutorial = true; // 오류 시 기본적으로 표시
+      }
+    }
+    
+    if (shouldShowTutorial) {
+      _hasShownTutorial = true;
+      debugPrint('✅ 튜토리얼 표시 시작');
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const TutorialScreen(),
+            ),
+          );
         }
-      }
-      
-      if (shouldShowTutorial) {
-        _hasShownTutorial = true;
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const TutorialScreen(),
-              ),
-            );
-          }
-        });
-      }
+      });
+    } else {
+      debugPrint('ℹ️ 튜토리얼 표시하지 않음 (설정에 따라)');
     }
   }
 
