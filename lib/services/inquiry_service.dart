@@ -101,7 +101,7 @@ class InquiryService {
 
         // 헤더 추가
         request.headers['Content-Type'] = 'multipart/form-data';
-        request.headers['Accept-Language'] = 'ko-KR';
+        // 🔥 Accept-Language 헤더 제거 - 서버에서 언어 인식 문제 방지
 
         // 텍스트 필드 추가
         request.fields['category'] = category;
@@ -226,7 +226,7 @@ class InquiryService {
           Uri.parse(url),
           headers: {
             'Content-Type': 'application/json',
-            'Accept-Language': 'ko-KR',
+            // 🔥 Accept-Language 헤더 제거 - 서버에서 언어 인식 문제 방지
           },
           body: jsonEncode(requestBody),
         );
@@ -276,7 +276,7 @@ class InquiryService {
         Uri.parse('$baseUrl/list/$userId'),
         headers: {
           'Content-Type': 'application/json',
-          'Accept-Language': 'ko-KR',
+          // 🔥 Accept-Language 헤더 제거 - 서버에서 언어 인식 문제 방지
         },
       );
 
@@ -309,7 +309,7 @@ class InquiryService {
         Uri.parse('$baseUrl/detail/$inquiryId'),
         headers: {
           'Content-Type': 'application/json',
-          'Accept-Language': 'ko-KR',
+          // 🔥 Accept-Language 헤더 제거 - 서버에서 언어 인식 문제 방지
         },
       );
 
