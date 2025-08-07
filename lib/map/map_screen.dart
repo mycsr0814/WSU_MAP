@@ -138,7 +138,15 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     if (currentUserId != _lastUserId) {
       _lastUserId = currentUserId;
       _hasProcessedTimetableBuilding = false; // 🔥 플래그 리셋
-      debugPrint('🔄 새 사용자 감지 - 시간표 건물 정보 플래그 리셋');
+      _hasShownTutorial = false; // 🔥 튜토리얼 플래그 리셋
+      debugPrint('🔄 새 사용자 감지 - 시간표 건물 정보 플래그 및 튜토리얼 플래그 리셋');
+      
+      // 🔥 새 사용자일 때 튜토리얼 표시
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _showTutorialIfNeeded();
+        }
+      });
     }
 
     // 🔥 시간표에서 전달받은 건물 정보 처리

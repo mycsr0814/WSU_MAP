@@ -91,6 +91,7 @@ class _TutorialScreenState extends State<TutorialScreen> {
                         fontWeight: FontWeight.bold,
                         color: Color(0xFF1E3A8A),
                       ),
+                      textAlign: TextAlign.center,
                     ),
                   ),
                 ],
