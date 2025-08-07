@@ -74,7 +74,7 @@ class _TutorialScreenState extends State<TutorialScreen> {
   Future<void> _finishTutorial() async {
     final userAuth = context.read<UserAuth>();
     
-    // 다시 보지 않기가 체크되어 있으면 서버에 설정 업데이트
+    // 로그인된 사용자이고 다시 보지 않기가 체크되어 있으면 서버에 설정 업데이트
     if (_dontShowAgain && userAuth.isLoggedIn) {
       try {
         final success = await userAuth.updateTutorial(showTutorial: false);
@@ -167,8 +167,8 @@ class _TutorialScreenState extends State<TutorialScreen> {
               padding: const EdgeInsets.all(24),
               child: Column(
                 children: [
-                  // 다시 보지 않기 체크박스 (마지막 페이지에서만 표시)
-                  if (isLastPage)
+                  // 다시 보지 않기 체크박스 (마지막 페이지에서만 표시, 로그인된 사용자에게만)
+                  if (isLastPage && context.read<UserAuth>().isLoggedIn)
                     Container(
                       margin: const EdgeInsets.only(bottom: 16),
                       child: Row(

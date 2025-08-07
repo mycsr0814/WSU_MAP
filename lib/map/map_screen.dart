@@ -606,19 +606,31 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
   void _showTutorialIfNeeded() {
     final userAuth = context.read<UserAuth>();
     
-    // 로그인된 사용자이고, 서버에서 튜토리얼을 표시하도록 설정되어 있고, 아직 보지 않았을 때만 표시
-    if (!_hasShownTutorial && mounted && userAuth.isLoggedIn && userAuth.isTutorial) {
-      _hasShownTutorial = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const TutorialScreen(),
-            ),
-          );
-        }
-      });
+    // 로그인된 사용자는 서버 설정에 따라, 게스트는 항상 튜토리얼 표시
+    if (!_hasShownTutorial && mounted) {
+      bool shouldShowTutorial = false;
+      
+      if (userAuth.isLoggedIn) {
+        // 로그인된 사용자는 서버의 Is_Tutorial 설정에 따라
+        shouldShowTutorial = userAuth.isTutorial;
+      } else {
+        // 게스트는 항상 튜토리얼 표시
+        shouldShowTutorial = true;
+      }
+      
+      if (shouldShowTutorial) {
+        _hasShownTutorial = true;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const TutorialScreen(),
+              ),
+            );
+          }
+        });
+      }
     }
   }
 
