@@ -30,6 +30,9 @@ class _AuthSelectionViewState extends State<AuthSelectionView>
 
   // 🔥 카테고리 로드 중복 방지 플래그
   bool _isLoadingCategories = false;
+  
+  // 🔥 버튼 중복 클릭 방지 플래그
+  bool _isNavigating = false;
 
   @override
   void initState() {
@@ -675,54 +678,72 @@ Navigator.of(context).pushAndRemoveUntil(
   }
 
   void _navigateToSignUp() async {
-    // 🔥 중복 로드 방지
-    if (_isLoadingCategories) {
-      debugPrint('ℹ️ 카테고리 로드 중 - 회원가입 네비게이션 건너뜀');
+    // 🔥 중복 클릭 방지
+    if (_isNavigating || _isLoadingCategories) {
+      debugPrint('ℹ️ 네비게이션 중 - 회원가입 건너뜀');
       return;
     }
     
+    debugPrint('🔄 회원가입 네비게이션 시작');
+    _isNavigating = true;
     _isLoadingCategories = true;
     final categoryProvider = Provider.of<CategoryProvider>(context, listen: false);
     
     try {
       // 🔥 회원가입 화면으로 이동하면서 카테고리 로드
+      debugPrint('🔄 카테고리 로드 시작');
       await categoryProvider.loadCategoriesFromServer();
+      debugPrint('✅ 카테고리 로드 완료');
       
       if (mounted) {
+        debugPrint('🔄 회원가입 화면으로 이동');
         Navigator.of(context).push(
           MaterialPageRoute(
             builder: (context) => const SignUpView(),
           ),
         );
       }
+    } catch (e) {
+      debugPrint('❌ 회원가입 네비게이션 오류: $e');
     } finally {
+      _isNavigating = false;
       _isLoadingCategories = false;
+      debugPrint('✅ 회원가입 네비게이션 완료');
     }
   }
 
   void _navigateToLogin() async {
-    // 🔥 중복 로드 방지
-    if (_isLoadingCategories) {
-      debugPrint('ℹ️ 카테고리 로드 중 - 로그인 네비게이션 건너뜀');
+    // 🔥 중복 클릭 방지
+    if (_isNavigating || _isLoadingCategories) {
+      debugPrint('ℹ️ 네비게이션 중 - 로그인 건너뜀');
       return;
     }
     
+    debugPrint('🔄 로그인 네비게이션 시작');
+    _isNavigating = true;
     _isLoadingCategories = true;
     final categoryProvider = Provider.of<CategoryProvider>(context, listen: false);
     
     try {
       // 🔥 로그인 화면으로 이동하면서 카테고리 로드
+      debugPrint('🔄 카테고리 로드 시작');
       await categoryProvider.loadCategoriesFromServer();
+      debugPrint('✅ 카테고리 로드 완료');
       
       if (mounted) {
+        debugPrint('🔄 로그인 화면으로 이동');
         Navigator.of(context).push(
           MaterialPageRoute(
             builder: (context) => const LoginFormView(),
           ),
         );
       }
+    } catch (e) {
+      debugPrint('❌ 로그인 네비게이션 오류: $e');
     } finally {
+      _isNavigating = false;
       _isLoadingCategories = false;
+      debugPrint('✅ 로그인 네비게이션 완료');
     }
   }
 
