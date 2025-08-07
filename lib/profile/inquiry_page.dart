@@ -183,7 +183,7 @@ class _CreateInquiryTabState extends State<CreateInquiryTab> {
     
     final l10n = AppLocalizations.of(context)!;
     
-    // 🔥 한국어 코드와 다국어 텍스트 매핑
+    // 🔥 고정된 한국어 코드와 다국어 텍스트 매핑
     _inquiryTypeMapping = {
       'place_error': l10n.inquiry_category_place_error,
       'bug': l10n.inquiry_category_bug,
@@ -195,8 +195,12 @@ class _CreateInquiryTabState extends State<CreateInquiryTab> {
     // 🔥 매핑 설정 시 로그 출력
     debugPrint('=== 문의 카테고리 매핑 설정 ===');
     debugPrint('현재 언어: ${Localizations.localeOf(context)}');
+    debugPrint('현재 로컬라이제이션: ${l10n.runtimeType}');
+    debugPrint('매핑 상세 확인:');
     _inquiryTypeMapping.forEach((key, value) {
-      debugPrint('  $key -> $value');
+      debugPrint('  키: "$key" -> 값: "$value"');
+      debugPrint('    키 타입: ${key.runtimeType}, 길이: ${key.length}');
+      debugPrint('    값 타입: ${value.runtimeType}, 길이: ${value.length}');
     });
     debugPrint('============================');
   }
@@ -908,6 +912,14 @@ class _CreateInquiryTabState extends State<CreateInquiryTab> {
       debugPrint('선택된 카테고리 표시 텍스트: $selectedDisplayText');
       debugPrint('매핑에서 해당 키가 존재하는지: ${_inquiryTypeMapping.containsKey(category)}');
       debugPrint('서버로 전송될 카테고리: $category');
+      
+      // 🔥 서버로 전송되는 모든 데이터 확인
+      debugPrint('=== 서버 전송 데이터 ===');
+      debugPrint('userId: ${widget.userAuth.userId}');
+      debugPrint('category: $category');
+      debugPrint('title: ${_titleController.text.trim()}');
+      debugPrint('content: ${_contentController.text.trim()}');
+      debugPrint('========================');
       debugPrint('================================');
 
       final success = await InquiryService.createInquiry(
@@ -1524,30 +1536,7 @@ class _MyInquiriesTabState extends State<MyInquiriesTab> {
   }
 
   String _getLocalizedCategory(String category) {
-    final l10n = AppLocalizations.of(context)!;
-    switch (category) {
-      case '장소/정보 오류':
-      case 'Place/Info Error':
-      case '地点/信息错误':
-        return l10n.inquiry_category_place_error;
-      case '버그 신고':
-      case 'Bug Report':
-      case '错误报告':
-        return l10n.inquiry_category_bug;
-      case '기능 제안':
-      case 'Feature Request':
-      case '功能建议':
-        return l10n.inquiry_category_feature;
-      case '경로 안내 오류':
-      case 'Route Guidance Error':
-      case '路线指导错误':
-        return l10n.inquiry_category_route_error;
-      case '기타 문의':
-      case 'Other Inquiry':
-      case '其他咨询':
-        return l10n.inquiry_category_other;
-      default:
-        return category;
-    }
+    // 🔥 서버에서 받은 카테고리를 그대로 반환 (로컬라이제이션 변환 제거)
+    return category;
   }
 }
