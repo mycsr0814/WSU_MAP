@@ -3,9 +3,9 @@ import '../generated/app_localizations.dart';
 import 'timetable_item.dart';
 import 'timetable_api_service.dart';
 import '../map/widgets/directions_screen.dart'; // 폴더 구조에 맞게 경로 수정!
-
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'excel_import_service.dart';
+import 'package:flutter_typeahead/flutter_typeahead.dart';
 
 class ScheduleScreen extends StatefulWidget {
   final String userId;
@@ -1153,12 +1153,11 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                               icon: Icons.person_outline,
                             ),
                             const SizedBox(height: 16),
-                            _buildSearchableTextField(
+                            _buildTypeAheadField(
                               controller: buildingFieldController,
                               labelText: l10n?.building_name ?? 'Building',
                               icon: Icons.business,
                               items: buildingCodes,
-                              selectedValue: selectedBuilding,
                               onChanged: (value) async {
                                 debugPrint('🏢 건물 입력 변경: "$value"');
                                 selectedBuilding = value;
@@ -1182,12 +1181,11 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                               },
                             ),
                             const SizedBox(height: 16),
-                            _buildSearchableTextField(
+                            _buildTypeAheadField(
                               controller: floorFieldController,
                               labelText: l10n?.floor_number ?? 'Floor',
                               icon: Icons.layers,
                               items: floorList,
-                              selectedValue: selectedFloor,
                               onChanged: (value) async {
                                 debugPrint('🏢 층 입력 변경: "$value"');
                                 selectedFloor = value;
@@ -1208,12 +1206,11 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                               },
                             ),
                             const SizedBox(height: 16),
-                            _buildSearchableTextField(
+                            _buildTypeAheadField(
                               controller: roomFieldController,
                               labelText: l10n?.room_name ?? 'Room',
                               icon: Icons.meeting_room,
                               items: roomList,
-                              selectedValue: selectedRoom,
                               onChanged: (value) {
                                 debugPrint('🏢 강의실 입력 변경: "$value"');
                                 selectedRoom = value;
@@ -1910,131 +1907,61 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     );
   }
 
-  Widget _buildSearchableTextField({
+  Widget _buildTypeAheadField({
     required TextEditingController controller,
     required String labelText,
     required IconData icon,
     required List<String> items,
-    String? selectedValue,
     required Function(String) onChanged,
   }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+    return TypeAheadField<String>(
+      suggestionsCallback: (pattern) async {
+        if (pattern.isEmpty) return items;
+        return items.where((item) =>
+          item.toLowerCase().startsWith(pattern.toLowerCase())
+        ).toList();
+      },
+      itemBuilder: (context, suggestion) {
+        return ListTile(
+          title: Text(suggestion,
+            style: const TextStyle(fontSize: 16, color: Color(0xFF1E3A8A)),
           ),
-        ],
-      ),
-      child: TextFormField(
-        controller: controller,
-        style: const TextStyle(fontSize: 16, color: Color(0xFF1E3A8A)),
-        decoration: InputDecoration(
-          labelText: labelText,
-          labelStyle: const TextStyle(color: Color(0xFF64748B), fontSize: 14),
-          prefixIcon: Container(
-            margin: const EdgeInsets.all(8),
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: const Color(0xFF1E3A8A).withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(icon, color: const Color(0xFF1E3A8A), size: 20),
-          ),
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 16,
-          ),
-          floatingLabelBehavior: FloatingLabelBehavior.never,
-          suffixIcon: IconButton(
-            icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF1E3A8A)),
-            onPressed: () {
-              _showFilteredDropdown(context, controller, items, onChanged);
-            },
-          ),
-        ),
-        onChanged: (value) {
-          debugPrint('🔍 입력 변경: "$value"');
-          onChanged(value);
-        },
-      ),
-    );
-  }
-
-  void _showFilteredDropdown(
-    BuildContext context,
-    TextEditingController controller,
-    List<String> items,
-    Function(String) onChanged,
-  ) {
-    final searchText = controller.text.toLowerCase();
-    final filteredItems = items.where((item) => 
-      item.toLowerCase().contains(searchText)
-    ).toList();
-    
-    debugPrint('🔍 검색어: "$searchText"');
-    debugPrint('🔍 필터링된 항목: $filteredItems');
-    
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            String searchQuery = '';
-            List<String> currentFilteredItems = filteredItems;
-            
-            return AlertDialog(
-              title: Text('선택하세요'),
-              content: Container(
-                width: double.maxFinite,
-                height: 300,
-                child: Column(
-                  children: [
-                    // 검색 필드 추가
-                    TextField(
-                      decoration: InputDecoration(
-                        hintText: '검색...',
-                        prefixIcon: Icon(Icons.search),
-                        border: OutlineInputBorder(),
-                      ),
-                      onChanged: (searchValue) {
-                        searchQuery = searchValue;
-                        currentFilteredItems = items.where((item) => 
-                          item.toLowerCase().contains(searchValue.toLowerCase())
-                        ).toList();
-                        setState(() {});
-                      },
-                    ),
-                    SizedBox(height: 8),
-                    Expanded(
-                      child: ListView.builder(
-                        itemCount: currentFilteredItems.length,
-                        itemBuilder: (context, index) {
-                          final item = currentFilteredItems[index];
-                          return ListTile(
-                            title: Text(item),
-                            onTap: () {
-                              controller.text = item;
-                              onChanged(item);
-                              Navigator.of(context).pop();
-                            },
-                          );
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
         );
       },
+      onSelected: (suggestion) {
+        controller.text = suggestion;
+        onChanged(suggestion);
+      },
+      builder: (context, textController, focusNode) {
+        return TextField(
+          controller: textController,
+          focusNode: focusNode,
+          style: const TextStyle(fontSize: 16, color: Color(0xFF1E3A8A)),
+          decoration: InputDecoration(
+            labelText: labelText,
+            labelStyle: const TextStyle(color: Color(0xFF64748B), fontSize: 14),
+            prefixIcon: Container(
+              margin: const EdgeInsets.all(8),
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1E3A8A).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(icon, color: const Color(0xFF1E3A8A), size: 20),
+            ),
+            border: InputBorder.none,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 16,
+            ),
+            floatingLabelBehavior: FloatingLabelBehavior.never,
+          ),
+        );
+      },
+      emptyBuilder: (context) => const SizedBox(
+        height: 40,
+        child: Center(child: Text('검색 결과 없음', style: TextStyle(fontSize: 14))),
+      ),
     );
   }
 
