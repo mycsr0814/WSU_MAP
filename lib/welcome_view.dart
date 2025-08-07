@@ -127,8 +127,8 @@ class _WelcomeViewState extends State<WelcomeView>
     // 🔥 Welcome 화면 진입 시 백그라운드에서 위치 미리 준비
     _prepareLocationInBackground();
 
-    // 🔥 3초 후 자동으로 AuthSelectionView로 이동
-    Timer(const Duration(seconds: 3), () {
+    // 🔥 2초 후 자동으로 AuthSelectionView로 이동
+    Timer(const Duration(seconds: 2), () {
       if (mounted) {
         _navigateToAuthSelection();
       }

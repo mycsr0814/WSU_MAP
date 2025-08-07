@@ -108,10 +108,10 @@ class AuthService {
           // 성공
           final data = jsonDecode(response.body);
           
-          // Is_Tutorial 값을 정확하게 처리
+          // is_tutorial 값을 정확하게 처리
           bool isTutorial = true; // 기본값
-          if (data.containsKey('Is_Tutorial')) {
-            final tutorialValue = data['Is_Tutorial'];
+          if (data.containsKey('is_tutorial')) {
+            final tutorialValue = data['is_tutorial'];
             if (tutorialValue is bool) {
               isTutorial = tutorialValue;
             } else if (tutorialValue is String) {
@@ -121,7 +121,7 @@ class AuthService {
             }
           }
           
-          debugPrint('🔍 서버 응답에서 Is_Tutorial 원본 값: ${data['Is_Tutorial']} (타입: ${data['Is_Tutorial']?.runtimeType})');
+          debugPrint('🔍 서버 응답에서 is_tutorial 원본 값: ${data['is_tutorial']} (타입: ${data['is_tutorial']?.runtimeType})');
           debugPrint('🔍 처리된 Is_Tutorial 값: $isTutorial (타입: ${isTutorial.runtimeType})');
           debugPrint('🔍 전체 서버 응답 데이터: $data');
           

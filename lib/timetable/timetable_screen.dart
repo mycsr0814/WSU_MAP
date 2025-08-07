@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_typeahead/flutter_typeahead.dart';
 import '../generated/app_localizations.dart';
 import 'timetable_item.dart';
 import 'timetable_api_service.dart';
@@ -158,8 +157,63 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       return;
     }
 
-    await _apiService.addScheduleItem(item, widget.userId);
-    await _loadScheduleItems();
+    try {
+      debugPrint('📅 시간표 추가 시작');
+      await _apiService.addScheduleItem(item, widget.userId);
+      debugPrint('📅 시간표 추가 완료');
+      await _loadScheduleItems();
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.white, size: 20),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    '시간표가 성공적으로 추가되었습니다.',
+                    style: TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: const Color(0xFF10B981),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('❌ 시간표 추가 실패: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.error_outline, color: Colors.white, size: 20),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    '시간표 추가에 실패했습니다: ${e.toString().replaceAll('Exception: ', '')}',
+                    style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: const Color(0xFFEF4444),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _updateScheduleItem(
@@ -1099,19 +1153,14 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                               icon: Icons.person_outline,
                             ),
                             const SizedBox(height: 16),
-                            _buildStyledTypeAheadField(
+                            _buildSearchableTextField(
                               controller: buildingFieldController,
                               labelText: l10n?.building_name ?? 'Building',
                               icon: Icons.business,
-                              suggestionsCallback: (pattern) async =>
-                                  buildingCodes
-                                      .where(
-                                        (code) => code.toLowerCase().contains(
-                                          pattern.toLowerCase(),
-                                        ),
-                                      )
-                                      .toList(),
+                              items: buildingCodes,
+                              selectedValue: selectedBuilding,
                               onChanged: (value) async {
+                                debugPrint('🏢 건물 입력 변경: "$value"');
                                 selectedBuilding = value;
                                 setState(() {
                                   selectedFloor = null;
@@ -1122,100 +1171,52 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                                   roomList = [];
                                 });
                                 if (buildingCodes.contains(value)) {
+                                  debugPrint('🏢 건물 확인됨, 층 정보 가져오기: $value');
                                   final fetchedFloors = await _apiService
                                       .fetchFloors(value);
                                   setState(() {
                                     floorList = fetchedFloors;
                                   });
+                                  debugPrint('🏢 층 정보 로드 완료: ${fetchedFloors.length}개');
                                 }
-                              },
-                              onSelected: (suggestion) async {
-                                selectedBuilding = suggestion;
-                                setState(() {
-                                  buildingFieldController.text = suggestion;
-                                  selectedFloor = null;
-                                  selectedRoom = null;
-                                  floorFieldController.text = '';
-                                  roomFieldController.text = '';
-                                  floorList = [];
-                                  roomList = [];
-                                });
-                                final fetchedFloors = await _apiService
-                                    .fetchFloors(suggestion);
-                                setState(() {
-                                  floorList = fetchedFloors;
-                                });
                               },
                             ),
                             const SizedBox(height: 16),
-                            _buildStyledTypeAheadField(
-                              key: ValueKey(selectedBuilding),
+                            _buildSearchableTextField(
                               controller: floorFieldController,
                               labelText: l10n?.floor_number ?? 'Floor',
                               icon: Icons.layers,
-                              enabled: selectedBuilding != null,
-                              suggestionsCallback: (pattern) async {
-                                if (pattern.trim().isEmpty) return floorList;
-                                return floorList
-                                    .where(
-                                      (floor) => floor.toLowerCase().contains(
-                                        pattern.toLowerCase(),
-                                      ),
-                                    )
-                                    .toList();
-                              },
+                              items: floorList,
+                              selectedValue: selectedFloor,
                               onChanged: (value) async {
+                                debugPrint('🏢 층 입력 변경: "$value"');
                                 selectedFloor = value;
-                                selectedRoom = null;
-                                roomFieldController.text = '';
-                                setState(() => roomList = []);
+                                setState(() {
+                                  selectedRoom = null;
+                                  roomFieldController.text = '';
+                                  roomList = [];
+                                });
                                 if (floorList.contains(value)) {
+                                  debugPrint('🏢 층 확인됨, 강의실 정보 가져오기: $value');
                                   final fetchedRooms = await _apiService
                                       .fetchRooms(selectedBuilding!, value);
                                   setState(() {
                                     roomList = fetchedRooms;
                                   });
+                                  debugPrint('🏢 강의실 정보 로드 완료: ${fetchedRooms.length}개');
                                 }
-                              },
-                              onSelected: (suggestion) async {
-                                selectedFloor = suggestion;
-                                setState(() {
-                                  floorFieldController.text = suggestion;
-                                  selectedRoom = null;
-                                  roomFieldController.text = '';
-                                });
-                                final fetchedRooms = await _apiService
-                                    .fetchRooms(selectedBuilding!, suggestion);
-                                setState(() {
-                                  roomList = fetchedRooms;
-                                });
                               },
                             ),
                             const SizedBox(height: 16),
-                            _buildStyledTypeAheadField(
-                              key: ValueKey(
-                                '${selectedBuilding}_$selectedFloor',
-                              ),
+                            _buildSearchableTextField(
                               controller: roomFieldController,
                               labelText: l10n?.room_name ?? 'Room',
                               icon: Icons.meeting_room,
-                              enabled: selectedFloor != null,
-                              suggestionsCallback: (pattern) async {
-                                if (pattern.trim().isEmpty) return roomList;
-                                return roomList
-                                    .where(
-                                      (room) => room.toLowerCase().contains(
-                                        pattern.toLowerCase(),
-                                      ),
-                                    )
-                                    .toList();
-                              },
-                              onChanged: (value) => selectedRoom = value,
-                              onSelected: (suggestion) {
-                                selectedRoom = suggestion;
-                                setState(() {
-                                  roomFieldController.text = suggestion;
-                                });
+                              items: roomList,
+                              selectedValue: selectedRoom,
+                              onChanged: (value) {
+                                debugPrint('🏢 강의실 입력 변경: "$value"');
+                                selectedRoom = value;
                               },
                             ),
                             const SizedBox(height: 16),
@@ -1783,85 +1784,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     );
   }
 
-  Widget _buildStyledTypeAheadField({
-    Key? key,
-    TextEditingController? controller,
-    required String labelText,
-    required IconData icon,
-    bool enabled = true,
-    required Future<List<String>> Function(String) suggestionsCallback,
-    Function(String)? onChanged,
-    Function(String)? onSelected,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: enabled ? Colors.white : const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: enabled
-              ? const Color(0xFFE2E8F0)
-              : const Color(0xFFE2E8F0).withOpacity(0.5),
-        ),
-        boxShadow: enabled
-            ? [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ]
-            : [],
-      ),
-      child: TypeAheadField<String>(
-        key: key,
-        suggestionsCallback: suggestionsCallback,
-        itemBuilder: (context, suggestion) => Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Text(
-            suggestion,
-            style: const TextStyle(fontSize: 16, color: Color(0xFF1E3A8A)),
-          ),
-        ),
-        builder: (context, fieldController, focusNode) {
-          return TextFormField(
-            controller: controller ?? fieldController,
-            focusNode: focusNode,
-            enabled: enabled,
-            style: TextStyle(
-              fontSize: 16,
-              color: enabled
-                  ? const Color(0xFF1E3A8A)
-                  : const Color(0xFF64748B),
-            ),
-            decoration: InputDecoration(
-              labelText: labelText,
-              labelStyle: TextStyle(
-                color: enabled
-                    ? const Color(0xFF64748B)
-                    : const Color(0xFF64748B).withOpacity(0.5),
-                fontSize: 14,
-              ),
-              prefixIcon: Icon(
-                icon,
-                color: enabled
-                    ? const Color(0xFF1E3A8A)
-                    : const Color(0xFF64748B).withOpacity(0.5),
-                size: 20,
-              ),
-              border: InputBorder.none,
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 16,
-              ),
-              floatingLabelBehavior: FloatingLabelBehavior.never,
-            ),
-            onChanged: onChanged,
-          );
-        },
-        onSelected: onSelected,
-      ),
-    );
-  }
+
 
   Widget _buildStyledDropdownField<T>({
     required T? value,
@@ -1986,6 +1909,138 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       onSubmit: (newItem) async => await _updateScheduleItem(item, newItem),
     );
   }
+
+  Widget _buildSearchableTextField({
+    required TextEditingController controller,
+    required String labelText,
+    required IconData icon,
+    required List<String> items,
+    String? selectedValue,
+    required Function(String) onChanged,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: TextFormField(
+        controller: controller,
+        style: const TextStyle(fontSize: 16, color: Color(0xFF1E3A8A)),
+        decoration: InputDecoration(
+          labelText: labelText,
+          labelStyle: const TextStyle(color: Color(0xFF64748B), fontSize: 14),
+          prefixIcon: Container(
+            margin: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1E3A8A).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, color: const Color(0xFF1E3A8A), size: 20),
+          ),
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 16,
+          ),
+          floatingLabelBehavior: FloatingLabelBehavior.never,
+          suffixIcon: IconButton(
+            icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF1E3A8A)),
+            onPressed: () {
+              _showFilteredDropdown(context, controller, items, onChanged);
+            },
+          ),
+        ),
+        onChanged: (value) {
+          debugPrint('🔍 입력 변경: "$value"');
+          onChanged(value);
+        },
+      ),
+    );
+  }
+
+  void _showFilteredDropdown(
+    BuildContext context,
+    TextEditingController controller,
+    List<String> items,
+    Function(String) onChanged,
+  ) {
+    final searchText = controller.text.toLowerCase();
+    final filteredItems = items.where((item) => 
+      item.toLowerCase().contains(searchText)
+    ).toList();
+    
+    debugPrint('🔍 검색어: "$searchText"');
+    debugPrint('🔍 필터링된 항목: $filteredItems');
+    
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            String searchQuery = '';
+            List<String> currentFilteredItems = filteredItems;
+            
+            return AlertDialog(
+              title: Text('선택하세요'),
+              content: Container(
+                width: double.maxFinite,
+                height: 300,
+                child: Column(
+                  children: [
+                    // 검색 필드 추가
+                    TextField(
+                      decoration: InputDecoration(
+                        hintText: '검색...',
+                        prefixIcon: Icon(Icons.search),
+                        border: OutlineInputBorder(),
+                      ),
+                      onChanged: (searchValue) {
+                        searchQuery = searchValue;
+                        currentFilteredItems = items.where((item) => 
+                          item.toLowerCase().contains(searchValue.toLowerCase())
+                        ).toList();
+                        setState(() {});
+                      },
+                    ),
+                    SizedBox(height: 8),
+                    Expanded(
+                      child: ListView.builder(
+                        itemCount: currentFilteredItems.length,
+                        itemBuilder: (context, index) {
+                          final item = currentFilteredItems[index];
+                          return ListTile(
+                            title: Text(item),
+                            onTap: () {
+                              controller.text = item;
+                              onChanged(item);
+                              Navigator.of(context).pop();
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+
+
+
 
   void _showRecommendRoute(ScheduleItem item) {
     Navigator.push(

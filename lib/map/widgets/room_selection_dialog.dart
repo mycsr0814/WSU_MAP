@@ -165,7 +165,7 @@ class RoomSelectionDialog extends StatelessWidget {
                           child: _buildActionButton(
                             onPressed: onNavigateToIndoorMap,
                             icon: Icons.map_outlined,
-                            label: '내부도',
+                            label: '강의실보기',
                             isPrimary: true,
                           ),
                         ),
@@ -174,7 +174,7 @@ class RoomSelectionDialog extends StatelessWidget {
                           child: _buildActionButton(
                             onPressed: onShowBuildingMarker,
                             icon: Icons.location_on_outlined,
-                            label: '건물 마커',
+                            label: '건물보기',
                             isPrimary: false,
                           ),
                         ),

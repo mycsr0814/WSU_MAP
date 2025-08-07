@@ -1632,32 +1632,7 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
                     ),
                   ),
 
-                // 🔥 현재 위치 표시 버튼
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.9),
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: IconButton(
-                    icon: Icon(
-                      _showCurrentLocation
-                          ? Icons.my_location
-                          : Icons.my_location_outlined,
-                      color: _showCurrentLocation
-                          ? Colors.blue
-                          : Colors.black87,
-                    ),
-                    onPressed: _showCurrentLocationOnMap,
-                    padding: const EdgeInsets.all(12),
-                  ),
-                ),
+
               ],
             ),
           ),
@@ -1667,33 +1642,7 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
               children: [
                 _buildBodyContent(),
 
-                // 🔥 현재 위치 마커 표시
-                if (_showCurrentLocation && _currentLocationOffset != null)
-                  Positioned(
-                    left: _currentLocationOffset!.dx - 12,
-                    top: _currentLocationOffset!.dy - 12,
-                    child: Container(
-                      width: 24,
-                      height: 24,
-                      decoration: BoxDecoration(
-                        color: Colors.blue,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 2),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.3),
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: const Icon(
-                        Icons.my_location,
-                        color: Colors.white,
-                        size: 12,
-                      ),
-                    ),
-                  ),
+
 
                 if (!_isFloorListLoading &&
                     _error == null &&

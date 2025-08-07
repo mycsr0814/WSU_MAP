@@ -73,12 +73,33 @@ class TimetableApiService {
       return;
     }
 
-    final res = await http.post(
-      Uri.parse('$timetableBase/$userId'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode(item.toJson()),
-    );
-    if (res.statusCode != 201) throw Exception('시간표 추가 실패');
+    try {
+      debugPrint('📤 시간표 추가 요청 시작');
+      debugPrint('📤 URL: $timetableBase/$userId');
+      debugPrint('📤 요청 데이터: ${item.toJson()}');
+
+      final res = await http.post(
+        Uri.parse('$timetableBase/$userId'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(item.toJson()),
+      ).timeout(const Duration(seconds: 10));
+
+      debugPrint('📥 시간표 추가 응답 상태: ${res.statusCode}');
+      debugPrint('📥 시간표 추가 응답 내용: ${res.body}');
+
+      if (res.statusCode == 200 || res.statusCode == 201) {
+        debugPrint('✅ 시간표 추가 성공');
+      } else {
+        debugPrint('❌ 시간표 추가 실패: ${res.statusCode}');
+        throw Exception('시간표 추가 실패 (${res.statusCode}): ${res.body}');
+      }
+    } catch (e) {
+      debugPrint('❌ 시간표 추가 중 오류: $e');
+      if (e.toString().contains('timeout')) {
+        throw Exception('서버 응답 시간이 초과되었습니다.');
+      }
+      rethrow;
+    }
   }
 
   /// 시간표 항목 수정
