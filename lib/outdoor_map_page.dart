@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:flutter_application_1/generated/app_localizations.dart';
@@ -27,6 +28,7 @@ class OutdoorMapPage extends StatefulWidget {
 class _OutdoorMapPageState extends State<OutdoorMapPage> {
   NaverMapController? _mapController;
   List<String> _pathOverlayIds = [];
+  List<String> _markerOverlayIds = [];
   NLatLng? _currentLocation;
   LocationManager? _locationManager;
 
@@ -38,85 +40,6 @@ class _OutdoorMapPageState extends State<OutdoorMapPage> {
       _drawPath();
       _setupLocationListener();
     });
-  }
-
-  /// 위치 변화 감지 설정
-  void _setupLocationListener() {
-    _locationManager = Provider.of<LocationManager>(context, listen: false);
-    _locationManager?.addListener(_onLocationChanged);
-  }
-
-  /// 위치 변화 시 호출되는 콜백
-  void _onLocationChanged() {
-    if (_locationManager?.hasValidLocation == true && 
-        _locationManager?.currentLocation != null) {
-      final newLocation = NLatLng(
-        _locationManager!.currentLocation!.latitude!,
-        _locationManager!.currentLocation!.longitude!,
-      );
-      
-      // 위치가 실제로 변경되었는지 확인
-      if (_currentLocation == null || 
-          _currentLocation!.latitude != newLocation.latitude ||
-          _currentLocation!.longitude != newLocation.longitude) {
-        setState(() {
-          _currentLocation = newLocation;
-        });
-        _showCurrentLocation();
-      }
-    }
-  }
-
-  /// 현재 위치 가져오기
-  Future<void> _getCurrentLocation() async {
-    final locationManager = Provider.of<LocationManager>(context, listen: false);
-    if (locationManager.hasValidLocation && locationManager.currentLocation != null) {
-      setState(() {
-        _currentLocation = NLatLng(
-          locationManager.currentLocation!.latitude!,
-          locationManager.currentLocation!.longitude!,
-        );
-      });
-      await _showCurrentLocation();
-    }
-  }
-
-  /// 현재 위치 표시
-  Future<void> _showCurrentLocation() async {
-    if (_mapController == null || _currentLocation == null) return;
-
-    // 기존 현재 위치 마커 제거
-    _mapController!.deleteOverlay(NOverlayInfo(
-      type: NOverlayType.marker,
-      id: 'current_location',
-    ));
-
-    // 현재 위치 마커 추가
-    final currentLocationMarker = NMarker(
-      id: 'current_location',
-      position: _currentLocation!,
-      icon: await NOverlayImage.fromWidget(
-        context: context,
-        widget: Container(
-          width: 24,
-          height: 24,
-          decoration: BoxDecoration(
-            color: const Color(0xFF3B82F6),
-            shape: BoxShape.circle,
-            border: Border.all(color: Colors.white, width: 2),
-          ),
-          child: const Icon(
-            Icons.my_location,
-            color: Colors.white,
-            size: 14,
-          ),
-        ),
-        size: const Size(24, 24),
-      ),
-      size: const Size(24, 24),
-    );
-
-    _mapController!.addOverlay(currentLocationMarker);
   }
 
   /// 위치 변화 감지 설정
@@ -217,7 +140,7 @@ class _OutdoorMapPageState extends State<OutdoorMapPage> {
               await _getCurrentLocation();
               _drawPath();
               await _addRouteMarkers();
-              _showCurrentLocation();
+              await _showCurrentLocation();
             },
           ),
           // 하단 정보 패널
@@ -252,13 +175,13 @@ class _OutdoorMapPageState extends State<OutdoorMapPage> {
                               width: 12,
                               height: 12,
                               decoration: const BoxDecoration(
-                                color: Color(0xFF3B82F6), // 파란색으로 변경
+                                color: Color(0xFF3B82F6), // 파란색 출발지
                                 shape: BoxShape.circle,
                               ),
                             ),
                             const SizedBox(width: 8),
                             Text(
-                              '출발지',
+                              l10n.departure,
                               style: const TextStyle(
                                 fontSize: 12,
                                 color: Colors.grey,
@@ -268,7 +191,7 @@ class _OutdoorMapPageState extends State<OutdoorMapPage> {
                             const SizedBox(width: 4),
                             Expanded(
                               child: Text(
-                                '출발지',
+                                widget.startLabel ?? l10n.myLocation,
                                 style: const TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
@@ -290,13 +213,13 @@ class _OutdoorMapPageState extends State<OutdoorMapPage> {
                               width: 12,
                               height: 12,
                               decoration: const BoxDecoration(
-                                color: Color(0xFFEF4444), // 빨간색 유지
+                                color: Color(0xFFEF4444), // 빨간색 도착지
                                 shape: BoxShape.circle,
                               ),
                             ),
                             const SizedBox(width: 8),
                             Text(
-                              '도착지',
+                              l10n.arrival,
                               style: const TextStyle(
                                 fontSize: 12,
                                 color: Colors.grey,
@@ -306,7 +229,7 @@ class _OutdoorMapPageState extends State<OutdoorMapPage> {
                             const SizedBox(width: 4),
                             Expanded(
                               child: Text(
-                                '도착지',
+                                widget.endLabel ?? l10n.destination,
                                 style: const TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
@@ -453,19 +376,31 @@ class _OutdoorMapPageState extends State<OutdoorMapPage> {
     try {
       final timestamp = DateTime.now().millisecondsSinceEpoch;
 
-      // 🔥 출발점 마커 (start_marker.png 사용)
+      // 🔥 출발점 마커 (파란색 원형)
       if (widget.path.isNotEmpty) {
         final startMarkerId = 'route_start_$timestamp';
         final startMarker = NMarker(
           id: startMarkerId,
           position: widget.path.first,
-          icon: NOverlayImage.fromAssetImage('lib/asset/start_marker.png'),
-          caption: NOverlayCaption(
-            text: '출발지',
-            color: Colors.white,
-            haloColor: const Color(0xFF3B82F6),
-            textSize: 12,
+          icon: await NOverlayImage.fromWidget(
+            context: context,
+            widget: Container(
+              width: 20,
+              height: 20,
+              decoration: BoxDecoration(
+                color: const Color(0xFF3B82F6),
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 2),
+              ),
+              child: const Icon(
+                Icons.arrow_forward,
+                color: Colors.white,
+                size: 12,
+              ),
+            ),
+            size: const Size(20, 20),
           ),
+          size: const Size(20, 20),
         );
 
         await _mapController!.addOverlay(startMarker);
@@ -476,19 +411,31 @@ class _OutdoorMapPageState extends State<OutdoorMapPage> {
         debugPrint('출발지 마커 ID: $startMarkerId');
       }
 
-      // 🔥 도착점 마커 (end_marker.png 사용)
+      // 🔥 도착점 마커 (빨간색 원형)
       if (widget.path.length > 1) {
         final endMarkerId = 'route_end_$timestamp';
         final endMarker = NMarker(
           id: endMarkerId,
           position: widget.path.last,
-          icon: NOverlayImage.fromAssetImage('lib/asset/end_marker.png'),
-          caption: NOverlayCaption(
-            text: '도착지',
-            color: Colors.white,
-            haloColor: const Color(0xFFEF4444),
-            textSize: 12,
+          icon: await NOverlayImage.fromWidget(
+            context: context,
+            widget: Container(
+              width: 24,
+              height: 24,
+              decoration: BoxDecoration(
+                color: const Color(0xFFEF4444),
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 2),
+              ),
+              child: const Icon(
+                Icons.flag,
+                color: Colors.white,
+                size: 14,
+              ),
+            ),
+            size: const Size(24, 24),
           ),
+          size: const Size(24, 24),
         );
 
         await _mapController!.addOverlay(endMarker);
@@ -523,16 +470,6 @@ class _OutdoorMapPageState extends State<OutdoorMapPage> {
     }
   }
 
-  /// 현재 위치 표시
-  void _showCurrentLocation() async {
-    try {
-      await _locationController.requestCurrentLocation();
-      debugPrint('✅ 현재 위치 요청 완료');
-    } catch (e) {
-      debugPrint('❌ 현재 위치 요청 실패: $e');
-    }
-  }
-
   /// 경로 마커 제거
   void _clearRouteMarkers() {
     for (var markerId in _markerOverlayIds) {
@@ -554,21 +491,26 @@ class _OutdoorMapPageState extends State<OutdoorMapPage> {
     
     // 오버레이 정리
     if (_mapController != null) {
+      // 경로 오버레이 정리
       for (var overlayId in _pathOverlayIds) {
         _mapController!.deleteOverlay(
           NOverlayInfo(type: NOverlayType.polylineOverlay, id: overlayId),
         );
       }
+      
+      // 마커 오버레이 정리
+      for (var markerId in _markerOverlayIds) {
+        _mapController!.deleteOverlay(
+          NOverlayInfo(type: NOverlayType.marker, id: markerId),
+        );
+      }
+      
       // 현재 위치 마커 정리
       _mapController!.deleteOverlay(NOverlayInfo(
         type: NOverlayType.marker,
         id: 'current_location',
       ));
     }
-
-    // 서비스 정리
-    _mapLocationService.dispose();
-    _locationController.dispose();
 
     super.dispose();
   }

@@ -115,6 +115,16 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
     if (_startBuilding != null && _endBuilding != null) {
       _calculateRoutePreview();
     }
+    // 🔥 presetEnd만 설정된 경우 내 위치를 출발지로 자동 설정
+    else if (_endBuilding != null && _startBuilding == null) {
+      debugPrint('🎯 presetEnd만 설정됨 - 내 위치를 출발지로 자동 설정');
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _setMyLocationAsStart();
+        if (_startBuilding != null && _endBuilding != null) {
+          _calculateRoutePreview();
+        }
+      });
+    }
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final locationManager = Provider.of<LocationManager>(
@@ -174,6 +184,12 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
           _endRoomInfo = roomInfo;
         });
         debugPrint('도착지로 설정: $buildingName ($floorNumberStr층 $roomName호)');
+        
+        // 🔥 도착지 설정 후 즉시 경로 계산
+        if (_startBuilding != null && _endBuilding != null) {
+          debugPrint('🎯 도착지 설정 완료, 경로 미리보기 계산 시작');
+          _calculateRoutePreview();
+        }
       }
 
       _needsCoordinateUpdate = true;
@@ -332,7 +348,6 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
       }
 
       setState(() => _isCalculatingPreview = true);
-      setState(() => _isCalculatingPreview = true);
 
       debugPrint('🔍 경로 미리보기 계산 시작');
       debugPrint('   출발지: ${_startBuilding!.name}');
@@ -364,10 +379,6 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
     } catch (e) {
       debugPrint('❌ 경로 미리보기 계산 전체 오류: $e');
       await _handleRouteCalculationError(e);
-    } finally {
-      if (mounted) {
-        setState(() => _isCalculatingPreview = false);
-      }
     }
   }
 
@@ -555,6 +566,7 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
       // 🔥 성공적으로 응답 처리
       setState(() {
         _previewResponse = response;
+        _isCalculatingPreview = false;
       });
 
       // 🔥 거리/시간 계산
@@ -580,6 +592,7 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
         _previewResponse = null;
         _estimatedDistance = '';
         _estimatedTime = '';
+        _isCalculatingPreview = false;
       });
 
       final errorMessage = error.toString();
@@ -859,6 +872,11 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
           _searchController.clear();
         });
         debugPrint('✅ 도착지 설정: ${building.name}');
+        
+        // 🔥 도착지 설정 시 출발지가 비어있으면 내 위치 자동 설정
+        if (_startBuilding == null) {
+          _setMyLocationAsStart();
+        }
       }
 
       _focusNode.unfocus();
@@ -866,12 +884,12 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
 
       // 🔥 안전한 경로 미리보기 계산
       if (_startBuilding != null && _endBuilding != null) {
-        debugPrint('🎯 출발지와 도착지가 모두 설정됨, 미리보기 계산 시작');
+        debugPrint('🎯 출발지와 도착지가 모두 설정됨, 미리보기 계산 시작 (검색 결과 선택)');
         debugPrint('   출발지: ${_startBuilding!.name}');
         debugPrint('   도착지: ${_endBuilding!.name}');
-        Future.microtask(() => _calculateRoutePreview());
+        _calculateRoutePreview();
       } else {
-        debugPrint('⚠️ 출발지 또는 도착지가 설정되지 않음');
+        debugPrint('⚠️ 출발지 또는 도착지가 설정되지 않음 (검색 결과 선택)');
         debugPrint('   출발지: ${_startBuilding?.name ?? 'null'}');
         debugPrint('   도착지: ${_endBuilding?.name ?? 'null'}');
       }
@@ -955,7 +973,7 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
         debugPrint('🎯 출발지와 도착지가 모두 설정됨, 미리보기 계산 시작 (검색 결과 선택)');
         debugPrint('   출발지: ${_startBuilding!.name}');
         debugPrint('   도착지: ${_endBuilding!.name}');
-        Future.microtask(() => _calculateRoutePreview());
+        _calculateRoutePreview();
       } else {
         debugPrint('⚠️ 출발지 또는 도착지가 설정되지 않음 (검색 결과 선택)');
         debugPrint('   출발지: ${_startBuilding?.name ?? 'null'}');
@@ -1007,7 +1025,7 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
 
         // 🔥 내 위치 설정 후 미리보기 계산
         if (_endBuilding != null) {
-          Future.microtask(() => _calculateRoutePreview());
+          _calculateRoutePreview();
         }
 
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1050,7 +1068,7 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
 
         // 🔥 기본 위치 설정 후 미리보기 계산
         if (_endBuilding != null) {
-          Future.microtask(() => _calculateRoutePreview());
+          _calculateRoutePreview();
         }
 
         ScaffoldMessenger.of(context).showSnackBar(
