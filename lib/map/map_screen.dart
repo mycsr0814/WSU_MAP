@@ -139,12 +139,14 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
       _hasShownTutorial = false; // 🔥 튜토리얼 플래그 리셋
       debugPrint('🔄 새 사용자 감지 - 시간표 건물 정보 플래그 및 튜토리얼 플래그 리셋');
       
-      // 🔥 새 사용자일 때 튜토리얼 표시
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          _showTutorialIfNeeded();
-        }
-      });
+      // 🔥 새 사용자일 때 튜토리얼 표시 (한 번만)
+      if (mounted) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && !_hasShownTutorial) {
+            _showTutorialIfNeeded();
+          }
+        });
+      }
     }
 
     // 🔥 시간표에서 전달받은 건물 정보 처리
@@ -609,13 +611,13 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
 
   /// 🔥 튜토리얼 표시 메서드
   void _showTutorialIfNeeded() async {
-    final userAuth = context.read<UserAuth>();
-    
     // 이미 표시했거나 화면이 마운트되지 않았으면 표시하지 않음
     if (_hasShownTutorial || !mounted) {
+      debugPrint('ℹ️ 튜토리얼 표시 건너뜀 - 이미 표시됨: $_hasShownTutorial, 마운트됨: $mounted');
       return;
     }
     
+    final userAuth = context.read<UserAuth>();
     bool shouldShowTutorial = false;
     
     if (userAuth.isLoggedIn && !userAuth.userId!.startsWith('guest_')) {
@@ -634,7 +636,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
       }
     }
     
-    if (shouldShowTutorial) {
+    if (shouldShowTutorial && mounted) {
       _hasShownTutorial = true;
       debugPrint('✅ 튜토리얼 표시 시작');
       WidgetsBinding.instance.addPostFrameCallback((_) {
