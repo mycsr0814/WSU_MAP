@@ -629,6 +629,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     final userAuth = context.read<UserAuth>();
     debugPrint('🔍 현재 사용자: ${userAuth.userId}, 로그인 상태: ${userAuth.isLoggedIn}, 튜토리얼 설정: ${userAuth.isTutorial}');
     debugPrint('🔍 사용자 ID 타입: ${userAuth.userId.runtimeType}, 튜토리얼 설정 타입: ${userAuth.isTutorial.runtimeType}');
+    debugPrint('🔍 튜토리얼 설정 상세: ${userAuth.isTutorial} (bool: ${userAuth.isTutorial is bool})');
     
     // 로그인되지 않았으면 튜토리얼 표시하지 않음
     if (!userAuth.isLoggedIn) {
@@ -644,6 +645,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
       shouldShowTutorial = userAuth.isTutorial;
       debugPrint('🔍 로그인 사용자 튜토리얼 확인: $shouldShowTutorial (서버 설정: ${userAuth.isTutorial})');
       debugPrint('🔍 shouldShowTutorial 타입: ${shouldShowTutorial.runtimeType}');
+      debugPrint('🔍 shouldShowTutorial 상세: $shouldShowTutorial (bool: ${shouldShowTutorial is bool})');
       
       // 서버 설정이 false면 튜토리얼 표시하지 않음
       if (!shouldShowTutorial) {

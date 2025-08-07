@@ -107,11 +107,15 @@ class AuthService {
         case 200:
           // 성공
           final data = jsonDecode(response.body);
+          final isTutorial = data['Is_Tutorial'] ?? true;
+          debugPrint('🔍 서버 응답에서 Is_Tutorial 값: $isTutorial (타입: ${isTutorial.runtimeType})');
+          debugPrint('🔍 전체 서버 응답 데이터: $data');
+          
           return LoginResult.success(
             userId: data['id'],
             userName: data['name'],
             isLogin: data['islogin'] ?? data['isLogin'] ?? data['online'] ?? true,
-            isTutorial: data['Is_Tutorial'] ?? true, // 튜토리얼 표시 여부
+            isTutorial: isTutorial, // 튜토리얼 표시 여부
           );
         case 400:
           return LoginResult.failure('아이디와 비밀번호를 입력하세요.');

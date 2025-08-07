@@ -325,6 +325,10 @@ class UserAuth extends ChangeNotifier {
           _isLoggedIn = true;
           _isFirstLaunch = false;
           _isTutorial = result.isTutorial ?? true; // 서버에서 받은 튜토리얼 정보
+          
+          debugPrint('🔍 UserAuth: 서버에서 받은 튜토리얼 설정: ${result.isTutorial}');
+          debugPrint('🔍 UserAuth: 저장된 튜토리얼 설정: $_isTutorial');
+          debugPrint('🔍 UserAuth: 사용자 ID: $_userId');
 
           // 로그인 성공 시 항상 비밀번호 저장 (프로필 수정 시 확인용)
           await _saveLoginInfo(rememberMe: rememberMe, password: password);
