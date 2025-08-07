@@ -107,8 +107,22 @@ class AuthService {
         case 200:
           // 성공
           final data = jsonDecode(response.body);
-          final isTutorial = data['Is_Tutorial'] ?? true;
-          debugPrint('🔍 서버 응답에서 Is_Tutorial 값: $isTutorial (타입: ${isTutorial.runtimeType})');
+          
+          // Is_Tutorial 값을 정확하게 처리
+          bool isTutorial = true; // 기본값
+          if (data.containsKey('Is_Tutorial')) {
+            final tutorialValue = data['Is_Tutorial'];
+            if (tutorialValue is bool) {
+              isTutorial = tutorialValue;
+            } else if (tutorialValue is String) {
+              isTutorial = tutorialValue.toLowerCase() == 'true';
+            } else if (tutorialValue is int) {
+              isTutorial = tutorialValue == 1;
+            }
+          }
+          
+          debugPrint('🔍 서버 응답에서 Is_Tutorial 원본 값: ${data['Is_Tutorial']} (타입: ${data['Is_Tutorial']?.runtimeType})');
+          debugPrint('🔍 처리된 Is_Tutorial 값: $isTutorial (타입: ${isTutorial.runtimeType})');
           debugPrint('🔍 전체 서버 응답 데이터: $data');
           
           return LoginResult.success(
