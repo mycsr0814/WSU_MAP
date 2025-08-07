@@ -182,6 +182,14 @@ class _CreateInquiryTabState extends State<CreateInquiryTab> {
       'route_error': l10n.inquiry_category_route_error,
       'other': l10n.inquiry_category_other,
     };
+    
+    // 🔥 매핑 설정 시 로그 출력
+    debugPrint('=== 문의 카테고리 매핑 설정 ===');
+    debugPrint('현재 언어: ${Localizations.localeOf(context)}');
+    _inquiryTypeMapping.forEach((key, value) {
+      debugPrint('  $key -> $value');
+    });
+    debugPrint('============================');
   }
 
   /// 서버 경로 테스트
@@ -362,6 +370,12 @@ class _CreateInquiryTabState extends State<CreateInquiryTab> {
               );
             }).toList(),
             onChanged: (String? newValue) {
+              debugPrint('=== 드롭다운 선택 변경 ===');
+              debugPrint('선택된 값: $newValue');
+              if (newValue != null) {
+                debugPrint('선택된 값의 표시 텍스트: ${_inquiryTypeMapping[newValue]}');
+              }
+              debugPrint('========================');
               setState(() {
                 _selectedInquiryType = newValue;
               });
