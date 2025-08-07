@@ -284,6 +284,18 @@ class AppLocalizationsZh extends AppLocalizations {
   String get friends => '好友';
 
   @override
+  String get tutorial => '使用教程';
+
+  @override
+  String get previous => '上一个';
+
+  @override
+  String get next => '下一个';
+
+  @override
+  String get finish => '完成';
+
+  @override
   String get profile => '个人资料';
 
   @override
@@ -1031,12 +1043,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get indoor_departure => '室内出发';
-
-  @override
-  String get previous => '上一个';
-
-  @override
-  String get next => '下一个';
 
   @override
   String get complete => '完成';

@@ -296,6 +296,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get friends => 'Friends';
 
   @override
+  String get tutorial => 'Tutorial';
+
+  @override
+  String get previous => 'Previous';
+
+  @override
+  String get next => 'Next';
+
+  @override
+  String get finish => 'Finish';
+
+  @override
   String get profile => 'Profile';
 
   @override
@@ -1057,12 +1069,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get indoor_departure => 'Indoor Departure';
-
-  @override
-  String get previous => 'Previous';
-
-  @override
-  String get next => 'Next';
 
   @override
   String get complete => 'Complete';

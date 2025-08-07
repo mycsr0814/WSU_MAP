@@ -285,6 +285,18 @@ class AppLocalizationsKo extends AppLocalizations {
   String get friends => '친구';
 
   @override
+  String get tutorial => '사용법';
+
+  @override
+  String get previous => '이전';
+
+  @override
+  String get next => '다음';
+
+  @override
+  String get finish => '완료';
+
+  @override
   String get profile => '프로필';
 
   @override
@@ -1033,12 +1045,6 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get indoor_departure => '실내 출발';
-
-  @override
-  String get previous => '이전';
-
-  @override
-  String get next => '다음';
 
   @override
   String get complete => '완료';

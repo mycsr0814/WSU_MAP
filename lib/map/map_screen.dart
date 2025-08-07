@@ -25,6 +25,7 @@ import 'package:flutter_application_1/widgets/category_chips.dart';
 import '../auth/user_auth.dart';
 import 'package:flutter_application_1/managers/location_manager.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
+import '../tutorial/tutorial_screen.dart';
 
 import 'package:flutter_application_1/map/building_data.dart';
 import 'package:flutter_application_1/models/building.dart';
@@ -53,6 +54,9 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
 
   // 🔥 시간표에서 전달받은 건물 정보 처리 플래그
   bool _hasProcessedTimetableBuilding = false;
+  
+  // 🔥 튜토리얼 관련 변수
+  bool _hasShownTutorial = false;
 
   @override
   void initState() {
@@ -75,6 +79,9 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
           ),
         );
       }
+      
+      // 🔥 튜토리얼 표시 (로그인/게스트 진입 시)
+      _showTutorialIfNeeded();
     });
   }
 
@@ -594,6 +601,33 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     return buildingName;
   }
 
+  /// 🔥 튜토리얼 표시 메서드
+  void _showTutorialIfNeeded() {
+    if (!_hasShownTutorial && mounted) {
+      _hasShownTutorial = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const TutorialScreen(),
+            ),
+          );
+        }
+      });
+    }
+  }
+
+  /// 🔥 사용법 버튼 클릭 메서드
+  void _showTutorial() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const TutorialScreen(),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     // 🔥 UserAuth 상태 변화를 감지
@@ -743,6 +777,56 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                     },
                   ),
                 ],
+              ),
+            ),
+            // 🔥 사용법 버튼 (우측 상단)
+            Positioned(
+              top: MediaQuery.of(context).padding.top + 10,
+              right: 16,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: _showTutorial,
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.help_outline,
+                            size: 18,
+                            color: Colors.grey[700],
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            AppLocalizations.of(context)!.tutorial,
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.grey[700],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
               ),
             ),
             // 네비게이션 상태 카드
