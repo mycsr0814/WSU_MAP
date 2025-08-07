@@ -95,7 +95,8 @@ class BuildingDetailSheet extends StatelessWidget {
                 ),
               ),
               // 이미지 섹션 (있는 경우에만)
-              if (building.imageUrl != null || (building.imageUrls?.isNotEmpty == true))
+              if (building.imageUrl != null ||
+                  (building.imageUrls?.isNotEmpty == true))
                 _buildImageSection(context),
               // 기본 정보 카드(섹션)
               Padding(
@@ -113,7 +114,11 @@ class BuildingDetailSheet extends StatelessWidget {
                     children: [
                       Row(
                         children: [
-                          Icon(Icons.info_outline, color: Colors.grey.shade600, size: 20),
+                          Icon(
+                            Icons.info_outline,
+                            color: Colors.grey.shade600,
+                            size: 20,
+                          ),
                           const SizedBox(width: 8),
                           Text(
                             l10n.basic_info,
@@ -127,10 +132,22 @@ class BuildingDetailSheet extends StatelessWidget {
                       ),
                       const SizedBox(height: 12),
                       // 정보행(카테고리, 상태, 시간, 전화, 좌표 등)
-                      _buildInfoRow(Icons.category, l10n.category, building.category),
-                      _buildInfoRow(Icons.info, l10n.status, building.getLocalizedStatus(context)),
+                      _buildInfoRow(
+                        Icons.category,
+                        l10n.category,
+                        building.category,
+                      ),
+                      _buildInfoRow(
+                        Icons.info,
+                        l10n.status,
+                        building.getLocalizedStatus(context),
+                      ),
                       if (building.hours.isNotEmpty)
-                        _buildInfoRow(Icons.access_time, l10n.hours, building.hours),
+                        _buildInfoRow(
+                          Icons.access_time,
+                          l10n.hours,
+                          building.hours,
+                        ),
                       if (building.description.isNotEmpty) ...[
                         const SizedBox(height: 12),
                         const Divider(),
@@ -157,7 +174,7 @@ class BuildingDetailSheet extends StatelessWidget {
 
   Widget _buildImageSection(BuildContext context) {
     final hasMultipleImages = (building.imageUrls?.length ?? 0) > 1;
-    
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Container(
@@ -199,7 +216,10 @@ class BuildingDetailSheet extends StatelessWidget {
                 child: GestureDetector(
                   onTap: () => _showImageGallery(context),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.black.withValues(alpha: 0.7),
                       borderRadius: BorderRadius.circular(12),
@@ -234,7 +254,7 @@ class BuildingDetailSheet extends StatelessWidget {
 
   void _showImageGallery(BuildContext context) {
     if (building.imageUrls == null || building.imageUrls!.isEmpty) return;
-    
+
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -274,10 +294,15 @@ class BuildingDetailSheet extends StatelessWidget {
   }
 
   Widget _buildInfoRow(IconData icon, String label, String value) {
-    // 상태 정보인 경우 색상 적용
-    final isStatusInfo = label == 'Status' || label == '상태';
+    // 상태 정보인지 확인 (라벨이 'Status' 또는 '상태'인 경우)
+    final isStatusInfo =
+        label.toLowerCase().contains('status') ||
+        label.contains('상태') ||
+        label.contains('운영');
+
+    // 상태 정보인 경우 색상 적용, 그렇지 않으면 기본 색상 사용
     final textColor = isStatusInfo ? building.statusColor : Colors.black87;
-    
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
@@ -297,7 +322,7 @@ class BuildingDetailSheet extends StatelessWidget {
             child: Text(
               value,
               style: TextStyle(
-                fontSize: 13, 
+                fontSize: 13,
                 color: textColor,
                 fontWeight: isStatusInfo ? FontWeight.w600 : FontWeight.normal,
               ),

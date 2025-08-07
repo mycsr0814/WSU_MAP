@@ -1663,6 +1663,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get floor_plan => 'Floor Plan';
 
   @override
+  String get floor => 'Floor';
+
+  @override
+  String get indoorMap => 'Indoor Map';
+
+  @override
+  String get showBuildingMarker => 'Show Building Marker';
+
+  @override
   String get search_hint => 'Search campus buildings';
 
   @override

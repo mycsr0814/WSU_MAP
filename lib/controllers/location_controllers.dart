@@ -29,6 +29,9 @@ class LocationController extends ChangeNotifier {
   // 🔥 모든 위치 관련 오버레이 ID 추적
   final Set<String> _locationOverlayIds = {};
 
+  // 🔥 마지막으로 업데이트된 위치 저장
+  NLatLng? _lastUpdatedPosition;
+
   LocationController({
     LocationService? locationService,
     LocationPermissionManager? permissionManager,
@@ -183,9 +186,17 @@ class LocationController extends ChangeNotifier {
       return;
     }
 
+    // 🔥 위치 변경 감지 - 같은 위치면 업데이트하지 않음
+    if (_lastUpdatedPosition != null &&
+        _lastUpdatedPosition!.latitude == position.latitude &&
+        _lastUpdatedPosition!.longitude == position.longitude) {
+      return; // 위치가 변경되지 않았으면 업데이트하지 않음
+    }
+
     try {
+      // 🔥 로그 최적화 - 실제 업데이트 시에만 출력
       debugPrint(
-        '📍 위치 마커 업데이트 시작: ${position.latitude}, ${position.longitude}',
+        '📍 위치 마커 업데이트: ${position.latitude.toStringAsFixed(6)}, ${position.longitude.toStringAsFixed(6)}',
       );
 
       // 🔥 방법 1: MapLocationService 사용 (가장 안전)
@@ -200,14 +211,15 @@ class LocationController extends ChangeNotifier {
         shouldMoveCamera: false, // 카메라는 이동하지 않음
       );
 
-      debugPrint('✅ MapLocationService를 통한 위치 마커 업데이트 완료');
+      // 🔥 성공 시 위치 저장
+      _lastUpdatedPosition = position;
     } catch (e) {
       debugPrint('❌ MapLocationService 실패, 직접 방식 시도: $e');
 
       try {
         // 🔥 방법 2: 직접 제거 후 추가
         await _forceRemoveAndRecreate(position);
-        debugPrint('✅ 직접 방식 위치 마커 업데이트 완료');
+        _lastUpdatedPosition = position;
       } catch (e2) {
         debugPrint('❌ 직접 방식도 실패: $e2');
 
@@ -215,7 +227,7 @@ class LocationController extends ChangeNotifier {
         try {
           final accuracy = _currentLocation?.accuracy ?? 10.0;
           await _addLocationCircle(position, accuracy);
-          debugPrint('✅ 새 마커 추가 완료 (중복 가능)');
+          _lastUpdatedPosition = position;
         } catch (e3) {
           debugPrint('❌ 모든 방법 실패: $e3');
         }
@@ -353,9 +365,7 @@ class LocationController extends ChangeNotifier {
         id: circleId,
         center: location,
         radius: circleRadius,
-        color: const Color(
-          0xFF1E3A8A,
-        ).withOpacity(0.2),
+        color: const Color(0xFF1E3A8A).withOpacity(0.2),
         outlineColor: const Color(0xFF1E3A8A),
         outlineWidth: 1.5,
       );

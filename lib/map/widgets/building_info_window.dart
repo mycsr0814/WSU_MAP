@@ -6,7 +6,6 @@ import '../../generated/app_localizations.dart';
 import 'package:flutter_application_1/inside/building_map_page.dart';
 import 'package:flutter_application_1/map/widgets/directions_screen.dart';
 
-
 class BuildingInfoWindow extends StatefulWidget {
   final Building building;
   final VoidCallback onClose;
@@ -33,7 +32,7 @@ class _BuildingInfoWindowState extends State<BuildingInfoWindow> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    
+
     return Stack(
       children: [
         // 배경 터치 영역
@@ -70,10 +69,7 @@ class _BuildingInfoWindowState extends State<BuildingInfoWindow> {
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _buildDragHandle(),
-                    _buildContent(context, l10n),
-                  ],
+                  children: [_buildDragHandle(), _buildContent(context, l10n)],
                 ),
               ),
             ),
@@ -102,11 +98,13 @@ class _BuildingInfoWindowState extends State<BuildingInfoWindow> {
     // 서버에서 받아온 이미지만 사용
     List<String> imagePaths = [];
     bool isNetworkImage = false;
-    
-    if (widget.building.imageUrls != null && widget.building.imageUrls!.isNotEmpty) {
+
+    if (widget.building.imageUrls != null &&
+        widget.building.imageUrls!.isNotEmpty) {
       imagePaths = widget.building.imageUrls!;
       isNetworkImage = true;
-    } else if (widget.building.imageUrl != null && widget.building.imageUrl!.isNotEmpty) {
+    } else if (widget.building.imageUrl != null &&
+        widget.building.imageUrl!.isNotEmpty) {
       imagePaths = [widget.building.imageUrl!];
       isNetworkImage = true;
     }
@@ -167,7 +165,8 @@ class _BuildingInfoWindowState extends State<BuildingInfoWindow> {
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
                           value: loadingProgress.expectedTotalBytes != null
-                              ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                              ? loadingProgress.cumulativeBytesLoaded /
+                                    loadingProgress.expectedTotalBytes!
                               : null,
                         ),
                       ),
@@ -192,7 +191,10 @@ class _BuildingInfoWindowState extends State<BuildingInfoWindow> {
                   top: 8,
                   right: 8,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.black.withOpacity(0.7),
                       borderRadius: BorderRadius.circular(12),
@@ -238,7 +240,11 @@ class _BuildingInfoWindowState extends State<BuildingInfoWindow> {
   }
 
   /// 🔥 이미지 전체화면 다이얼로그
-  void _showImageDialog(List<String> imagePaths, int initialIndex, bool isNetworkImage) {
+  void _showImageDialog(
+    List<String> imagePaths,
+    int initialIndex,
+    bool isNetworkImage,
+  ) {
     showDialog(
       context: context,
       barrierDismissible: true,
@@ -288,29 +294,29 @@ class _BuildingInfoWindowState extends State<BuildingInfoWindow> {
         const SizedBox(height: 4),
         Text(
           widget.building.info,
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.grey.shade500,
-          ),
+          style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
         ),
       ],
     );
   }
 
   Widget _buildStatusAndHours(AppLocalizations l10n) {
+    final statusColor = widget.building.statusColor;
+    final isOpen = widget.building.isOpen;
+
     return Row(
       children: [
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
-            color: widget.building.statusColor.withOpacity(0.1),
+            color: statusColor.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Text(
             widget.building.getLocalizedStatus(context),
             style: TextStyle(
               fontSize: 12,
-              color: widget.building.statusColor,
+              color: statusColor,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -318,10 +324,7 @@ class _BuildingInfoWindowState extends State<BuildingInfoWindow> {
         const SizedBox(width: 8),
         Text(
           widget.building.hours,
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.grey[600],
-          ),
+          style: TextStyle(fontSize: 12, color: Colors.grey[600]),
         ),
       ],
     );
@@ -385,14 +388,18 @@ class _BuildingInfoWindowState extends State<BuildingInfoWindow> {
         locationType: locationType,
         onConfirm: () {
           Navigator.of(context).pop();
-          
+
           // 길찾기 화면으로 이동
           Navigator.push(
             context,
             MaterialPageRoute(
               builder: (context) => DirectionsScreen(
-                presetStart: locationType == l10n.set_start_point ? widget.building : null,
-                presetEnd: locationType == l10n.set_end_point ? widget.building : null,
+                presetStart: locationType == l10n.set_start_point
+                    ? widget.building
+                    : null,
+                presetEnd: locationType == l10n.set_end_point
+                    ? widget.building
+                    : null,
               ),
             ),
           );
@@ -464,7 +471,8 @@ class _ImageDialogState extends State<_ImageDialog> {
                       return Center(
                         child: CircularProgressIndicator(
                           value: loadingProgress.expectedTotalBytes != null
-                              ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                              ? loadingProgress.cumulativeBytesLoaded /
+                                    loadingProgress.expectedTotalBytes!
                               : null,
                         ),
                       );
@@ -476,7 +484,10 @@ class _ImageDialogState extends State<_ImageDialog> {
                           children: [
                             Icon(Icons.error, size: 48, color: Colors.grey),
                             SizedBox(height: 16),
-                            Text('이미지를 불러올 수 없습니다', style: TextStyle(color: Colors.grey)),
+                            Text(
+                              '이미지를 불러올 수 없습니다',
+                              style: TextStyle(color: Colors.grey),
+                            ),
                           ],
                         ),
                       );
@@ -566,8 +577,12 @@ class _LocationSettingDialog extends StatelessWidget {
                 Row(
                   children: [
                     Icon(
-                      locationType == l10n.set_start_point ? Icons.play_arrow : Icons.flag,
-                      color: locationType == l10n.set_start_point ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+                      locationType == l10n.set_start_point
+                          ? Icons.play_arrow
+                          : Icons.flag,
+                      color: locationType == l10n.set_start_point
+                          ? const Color(0xFF10B981)
+                          : const Color(0xFFEF4444),
                       size: 24,
                     ),
                     const SizedBox(width: 8),
@@ -586,10 +601,7 @@ class _LocationSettingDialog extends StatelessWidget {
                 // 내용
                 Text(
                   l10n.location_setting_confirm(buildingName, locationType),
-                  style: const TextStyle(
-                    fontSize: 16,
-                    color: Colors.black87,
-                  ),
+                  style: const TextStyle(fontSize: 16, color: Colors.black87),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 24),
@@ -659,4 +671,4 @@ class _LocationSettingDialog extends StatelessWidget {
       ),
     );
   }
-} 
+}

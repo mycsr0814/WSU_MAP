@@ -15,8 +15,18 @@ class CategoryChips extends StatefulWidget {
     this.selectedCategory,
   });
 
-  // 외부에서 카테고리 선택을 위한 GlobalKey
-  static final GlobalKey<_CategoryChipsState> globalKey = GlobalKey<_CategoryChipsState>();
+  // 외부에서 카테고리 선택을 위한 GlobalKey - 동적 생성으로 변경
+  static GlobalKey<_CategoryChipsState>? _globalKey;
+  
+  static GlobalKey<_CategoryChipsState> get globalKey {
+    _globalKey ??= GlobalKey<_CategoryChipsState>();
+    return _globalKey!;
+  }
+  
+  // GlobalKey 초기화 메서드 추가
+  static void resetGlobalKey() {
+    _globalKey = null;
+  }
 
   @override
   State<CategoryChips> createState() => _CategoryChipsState();
@@ -162,15 +172,110 @@ class _CategoryChipsState extends State<CategoryChips> {
           margin: const EdgeInsets.symmetric(horizontal: 16),
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
-            itemCount: categoryProvider.categories.length,
+            itemCount: categoryProvider.categories.length + 1, // "전체" 버튼 추가
             separatorBuilder: (context, index) => const SizedBox(width: 6),
             itemBuilder: (context, index) {
-              final category = categoryProvider.categories[index];
-              return _buildCategoryChip(category);
+              if (index == 0) {
+                // "전체" 버튼
+                return _buildAllCategoriesChip();
+              } else {
+                // 기존 카테고리 버튼들
+                final category = categoryProvider.categories[index - 1];
+                return _buildCategoryChip(category);
+              }
             },
           ),
         );
       },
+    );
+  }
+
+  Widget _buildAllCategoriesChip() {
+    final isSelected = _selectedCategory == null;
+    
+    return InkWell(
+      onTap: () {
+        if (mounted && !_isDisposed) {
+          debugPrint('🎯 "건물" 버튼 클릭 - 모든 건물 마커 표시');
+          setState(() {
+            _selectedCategory = null;
+          });
+          widget.onCategorySelected('', []);
+        }
+      },
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            gradient: isSelected 
+              ? const LinearGradient(
+                  colors: [
+                    Color(0xFF4CAF50),
+                    Color(0xFF45A049),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                )
+              : LinearGradient(
+                  colors: [
+                    Colors.white,
+                    Colors.grey.shade50,
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isSelected 
+                ? const Color(0xFF4CAF50)
+                : Colors.grey.shade300,
+              width: isSelected ? 1.5 : 1.0,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                padding: EdgeInsets.all(isSelected ? 3 : 2),
+                decoration: BoxDecoration(
+                  color: isSelected 
+                    ? Colors.white.withValues(alpha: 0.25)
+                    : const Color(0xFF4CAF50).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Icon(
+                  Icons.map,
+                  size: isSelected ? 14 : 12,
+                  color: isSelected 
+                    ? Colors.white 
+                    : const Color(0xFF4CAF50),
+                ),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                '건물',
+                style: TextStyle(
+                  fontSize: isSelected ? 11 : 10,
+                  color: isSelected 
+                    ? Colors.white 
+                    : const Color(0xFF4CAF50),
+                  fontWeight: isSelected 
+                    ? FontWeight.w700 
+                    : FontWeight.w600,
+                  letterSpacing: isSelected ? 0.1 : 0.0,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 

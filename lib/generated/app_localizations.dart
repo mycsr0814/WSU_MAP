@@ -3196,6 +3196,24 @@ abstract class AppLocalizations {
   /// **'Floor Plan'**
   String get floor_plan;
 
+  /// No description provided for @floor.
+  ///
+  /// In en, this message translates to:
+  /// **'Floor'**
+  String get floor;
+
+  /// No description provided for @indoorMap.
+  ///
+  /// In en, this message translates to:
+  /// **'Indoor Map'**
+  String get indoorMap;
+
+  /// No description provided for @showBuildingMarker.
+  ///
+  /// In en, this message translates to:
+  /// **'Show Building Marker'**
+  String get showBuildingMarker;
+
   /// No description provided for @search_hint.
   ///
   /// In en, this message translates to:

@@ -55,7 +55,8 @@ class MapService {
   bool get buildingMarkersVisible =>
       _buildingMarkerService.buildingMarkersVisible;
   List<NMarker> get buildingMarkers => _buildingMarkerService.buildingMarkers;
-  NMarker? findMarkerForBuilding(Building building) => _buildingMarkerService.findMarkerForBuilding(building);
+  NMarker? findMarkerForBuilding(Building building) =>
+      _buildingMarkerService.findMarkerForBuilding(building);
 
   // 🔥 4. 메서드들
 
@@ -198,6 +199,10 @@ class MapService {
     await _buildingMarkerService.clearBuildingMarkers();
   }
 
+  Future<void> clearAllBuildingMarkers() async {
+    await _buildingMarkerService.clearAllMarkers();
+  }
+
   Future<void> hideAllBuildingMarkers() async {
     await _buildingMarkerService.hideAllBuildingMarkers();
   }
@@ -219,8 +224,8 @@ class MapService {
   }
 
   // 🔥 경로 관련 메서드들 - 서비스로 위임
-  Future<void> drawPath(List<NLatLng> pathCoordinates) async {
-    await _routeRenderingService.drawPath(pathCoordinates);
+  Future<void> drawPath(List<NLatLng> pathCoordinates, {double? pathWidth}) async {
+    await _routeRenderingService.drawPath(pathCoordinates, pathWidth: pathWidth);
   }
 
   Future<void> moveCameraToPath(List<NLatLng> pathCoordinates) async {

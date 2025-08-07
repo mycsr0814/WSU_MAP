@@ -52,10 +52,13 @@ class PathPainter extends CustomPainter {
     debugPrint('   스케일 적용 후 시작점: ${scaledPoints.first}');
     debugPrint('   스케일 적용 후 끝점: ${scaledPoints.last}');
 
+    // 🔥 동적 경로 두께 계산
+    final dynamicStrokeWidth = _calculateDynamicStrokeWidth(pathPoints, strokeWidth);
+    
     // 경로 스타일 설정
     final Paint pathPaint = Paint()
       ..color = pathColor ?? (isNavigationMode ? Colors.blue : Colors.red)
-      ..strokeWidth = strokeWidth ?? (isNavigationMode ? 6.0 : 4.0)
+      ..strokeWidth = dynamicStrokeWidth
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round;
@@ -251,7 +254,63 @@ class PathPainter extends CustomPainter {
     
     canvas.drawPath(flagPath, endIconPaint);
     
-    debugPrint('✅ 시작/끝점 마커 그리기 완료 (개선된 버전)');
+    // 🔥 출발지 텍스트 추가
+    _drawMarkerText(canvas, startPoint, '출발지', const Color(0xFF3B82F6));
+    
+    // 🔥 도착지 텍스트 추가
+    _drawMarkerText(canvas, endPoint, '도착지', const Color(0xFFEF4444));
+    
+    debugPrint('✅ 시작/끝점 마커 그리기 완료 (텍스트 포함)');
+  }
+
+  /// 🔥 마커 텍스트 그리기
+  void _drawMarkerText(Canvas canvas, Offset position, String text, Color color) {
+    final textStyle = TextStyle(
+      color: Colors.white,
+      fontSize: 12,
+      fontWeight: FontWeight.bold,
+      shadows: [
+        Shadow(
+          offset: const Offset(1, 1),
+          blurRadius: 2,
+          color: Colors.black.withOpacity(0.7),
+        ),
+      ],
+    );
+    
+    final textSpan = TextSpan(text: text, style: textStyle);
+    final textPainter = TextPainter(
+      text: textSpan,
+      textDirection: TextDirection.ltr,
+    );
+    
+    textPainter.layout();
+    
+    // 텍스트 위치 계산 (마커 아래쪽)
+    final textPosition = Offset(
+      position.dx - textPainter.width / 2,
+      position.dy + 20,
+    );
+    
+    // 배경 박스 그리기
+    final backgroundRect = Rect.fromLTWH(
+      textPosition.dx - 4,
+      textPosition.dy - 2,
+      textPainter.width + 8,
+      textPainter.height + 4,
+    );
+    
+    final backgroundPaint = Paint()
+      ..color = color.withOpacity(0.9)
+      ..style = PaintingStyle.fill;
+    
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(backgroundRect, const Radius.circular(4)),
+      backgroundPaint,
+    );
+    
+    // 텍스트 그리기
+    textPainter.paint(canvas, textPosition);
   }
 
   /// 목적지 깃발 그리기
@@ -363,6 +422,37 @@ class PathPainter extends CustomPainter {
       vector.dx * cos - vector.dy * sin,
       vector.dx * sin + vector.dy * cos,
     );
+  }
+
+  /// 🔥 동적 경로 두께 계산
+  double _calculateDynamicStrokeWidth(List<Offset> pathPoints, double? customStrokeWidth) {
+    if (customStrokeWidth != null) {
+      return customStrokeWidth;
+    }
+
+    // 경로 길이에 따른 동적 두께 계산
+    final pathLength = _calculatePathLength(pathPoints);
+    
+    if (pathLength < 50) {
+      return isNavigationMode ? 8.0 : 6.0; // 짧은 경로: 두꺼운 선
+    } else if (pathLength < 150) {
+      return isNavigationMode ? 6.0 : 5.0; // 중간 경로: 보통 두께
+    } else if (pathLength < 300) {
+      return isNavigationMode ? 5.0 : 4.0; // 긴 경로: 얇은 선
+    } else {
+      return isNavigationMode ? 4.0 : 3.0; // 매우 긴 경로: 가장 얇은 선
+    }
+  }
+
+  /// 🔥 경로 길이 계산 (픽셀 단위)
+  double _calculatePathLength(List<Offset> points) {
+    if (points.length < 2) return 0.0;
+    
+    double totalDistance = 0.0;
+    for (int i = 0; i < points.length - 1; i++) {
+      totalDistance += (points[i + 1] - points[i]).distance;
+    }
+    return totalDistance;
   }
 
   @override

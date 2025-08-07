@@ -1637,6 +1637,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get floor_plan => 'Floor Plan';
 
   @override
+  String get floor => '层';
+
+  @override
+  String get indoorMap => '室内地图';
+
+  @override
+  String get showBuildingMarker => '显示建筑标记';
+
+  @override
   String get search_hint => 'Search campus buildings';
 
   @override
