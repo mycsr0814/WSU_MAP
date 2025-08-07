@@ -82,6 +82,9 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
           ),
         );
       }
+      
+      // 🔥 튜토리얼 표시 (한 번만)
+      _showTutorialIfNeeded();
     });
   }
 
@@ -143,16 +146,6 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
       _isShowingTutorial = false; // 🔥 표시 중 플래그 리셋
       _isTutorialCheckInProgress = false; // 🔥 확인 진행 중 플래그 리셋
       debugPrint('🔄 새 사용자 감지 - 모든 플래그 리셋');
-      
-      // �� 새 사용자일 때 튜토리얼 표시 (더 긴 지연으로 중복 방지)
-      Future.delayed(const Duration(milliseconds: 500), () {
-        if (mounted && !_hasShownTutorial && !_isShowingTutorial && !_isTutorialCheckInProgress) {
-          debugPrint('🔄 튜토리얼 표시 시도');
-          _showTutorialIfNeeded();
-        } else {
-          debugPrint('ℹ️ 튜토리얼 표시 시도 건너뜀 - 플래그 상태 확인');
-        }
-      });
     }
 
     // 🔥 시간표에서 전달받은 건물 정보 처리
@@ -668,20 +661,16 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
       _isTutorialCheckInProgress = false; // 확인 완료
       debugPrint('✅ 튜토리얼 표시 시작');
       
-      // 즉시 표시하지 않고 약간의 지연 후 표시
-      Future.delayed(const Duration(milliseconds: 200), () {
-        if (mounted) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const TutorialScreen(),
-            ),
-          ).then((_) {
-            // 튜토리얼 화면이 닫힌 후 플래그 리셋
-            _isShowingTutorial = false;
-            debugPrint('✅ 튜토리얼 화면 닫힘');
-          });
-        }
+      // 즉시 표시
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const TutorialScreen(),
+        ),
+      ).then((_) {
+        // 튜토리얼 화면이 닫힌 후 플래그 리셋
+        _isShowingTutorial = false;
+        debugPrint('✅ 튜토리얼 화면 닫힘');
       });
     } else {
       debugPrint('ℹ️ 튜토리얼 표시하지 않음 (설정에 따라)');
