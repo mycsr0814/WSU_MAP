@@ -113,6 +113,107 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
+  String get walk => '도보';
+
+  @override
+  String get minute => '분';
+
+  @override
+  String get hour => '시간';
+
+  @override
+  String get less_than_one_minute => '1분 이내';
+
+  @override
+  String get zero_minutes => '0분';
+
+  @override
+  String get calculation_failed => '계산 불가';
+
+  @override
+  String get professor_name => '교수명';
+
+  @override
+  String get building_name => '건물명';
+
+  @override
+  String get floor_number => '층수';
+
+  @override
+  String get room_name => '호실';
+
+  @override
+  String get day_of_week => '요일';
+
+  @override
+  String get time => '시간';
+
+  @override
+  String get memo => '메모';
+
+  @override
+  String get recommend_route => '추천경로';
+
+  @override
+  String get view_location => '위치 보기';
+
+  @override
+  String get edit => '편집';
+
+  @override
+  String get close => '닫기';
+
+  @override
+  String get help => '사용법';
+
+  @override
+  String get help_intro_title => '따라우송 사용법';
+
+  @override
+  String get help_intro_description =>
+      '우송대학교 캠퍼스 네비게이터로\n캠퍼스 생활을 더욱 편리하게 만들어보세요';
+
+  @override
+  String get help_detailed_search_title => '세부 검색';
+
+  @override
+  String get help_detailed_search_description =>
+      '건물명, 강의실 번호, 편의시설까지\n정확하고 빠른 검색으로 원하는 곳을 찾아보세요';
+
+  @override
+  String get help_timetable_title => '시간표 연동';
+
+  @override
+  String get help_timetable_description =>
+      '수업 시간표를 앱에 연동하여\n다음 수업까지의 최적 경로를 자동으로 안내받으세요';
+
+  @override
+  String get help_directions_title => '길찾기';
+
+  @override
+  String get help_directions_description =>
+      '캠퍼스 내 정확한 경로 안내로\n목적지까지 쉽고 빠르게 도착하세요';
+
+  @override
+  String get help_building_map_title => '건물 내부 도면';
+
+  @override
+  String get help_building_map_description =>
+      '건물 내부의 상세한 도면으로\n강의실과 편의시설을 쉽게 찾아보세요';
+
+  @override
+  String get previous => '이전';
+
+  @override
+  String get next => '다음';
+
+  @override
+  String get done => '완료';
+
+  @override
+  String get image_load_error => '이미지를 불러올 수 없습니다';
+
+  @override
   String get start_campus_exploration => '캠퍼스 탐색을 시작해보세요';
 
   @override
@@ -288,12 +389,6 @@ class AppLocalizationsKo extends AppLocalizations {
   String get tutorial => '사용법';
 
   @override
-  String get previous => '이전';
-
-  @override
-  String get next => '다음';
-
-  @override
   String get finish => '완료';
 
   @override
@@ -369,13 +464,13 @@ class AppLocalizationsKo extends AppLocalizations {
   String get inquiry_type_bug => '버그 신고';
 
   @override
-  String get inquiry_type_feature => '기능 요청';
+  String get inquiry_type_feature => '기능 제안';
 
   @override
   String get inquiry_type_improvement => '개선 제안';
 
   @override
-  String get inquiry_type_other => '기타';
+  String get inquiry_type_other => '기타 문의';
 
   @override
   String get inquiry_status_pending => '답변 대기';
@@ -539,18 +634,6 @@ class AppLocalizationsKo extends AppLocalizations {
   String get deleteButton => '삭제';
 
   @override
-  String get building_name => '건물명';
-
-  @override
-  String get floor_number => '층수';
-
-  @override
-  String get room_name => '호실';
-
-  @override
-  String get memo => '메모';
-
-  @override
   String get overlap_message => '이 시간에 이미 등록된 수업이 있습니다';
 
   @override
@@ -615,9 +698,6 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get showLocation => '위치 보기';
-
-  @override
-  String get close => '닫기';
 
   @override
   String friendLocationRemoved(String userName) {
@@ -751,7 +831,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get inquiry_category_bug => '버그 신고';
 
   @override
-  String get inquiry_category_feature => '기능 요청';
+  String get inquiry_category_feature => '기능 제안';
 
   @override
   String get inquiry_category_other => '기타';
@@ -808,9 +888,6 @@ class AppLocalizationsKo extends AppLocalizations {
   String get friday => '금';
 
   @override
-  String get time => '시간';
-
-  @override
   String get add_class => '수업 추가';
 
   @override
@@ -823,13 +900,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get class_name => '수업명';
 
   @override
-  String get professor_name => '교수명';
-
-  @override
   String get classroom => '강의실';
-
-  @override
-  String get day_of_week => '요일';
 
   @override
   String get start_time => '시작 시간';
@@ -930,9 +1001,6 @@ class AppLocalizationsKo extends AppLocalizations {
   String get message => '메시지';
 
   @override
-  String get view_location => '위치 보기';
-
-  @override
   String get call => '전화';
 
   @override
@@ -949,9 +1017,6 @@ class AppLocalizationsKo extends AppLocalizations {
   String calling(String name) {
     return '전화 중';
   }
-
-  @override
-  String get edit => '편집';
 
   @override
   String get delete => '삭제';
@@ -997,9 +1062,6 @@ class AppLocalizationsKo extends AppLocalizations {
   String hours_and_minutes(Object hours, Object minutes) {
     return '$hours시간 $minutes분';
   }
-
-  @override
-  String get calculation_failed => '계산 불가';
 
   @override
   String get current_location_departure => '현재 위치에서 출발';
@@ -1484,13 +1546,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get developer_github => 'GitHub: github.com/yourid';
 
   @override
-  String get help => '사용법';
-
-  @override
   String get no_help_images => '도움말 이미지가 없습니다';
-
-  @override
-  String get image_load_error => '이미지를 불러올 수 없습니다';
 
   @override
   String get description_hint => '설명을 입력하세요';
@@ -1562,6 +1618,32 @@ class AppLocalizationsKo extends AppLocalizations {
   String cancelFriendRequestConfirm(String name) {
     return '$name님에게 보낸 친구 요청을 취소하시겠습니까?';
   }
+
+  @override
+  String get attached_image => '첨부된 이미지';
+
+  @override
+  String get answer_section_title => '답변';
+
+  @override
+  String get inquiry_default_answer =>
+      '문의해주신 내용에 대한 답변입니다. 추가 문의사항이 있으시면 언제든 연락주세요.';
+
+  @override
+  String get answer_date_prefix => '답변일:';
+
+  @override
+  String get waiting_answer_status => '답변 대기 중';
+
+  @override
+  String get waiting_answer_message =>
+      '문의해주신 내용을 검토하고 있습니다. 빠른 시일 내에 답변드리겠습니다.';
+
+  @override
+  String get status_pending => '답변 대기';
+
+  @override
+  String get status_answered => '답변 완료';
 
   @override
   String get cancelRequest => '요청 취소';
@@ -1661,9 +1743,6 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get searchTryAgain => '다른 검색어를 시도해보세요';
-
-  @override
-  String get attached_image => '첨부된 이미지';
 
   @override
   String get required => '필수';

@@ -2,11 +2,28 @@ import 'package:flutter/material.dart';
 import '../services/inquiry_service.dart';
 import '../generated/app_localizations.dart';
 
-// 문의 상세 페이지
 class InquiryDetailPage extends StatelessWidget {
   final InquiryItem inquiry;
 
   const InquiryDetailPage({required this.inquiry, super.key});
+
+  String getLocalizedCategory(BuildContext context, String category) {
+    final l10n = AppLocalizations.of(context)!;
+    switch (category) {
+      case 'place_error':
+        return l10n.inquiry_category_place_error;
+      case 'bug':
+        return l10n.inquiry_category_bug;
+      case 'feature':
+        return l10n.inquiry_category_feature;
+      case 'route_error':
+        return l10n.inquiry_category_route_error;
+      case 'other':
+        return l10n.inquiry_category_other;
+      default:
+        return category;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -46,7 +63,7 @@ class InquiryDetailPage extends StatelessWidget {
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Text(
-                    inquiry.category,
+                    getLocalizedCategory(context, inquiry.category),
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
@@ -65,7 +82,8 @@ class InquiryDetailPage extends StatelessWidget {
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Text(
-                    inquiry.status,
+                    // status 값도 로케일에 맞게 변환 처리 (한글 영어 둘다)
+                    _localizedStatus(context, inquiry.status),
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
@@ -199,7 +217,7 @@ class InquiryDetailPage extends StatelessWidget {
             ],
 
             // 답변 섹션
-            if (inquiry.status == '답변 완료') ...[
+            if (_isAnsweredStatus(inquiry.status)) ...[
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(20),
@@ -220,7 +238,7 @@ class InquiryDetailPage extends StatelessWidget {
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          '답변',
+                          l10n.answer_section_title,
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
@@ -232,7 +250,7 @@ class InquiryDetailPage extends StatelessWidget {
                     const SizedBox(height: 12),
                     Text(
                       inquiry.answer ??
-                          '문의해주신 내용에 대한 답변입니다. 추가 문의사항이 있으시면 언제든 연락주세요.',
+                          l10n.inquiry_default_answer,
                       style: TextStyle(
                         fontSize: 16,
                         color: Colors.green[800],
@@ -250,7 +268,7 @@ class InquiryDetailPage extends StatelessWidget {
                           ),
                           const SizedBox(width: 8),
                           Text(
-                            '답변일: ${inquiry.answeredAt}',
+                            '${l10n.answer_date_prefix} ${inquiry.answeredAt}',
                             style: TextStyle(
                               fontSize: 12,
                               color: Colors.green[600],
@@ -283,7 +301,7 @@ class InquiryDetailPage extends StatelessWidget {
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          '답변 대기 중',
+                          l10n.waiting_answer_status,
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
@@ -294,7 +312,7 @@ class InquiryDetailPage extends StatelessWidget {
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      '문의해주신 내용을 검토하고 있습니다. 빠른 시일 내에 답변드리겠습니다.',
+                      l10n.waiting_answer_message,
                       style: TextStyle(
                         fontSize: 16,
                         color: Colors.orange[800],
@@ -321,6 +339,24 @@ class InquiryDetailPage extends StatelessWidget {
         return Colors.green;
       default:
         return Colors.grey;
+    }
+  }
+
+  bool _isAnsweredStatus(String status) {
+    return status == 'answered' || status == '답변 완료';
+  }
+
+  String _localizedStatus(BuildContext context, String status) {
+    final l10n = AppLocalizations.of(context)!;
+    switch (status) {
+      case 'pending':
+      case '답변 대기':
+        return l10n.status_pending;
+      case 'answered':
+      case '답변 완료':
+        return l10n.status_answered;
+      default:
+        return status;
     }
   }
 }

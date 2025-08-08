@@ -113,6 +113,102 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String get walk => '步行';
+
+  @override
+  String get minute => '分';
+
+  @override
+  String get hour => '小时';
+
+  @override
+  String get less_than_one_minute => '1分钟以内';
+
+  @override
+  String get zero_minutes => '0分钟';
+
+  @override
+  String get calculation_failed => '计算失败';
+
+  @override
+  String get professor_name => '教授';
+
+  @override
+  String get building_name => '建筑名称';
+
+  @override
+  String get floor_number => '楼层';
+
+  @override
+  String get room_name => '房间';
+
+  @override
+  String get day_of_week => '星期';
+
+  @override
+  String get time => '时间';
+
+  @override
+  String get memo => '备注';
+
+  @override
+  String get recommend_route => '推荐路线';
+
+  @override
+  String get view_location => '查看位置';
+
+  @override
+  String get edit => '编辑';
+
+  @override
+  String get close => '关闭';
+
+  @override
+  String get help => '帮助';
+
+  @override
+  String get help_intro_title => '使用TarauSong';
+
+  @override
+  String get help_intro_description => '使用吴松大学校园导航器，让您的校园生活更方便。';
+
+  @override
+  String get help_detailed_search_title => '详细搜索';
+
+  @override
+  String get help_detailed_search_description => '包括建筑名称、教室号码和设施，快速准确地查找所需位置。';
+
+  @override
+  String get help_timetable_title => '时间表集成';
+
+  @override
+  String get help_timetable_description => '同步您的课程表，并获得直到下一节课的最佳路线指南。';
+
+  @override
+  String get help_directions_title => '路线导航';
+
+  @override
+  String get help_directions_description => '在校园内准确导航，轻松快速到达目的地。';
+
+  @override
+  String get help_building_map_title => '建筑楼层地图';
+
+  @override
+  String get help_building_map_description => '使用详细的楼层地图轻松找到教室和设施。';
+
+  @override
+  String get previous => '上一个';
+
+  @override
+  String get next => '下一个';
+
+  @override
+  String get done => '完成';
+
+  @override
+  String get image_load_error => '无法加载图片';
+
+  @override
   String get start_campus_exploration => '开始探索校园';
 
   @override
@@ -285,12 +381,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get tutorial => '使用教程';
-
-  @override
-  String get previous => '上一个';
-
-  @override
-  String get next => '下一个';
 
   @override
   String get finish => '完成';
@@ -538,18 +628,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get deleteButton => '删除';
 
   @override
-  String get building_name => '建筑名称';
-
-  @override
-  String get floor_number => '楼层';
-
-  @override
-  String get room_name => '房间';
-
-  @override
-  String get memo => '备注';
-
-  @override
   String get overlap_message => '此时间已有注册的课程';
 
   @override
@@ -614,9 +692,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get showLocation => '显示位置';
-
-  @override
-  String get close => '关闭';
 
   @override
   String friendLocationRemoved(String userName) {
@@ -806,9 +881,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get friday => '周五';
 
   @override
-  String get time => '时间';
-
-  @override
   String get add_class => '添加课程';
 
   @override
@@ -821,13 +893,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get class_name => '课程名称';
 
   @override
-  String get professor_name => '教授';
-
-  @override
   String get classroom => '教室';
-
-  @override
-  String get day_of_week => '星期';
 
   @override
   String get start_time => '开始时间';
@@ -928,9 +994,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get message => '消息';
 
   @override
-  String get view_location => '查看位置';
-
-  @override
   String get call => '通话';
 
   @override
@@ -947,9 +1010,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String calling(String name) {
     return '正在呼叫$name';
   }
-
-  @override
-  String get edit => '编辑';
 
   @override
   String get delete => '删除';
@@ -995,9 +1055,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String hours_and_minutes(Object hours, Object minutes) {
     return '$hours小时$minutes分钟';
   }
-
-  @override
-  String get calculation_failed => '计算失败';
 
   @override
   String get current_location_departure => '从当前位置出发';
@@ -1489,13 +1546,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get developer_github => 'GitHub: github.com/yourid';
 
   @override
-  String get help => 'Help';
-
-  @override
   String get no_help_images => 'No help images';
-
-  @override
-  String get image_load_error => 'Cannot load image';
 
   @override
   String get description_hint => 'Enter description';
@@ -1570,6 +1621,30 @@ class AppLocalizationsZh extends AppLocalizations {
   String cancelFriendRequestConfirm(String name) {
     return 'Do you want to cancel the friend request sent to $name?';
   }
+
+  @override
+  String get attached_image => '附加图片';
+
+  @override
+  String get answer_section_title => '答复';
+
+  @override
+  String get inquiry_default_answer => '这是您查询的答复。如有其他问题，请随时联系我们。';
+
+  @override
+  String get answer_date_prefix => '答复日期：';
+
+  @override
+  String get waiting_answer_status => '等待答复';
+
+  @override
+  String get waiting_answer_message => '我们正在审核您的查询，将尽快回复。';
+
+  @override
+  String get status_pending => '等待中';
+
+  @override
+  String get status_answered => '已答复';
 
   @override
   String get cancelRequest => 'Cancel Request';
@@ -1671,9 +1746,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get searchTryAgain => 'Try a different search term';
-
-  @override
-  String get attached_image => 'Attached Image';
 
   @override
   String get required => 'Required';

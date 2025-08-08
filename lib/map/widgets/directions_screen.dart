@@ -119,7 +119,7 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
     else if (_endBuilding != null && _startBuilding == null) {
       debugPrint('🎯 presetEnd만 설정됨 - 내 위치를 출발지로 자동 설정');
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        _setMyLocationAsStart();
+        _setMyLocationAsStart(context);
         if (_startBuilding != null && _endBuilding != null) {
           _calculateRoutePreview();
         }
@@ -339,7 +339,7 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
       // 내위치가 설정되지 않았으면 자동으로 설정
       if (_startBuilding == null) {
         debugPrint('📍 내위치가 설정되지 않음. 자동으로 내위치 설정');
-        _setMyLocationAsStart();
+        _setMyLocationAsStart(context);
       }
 
       if (_startBuilding == null || _endBuilding == null) {
@@ -570,7 +570,7 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
       });
 
       // 🔥 거리/시간 계산
-      _calculateEstimatesFromResponse(response);
+      _calculateEstimatesFromResponse(response, context);
 
       debugPrint('✅ 경로 미리보기 계산 완료');
       debugPrint('   경로 타입: ${response.type}');
@@ -665,60 +665,60 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
   }
 
   // 🔥 통합 API 응답으로부터 예상 시간과 거리 계산
-  void _calculateEstimatesFromResponse(UnifiedPathResponse response) {
-    try {
-      double totalDistance = 0;
+  void _calculateEstimatesFromResponse(UnifiedPathResponse response, BuildContext context) {
+  final l10n = AppLocalizations.of(context)!;
+  try {
+    double totalDistance = 0;
 
-      // 🔥 null 체크 강화
-      if (response.result.departureIndoor?.path.distance != null) {
-        totalDistance += response.result.departureIndoor!.path.distance;
-      }
-      if (response.result.outdoor?.path.distance != null) {
-        totalDistance += response.result.outdoor!.path.distance;
-      }
-      if (response.result.arrivalIndoor?.path.distance != null) {
-        totalDistance += response.result.arrivalIndoor!.path.distance;
-      }
-
-      // 🔥 거리 포맷팅 - 안전한 계산
-      if (totalDistance <= 0) {
-        _estimatedDistance = '0m';
-        _estimatedTime = '0분';
-        return;
-      }
-
-      if (totalDistance < 1000) {
-        _estimatedDistance = '${totalDistance.round()}m';
-      } else {
-        _estimatedDistance = '${(totalDistance / 1000).toStringAsFixed(1)}km';
-      }
-
-      // 🔥 예상 시간 계산 - 안전한 계산
-      const double walkingSpeedKmh = 4.0;
-      final double timeInHours = totalDistance / 1000 / walkingSpeedKmh;
-      final int timeInMinutes = (timeInHours * 60).round();
-
-      if (timeInMinutes <= 0) {
-        _estimatedTime = '1분 이내';
-      } else if (timeInMinutes < 60) {
-        _estimatedTime = '도보 $timeInMinutes분';
-      } else {
-        final int hours = timeInMinutes ~/ 60;
-        final int minutes = timeInMinutes % 60;
-        if (minutes == 0) {
-          _estimatedTime = '도보 $hours시간';
-        } else {
-          _estimatedTime = '도보 $hours시간 $minutes분';
-        }
-      }
-
-      debugPrint('📊 통합 API 기반 예상: 거리 $_estimatedDistance, 시간 $_estimatedTime');
-    } catch (e) {
-      debugPrint('❌ 거리/시간 계산 오류: $e');
-      _estimatedDistance = '계산 불가';
-      _estimatedTime = '계산 불가';
+    // null 체크 강화
+    if (response.result.departureIndoor?.path.distance != null) {
+      totalDistance += response.result.departureIndoor!.path.distance;
     }
+    if (response.result.outdoor?.path.distance != null) {
+      totalDistance += response.result.outdoor!.path.distance;
+    }
+    if (response.result.arrivalIndoor?.path.distance != null) {
+      totalDistance += response.result.arrivalIndoor!.path.distance;
+    }
+
+    // 거리 포맷팅
+    if (totalDistance <= 0) {
+      _estimatedDistance = '0m';
+      _estimatedTime = l10n.zero_minutes;     // "0분"
+      return;
+    }
+    if (totalDistance < 1000) {
+      _estimatedDistance = '${totalDistance.round()}m';
+    } else {
+      _estimatedDistance = '${(totalDistance / 1000).toStringAsFixed(1)}km';
+    }
+
+    // 예상 시간 계산
+    const double walkingSpeedKmh = 4.0;
+    final double timeInHours = totalDistance / 1000 / walkingSpeedKmh;
+    final int timeInMinutes = (timeInHours * 60).round();
+
+    if (timeInMinutes <= 0) {
+      _estimatedTime = l10n.less_than_one_minute; // "1분 이내"
+    } else if (timeInMinutes < 60) {
+      _estimatedTime = '${l10n.walk} $timeInMinutes${l10n.minute}';
+    } else {
+      final int hours = timeInMinutes ~/ 60;
+      final int minutes = timeInMinutes % 60;
+      if (minutes == 0) {
+        _estimatedTime = '${l10n.walk} $hours${l10n.hour}';
+      } else {
+        _estimatedTime = '${l10n.walk} $hours${l10n.hour} $minutes${l10n.minute}';
+      }
+    }
+
+    debugPrint('📊 통합 API 기반 예상: 거리 $_estimatedDistance, 시간 $_estimatedTime');
+  } catch (e) {
+    debugPrint('❌ 거리/시간 계산 오류: $e');
+    _estimatedDistance = l10n.calculation_failed; // "계산 불가"
+    _estimatedTime = l10n.calculation_failed;
   }
+}
 
   Future<void> _onSearchChanged() async {
     final query = _searchController.text.trim();
@@ -875,7 +875,7 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
         
         // 🔥 도착지 설정 시 출발지가 비어있으면 내 위치 자동 설정
         if (_startBuilding == null) {
-          _setMyLocationAsStart();
+          _setMyLocationAsStart(context);
         }
       }
 
@@ -962,7 +962,7 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
 
         // 🔥 도착지 설정 시 출발지가 비어있으면 내 위치 자동 설정
         if (_startBuilding == null) {
-          _setMyLocationAsStart();
+          _setMyLocationAsStart(context);
         }
       }
 
@@ -994,106 +994,108 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
   }
 
   // 🔥 내 위치를 출발지로 설정하는 메서드
-  void _setMyLocationAsStart() {
-    try {
-      debugPrint('📍 내 위치를 출발지로 자동 설정');
+void _setMyLocationAsStart(BuildContext context) {
+  try {
+    debugPrint('📍 내 위치를 출발지로 자동 설정');
 
-      final locationManager = Provider.of<LocationManager>(
-        context,
-        listen: false,
+    final locationManager = Provider.of<LocationManager>(
+      context,
+      listen: false,
+    );
+
+    final l10n = AppLocalizations.of(context)!;
+
+    if (locationManager.hasValidLocation &&
+        locationManager.currentLocation != null) {
+      final myLocationBuilding = Building(
+        name: '내 위치',
+        info: '현재 위치에서 출발',
+        lat: locationManager.currentLocation!.latitude!,
+        lng: locationManager.currentLocation!.longitude!,
+        category: '현재위치',
+        baseStatus: '사용가능',
+        hours: '',
+        phone: '',
+        imageUrl: '',
+        description: '현재 위치에서 길찾기를 시작합니다',
       );
 
-      if (locationManager.hasValidLocation &&
-          locationManager.currentLocation != null) {
-        final myLocationBuilding = Building(
-          name: '내 위치',
-          info: '현재 위치에서 출발',
-          lat: locationManager.currentLocation!.latitude!,
-          lng: locationManager.currentLocation!.longitude!,
-          category: '현재위치',
-          baseStatus: '사용가능',
-          hours: '',
-          phone: '',
-          imageUrl: '',
-          description: '현재 위치에서 길찾기를 시작합니다',
-        );
+      setState(() {
+        _startBuilding = myLocationBuilding;
+        _startRoomInfo = null;
+      });
 
-        setState(() {
-          _startBuilding = myLocationBuilding;
-          _startRoomInfo = null;
-        });
-
-        // 🔥 내 위치 설정 후 미리보기 계산
-        if (_endBuilding != null) {
-          _calculateRoutePreview();
-        }
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.my_location, color: Colors.white, size: 16),
-                const SizedBox(width: 8),
-                const Text('내 위치가 출발지로 자동 설정되었습니다'),
-              ],
-            ),
-            backgroundColor: const Color(0xFF10B981),
-            duration: const Duration(seconds: 2),
-            behavior: SnackBarBehavior.floating,
-            margin: const EdgeInsets.all(16),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-          ),
-        );
-      } else {
-        // 위치 정보가 없으면 기본 위치 사용
-        final defaultLocationBuilding = Building(
-          name: '내 위치',
-          info: '현재 위치에서 출발 (기본 위치)',
-          lat: 36.338133,
-          lng: 127.446423,
-          category: '현재위치',
-          baseStatus: '사용가능',
-          hours: '',
-          phone: '',
-          imageUrl: '',
-          description: '현재 위치에서 길찾기를 시작합니다',
-        );
-
-        setState(() {
-          _startBuilding = defaultLocationBuilding;
-          _startRoomInfo = null;
-        });
-
-        // 🔥 기본 위치 설정 후 미리보기 계산
-        if (_endBuilding != null) {
-          _calculateRoutePreview();
-        }
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.warning, color: Colors.white, size: 16),
-                const SizedBox(width: 8),
-                const Text('기본 위치가 출발지로 설정되었습니다'),
-              ],
-            ),
-            backgroundColor: Colors.orange,
-            duration: const Duration(seconds: 2),
-            behavior: SnackBarBehavior.floating,
-            margin: const EdgeInsets.all(16),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-          ),
-        );
+      // 🔥 내 위치 설정 후 미리보기 계산
+      if (_endBuilding != null) {
+        _calculateRoutePreview();
       }
-    } catch (e) {
-      debugPrint('❌ 내 위치 자동 설정 오류: $e');
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.my_location, color: Colors.white, size: 16),
+              const SizedBox(width: 8),
+              Text(l10n.my_location_set_as_start),  // 다국어 처리된 메시지
+            ],
+          ),
+          backgroundColor: const Color(0xFF10B981),
+          duration: const Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.all(16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+      );
+    } else {
+      // 위치 정보가 없으면 기본 위치 사용
+      final defaultLocationBuilding = Building(
+        name: '내 위치',
+        info: '현재 위치에서 출발 (기본 위치)',
+        lat: 36.338133,
+        lng: 127.446423,
+        category: '현재위치',
+        baseStatus: '사용가능',
+        hours: '',
+        phone: '',
+        imageUrl: '',
+        description: '현재 위치에서 길찾기를 시작합니다',
+      );
+
+      setState(() {
+        _startBuilding = defaultLocationBuilding;
+        _startRoomInfo = null;
+      });
+
+      // 🔥 기본 위치 설정 후 미리보기 계산
+      if (_endBuilding != null) {
+        _calculateRoutePreview();
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.warning, color: Colors.white, size: 16),
+              const SizedBox(width: 8),
+              Text(l10n.default_location_set_as_start),  // 다국어 처리된 메시지
+            ],
+          ),
+          backgroundColor: Colors.orange,
+          duration: const Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.all(16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+      );
     }
+  } catch (e) {
+    debugPrint('❌ 내 위치 자동 설정 오류: $e');
   }
+}
 
   // 🔥 기본 내위치 Building 객체 반환
   Building _getDefaultMyLocation() {
@@ -1137,7 +1139,7 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
       // 내위치가 설정되지 않았으면 자동으로 설정
       if (_startBuilding == null) {
         debugPrint('📍 내위치가 설정되지 않음. 자동으로 내위치 설정');
-        _setMyLocationAsStart();
+        _setMyLocationAsStart(context);
       }
 
       debugPrint(
@@ -1569,11 +1571,6 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
   }
 
   // 🔥 수정된 _buildSearchResultItem 메서드 - 강의실 직접 이동 기능 추가
-
-  // directions_screen.dart에서 _buildSearchResultItem의 onTap 부분을 다음과 같이 수정
-
-  // directions_screen.dart에서 _buildSearchResultItem의 onTap 부분을 다음과 같이 수정
-
   Widget _buildSearchResultItem(SearchResult result) {
     return Container(
       margin: const EdgeInsets.only(bottom: 1),

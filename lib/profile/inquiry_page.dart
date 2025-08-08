@@ -6,45 +6,6 @@ import '../services/inquiry_service.dart';
 import '../auth/user_auth.dart';
 import 'inquiry_detail_page.dart';
 
-/// 문의하기 카테고리 매핑 클래스 (더 이상 사용하지 않음)
-/// 현재는 드롭다운에서 직접 한국어 코드를 사용하므로 불필요
-/*
-class InquiryCategoryMapper {
-  /// 다국어 텍스트를 한국어 카테고리 코드로 변환
-  static String getKoreanCategory(String localizedText) {
-    switch (localizedText) {
-      case '장소/정보 오류':
-      case 'Place/Info Error':
-      case '地点/信息错误':
-        return 'place_error';
-      case '버그 신고':
-      case 'Bug Report':
-      case '错误报告':
-        return 'bug';
-      case '기능 요청':
-      case '기능 제안':
-      case 'Feature Request':
-      case '功能请求':
-      case '功能建议':
-        return 'feature';
-      case '경로 안내 오류':
-      case 'Route Guidance Error':
-      case '路线指导错误':
-        return 'route_error';
-      case '기타':
-      case '기타 문의':
-      case 'Other':
-      case 'Other Inquiry':
-      case '其他':
-      case '其他咨询':
-        return 'other';
-      default:
-        return 'other'; // 기본값
-    }
-  }
-}
-*/
-
 class InquiryPage extends StatefulWidget {
   final UserAuth userAuth;
 
@@ -874,106 +835,92 @@ class _CreateInquiryTabState extends State<CreateInquiryTab> {
   }
 
   Future<void> _submitInquiry() async {
-    if (_isDisposed) return;
-    
-    final l10n = AppLocalizations.of(context)!;
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
+  if (_isDisposed) return;
+  
+  final l10n = AppLocalizations.of(context)!;
+  if (!_formKey.currentState!.validate()) {
+    return;
+  }
 
-    if (_isSubmitting) return;
+  if (_isSubmitting) return;
 
-    setState(() {
-      _isSubmitting = true;
-    });
+  setState(() {
+    _isSubmitting = true;
+  });
 
-    // 로딩 다이얼로그 표시
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => const Center(child: CircularProgressIndicator()),
+  // 로딩 다이얼로그 표시
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (context) => const Center(child: CircularProgressIndicator()),
+  );
+
+  try {
+    final category = _selectedInquiryType!; // 키 값 그대로 사용
+
+    debugPrint('=== 문의하기 카테고리 디버그 ===');
+    debugPrint('선택된 카테고리 (키 값): $category');
+    debugPrint('매핑에서 해당 키가 존재하는지: ${_inquiryTypeMapping.containsKey(category)}');
+    debugPrint('서버로 전송될 카테고리: $category');
+    debugPrint('=== 서버 전송 데이터 ===');
+    debugPrint('userId: ${widget.userAuth.userId}');
+    debugPrint('category: $category');
+    debugPrint('title: ${_titleController.text.trim()}');
+    debugPrint('content: ${_contentController.text.trim()}');
+    debugPrint('========================');
+
+    final success = await InquiryService.createInquiry(
+      userId: widget.userAuth.userId!,
+      category: category, // 키 값 그대로 전송
+      title: _titleController.text.trim(),
+      content: _contentController.text.trim(),
+      imageFile: _selectedImages.isNotEmpty ? _selectedImages.first : null,
     );
 
-    try {
-      // 🔥 서버로 전송되는 카테고리 확인
-      final category = _selectedInquiryType!;
-      debugPrint('=== 문의하기 카테고리 디버그 ===');
-      debugPrint('선택된 카테고리 (한국어 코드): $category');
-      debugPrint('카테고리 타입: ${category.runtimeType}');
-      debugPrint('카테고리 길이: ${category.length}');
-      debugPrint('카테고리 바이트: ${category.codeUnits}');
-      debugPrint('카테고리 매핑 확인:');
-      _inquiryTypeMapping.forEach((key, value) {
-        debugPrint('  "$key" -> "$value"');
-      });
-      
-      // 🔥 선택된 카테고리의 실제 표시 텍스트 확인
-      final selectedDisplayText = _inquiryTypeMapping[category];
-      debugPrint('선택된 카테고리 표시 텍스트: $selectedDisplayText');
-      debugPrint('매핑에서 해당 키가 존재하는지: ${_inquiryTypeMapping.containsKey(category)}');
-      debugPrint('서버로 전송될 카테고리: $category');
-      
-      // 🔥 서버로 전송되는 모든 데이터 확인
-      debugPrint('=== 서버 전송 데이터 ===');
-      debugPrint('userId: ${widget.userAuth.userId}');
-      debugPrint('category: $category');
-      debugPrint('title: ${_titleController.text.trim()}');
-      debugPrint('content: ${_contentController.text.trim()}');
-      debugPrint('========================');
-      debugPrint('================================');
+    if (mounted) {
+      Navigator.pop(context); // 로딩 다이얼로그 닫기
 
-      final success = await InquiryService.createInquiry(
-        userId: widget.userAuth.userId!,
-        category: category, // 한국어 코드 (place_error, bug, feature, route_error, other)
-        title: _titleController.text.trim(),
-        content: _contentController.text.trim(),
-        imageFile: _selectedImages.isNotEmpty ? _selectedImages.first : null,
-      );
-
-      if (mounted) {
-        Navigator.pop(context); // 로딩 다이얼로그 닫기
-
-        if (success) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(l10n.inquiry_submit_success),
-              backgroundColor: Colors.green,
-            ),
-          );
-
-          // 폼 초기화
-          _formKey.currentState!.reset();
-          setState(() {
-            _selectedInquiryType = null;
-            _selectedImages.clear();
-          });
-
-          // "내 문의" 탭 새로고침
-          widget.onInquirySubmitted?.call();
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(l10n.inquiry_submit_failed),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        Navigator.pop(context); // 로딩 다이얼로그 닫기
+      if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.inquiry_error_occurred), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text(l10n.inquiry_submit_success),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        // 폼 초기화
+        _formKey.currentState!.reset();
+        setState(() {
+          _selectedInquiryType = null;
+          _selectedImages.clear();
+        });
+
+        // "내 문의" 탭 새로고침
+        widget.onInquirySubmitted?.call();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(l10n.inquiry_submit_failed),
+            backgroundColor: Colors.red,
+          ),
         );
       }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isSubmitting = false;
-        });
-      }
+    }
+  } catch (e) {
+    if (mounted) {
+      Navigator.pop(context); // 로딩 다이얼로그 닫기
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.inquiry_error_occurred), backgroundColor: Colors.red),
+      );
+    }
+  } finally {
+    if (mounted) {
+      setState(() {
+        _isSubmitting = false;
+      });
     }
   }
+}
 }
 
 // 내 문의 탭
@@ -1535,8 +1482,23 @@ class _MyInquiriesTabState extends State<MyInquiriesTab> {
     }
   }
 
-  String _getLocalizedCategory(String category) {
-    // 🔥 서버에서 받은 카테고리를 그대로 반환 (로컬라이제이션 변환 제거)
-    return category;
+String _getLocalizedCategory(String category) {
+  final l10n = AppLocalizations.of(context)!;
+
+  switch (category) {
+    case 'place_error':
+      return l10n.inquiry_category_place_error;
+    case 'bug':
+      return l10n.inquiry_category_bug;
+    case 'feature':
+      return l10n.inquiry_category_feature;
+    case 'route_error':
+      return l10n.inquiry_category_route_error;
+    case 'other':
+      return l10n.inquiry_category_other;
+    default:
+      return category; // 알 수 없는 값은 그냥 그대로 출력
   }
+}
+
 }

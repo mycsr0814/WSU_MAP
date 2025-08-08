@@ -1699,6 +1699,19 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                                               await onSubmit(newItem);
                                               Navigator.pop(context);
                                             }
+                                            else {
+  FocusScope.of(context).unfocus();
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: const Text('필수 입력값을 모두 입력해 주세요.'),
+      backgroundColor: Colors.red,
+      behavior: SnackBarBehavior.floating,
+      margin: const EdgeInsets.only(top: 24, left: 16, right: 16),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      duration: const Duration(seconds: 3),
+    ),
+  );
+}
                                           },
                                           style: ElevatedButton.styleFrom(
                                             backgroundColor: const Color(
@@ -1965,10 +1978,6 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     );
   }
 
-
-
-
-
   void _showRecommendRoute(ScheduleItem item) {
     Navigator.push(
       context,
@@ -2052,446 +2061,312 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   }
 
   void _showScheduleDetail(ScheduleItem item) {
-    final l10n = AppLocalizations.of(context);
+  final l10n = AppLocalizations.of(context)!;
 
-    showDialog(
-      context: context,
-      barrierColor: Colors.black.withOpacity(0.5),
-      builder: (context) => Dialog(
-        backgroundColor: Colors.transparent,
-        child: Container(
-          width: MediaQuery.of(context).size.width * 0.9,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.08),
-                blurRadius: 20,
-                offset: const Offset(0, 8),
+  showDialog(
+    context: context,
+    barrierColor: Colors.black.withOpacity(0.5),
+    builder: (context) => Dialog(
+      backgroundColor: Colors.transparent,
+      child: Container(
+        width: MediaQuery.of(context).size.width * 0.9,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: item.color.withOpacity(0.1),
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(20),
+                  topRight: Radius.circular(20),
+                ),
               ),
-            ],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: item.color.withOpacity(0.1),
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(20),
-                    topRight: Radius.circular(20),
+              child: Row(
+                children: [
+                  Container(
+                    width: 60,
+                    height: 60,
+                    decoration: BoxDecoration(
+                      color: item.color.withOpacity(0.2),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(Icons.schedule, color: item.color, size: 30),
                   ),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 60,
-                      height: 60,
-                      decoration: BoxDecoration(
-                        color: item.color.withOpacity(0.2),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(Icons.schedule, color: item.color, size: 30),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            item.title,
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w700,
-                              color: item.color,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '${_getDayName(item.dayOfWeek)} ${item.startTime} - ${item.endTime}',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: item.color.withOpacity(0.8),
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  children: [
-                    _buildStyledDetailRow(
-                      Icons.person,
-                      l10n?.professor_name ?? 'Professor',
-                      item.professor,
-                    ),
-                    const SizedBox(height: 16),
-                    _buildStyledDetailRow(
-                      Icons.business,
-                      l10n?.building_name ?? 'Building',
-                      item.buildingName,
-                    ),
-                    const SizedBox(height: 16),
-                    _buildStyledDetailRow(
-                      Icons.layers,
-                      l10n?.floor_number ?? 'Floor',
-                      item.floorNumber,
-                    ),
-                    const SizedBox(height: 16),
-                    _buildStyledDetailRow(
-                      Icons.meeting_room,
-                      l10n?.room_name ?? 'Room',
-                      item.roomName,
-                    ),
-                    const SizedBox(height: 16),
-                    _buildStyledDetailRow(
-                      Icons.calendar_today,
-                      l10n?.day_of_week ?? 'Day',
-                      _getDayName(item.dayOfWeek),
-                    ),
-                    const SizedBox(height: 16),
-                    _buildStyledDetailRow(
-                      Icons.access_time,
-                      l10n?.time ?? 'Time',
-                      '${item.startTime} - ${item.endTime}',
-                    ),
-                    if (item.memo.isNotEmpty) ...[
-                      const SizedBox(height: 16),
-                      _buildStyledDetailRow(
-                        Icons.note_alt_outlined,
-                        l10n?.memo ?? 'Memo',
-                        item.memo,
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF8FAFC),
-                  borderRadius: const BorderRadius.only(
-                    bottomLeft: Radius.circular(20),
-                    bottomRight: Radius.circular(20),
-                  ),
-                ),
-                child: Column(
-                  children: [
-                    // 🔥 반응형 버튼 레이아웃
-                    LayoutBuilder(
-                      builder: (context, constraints) {
-                        final isSmallScreen = constraints.maxWidth < 350;
-
-                        if (isSmallScreen) {
-                          // 작은 화면: 세로로 배치
-                          return Column(
-                            children: [
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: SizedBox(
-                                      width: double.infinity,
-                                      height: 48,
-                                      child: ElevatedButton(
-                                        onPressed: () {
-                                          Navigator.pop(context);
-                                          _showRecommendRoute(item);
-                                        },
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: const Color(0xFF1E3A8A),
-                                          foregroundColor: Colors.white,
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(12),
-                                          ),
-                                          elevation: 2,
-                                        ),
-                                        child: Row(
-                                          mainAxisAlignment: MainAxisAlignment.center,
-                                          children: [
-                                            const Icon(Icons.directions, size: 18),
-                                            const SizedBox(width: 8),
-                                            const Text(
-                                              '추천경로',
-                                              style: TextStyle(
-                                                fontWeight: FontWeight.w600,
-                                                fontSize: 14,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: SizedBox(
-                                      width: double.infinity,
-                                      height: 48,
-                                      child: ElevatedButton(
-                                        onPressed: () {
-                                          debugPrint('🔘 위치 보기 버튼 클릭됨!');
-                                          Navigator.pop(context);
-                                          _showBuildingLocation(item);
-                                        },
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: const Color(0xFF3B82F6),
-                                          foregroundColor: Colors.white,
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(12),
-                                          ),
-                                          elevation: 2,
-                                        ),
-                                        child: Row(
-                                          mainAxisAlignment: MainAxisAlignment.center,
-                                          children: [
-                                            const Icon(Icons.location_on, size: 18),
-                                            const SizedBox(width: 8),
-                                            const Text(
-                                              '위치 보기',
-                                              style: TextStyle(
-                                                fontWeight: FontWeight.w600,
-                                                fontSize: 14,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 8),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: SizedBox(
-                                      width: double.infinity,
-                                      height: 48,
-                                      child: ElevatedButton(
-                                        onPressed: () {
-                                          Navigator.pop(context);
-                                          _showEditScheduleDialog(item);
-                                        },
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: const Color(0xFF64748B),
-                                          foregroundColor: Colors.white,
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(12),
-                                          ),
-                                          elevation: 2,
-                                        ),
-                                        child: Row(
-                                          mainAxisAlignment: MainAxisAlignment.center,
-                                          children: [
-                                            const Icon(Icons.edit, size: 18),
-                                            const SizedBox(width: 8),
-                                            Text(
-                                              l10n?.edit ?? 'Edit',
-                                              style: const TextStyle(
-                                                fontWeight: FontWeight.w600,
-                                                fontSize: 14,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  SizedBox(
-                                    width: 48,
-                                    height: 48,
-                                    child: ElevatedButton(
-                                      onPressed: () async {
-                                        Navigator.pop(context);
-                                        await _showDeleteConfirmDialog(item);
-                                      },
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: const Color(0xFFEF4444),
-                                        foregroundColor: Colors.white,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(12),
-                                        ),
-                                        elevation: 2,
-                                      ),
-                                      child: const Icon(Icons.delete, size: 18),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          );
-                        } else {
-                          // 큰 화면: 가로로 배치
-                          return Row(
-                            children: [
-                              Expanded(
-                                child: SizedBox(
-                                  height: 48,
-                                  child: ElevatedButton(
-                                    onPressed: () {
-                                      Navigator.pop(context);
-                                      _showRecommendRoute(item);
-                                    },
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: const Color(0xFF1E3A8A),
-                                      foregroundColor: Colors.white,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      elevation: 2,
-                                    ),
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        const Icon(Icons.directions, size: 18),
-                                        const SizedBox(width: 8),
-                                        const Text(
-                                          '추천경로',
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.w600,
-                                            fontSize: 14,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: SizedBox(
-                                  height: 48,
-                                  child: ElevatedButton(
-                                    onPressed: () {
-                                      debugPrint('🔘 위치 보기 버튼 클릭됨!');
-                                      Navigator.pop(context);
-                                      _showBuildingLocation(item);
-                                    },
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: const Color(0xFF3B82F6),
-                                      foregroundColor: Colors.white,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      elevation: 2,
-                                    ),
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        const Icon(Icons.location_on, size: 18),
-                                        const SizedBox(width: 8),
-                                        const Text(
-                                          '위치 보기',
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.w600,
-                                            fontSize: 14,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: SizedBox(
-                                  height: 48,
-                                  child: ElevatedButton(
-                                    onPressed: () {
-                                      Navigator.pop(context);
-                                      _showEditScheduleDialog(item);
-                                    },
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: const Color(0xFF64748B),
-                                      foregroundColor: Colors.white,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      elevation: 2,
-                                    ),
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        const Icon(Icons.edit, size: 18),
-                                        const SizedBox(width: 8),
-                                        Text(
-                                          l10n?.edit ?? 'Edit',
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.w600,
-                                            fontSize: 14,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              SizedBox(
-                                width: 48,
-                                height: 48,
-                                child: ElevatedButton(
-                                  onPressed: () async {
-                                    Navigator.pop(context);
-                                    await _showDeleteConfirmDialog(item);
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFFEF4444),
-                                    foregroundColor: Colors.white,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    elevation: 2,
-                                  ),
-                                  child: const Icon(Icons.delete, size: 18),
-                                ),
-                              ),
-                            ],
-                          );
-                        }
-                      },
-                    ),
-                    const SizedBox(height: 12),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 44,
-                      child: OutlinedButton(
-                        onPressed: () => Navigator.pop(context),
-                        style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: Color(0xFFE2E8F0)),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                        child: const Text(
-                          '닫기',
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          item.title,
                           style: TextStyle(
-                            color: Color(0xFF64748B),
-                            fontWeight: FontWeight.w600,
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
+                            color: item.color,
                           ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '${_getDayName(item.dayOfWeek)} ${item.startTime} - ${item.endTime}',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: item.color.withOpacity(0.8),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                children: [
+                  _buildStyledDetailRow(
+                    Icons.person,
+                    l10n.professor_name,
+                    item.professor,
+                  ),
+                  const SizedBox(height: 16),
+                  _buildStyledDetailRow(
+                    Icons.business,
+                    l10n.building_name,
+                    item.buildingName,
+                  ),
+                  const SizedBox(height: 16),
+                  _buildStyledDetailRow(
+                    Icons.layers,
+                    l10n.floor_number,
+                    item.floorNumber,
+                  ),
+                  const SizedBox(height: 16),
+                  _buildStyledDetailRow(
+                    Icons.meeting_room,
+                    l10n.room_name,
+                    item.roomName,
+                  ),
+                  const SizedBox(height: 16),
+                  _buildStyledDetailRow(
+                    Icons.calendar_today,
+                    l10n.day_of_week,
+                    _getDayName(item.dayOfWeek),
+                  ),
+                  const SizedBox(height: 16),
+                  _buildStyledDetailRow(
+                    Icons.access_time,
+                    l10n.time,
+                    '${item.startTime} - ${item.endTime}',
+                  ),
+                  if (item.memo.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    _buildStyledDetailRow(
+                      Icons.note_alt_outlined,
+                      l10n.memo,
+                      item.memo,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(20),
+                  bottomRight: Radius.circular(20),
+                ),
+              ),
+              child: Column(
+                children: [
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final isSmallScreen = constraints.maxWidth < 350;
+
+                      Widget recommendRouteButton = ElevatedButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          _showRecommendRoute(item);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF1E3A8A),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 2,
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.directions, size: 18),
+                            const SizedBox(width: 8),
+                            Text(
+                              l10n.recommend_route,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+
+                      Widget viewLocationButton = ElevatedButton(
+                        onPressed: () {
+                          debugPrint('🔘 위치 보기 버튼 클릭됨!');
+                          Navigator.pop(context);
+                          _showBuildingLocation(item);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF3B82F6),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 2,
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.location_on, size: 18),
+                            const SizedBox(width: 8),
+                            Text(
+                              l10n.view_location,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+
+                      Widget editButton = ElevatedButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          _showEditScheduleDialog(item);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF64748B),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 2,
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.edit, size: 18),
+                            const SizedBox(width: 8),
+                            Text(
+                              l10n.edit,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+
+                      Widget deleteButton = ElevatedButton(
+                        onPressed: () async {
+                          Navigator.pop(context);
+                          await _showDeleteConfirmDialog(item);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFEF4444),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 2,
+                        ),
+                        child: const Icon(Icons.delete, size: 18),
+                      );
+
+                      if (isSmallScreen) {
+                        return Column(
+                          children: [
+                            Row(
+                              children: [
+                                Expanded(child: SizedBox(height: 48, child: recommendRouteButton)),
+                                const SizedBox(width: 8),
+                                Expanded(child: SizedBox(height: 48, child: viewLocationButton)),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                Expanded(child: SizedBox(height: 48, child: editButton)),
+                                const SizedBox(width: 8),
+                                SizedBox(width: 48, height: 48, child: deleteButton),
+                              ],
+                            ),
+                          ],
+                        );
+                      } else {
+                        return Row(
+                          children: [
+                            Expanded(child: SizedBox(height: 48, child: recommendRouteButton)),
+                            const SizedBox(width: 8),
+                            Expanded(child: SizedBox(height: 48, child: viewLocationButton)),
+                            const SizedBox(width: 8),
+                            Expanded(child: SizedBox(height: 48, child: editButton)),
+                            const SizedBox(width: 8),
+                            SizedBox(width: 48, height: 48, child: deleteButton),
+                          ],
+                        );
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 44,
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Color(0xFFE2E8F0)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      child: Text(
+                        l10n.close,
+                        style: const TextStyle(
+                          color: Color(0xFF64748B),
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
-    );
+    ),
+  );
   }
 }
-
-
 
 // 간단하고 직관적인 엑셀 업로드 다이얼로그
 void _showSimpleExcelUploadDialog(BuildContext context, String userId, Future<void> Function() refreshCallback) {
