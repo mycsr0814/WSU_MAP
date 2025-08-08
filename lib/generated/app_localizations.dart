@@ -304,6 +304,138 @@ abstract class AppLocalizations {
   /// **'{feature} feature is coming soon.\nIt will be added soon.'**
   String feature_coming_soon(String feature);
 
+  /// No description provided for @departurePoint.
+  ///
+  /// In en, this message translates to:
+  /// **'Departure'**
+  String get departurePoint;
+
+  /// No description provided for @arrivalPoint.
+  ///
+  /// In en, this message translates to:
+  /// **'Arrival'**
+  String get arrivalPoint;
+
+  /// No description provided for @all.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get all;
+
+  /// No description provided for @tutorial.
+  ///
+  /// In en, this message translates to:
+  /// **'Tutorial'**
+  String get tutorial;
+
+  /// No description provided for @tutorialTitleIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'How to Use TaraWoosong'**
+  String get tutorialTitleIntro;
+
+  /// No description provided for @tutorialDescIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Make your campus life easier with Woosong University Campus Navigator.'**
+  String get tutorialDescIntro;
+
+  /// No description provided for @tutorialTitleSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Detailed Search Function'**
+  String get tutorialTitleSearch;
+
+  /// No description provided for @tutorialDescSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'You can search not only buildings but also lecture rooms at Woosong University!\nFind detailed information including lecture room location and facilities 😊'**
+  String get tutorialDescSearch;
+
+  /// No description provided for @tutorialTitleSchedule.
+  ///
+  /// In en, this message translates to:
+  /// **'Schedule Integration'**
+  String get tutorialTitleSchedule;
+
+  /// No description provided for @tutorialDescSchedule.
+  ///
+  /// In en, this message translates to:
+  /// **'Link your class schedule to the app and get optimized routes to your next class automatically.'**
+  String get tutorialDescSchedule;
+
+  /// No description provided for @tutorialTitleDirections.
+  ///
+  /// In en, this message translates to:
+  /// **'Directions'**
+  String get tutorialTitleDirections;
+
+  /// No description provided for @tutorialDescDirections.
+  ///
+  /// In en, this message translates to:
+  /// **'Get accurate route guidance within campus and arrive at your destination easily and quickly.'**
+  String get tutorialDescDirections;
+
+  /// No description provided for @tutorialTitleIndoorMap.
+  ///
+  /// In en, this message translates to:
+  /// **'Indoor Building Map'**
+  String get tutorialTitleIndoorMap;
+
+  /// No description provided for @tutorialDescIndoorMap.
+  ///
+  /// In en, this message translates to:
+  /// **'Find lecture rooms and amenities easily with detailed indoor maps of the buildings.'**
+  String get tutorialDescIndoorMap;
+
+  /// No description provided for @dontShowAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Don\'t show again'**
+  String get dontShowAgain;
+
+  /// No description provided for @goBack.
+  ///
+  /// In en, this message translates to:
+  /// **'Go Back'**
+  String get goBack;
+
+  /// No description provided for @lectureRoom.
+  ///
+  /// In en, this message translates to:
+  /// **'Lecture Room'**
+  String get lectureRoom;
+
+  /// No description provided for @lectureRoomInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Lecture Room Info'**
+  String get lectureRoomInfo;
+
+  /// No description provided for @floor.
+  ///
+  /// In en, this message translates to:
+  /// **'Floor'**
+  String get floor;
+
+  /// No description provided for @personInCharge.
+  ///
+  /// In en, this message translates to:
+  /// **'Person in Charge'**
+  String get personInCharge;
+
+  /// No description provided for @viewLectureRoom.
+  ///
+  /// In en, this message translates to:
+  /// **'View Lecture Room'**
+  String get viewLectureRoom;
+
+  /// No description provided for @viewBuilding.
+  ///
+  /// In en, this message translates to:
+  /// **'View Building'**
+  String get viewBuilding;
+
   /// No description provided for @walk.
   ///
   /// In en, this message translates to:
@@ -837,12 +969,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Friends'**
   String get friends;
-
-  /// No description provided for @tutorial.
-  ///
-  /// In en, this message translates to:
-  /// **'Tutorial'**
-  String get tutorial;
 
   /// No description provided for @finish.
   ///
@@ -2446,6 +2572,48 @@ abstract class AppLocalizations {
   /// **'Move to {place}'**
   String instructionMoveToDestination(String place);
 
+  /// No description provided for @errorCannotOpenPhoneApp.
+  ///
+  /// In en, this message translates to:
+  /// **'Cannot open the phone app.'**
+  String get errorCannotOpenPhoneApp;
+
+  /// No description provided for @emailCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Email copied to clipboard.'**
+  String get emailCopied;
+
+  /// No description provided for @description.
+  ///
+  /// In en, this message translates to:
+  /// **'Description'**
+  String get description;
+
+  /// No description provided for @noDetailedInfoRegistered.
+  ///
+  /// In en, this message translates to:
+  /// **'No detailed information registered.'**
+  String get noDetailedInfoRegistered;
+
+  /// No description provided for @setDeparture.
+  ///
+  /// In en, this message translates to:
+  /// **'Set as Departure'**
+  String get setDeparture;
+
+  /// No description provided for @setArrival.
+  ///
+  /// In en, this message translates to:
+  /// **'Set as Arrival'**
+  String get setArrival;
+
+  /// No description provided for @errorOccurred.
+  ///
+  /// In en, this message translates to:
+  /// **'An error occurred: {error}'**
+  String errorOccurred(Object error);
+
   /// No description provided for @instructionExitToOutdoor.
   ///
   /// In en, this message translates to:
@@ -3357,12 +3525,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Floor Plan'**
   String get floor_plan;
-
-  /// No description provided for @floor.
-  ///
-  /// In en, this message translates to:
-  /// **'Floor'**
-  String get floor;
 
   /// No description provided for @indoorMap.
   ///

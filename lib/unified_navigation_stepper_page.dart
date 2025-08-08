@@ -116,52 +116,53 @@ class _UnifiedNavigationStepperPageState extends State<UnifiedNavigationStepperP
   }
 
   @override
-  Widget build(BuildContext context) {
-    final currentStep = _steps[_currentStepIndex];
-    final isLastStep = _currentStepIndex == _steps.length - 1;
-    final l10n = AppLocalizations.of(context)!;
+Widget build(BuildContext context) {
+  final currentStep = _steps[_currentStepIndex];
+  final isLastStep = _currentStepIndex == _steps.length - 1;
+  final l10n = AppLocalizations.of(context)!;
 
-    Widget content;
-    if (currentStep.type == StepType.indoor) {
-      content = BuildingMapPage(
-        buildingName: currentStep.building,
-        navigationNodeIds: currentStep.nodeIds,
-        isArrivalNavigation: currentStep.isArrival,
-      );
-    } else {
-      content = OutdoorMapPage(
-        path: convertToNLatLngList(currentStep.outdoorPath!),
-        distance: currentStep.outdoorDistance!,
-        showMarkers: true,
-        startLabel: '출발지',
-        endLabel: '도착지',
-      );
-    }
+  Widget content;
+  if (currentStep.type == StepType.indoor) {
+    content = BuildingMapPage(
+      buildingName: currentStep.building,
+      navigationNodeIds: currentStep.nodeIds,
+      isArrivalNavigation: currentStep.isArrival,
+    );
+  } else {
+    content = OutdoorMapPage(
+      path: convertToNLatLngList(currentStep.outdoorPath!),
+      distance: currentStep.outdoorDistance!,
+      showMarkers: true,
+      startLabel: l10n.departurePoint,  // 언어 변경 적용
+      endLabel: l10n.arrivalPoint,      // 언어 변경 적용
+    );
+  }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(_getCurrentStepTitle()),
-        backgroundColor: Colors.indigo, // 실내/실외 모두 동일 색상 적용
-        elevation: 0,
-        actions: [
-          Center(
-            child: Padding(
-              padding: const EdgeInsets.only(right: 16),
-              child: Text(
-                '${_currentStepIndex + 1}/${_steps.length}',
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                ),
+  // 나머지 build 내용 유지
+  return Scaffold(
+    appBar: AppBar(
+      title: Text(_getCurrentStepTitle()),
+      backgroundColor: Colors.indigo,
+      elevation: 0,
+      actions: [
+        Center(
+          child: Padding(
+            padding: const EdgeInsets.only(right: 16),
+            child: Text(
+              '${_currentStepIndex + 1}/${_steps.length}',
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ),
-        ],
-      ),
-      body: content,
-      bottomNavigationBar: _buildSimpleBottomBar(currentStep, isLastStep),
-    );
-  }
+        ),
+      ],
+    ),
+    body: content,
+    bottomNavigationBar: _buildSimpleBottomBar(currentStep, isLastStep),
+  );
+}
 
   String _getCurrentStepTitle() {
     final currentStep = _steps[_currentStepIndex];

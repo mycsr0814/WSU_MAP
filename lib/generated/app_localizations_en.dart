@@ -114,6 +114,77 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get departurePoint => 'Departure';
+
+  @override
+  String get arrivalPoint => 'Arrival';
+
+  @override
+  String get all => 'All';
+
+  @override
+  String get tutorial => 'Tutorial';
+
+  @override
+  String get tutorialTitleIntro => 'How to Use TaraWoosong';
+
+  @override
+  String get tutorialDescIntro =>
+      'Make your campus life easier with Woosong University Campus Navigator.';
+
+  @override
+  String get tutorialTitleSearch => 'Detailed Search Function';
+
+  @override
+  String get tutorialDescSearch =>
+      'You can search not only buildings but also lecture rooms at Woosong University!\nFind detailed information including lecture room location and facilities 😊';
+
+  @override
+  String get tutorialTitleSchedule => 'Schedule Integration';
+
+  @override
+  String get tutorialDescSchedule =>
+      'Link your class schedule to the app and get optimized routes to your next class automatically.';
+
+  @override
+  String get tutorialTitleDirections => 'Directions';
+
+  @override
+  String get tutorialDescDirections =>
+      'Get accurate route guidance within campus and arrive at your destination easily and quickly.';
+
+  @override
+  String get tutorialTitleIndoorMap => 'Indoor Building Map';
+
+  @override
+  String get tutorialDescIndoorMap =>
+      'Find lecture rooms and amenities easily with detailed indoor maps of the buildings.';
+
+  @override
+  String get dontShowAgain => 'Don\'t show again';
+
+  @override
+  String get goBack => 'Go Back';
+
+  @override
+  String get lectureRoom => 'Lecture Room';
+
+  @override
+  String get lectureRoomInfo => 'Lecture Room Info';
+
+  @override
+  String get floor => 'Floor';
+
+  @override
+  String get personInCharge => 'Person in Charge';
+
+  @override
+  String get viewLectureRoom => 'View Lecture Room';
+
+  @override
+  String get viewBuilding => 'View Building';
+
+  @override
   String get walk => 'Walk';
 
   @override
@@ -395,9 +466,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get friends => 'Friends';
-
-  @override
-  String get tutorial => 'Tutorial';
 
   @override
   String get finish => 'Finish';
@@ -1255,6 +1323,29 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get errorCannotOpenPhoneApp => 'Cannot open the phone app.';
+
+  @override
+  String get emailCopied => 'Email copied to clipboard.';
+
+  @override
+  String get description => 'Description';
+
+  @override
+  String get noDetailedInfoRegistered => 'No detailed information registered.';
+
+  @override
+  String get setDeparture => 'Set as Departure';
+
+  @override
+  String get setArrival => 'Set as Arrival';
+
+  @override
+  String errorOccurred(Object error) {
+    return 'An error occurred: $error';
+  }
+
+  @override
   String get instructionExitToOutdoor => 'Move to building exit';
 
   @override
@@ -1749,9 +1840,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get floor_plan => 'Floor Plan';
-
-  @override
-  String get floor => 'Floor';
 
   @override
   String get indoorMap => 'Indoor Map';

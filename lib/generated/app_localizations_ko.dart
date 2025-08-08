@@ -113,6 +113,74 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
+  String get departurePoint => '출발지';
+
+  @override
+  String get arrivalPoint => '도착지';
+
+  @override
+  String get all => '전체';
+
+  @override
+  String get tutorial => '사용법';
+
+  @override
+  String get tutorialTitleIntro => '따라우송 사용법';
+
+  @override
+  String get tutorialDescIntro => '우송대학교 캠퍼스 네비게이터로\n캠퍼스 생활을 더욱 편리하게 만들어보세요';
+
+  @override
+  String get tutorialTitleSearch => '디테일한 검색 기능';
+
+  @override
+  String get tutorialDescSearch =>
+      '우송대에서는 건물뿐만이 아닌 강의실도 검색이 가능해요!\n강의실의 위치부터 편의시설까지 디테일하게 검색해 보세요 😊';
+
+  @override
+  String get tutorialTitleSchedule => '시간표 연동';
+
+  @override
+  String get tutorialDescSchedule =>
+      '수업 시간표를 앱에 연동하여\n다음 수업까지의 최적 경로를 자동으로 안내받으세요';
+
+  @override
+  String get tutorialTitleDirections => '길찾기';
+
+  @override
+  String get tutorialDescDirections => '캠퍼스 내 정확한 경로 안내로\n목적지까지 쉽고 빠르게 도착하세요';
+
+  @override
+  String get tutorialTitleIndoorMap => '건물 내부 도면';
+
+  @override
+  String get tutorialDescIndoorMap => '건물 내부의 상세한 도면으로\n강의실과 편의시설을 쉽게 찾아보세요';
+
+  @override
+  String get dontShowAgain => '다시 보지 않기';
+
+  @override
+  String get goBack => '돌아가기';
+
+  @override
+  String get lectureRoom => '강의실';
+
+  @override
+  String get lectureRoomInfo => '강의실 정보';
+
+  @override
+  String get floor => '층';
+
+  @override
+  String get personInCharge => '담당자';
+
+  @override
+  String get viewLectureRoom => '강의실보기';
+
+  @override
+  String get viewBuilding => '건물보기';
+
+  @override
   String get walk => '도보';
 
   @override
@@ -384,9 +452,6 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get friends => '친구';
-
-  @override
-  String get tutorial => '사용법';
 
   @override
   String get finish => '완료';
@@ -1231,6 +1296,29 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
+  String get errorCannotOpenPhoneApp => '전화앱을 열 수 없습니다.';
+
+  @override
+  String get emailCopied => '이메일이 복사되었습니다.';
+
+  @override
+  String get description => '설명';
+
+  @override
+  String get noDetailedInfoRegistered => '등록된 상세 정보가 없습니다.';
+
+  @override
+  String get setDeparture => '출발지 설정';
+
+  @override
+  String get setArrival => '도착지 설정';
+
+  @override
+  String errorOccurred(Object error) {
+    return '오류가 발생했습니다: $error';
+  }
+
+  @override
   String get instructionExitToOutdoor => '실외로 나가세요';
 
   @override
@@ -1537,7 +1625,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get developer => '개발자';
 
   @override
-  String get developer_name => '이름: 홍길동';
+  String get developer_name => '팀원: 정진영, 박철현, 조현준, 최성열, 한승헌, 이예은';
 
   @override
   String get developer_email => '이메일: example@email.com';
@@ -1713,9 +1801,6 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get floor_plan => '도면';
-
-  @override
-  String get floor => '층';
 
   @override
   String get indoorMap => '내부도면';

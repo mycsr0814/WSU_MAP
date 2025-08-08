@@ -137,34 +137,32 @@ class _CreateInquiryTabState extends State<CreateInquiryTab> {
     });
   }
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (_isDisposed) return;
-    
-    final l10n = AppLocalizations.of(context)!;
-    
-    // 🔥 고정된 한국어 코드와 다국어 텍스트 매핑
-    _inquiryTypeMapping = {
-      'place_error': l10n.inquiry_category_place_error,
-      'bug': l10n.inquiry_category_bug,
-      'feature': l10n.inquiry_category_feature,
-      'route_error': l10n.inquiry_category_route_error,
-      'other': l10n.inquiry_category_other,
-    };
-    
-    // 🔥 매핑 설정 시 로그 출력
-    debugPrint('=== 문의 카테고리 매핑 설정 ===');
-    debugPrint('현재 언어: ${Localizations.localeOf(context)}');
-    debugPrint('현재 로컬라이제이션: ${l10n.runtimeType}');
-    debugPrint('매핑 상세 확인:');
-    _inquiryTypeMapping.forEach((key, value) {
-      debugPrint('  키: "$key" -> 값: "$value"');
-      debugPrint('    키 타입: ${key.runtimeType}, 길이: ${key.length}');
-      debugPrint('    값 타입: ${value.runtimeType}, 길이: ${value.length}');
-    });
-    debugPrint('============================');
-  }
+@override
+void didChangeDependencies() {
+  super.didChangeDependencies();
+  if (_isDisposed) return;
+
+  final l10n = AppLocalizations.of(context)!;
+
+  _inquiryTypeMapping = {
+    'place_error': l10n.inquiry_category_place_error,
+    'bug': l10n.inquiry_category_bug,
+    'feature': l10n.inquiry_category_feature,
+    'route_error': l10n.inquiry_category_route_error,
+    'other': l10n.inquiry_category_other,
+  };
+
+  debugPrint('=== 문의 카테고리 매핑 설정 ===');
+  debugPrint('현재 언어: ${Localizations.localeOf(context)}');
+  debugPrint('현재 로컬라이제이션 타입: ${l10n.runtimeType}');
+  debugPrint('매핑 상세 확인:');
+  _inquiryTypeMapping.forEach((key, value) {
+    debugPrint('  키: "$key" -> 값: "$value"');
+  });
+  debugPrint('============================');
+  
+}
+
 
   /// 서버 경로 테스트
   void _testServerRoutes() {
@@ -953,50 +951,52 @@ class _MyInquiriesTabState extends State<MyInquiriesTab> {
   }
 
   Future<void> _loadInquiries() async {
-    if (_isDisposed) return;
-    
-    setState(() {
-      _isLoading = true;
-    });
+  if (_isDisposed) return;
 
-    try {
-      debugPrint('=== 내 문의 탭에서 문의 목록 로드 시작 ===');
-      debugPrint('현재 사용자 ID: ${widget.userAuth.userId}');
-      debugPrint('현재 사용자 정보: ${widget.userAuth.toString()}');
+  setState(() {
+    _isLoading = true;
+  });
 
-      final inquiries = await InquiryService.getInquiries(
-        widget.userAuth.userId!,
+  try {
+    debugPrint('=== 내 문의 탭에서 문의 목록 로드 시작 ===');
+    debugPrint('현재 사용자 ID: ${widget.userAuth.userId}');
+    debugPrint('현재 사용자 정보: ${widget.userAuth.toString()}');
+
+    final inquiries = await InquiryService.getInquiries(
+      widget.userAuth.userId!,
+    );
+
+    debugPrint('받아온 문의 개수: ${inquiries.length}');
+    debugPrint(
+      '받아온 문의 목록: ${inquiries.map((e) => '${e.title} (${e.status})').toList()}',
+    );
+
+    if (!_isDisposed) {
+      setState(() {
+        _inquiries = inquiries;
+      });
+      debugPrint('setState 후 _inquiries 길이: ${_inquiries.length}');
+    }
+  } catch (e, stackTrace) {
+    debugPrint('문의 목록 로드 중 오류: $e');
+    debugPrint(stackTrace.toString());
+    if (!_isDisposed) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('문의 목록을 불러오는데 실패했습니다: $e'),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 4),
+        ),
       );
-
-      debugPrint('받아온 문의 개수: ${inquiries.length}');
-      debugPrint(
-        '받아온 문의 목록: ${inquiries.map((e) => '${e.title} (${e.status})').toList()}',
-      );
-
-      if (!_isDisposed) {
-        setState(() {
-          _inquiries = inquiries;
-          debugPrint('setState 후 _inquiries 길이: ${_inquiries.length}');
-        });
-      }
-    } catch (e) {
-      debugPrint('문의 목록 로드 중 오류: $e');
-      if (!_isDisposed) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('문의 목록을 불러오는데 실패했습니다: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } finally {
-      if (!_isDisposed) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+    }
+  } finally {
+    if (!_isDisposed) {
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
+}
 
   // 새로고침 메서드 추가
   Future<void> refreshInquiries() async {
@@ -1484,8 +1484,9 @@ class _MyInquiriesTabState extends State<MyInquiriesTab> {
 
 String _getLocalizedCategory(String category) {
   final l10n = AppLocalizations.of(context)!;
+  final normalized = category.toLowerCase();
 
-  switch (category) {
+  switch (normalized) {
     case 'place_error':
       return l10n.inquiry_category_place_error;
     case 'bug':
@@ -1497,8 +1498,7 @@ String _getLocalizedCategory(String category) {
     case 'other':
       return l10n.inquiry_category_other;
     default:
-      return category; // 알 수 없는 값은 그냥 그대로 출력
+      return category; // 알 수 없는 값은 원본 반환
   }
 }
-
 }

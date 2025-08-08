@@ -49,64 +49,80 @@ class RoomSelectionDialog extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // 헤더 섹션 (그라데이션 배경)
-              Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(22),
-                    topRight: Radius.circular(22),
-                  ),
-                  gradient: const LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [Color(0xFF1E3A8A), Color(0xFF3B82F6)],
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(16),
+              // 헤더 섹션 (그라데이션 배경) + 오른쪽 위 X 버튼 추가
+              Stack(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(22),
+                        topRight: Radius.circular(22),
                       ),
-                      child: const Icon(
-                        Icons.room,
-                        color: Colors.white,
-                        size: 28,
+                      gradient: const LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [Color(0xFF1E3A8A), Color(0xFF3B82F6)],
                       ),
                     ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            roomResult.displayName ?? '강의실',
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                              letterSpacing: -0.5,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(16),
                           ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '강의실 정보',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.white.withOpacity(0.8),
-                              fontWeight: FontWeight.w500,
-                            ),
+                          child: const Icon(
+                            Icons.room,
+                            color: Colors.white,
+                            size: 28,
                           ),
-                        ],
-                      ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                roomResult.displayName ?? l10n.lectureRoom,
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                  letterSpacing: -0.5,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                l10n.lectureRoomInfo,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.white.withOpacity(0.8),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+
+                  // 오른쪽 위 X 버튼
+                  Positioned(
+                    right: 8,
+                    top: 8,
+                    child: IconButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: const Icon(Icons.close, color: Colors.white),
+                      tooltip: l10n.cancel,
+                      splashRadius: 20,
+                    ),
+                  ),
+                ],
               ),
 
               // 내용 섹션
@@ -136,8 +152,7 @@ class RoomSelectionDialog extends StatelessWidget {
                             ),
                             const SizedBox(height: 12),
                           ],
-                          if (roomResult.roomDescription?.isNotEmpty ==
-                              true) ...[
+                          if (roomResult.roomDescription?.isNotEmpty == true) ...[
                             _buildInfoRow(
                               Icons.info_outline,
                               roomResult.roomDescription!,
@@ -148,7 +163,7 @@ class RoomSelectionDialog extends StatelessWidget {
                           if (roomResult.roomUser?.isNotEmpty == true) ...[
                             _buildInfoRow(
                               Icons.person_outline,
-                              '담당자: ${roomResult.roomUser!.join(", ")}',
+                              '${l10n.personInCharge}: ${roomResult.roomUser!.join(", ")}',
                               const Color(0xFFF59E0B),
                             ),
                           ],
@@ -165,7 +180,7 @@ class RoomSelectionDialog extends StatelessWidget {
                           child: _buildActionButton(
                             onPressed: onNavigateToIndoorMap,
                             icon: Icons.map_outlined,
-                            label: '강의실보기',
+                            label: l10n.viewLectureRoom,
                             isPrimary: true,
                           ),
                         ),
@@ -174,7 +189,7 @@ class RoomSelectionDialog extends StatelessWidget {
                           child: _buildActionButton(
                             onPressed: onShowBuildingMarker,
                             icon: Icons.location_on_outlined,
-                            label: '건물보기',
+                            label: l10n.viewBuilding,
                             isPrimary: false,
                           ),
                         ),
@@ -183,27 +198,7 @@ class RoomSelectionDialog extends StatelessWidget {
 
                     const SizedBox(height: 16),
 
-                    // 취소 버튼
-                    SizedBox(
-                      width: double.infinity,
-                      child: TextButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        style: TextButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: Text(
-                          l10n.cancel,
-                          style: const TextStyle(
-                            color: Color(0xFF6B7280),
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ),
+                    // 기존 취소 버튼 삭제
                   ],
                 ),
               ),

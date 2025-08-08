@@ -3,6 +3,7 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/generated/app_localizations.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:http/http.dart' as http;
 
@@ -1687,32 +1688,35 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
   }
 
   /// 🔥 카테고리 칩 위젯 (컴팩트 버전)
-  Widget _buildCategoryChips() {
-    return ListView.builder(
-      scrollDirection: Axis.horizontal,
-      itemCount: _availableCategories.length + 1, // +1 for "전체" 버튼
-      itemBuilder: (context, index) {
-        if (index == 0) {
-          // "전체" 버튼
-          return Padding(
-            padding: const EdgeInsets.only(right: 4),
-            child: _buildCategoryChip('전체', null, _showAllCategories),
-          );
-        } else {
-          final category = _availableCategories[index - 1];
-          final isSelected = _selectedCategories.contains(category);
-          return Padding(
-            padding: const EdgeInsets.only(right: 4),
-            child: _buildCategoryChip(
-              _getCategoryDisplayName(category),
-              category,
-              isSelected,
-            ),
-          );
-        }
-      },
-    );
-  }
+Widget _buildCategoryChips() {
+  final l10n = AppLocalizations.of(context)!;
+
+  return ListView.builder(
+    scrollDirection: Axis.horizontal,
+    itemCount: _availableCategories.length + 1, // +1 for "전체" 버튼
+    itemBuilder: (context, index) {
+      if (index == 0) {
+        // "전체" 버튼
+        return Padding(
+          padding: const EdgeInsets.only(right: 4),
+          child: _buildCategoryChip(l10n.all, null, _showAllCategories),
+        );
+      } else {
+        final category = _availableCategories[index - 1];
+        final isSelected = _selectedCategories.contains(category);
+        return Padding(
+          padding: const EdgeInsets.only(right: 4),
+          child: _buildCategoryChip(
+            _getCategoryDisplayName(category),
+            category,
+            isSelected,
+          ),
+        );
+      }
+    },
+  );
+}
+
 
   /// 🔥 카테고리 칩 (컴팩트 버전)
   Widget _buildCategoryChip(

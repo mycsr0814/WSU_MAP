@@ -113,6 +113,72 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String get departurePoint => '出发点';
+
+  @override
+  String get arrivalPoint => '目的地';
+
+  @override
+  String get all => '全部';
+
+  @override
+  String get tutorial => '教程';
+
+  @override
+  String get tutorialTitleIntro => 'TaraWoosong 使用方法';
+
+  @override
+  String get tutorialDescIntro => '使用宇松大学校园导航器，让您的校园生活更加便利。';
+
+  @override
+  String get tutorialTitleSearch => '详细搜索功能';
+
+  @override
+  String get tutorialDescSearch => '在宇松大学，您不仅可以搜索建筑物，还可以搜索教室！\n详细了解教室的位置及设施 😊';
+
+  @override
+  String get tutorialTitleSchedule => '课表同步';
+
+  @override
+  String get tutorialDescSchedule => '将课程时间表同步到应用程序，自动为您规划到下一节课的最佳路线。';
+
+  @override
+  String get tutorialTitleDirections => '路线指引';
+
+  @override
+  String get tutorialDescDirections => '校园内精准的路线指导，让您轻松快速抵达目的地。';
+
+  @override
+  String get tutorialTitleIndoorMap => '楼宇内部地图';
+
+  @override
+  String get tutorialDescIndoorMap => '通过详细的楼宇内部地图，轻松查找教室和便利设施。';
+
+  @override
+  String get dontShowAgain => '不再显示';
+
+  @override
+  String get goBack => '返回';
+
+  @override
+  String get lectureRoom => '教室';
+
+  @override
+  String get lectureRoomInfo => '教室信息';
+
+  @override
+  String get floor => '层';
+
+  @override
+  String get personInCharge => '负责人';
+
+  @override
+  String get viewLectureRoom => '查看教室';
+
+  @override
+  String get viewBuilding => '查看楼宇';
+
+  @override
   String get walk => '步行';
 
   @override
@@ -197,10 +263,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get help_building_map_description => '使用详细的楼层地图轻松找到教室和设施。';
 
   @override
-  String get previous => '上一个';
+  String get previous => '上一页';
 
   @override
-  String get next => '下一个';
+  String get next => '下一页';
 
   @override
   String get done => '完成';
@@ -263,7 +329,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get phone => '电话';
 
   @override
-  String get email => '邮箱';
+  String get email => '电子邮件';
 
   @override
   String get student_number => '学号';
@@ -378,9 +444,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get friends => '好友';
-
-  @override
-  String get tutorial => '使用教程';
 
   @override
   String get finish => '完成';
@@ -679,7 +742,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get offline => '离线';
 
   @override
-  String get contact => '联系';
+  String get contact => '联系方式';
 
   @override
   String get noContactInfo => '无联系信息';
@@ -1224,6 +1287,29 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String get errorCannotOpenPhoneApp => '无法打开电话应用程序。';
+
+  @override
+  String get emailCopied => '电子邮件已复制到剪贴板。';
+
+  @override
+  String get description => '描述';
+
+  @override
+  String get noDetailedInfoRegistered => '未注册详细信息。';
+
+  @override
+  String get setDeparture => '设置为出发地';
+
+  @override
+  String get setArrival => '设置为目的地';
+
+  @override
+  String errorOccurred(Object error) {
+    return '发生错误：$error';
+  }
+
+  @override
   String get instructionExitToOutdoor => '移动到建筑出口';
 
   @override
@@ -1716,9 +1802,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get floor_plan => 'Floor Plan';
-
-  @override
-  String get floor => '层';
 
   @override
   String get indoorMap => '室内地图';

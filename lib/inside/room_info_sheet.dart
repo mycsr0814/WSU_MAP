@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_application_1/generated/app_localizations.dart';
 import 'room_info.dart';
 
 class RoomInfoSheet extends StatelessWidget {
@@ -31,7 +32,7 @@ class RoomInfoSheet extends StatelessWidget {
             children: [
               const Icon(Icons.error_outline, color: Colors.white, size: 20),
               const SizedBox(width: 12),
-              const Expanded(child: Text('전화앱을 열 수 없습니다.')),
+              Expanded(child: Text(AppLocalizations.of(context)!.errorCannotOpenPhoneApp)),
             ],
           ),
           backgroundColor: const Color(0xFFEF4444),
@@ -55,7 +56,7 @@ class RoomInfoSheet extends StatelessWidget {
             children: [
               const Icon(Icons.check_circle, color: Colors.white, size: 20),
               const SizedBox(width: 12),
-              const Expanded(child: Text('이메일이 복사되었습니다.')),
+              Expanded(child: Text(AppLocalizations.of(context)!.emailCopied)),
             ],
           ),
           backgroundColor: const Color(0xFF10B981),
@@ -67,7 +68,13 @@ class RoomInfoSheet extends StatelessWidget {
   }
 
   // 🔥 친구창과 동일한 상세 정보 행 위젯
-  Widget _buildDetailRow(IconData icon, String label, String value, {bool isClickable = false, VoidCallback? onTap}) {
+  Widget _buildDetailRow(
+    IconData icon,
+    String label,
+    String value, {
+    bool isClickable = false,
+    VoidCallback? onTap,
+  }) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -115,6 +122,8 @@ class RoomInfoSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context);
+
     return Container(
       decoration: const BoxDecoration(
         color: Colors.white,
@@ -214,7 +223,7 @@ class RoomInfoSheet extends StatelessWidget {
                 if (roomInfo.desc.trim().isNotEmpty) ...[
                   _buildDetailRow(
                     Icons.description,
-                    '설명',
+                    loc!.description,
                     roomInfo.desc.trim(),
                   ),
                   const SizedBox(height: 16),
@@ -224,53 +233,54 @@ class RoomInfoSheet extends StatelessWidget {
                 if (roomInfo.users.where((u) => u.trim().isNotEmpty).isNotEmpty) ...[
                   _buildDetailRow(
                     Icons.person,
-                    '담당자',
-                    roomInfo.users
-                        .where((u) => u.trim().isNotEmpty)
-                        .map((u) => u.trim())
-                        .join(", "),
+                    loc!.personInCharge,
+                    roomInfo.users.where((u) => u.trim().isNotEmpty).map((u) => u.trim()).join(", "),
                   ),
                   const SizedBox(height: 16),
                 ],
 
                 // 전화번호들
-                if (roomInfo.phones != null) 
+                if (roomInfo.phones != null)
                   ...roomInfo.phones!
                       .where((p) => p.trim().isNotEmpty)
                       .map((p) => p.trim())
-                      .map((phone) => Column(
-                        children: [
-                          _buildDetailRow(
-                            Icons.phone,
-                            '연락처',
-                            phone,
-                            isClickable: true,
-                            onTap: () => _handlePhone(context, phone),
-                          ),
-                          const SizedBox(height: 16),
-                        ],
-                      )),
+                      .map(
+                        (phone) => Column(
+                          children: [
+                            _buildDetailRow(
+                              Icons.phone,
+                              loc!.contact,
+                              phone,
+                              isClickable: true,
+                              onTap: () => _handlePhone(context, phone),
+                            ),
+                            const SizedBox(height: 16),
+                          ],
+                        ),
+                      ),
 
                 // 이메일들
-                if (roomInfo.emails != null) 
+                if (roomInfo.emails != null)
                   ...roomInfo.emails!
                       .where((e) => e.trim().isNotEmpty)
                       .map((e) => e.trim())
-                      .map((email) => Column(
-                        children: [
-                          _buildDetailRow(
-                            Icons.email,
-                            '이메일',
-                            email,
-                            isClickable: true,
-                            onTap: () => _handleEmail(context, email),
-                          ),
-                          const SizedBox(height: 16),
-                        ],
-                      )),
+                      .map(
+                        (email) => Column(
+                          children: [
+                            _buildDetailRow(
+                              Icons.email,
+                              loc!.email,
+                              email,
+                              isClickable: true,
+                              onTap: () => _handleEmail(context, email),
+                            ),
+                            const SizedBox(height: 16),
+                          ],
+                        ),
+                      ),
 
                 // 정보가 없는 경우
-                if (roomInfo.desc.trim().isEmpty && 
+                if (roomInfo.desc.trim().isEmpty &&
                     roomInfo.users.where((u) => u.trim().isNotEmpty).isEmpty &&
                     (roomInfo.phones == null || roomInfo.phones!.where((p) => p.trim().isNotEmpty).isEmpty) &&
                     (roomInfo.emails == null || roomInfo.emails!.where((e) => e.trim().isNotEmpty).isEmpty)) ...[
@@ -291,7 +301,7 @@ class RoomInfoSheet extends StatelessWidget {
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
-                            '등록된 상세 정보가 없습니다.',
+                            loc!.noDetailedInfoRegistered,
                             style: TextStyle(
                               fontSize: 14,
                               color: Colors.grey.shade600,
@@ -309,117 +319,125 @@ class RoomInfoSheet extends StatelessWidget {
           ),
 
           // 🔥 버튼 영역 - 길찾기 버튼들만
-          if (onDeparture != null || onArrival != null) 
+          if (onDeparture != null || onArrival != null)
             Padding(
               padding: const EdgeInsets.only(left: 24, right: 24, bottom: 24),
               child: Row(
                 children: [
                   if (onDeparture != null) ...[
-    Expanded(
-  child: ElevatedButton.icon(
-    onPressed: () async {
-      HapticFeedback.lightImpact();
-      try {
-        final roomData = {
-          'roomId': roomInfo.id,
-          'roomName': roomInfo.name,
-          'buildingName': buildingName ?? '',
-          'floorNumber': floorNumber?.toString() ?? '',
-          'type': 'start',
-        };
-        Navigator.pop(context);
-        Navigator.pushNamed(
-          context,
-          '/directions',
-          arguments: roomData,
-        );
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.error_outline, color: Colors.white, size: 20),
-                const SizedBox(width: 12),
-                Expanded(child: Text('오류가 발생했습니다: $e')),
-              ],
-            ),
-            backgroundColor: const Color(0xFF1E3A8A),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          ),
-        );
-      }
-    },
-    label: const Text(
-      '출발지 설정',
-      style: TextStyle(color: Color(0xFF1E3A8A)), // 초록색 텍스트
-    ),
-    style: ElevatedButton.styleFrom(
-      backgroundColor: Colors.white, // 배경 흰색
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10),
-        side: const BorderSide(color: Colors.white), // 초록색 테두리 추가 (선택 사항)
-      ),
-      elevation: 2,
-    ),
-  ),
-),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () async {
+                          HapticFeedback.lightImpact();
+                          try {
+                            final roomData = {
+                              'roomId': roomInfo.id,
+                              'roomName': roomInfo.name,
+                              'buildingName': buildingName ?? '',
+                              'floorNumber': floorNumber?.toString() ?? '',
+                              'type': 'start',
+                            };
+                            Navigator.pop(context);
+                            Navigator.pushNamed(
+                              context,
+                              '/directions',
+                              arguments: roomData,
+                            );
+                          } catch (e) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Row(
+                                  children: [
+                                    const Icon(Icons.error_outline,
+                                        color: Colors.white, size: 20),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                        child:
+                                            Text(loc!.errorOccurred(e.toString()))),
+                                  ],
+                                ),
+                                backgroundColor: const Color(0xFF1E3A8A),
+                                behavior: SnackBarBehavior.floating,
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10)),
+                              ),
+                            );
+                          }
+                        },
+                        label: Text(
+                          loc!.setDeparture,
+                          style: const TextStyle(color: Color(0xFF1E3A8A)),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            side: const BorderSide(color: Colors.white),
+                          ),
+                          elevation: 2,
+                        ),
+                      ),
+                    ),
                   ],
-                  
+
                   if (onDeparture != null && onArrival != null)
                     const SizedBox(width: 12),
-                  
+
                   if (onArrival != null) ...[
                     Expanded(
-  child: ElevatedButton.icon(
-    onPressed: () async {
-      HapticFeedback.lightImpact();
-      try {
-        final roomData = {
-          'roomId': roomInfo.id,
-          'roomName': roomInfo.name,
-          'buildingName': buildingName ?? '',
-          'floorNumber': floorNumber?.toString() ?? '',
-          'type': 'end',
-        };
-        Navigator.pop(context);
-        Navigator.pushNamed(
-          context,
-          '/directions',
-          arguments: roomData,
-        );
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.error_outline, color: Colors.white, size: 20),
-                const SizedBox(width: 12),
-                Expanded(child: Text('오류가 발생했습니다: $e')),
-              ],
-            ),
-            backgroundColor: const Color(0xFFEF4444),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          ),
-        );
-      }
-    },
-    label: const Text(
-      '도착지 설정',
-      style: TextStyle(color: Colors.white), // 흰색 텍스트
-    ),
-    style: ElevatedButton.styleFrom(
-      backgroundColor: const Color(0xFF1E3A8A),  // 우송네이비 배경
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10),
-      ),
-      elevation: 2,
-    ),
-  ),
-),
+                      child: ElevatedButton.icon(
+                        onPressed: () async {
+                          HapticFeedback.lightImpact();
+                          try {
+                            final roomData = {
+                              'roomId': roomInfo.id,
+                              'roomName': roomInfo.name,
+                              'buildingName': buildingName ?? '',
+                              'floorNumber': floorNumber?.toString() ?? '',
+                              'type': 'end',
+                            };
+                            Navigator.pop(context);
+                            Navigator.pushNamed(
+                              context,
+                              '/directions',
+                              arguments: roomData,
+                            );
+                          } catch (e) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Row(
+                                  children: [
+                                    const Icon(Icons.error_outline,
+                                        color: Colors.white, size: 20),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                        child:
+                                            Text(loc!.errorOccurred(e.toString()))),
+                                  ],
+                                ),
+                                backgroundColor: const Color(0xFFEF4444),
+                                behavior: SnackBarBehavior.floating,
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10)),
+                              ),
+                            );
+                          }
+                        },
+                        label: Text(
+                          loc!.setArrival,
+                          style: const TextStyle(color: Colors.white),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF1E3A8A),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          elevation: 2,
+                        ),
+                      ),
+                    ),
                   ],
                 ],
               ),

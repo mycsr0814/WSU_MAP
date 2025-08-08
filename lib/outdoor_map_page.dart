@@ -122,145 +122,131 @@ class _OutdoorMapPageState extends State<OutdoorMapPage> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+Widget build(BuildContext context) {
+  final l10n = AppLocalizations.of(context)!;
 
-    return Scaffold(
-      body: Stack(
-        children: [
-          NaverMap(
-            options: const NaverMapViewOptions(
-              initialCameraPosition: NCameraPosition(
-                target: NLatLng(36.3370, 127.4450),
-                zoom: 15.5,
-              ),
+  return Scaffold(
+    body: Stack(
+      children: [
+        NaverMap(
+          options: const NaverMapViewOptions(
+            initialCameraPosition: NCameraPosition(
+              target: NLatLng(36.3370, 127.4450),
+              zoom: 15.5,
             ),
-            onMapReady: (controller) async {
-              _mapController = controller;
-              await _getCurrentLocation();
-              _drawPath();
-              await _addRouteMarkers();
-              await _showCurrentLocation();
-            },
           ),
-          // 하단 정보 패널
-          Positioned(
-            left: 16,
-            right: 16,
-            bottom: 100,
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // 출발/도착 정보
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Row(
-                          children: [
-                            const SizedBox(width: 8),
-                            Container(
-                              width: 12,
-                              height: 12,
-                              decoration: const BoxDecoration(
-                                color: Color(0xFF3B82F6), // 파란색 출발지
-                                shape: BoxShape.circle,
-                              ),
+          onMapReady: (controller) async {
+            _mapController = controller;
+            await _getCurrentLocation();
+            _drawPath();
+            await _addRouteMarkers();
+            await _showCurrentLocation();
+          },
+        ),
+        // 하단 정보 패널
+        Positioned(
+          left: 16,
+          right: 16,
+          bottom: 100,
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // 출발/도착 정보 (라벨 제거, 상세 위치명 크게 진하게)
+                Row(
+                  children: [
+                    Expanded(
+                      child: Row(
+                        children: [
+                          const SizedBox(width: 8),
+                          Container(
+                            width: 12,
+                            height: 12,
+                            decoration: const BoxDecoration(
+                              color: Color(0xFF3B82F6), // 파란색 출발지
+                              shape: BoxShape.circle,
                             ),
-                            const SizedBox(width: 8),
-                            Text(
-                              l10n.departure,
+                          ),
+                          const SizedBox(width: 8),
+                          // 기존 진한 출발지 텍스트 삭제
+                          Expanded(
+                            child: Text(
+                              widget.startLabel ?? l10n.myLocation,
                               style: const TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey,
-                                fontWeight: FontWeight.w500,
+                                fontSize: 18,               // 크기 키움
+                                fontWeight: FontWeight.bold, // 굵게
+                                color: Colors.black87,      // 진한 검정색
                               ),
+                              overflow: TextOverflow.ellipsis,
                             ),
-                            const SizedBox(width: 4),
-                            Expanded(
-                              child: Text(
-                                widget.startLabel ?? l10n.myLocation,
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 16),
-                      const Icon(Icons.arrow_forward, color: Colors.grey),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Row(
-                          children: [
-                            const SizedBox(width: 8),
-                            Container(
-                              width: 12,
-                              height: 12,
-                              decoration: const BoxDecoration(
-                                color: Color(0xFFEF4444), // 빨간색 도착지
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              l10n.arrival,
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            const SizedBox(width: 4),
-                            Expanded(
-                              child: Text(
-                                widget.endLabel ?? l10n.destination,
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  // 거리 정보
-                  Text(
-                    '${l10n.outdoor_movement_distance}: ${widget.distance.toStringAsFixed(0)}m',
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black87,
                     ),
+                    const SizedBox(width: 16),
+                    const Icon(Icons.arrow_forward, color: Colors.grey),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Row(
+                        children: [
+                          const SizedBox(width: 8),
+                          Container(
+                            width: 12,
+                            height: 12,
+                            decoration: const BoxDecoration(
+                              color: Color(0xFFEF4444), // 빨간색 도착지
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          // 기존 진한 도착지 텍스트 삭제
+                          Expanded(
+                            child: Text(
+                              widget.endLabel ?? l10n.destination,
+                              style: const TextStyle(
+                                fontSize: 18,               // 크기 키움
+                                fontWeight: FontWeight.bold, // 굵게
+                                color: Colors.black87,      // 진한 검정색
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                // 거리 정보
+                Text(
+                  '${l10n.outdoor_movement_distance}: ${widget.distance.toStringAsFixed(0)}m',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black87,
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
+}
 
   void _drawPath() {
     if (_mapController == null || widget.path.isEmpty) return;
