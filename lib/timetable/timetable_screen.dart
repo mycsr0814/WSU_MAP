@@ -1914,6 +1914,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     required List<String> items,
     required Function(String) onChanged,
   }) {
+    TextEditingController? _internalController;
     return TypeAheadField<String>(
       suggestionsCallback: (pattern) async {
         if (pattern.isEmpty) return items;
@@ -1929,10 +1930,14 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
         );
       },
       onSelected: (suggestion) {
+        // 동기화: 내부 컨트롤러와 외부 컨트롤러 모두 업데이트
         controller.text = suggestion;
+        _internalController?.text = suggestion;
         onChanged(suggestion);
       },
       builder: (context, textController, focusNode) {
+        // 내부 컨트롤러 참조 저장 (onSelected에서 텍스트 반영)
+        _internalController = textController;
         return TextField(
           controller: textController,
           focusNode: focusNode,
