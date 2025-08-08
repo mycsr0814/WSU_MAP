@@ -127,7 +127,7 @@ class WebSocketService {
       await _cleanupConnection();
 
       // 🔥 웹소켓 URL 확인 - 서버 포트는 3002
-      final wsUrl = 'ws://13.211.31.98:3002/friend/ws';
+      final wsUrl = 'ws://16.176.5.144:3002/friend/ws';
       debugPrint('🔌 웹소켓 연결 시도: $wsUrl');
       debugPrint('🔌 서버 IP: 16.176.179.75');
       debugPrint('🔌 서버 포트: 3002');

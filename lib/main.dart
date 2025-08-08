@@ -408,7 +408,7 @@ class _CampusNavigatorAppState extends State<CampusNavigatorApp>
             });
             return child!;
           },
-          home: _isInitialized ? _buildHomeScreen(auth) : _buildLoadingScreen(),
+          home: _buildHomeScreen(auth),
           debugShowCheckedModeBanner: false,
         );
       },
@@ -416,6 +416,11 @@ class _CampusNavigatorAppState extends State<CampusNavigatorApp>
   }
 
   Widget _buildHomeScreen(UserAuth auth) {
+    // 앱 초기화가 완료되지 않았으면 WelcomeView를 바로 표시
+    if (!_isInitialized) {
+      return const WelcomeView();
+    }
+
     if (auth.isFirstLaunch) {
       return const WelcomeView();
     } else if (auth.isLoggedIn) {
@@ -423,78 +428,6 @@ class _CampusNavigatorAppState extends State<CampusNavigatorApp>
     } else {
       return const AuthSelectionView();
     }
-  }
-
-  Widget _buildLoadingScreen() {
-    return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFF1E3A8A), Color(0xFF3B82F6)],
-          ),
-        ),
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 100,
-                height: 100,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(50),
-                  border: Border.all(
-                    color: Colors.white.withOpacity(0.3),
-                    width: 2,
-                  ),
-                ),
-                child: const Icon(Icons.school, size: 50, color: Colors.white),
-              ),
-              const SizedBox(height: 32),
-              const Text(
-                '우송대학교',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w800,
-                  color: Colors.white,
-                  letterSpacing: 1.2,
-                ),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                '캠퍼스 네비게이터',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.white,
-                  letterSpacing: 0.5,
-                ),
-              ),
-              const SizedBox(height: 48),
-              const SizedBox(
-                width: 30,
-                height: 30,
-                child: CircularProgressIndicator(
-                  strokeWidth: 3,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                ),
-              ),
-              const SizedBox(height: 24),
-              Text(
-                '초기화 중...',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.white.withOpacity(0.8),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
   }
 }
 

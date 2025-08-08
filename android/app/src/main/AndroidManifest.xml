@@ -51,7 +51,7 @@
     <application
         android:label="따라우송"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@mipmap/launcher_icon"
         android:usesCleartextTraffic="true"
         android:theme="@style/NormalTheme">
 

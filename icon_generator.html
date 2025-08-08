@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Icon Generator</title>
+  </head>
+  <body>
+    <canvas
+      id="canvas"
+      width="1024"
+      height="1024"
+      style="border: 1px solid #ccc"
+    ></canvas>
+    <br />
+    <button onclick="downloadPNG()">Download PNG</button>
+
+    <script>
+      const canvas = document.getElementById("canvas");
+      const ctx = canvas.getContext("2d");
+
+      // 배경
+      ctx.fillStyle = "#FFFFFF";
+      ctx.fillRect(0, 0, 1024, 1024);
+
+      // 메인 컨테이너 (중앙에 배치)
+      const containerSize = 800;
+      const startX = (1024 - containerSize) / 2;
+      const startY = (1024 - containerSize) / 2;
+      const itemSize = 180;
+      const spacing = 40;
+
+      // Top-left: 회색 C/E 모양
+      ctx.fillStyle = "#666666";
+      ctx.fillRect(startX, startY, itemSize, itemSize);
+      ctx.fillStyle = "#FFFFFF";
+      ctx.fillRect(startX + 30, startY + 30, itemSize - 60, itemSize - 60);
+
+      // Top-right: 빨간색 E/2 모양
+      ctx.fillStyle = "#E74C3C";
+      ctx.fillRect(startX + itemSize + spacing, startY, itemSize, itemSize);
+      ctx.fillStyle = "#FFFFFF";
+      ctx.fillRect(
+        startX + itemSize + spacing + 30,
+        startY + 30,
+        itemSize - 60,
+        30
+      );
+      ctx.fillRect(
+        startX + itemSize + spacing + 30,
+        startY + 75,
+        itemSize - 90,
+        30
+      );
+      ctx.fillRect(
+        startX + itemSize + spacing + 30,
+        startY + 120,
+        itemSize - 60,
+        30
+      );
+
+      // Bottom-left: 초록색 원
+      ctx.fillStyle = "#27AE60";
+      ctx.beginPath();
+      ctx.arc(
+        startX + itemSize / 2,
+        startY + itemSize + spacing + itemSize / 2,
+        itemSize / 2,
+        0,
+        2 * Math.PI
+      );
+      ctx.fill();
+      ctx.fillStyle = "#FFFFFF";
+      ctx.beginPath();
+      ctx.arc(
+        startX + itemSize / 2,
+        startY + itemSize + spacing + itemSize / 2,
+        itemSize / 3,
+        0,
+        2 * Math.PI
+      );
+      ctx.fill();
+
+      // Bottom-right: 파란색 화살표
+      ctx.fillStyle = "#3498DB";
+      ctx.fillRect(
+        startX + itemSize + spacing,
+        startY + itemSize + spacing,
+        itemSize,
+        itemSize
+      );
+      ctx.fillStyle = "#FFFFFF";
+      ctx.beginPath();
+      ctx.moveTo(
+        startX + itemSize + spacing + itemSize / 2,
+        startY + itemSize + spacing + 45
+      );
+      ctx.lineTo(
+        startX + itemSize + spacing + 60,
+        startY + itemSize + spacing + 105
+      );
+      ctx.lineTo(
+        startX + itemSize + spacing + 120,
+        startY + itemSize + spacing + 105
+      );
+      ctx.closePath();
+      ctx.fill();
+
+      function downloadPNG() {
+        const link = document.createElement("a");
+        link.download = "app_icon.png";
+        link.href = canvas.toDataURL();
+        link.click();
+      }
+    </script>
+  </body>
+</html>
