@@ -523,6 +523,7 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
   /// 🔥 긴급 수정: API 노드 형태에 맞춘 검색 후보 생성
   /// 🔥 간단한 노드 매칭: @ 뒤의 마지막 부분만 추출
   /// 🔥 최종 수정: @ 구분자로 정확히 분할
+  /// 🔥 계단 노드 매칭 개선
   List<String> _generateSearchCandidates(String nodeId) {
     final candidates = <String>[];
 
@@ -531,7 +532,22 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
     // 1. 원본 그대로
     candidates.add(nodeId);
 
-    // 2. @ 기호로 분할하여 각 부분 추출
+    // 2. 계단 노드 특별 처리
+    if (nodeId == 'stairs') {
+      // stairs 노드의 다양한 형태들을 시도
+      candidates.addAll([
+        'stairs',
+        'stair',
+        '계단',
+        'staircase',
+        'stairway',
+        'steps',
+        'step',
+      ]);
+      debugPrint('   🏢 계단 노드 후보들 추가');
+    }
+
+    // 3. @ 기호로 분할하여 각 부분 추출
     if (nodeId.contains('@')) {
       List<String> parts = nodeId.split('@');
 
@@ -544,6 +560,18 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
         // R 접두사 버전도 시도
         if (!lastPart.startsWith('R')) {
           candidates.add('R$lastPart');
+        }
+
+        // 계단 노드인 경우 추가 후보들
+        if (lastPart == 'stairs') {
+          candidates.addAll([
+            'stair',
+            '계단',
+            'staircase',
+            'stairway',
+            'steps',
+            'step',
+          ]);
         }
       }
 
@@ -1631,8 +1659,6 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
                       ],
                     ),
                   ),
-
-
               ],
             ),
           ),
@@ -1641,8 +1667,6 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
             child: Stack(
               children: [
                 _buildBodyContent(),
-
-
 
                 if (!_isFloorListLoading &&
                     _error == null &&

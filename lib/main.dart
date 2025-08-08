@@ -21,25 +21,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 👈 세로 모드 고정 추가
-  await SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-    DeviceOrientation.portraitDown,
-  ]);
-
-  // 👈 시스템 UI 초기 설정
-  await _setSystemUIMode();
-
-  try {
-    await FlutterNaverMap().init(
-      clientId: 'a7hukqhx2a',
-      onAuthFailed: (ex) => debugPrint('NaverMap 인증 실패: $ex'),
-    );
-    debugPrint('✅ 네이버 지도 초기화 성공');
-  } catch (e) {
-    debugPrint('❌ 네이버 지도 초기화 오류: $e');
-  }
-
+  // 즉시 앱 실행하여 스플래시 스크린 우회
   runApp(
     MultiProvider(
       providers: [
@@ -51,6 +33,37 @@ void main() async {
       child: const CampusNavigatorApp(),
     ),
   );
+
+  // 앱 실행 후 백그라운드에서 초기화 작업 수행
+  _initializeAppInBackground();
+}
+
+// 백그라운드에서 앱 초기화 작업 수행
+void _initializeAppInBackground() async {
+  // 세로 모드 고정
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
+
+  // 시스템 UI 초기 설정
+  await _setSystemUIMode();
+
+  // 네이버 지도 초기화
+  _initializeNaverMapInBackground();
+}
+
+// 네이버 지도 초기화를 백그라운드에서 실행
+void _initializeNaverMapInBackground() async {
+  try {
+    await FlutterNaverMap().init(
+      clientId: 'a7hukqhx2a',
+      onAuthFailed: (ex) => debugPrint('NaverMap 인증 실패: $ex'),
+    );
+    debugPrint('✅ 네이버 지도 초기화 성공');
+  } catch (e) {
+    debugPrint('❌ 네이버 지도 초기화 오류: $e');
+  }
 }
 
 // 👈 시스템 UI 모드 설정 함수
@@ -97,9 +110,11 @@ class _CampusNavigatorAppState extends State<CampusNavigatorApp>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
 
-    // provider 인스턴스 캐싱 - WidgetsBinding.instance.addPostFrameCallback 사용
+    // 즉시 초기화 완료로 설정하여 스플래시 스크린 완전 우회
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!_disposed) {
+        setState(() => _isInitialized = true);
+        
         _userAuth = Provider.of<UserAuth>(context, listen: false);
         _locationManager = Provider.of<LocationManager>(context, listen: false);
 
@@ -408,7 +423,7 @@ class _CampusNavigatorAppState extends State<CampusNavigatorApp>
             });
             return child!;
           },
-          home: _isInitialized ? _buildHomeScreen(auth) : _buildLoadingScreen(),
+          home: _buildHomeScreen(auth),
           debugShowCheckedModeBanner: false,
         );
       },
@@ -416,6 +431,7 @@ class _CampusNavigatorAppState extends State<CampusNavigatorApp>
   }
 
   Widget _buildHomeScreen(UserAuth auth) {
+    // 앱 초기화 상태와 관계없이 바로 WelcomeView를 표시
     if (auth.isFirstLaunch) {
       return const WelcomeView();
     } else if (auth.isLoggedIn) {
@@ -423,78 +439,6 @@ class _CampusNavigatorAppState extends State<CampusNavigatorApp>
     } else {
       return const AuthSelectionView();
     }
-  }
-
-  Widget _buildLoadingScreen() {
-    return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFF1E3A8A), Color(0xFF3B82F6)],
-          ),
-        ),
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 100,
-                height: 100,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(50),
-                  border: Border.all(
-                    color: Colors.white.withOpacity(0.3),
-                    width: 2,
-                  ),
-                ),
-                child: const Icon(Icons.school, size: 50, color: Colors.white),
-              ),
-              const SizedBox(height: 32),
-              const Text(
-                '우송대학교',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w800,
-                  color: Colors.white,
-                  letterSpacing: 1.2,
-                ),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                '캠퍼스 네비게이터',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.white,
-                  letterSpacing: 0.5,
-                ),
-              ),
-              const SizedBox(height: 48),
-              const SizedBox(
-                width: 30,
-                height: 30,
-                child: CircularProgressIndicator(
-                  strokeWidth: 3,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                ),
-              ),
-              const SizedBox(height: 24),
-              Text(
-                '초기화 중...',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.white.withOpacity(0.8),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
   }
 }
 

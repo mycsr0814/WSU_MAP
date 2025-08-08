@@ -50,6 +50,27 @@ dev_dependencies:
   flutter_launcher_icons: ^0.14.4
   dead_code_analyzer: ^1.1.0
 
+# 앱 아이콘 설정
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "lib/asset/app_icon.png"
+  min_sdk_android: 21
+  web:
+    generate: true
+    image_path: "lib/asset/app_icon.png"
+    background_color: "#ffffff"
+    theme_color: "#666666"
+  windows:
+    generate: true
+    image_path: "lib/asset/app_icon.png"
+    icon_size: 48
+  macos:
+    generate: true
+    image_path: "lib/asset/app_icon.png"
+
+
+
 dependency_overrides:
   app_settings: 5.1.1
 
@@ -65,6 +86,7 @@ flutter:
     - lib/asset/2.png
     - lib/asset/3.png
     - lib/asset/4.png
+    - lib/asset/app_icon.png
     - assets/timetable/tutorial/1.png
     - assets/timetable/tutorial/2.png
     - assets/timetable/tutorial/3.png
