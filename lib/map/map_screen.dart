@@ -82,9 +82,6 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
           ),
         );
       }
-
-      // 🔥 초기 튜토리얼 표시 처리 (한 번만)
-      _handleInitialTutorial();
     });
   }
 
@@ -171,58 +168,9 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     _handleBuildingInfoFromTimetable();
   }
 
-  /// 🔥 초기 튜토리얼 표시 처리
-  void _handleInitialTutorial() {
-    final userAuth = context.read<UserAuth>();
-    final currentUserId = userAuth.userId;
+  // 초기 튜토리얼 표시 로직은 didChangeDependencies에서만 처리합니다.
 
-    // 이미 처리된 사용자이거나 로그인되지 않았으면 건너뛰기
-    if (currentUserId == _lastUserId || !userAuth.isLoggedIn) {
-      debugPrint(
-        'ℹ️ 초기 튜토리얼 처리 건너뜀 - 이미 처리됨: ${currentUserId == _lastUserId}, 로그인: ${userAuth.isLoggedIn}',
-      );
-      return;
-    }
-
-    // 현재 사용자 ID 저장
-    _lastUserId = currentUserId;
-
-    // 튜토리얼 표시 여부 확인 및 표시
-    if (!_hasShownTutorial &&
-        !_isShowingTutorial &&
-        !_isTutorialCheckInProgress) {
-      debugPrint('🔄 초기 튜토리얼 표시 시도');
-      Future.delayed(const Duration(milliseconds: 500), () {
-        if (mounted) {
-          _showTutorialIfNeeded();
-        }
-      });
-    }
-  }
-
-  /// 🔥 새 사용자를 위한 맵 재초기화
-  Future<void> _reinitializeMapForNewUser() async {
-    try {
-      debugPrint('🔄 새 사용자를 위한 맵 재초기화 시작');
-
-      // 1. 기존 마커 모두 정리
-      await _buildingMarkerService.clearAllMarkers();
-
-      // 2. 컨트롤러 상태 리셋
-      _controller.resetForNewSession();
-
-      // 3. 잠시 후 기본 마커들 다시 로드
-      await Future.delayed(const Duration(milliseconds: 500));
-
-      // 4. 지도가 준비되어 있다면 마커 다시 로드
-      if (_controller.isMapReady) {
-        await _controller.loadDefaultMarkers();
-        debugPrint('✅ 기본 마커 다시 로드 완료');
-      }
-    } catch (e) {
-      debugPrint('❌ 맵 재초기화 오류: $e');
-    }
-  }
+  // _reinitializeMapForNewUser는 현재 사용되지 않습니다.
 
   /// 🔥 친구 위치 표시 및 지도 화면 전환 메서드
   Future<void> _showFriendLocationAndSwitchToMap(Friend friend) async {
@@ -685,9 +633,9 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     debugPrint(
       '🔍 사용자 ID 타입: ${userAuth.userId.runtimeType}, 튜토리얼 설정 타입: ${userAuth.isTutorial.runtimeType}',
     );
-    debugPrint(
-      '🔍 튜토리얼 설정 상세: ${userAuth.isTutorial} (bool: ${userAuth.isTutorial is bool})',
-    );
+      debugPrint(
+        '🔍 튜토리얼 설정 상세: ${userAuth.isTutorial}',
+      );
 
     // 로그인되지 않았으면 튜토리얼 표시하지 않음
     if (!userAuth.isLoggedIn) {
@@ -705,9 +653,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
         '🔍 로그인 사용자 튜토리얼 확인: $shouldShowTutorial (서버 설정: ${userAuth.isTutorial})',
       );
       debugPrint('🔍 shouldShowTutorial 타입: ${shouldShowTutorial.runtimeType}');
-      debugPrint(
-        '🔍 shouldShowTutorial 상세: $shouldShowTutorial (bool: ${shouldShowTutorial is bool})',
-      );
+      debugPrint('🔍 shouldShowTutorial 상세: $shouldShowTutorial');
 
       // 서버 설정이 false면 튜토리얼 표시하지 않음
       if (!shouldShowTutorial) {

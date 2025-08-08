@@ -1,7 +1,6 @@
 // lib/login/login_form_view.dart - 다국어 지원이 추가된 로그인 폼
 
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/map/map_screen.dart';
 import 'package:provider/provider.dart';
 import '../auth/user_auth.dart';
 import '../components/woosong_input_field.dart';
@@ -78,16 +77,8 @@ class _LoginFormViewState extends State<LoginFormView> with TickerProviderStateM
     );
 
     if (success && mounted) {
-      Navigator.of(context).pushReplacement(
-        PageRouteBuilder(
-          pageBuilder: (context, animation, secondaryAnimation) =>
-              const MapScreen(),
-          transitionsBuilder: (context, animation, secondaryAnimation, child) {
-            return FadeTransition(opacity: animation, child: child);
-          },
-          transitionDuration: const Duration(milliseconds: 500),
-        ),
-      );
+      // 홈(route.isFirst)로 돌아가도록만 처리하고, 홈에서 상태 기반으로 MapScreen을 렌더링
+      Navigator.of(context).popUntil((route) => route.isFirst);
     } else if (mounted) {
       _showErrorDialog(userAuth.lastError ?? l10n.login_error);
     }
@@ -95,7 +86,7 @@ class _LoginFormViewState extends State<LoginFormView> with TickerProviderStateM
 
   /// 게스트 로그인 처리
   void _handleGuestLogin() async {
-    final l10n = AppLocalizations.of(context)!;
+    // 다이얼로그에서 고정 텍스트를 사용하므로 지역화 객체는 사용하지 않음
     
     // 게스트 로그인 확인 다이얼로그 표시
     final confirmed = await showDialog<bool>(
@@ -204,16 +195,8 @@ class _LoginFormViewState extends State<LoginFormView> with TickerProviderStateM
       await userAuth.loginAsGuest(context: context);
 
       if (mounted) {
-        Navigator.of(context).pushReplacement(
-          PageRouteBuilder(
-            pageBuilder: (context, animation, secondaryAnimation) =>
-                const MapScreen(),
-            transitionsBuilder: (context, animation, secondaryAnimation, child) {
-              return FadeTransition(opacity: animation, child: child);
-            },
-            transitionDuration: const Duration(milliseconds: 500),
-          ),
-        );
+        // 홈(route.isFirst)로 돌아가도록만 처리하고, 홈에서 상태 기반으로 MapScreen을 렌더링
+        Navigator.of(context).popUntil((route) => route.isFirst);
       }
     }
   }

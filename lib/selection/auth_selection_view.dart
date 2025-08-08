@@ -1,7 +1,6 @@
 // lib/selection/auth_selection_view.dart - 다국어 지원이 추가된 인증 선택 화면
 
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/map/map_screen.dart';
 import 'package:provider/provider.dart';
 import '../signup/sign_up_view.dart';
 import '../login/login_form_view.dart';
@@ -182,13 +181,8 @@ class _AuthSelectionViewState extends State<AuthSelectionView>
     ]);
     
     if (mounted) {
-      Navigator.of(context).pushReplacement(
-        PageRouteBuilder(
-          pageBuilder: (context, animation, secondaryAnimation) => const MapScreen(),
-          transitionsBuilder: (context, animation, secondaryAnimation, child) => FadeTransition(opacity: animation, child: child),
-          transitionDuration: const Duration(milliseconds: 500),
-        ),
-      );
+      // 홈(route.isFirst)로 돌아가도록만 처리하고, 홈에서 상태 기반으로 MapScreen을 렌더링
+      Navigator.of(context).popUntil((route) => route.isFirst);
     }
   }
 
