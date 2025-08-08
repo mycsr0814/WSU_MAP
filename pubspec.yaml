@@ -69,6 +69,8 @@ flutter_launcher_icons:
     generate: true
     image_path: "lib/asset/app_icon.png"
 
+
+
 dependency_overrides:
   app_settings: 5.1.1
 

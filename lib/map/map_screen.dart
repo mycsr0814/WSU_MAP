@@ -82,6 +82,11 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
           ),
         );
       }
+<<<<<<< HEAD
+=======
+
+      // 🔥 초기 튜토리얼 표시 처리 제거 - didChangeDependencies에서만 처리
+>>>>>>> 25b43aca55385cd8e10cd0a25b449bfc6946a2ee
     });
   }
 
