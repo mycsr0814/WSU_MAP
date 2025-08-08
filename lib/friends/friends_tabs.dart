@@ -60,56 +60,6 @@ class FriendsTabs {
 
             const SizedBox(height: 20),
 
-            // 사용자 목록 표시
-            if (userList.isNotEmpty) ...[
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    '사용 가능한 사용자 목록:',
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.grey,
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.refresh, size: 16),
-                    onPressed: onRefreshUserList,
-                    tooltip: '사용자 목록 새로고침',
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Container(
-                constraints: const BoxConstraints(maxHeight: 200),
-                decoration: BoxDecoration(
-                  color: Colors.grey[50],
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.grey[300]!),
-                ),
-                child: ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: userList.length,
-                  itemBuilder: (context, index) {
-                    final user = userList[index];
-                    return ListTile(
-                      dense: true,
-                      title: Text(
-                        '${user['name']} (${user['id']})',
-                        style: const TextStyle(fontSize: 14),
-                      ),
-                      onTap: () {
-                        addController.text = user['id']!;
-                        setModalState(() {});
-                      },
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(height: 20),
-            ],
-
             SizedBox(
               width: double.infinity,
               child: WoosongButton(

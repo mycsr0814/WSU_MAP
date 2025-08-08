@@ -114,6 +114,107 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get walk => 'Walk';
+
+  @override
+  String get minute => 'min';
+
+  @override
+  String get hour => 'hr';
+
+  @override
+  String get less_than_one_minute => 'Less than 1 min';
+
+  @override
+  String get zero_minutes => '0 min';
+
+  @override
+  String get calculation_failed => 'Calculation failed';
+
+  @override
+  String get professor_name => 'Professor';
+
+  @override
+  String get building_name => 'Building Name';
+
+  @override
+  String get floor_number => 'Floor';
+
+  @override
+  String get room_name => 'Room';
+
+  @override
+  String get day_of_week => 'Day';
+
+  @override
+  String get time => 'Time';
+
+  @override
+  String get memo => 'Memo';
+
+  @override
+  String get recommend_route => 'Recommend Route';
+
+  @override
+  String get view_location => 'View Location';
+
+  @override
+  String get edit => 'Edit';
+
+  @override
+  String get close => 'Close';
+
+  @override
+  String get help => 'Help';
+
+  @override
+  String get help_intro_title => 'Using TarauSong';
+
+  @override
+  String get help_intro_description =>
+      'Make your campus life easier with Woosong University Campus Navigator.';
+
+  @override
+  String get help_detailed_search_title => 'Detailed Search';
+
+  @override
+  String get help_detailed_search_description =>
+      'Find locations precisely and quickly including building names, room numbers, and amenities.';
+
+  @override
+  String get help_timetable_title => 'Timetable Integration';
+
+  @override
+  String get help_timetable_description =>
+      'Sync your class timetable and get optimal route guidance until the next class.';
+
+  @override
+  String get help_directions_title => 'Directions';
+
+  @override
+  String get help_directions_description =>
+      'Navigate accurately on campus to reach your destination easily and quickly.';
+
+  @override
+  String get help_building_map_title => 'Building Floor Maps';
+
+  @override
+  String get help_building_map_description =>
+      'Use detailed floor maps to find classrooms and amenities easily.';
+
+  @override
+  String get previous => 'Previous';
+
+  @override
+  String get next => 'Next';
+
+  @override
+  String get done => 'Done';
+
+  @override
+  String get image_load_error => 'Cannot load image';
+
+  @override
   String get start_campus_exploration => 'Start exploring the campus';
 
   @override
@@ -297,12 +398,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tutorial => 'Tutorial';
-
-  @override
-  String get previous => 'Previous';
-
-  @override
-  String get next => 'Next';
 
   @override
   String get finish => 'Finish';
@@ -550,18 +645,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deleteButton => 'Delete';
 
   @override
-  String get building_name => 'Building Name';
-
-  @override
-  String get floor_number => 'Floor';
-
-  @override
-  String get room_name => 'Room';
-
-  @override
-  String get memo => 'Memo';
-
-  @override
   String get overlap_message =>
       'There is already a class registered at this time';
 
@@ -627,9 +710,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get showLocation => 'Show Location';
-
-  @override
-  String get close => 'Close';
 
   @override
   String friendLocationRemoved(String userName) {
@@ -726,7 +806,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get excel_file_tutorial => 'Excel File Tutorial';
 
   @override
-  String get image_attachment => 'Image Attachment';
+  String get image_attachment => 'Image Attached';
 
   @override
   String get max_one_image => 'Max 1 image';
@@ -767,7 +847,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'An error occurred while processing your inquiry';
 
   @override
-  String get inquiry_category_bug => 'Bug Report';
+  String get inquiry_category_bug => 'Bug';
 
   @override
   String get inquiry_category_feature => 'Feature Request';
@@ -776,10 +856,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get inquiry_category_other => 'Other';
 
   @override
-  String get inquiry_category_route_error => 'Route Guidance Error';
+  String get inquiry_category_route_error => 'Route Error';
 
   @override
-  String get inquiry_category_place_error => 'Place/Info Error';
+  String get inquiry_category_place_error => 'Place Error';
 
   @override
   String get location_share_title => 'Location Sharing';
@@ -828,9 +908,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get friday => 'Fri';
 
   @override
-  String get time => 'Time';
-
-  @override
   String get add_class => 'Add Class';
 
   @override
@@ -843,13 +920,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get class_name => 'Class Name';
 
   @override
-  String get professor_name => 'Professor';
-
-  @override
   String get classroom => 'Classroom';
-
-  @override
-  String get day_of_week => 'Day';
 
   @override
   String get start_time => 'Start Time';
@@ -950,9 +1021,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get message => 'Message';
 
   @override
-  String get view_location => 'View Location';
-
-  @override
   String get call => 'Call';
 
   @override
@@ -969,9 +1037,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String calling(String name) {
     return 'Calling $name';
   }
-
-  @override
-  String get edit => 'Edit';
 
   @override
   String get delete => 'Delete';
@@ -1017,9 +1082,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String hours_and_minutes(Object hours, Object minutes) {
     return '$hours hours $minutes minutes';
   }
-
-  @override
-  String get calculation_failed => 'Calculation failed';
 
   @override
   String get current_location_departure => 'Depart from current location';
@@ -1515,13 +1577,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get developer_github => 'GitHub: github.com/yourid';
 
   @override
-  String get help => 'Help';
-
-  @override
   String get no_help_images => 'No help images';
-
-  @override
-  String get image_load_error => 'Cannot load image';
 
   @override
   String get description_hint => 'Enter description';
@@ -1596,6 +1652,32 @@ class AppLocalizationsEn extends AppLocalizations {
   String cancelFriendRequestConfirm(String name) {
     return 'Do you want to cancel the friend request sent to $name?';
   }
+
+  @override
+  String get attached_image => 'Attached Image';
+
+  @override
+  String get answer_section_title => 'Answer';
+
+  @override
+  String get inquiry_default_answer =>
+      'This is the answer to your inquiry. Please contact us if you have further questions.';
+
+  @override
+  String get answer_date_prefix => 'Answered on:';
+
+  @override
+  String get waiting_answer_status => 'Waiting for answer';
+
+  @override
+  String get waiting_answer_message =>
+      'We are reviewing your inquiry and will reply as soon as possible.';
+
+  @override
+  String get status_pending => 'Pending';
+
+  @override
+  String get status_answered => 'Answered';
 
   @override
   String get cancelRequest => 'Cancel Request';
@@ -1697,9 +1779,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get searchTryAgain => 'Try a different search term';
-
-  @override
-  String get attached_image => 'Attached Image';
 
   @override
   String get required => 'Required';

@@ -315,54 +315,56 @@ class RoomInfoSheet extends StatelessWidget {
               child: Row(
                 children: [
                   if (onDeparture != null) ...[
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: () async {
-                          HapticFeedback.lightImpact();
-                          try {
-                            final roomData = {
-                              'roomId': roomInfo.id,
-                              'roomName': roomInfo.name,
-                              'buildingName': buildingName ?? '',
-                              'floorNumber': floorNumber?.toString() ?? '',
-                              'type': 'start',
-                            };
-                            Navigator.pop(context);
-                            Navigator.pushNamed(
-                              context,
-                              '/directions',
-                              arguments: roomData,
-                            );
-                          } catch (e) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Row(
-                                  children: [
-                                    const Icon(Icons.error_outline, color: Colors.white, size: 20),
-                                    const SizedBox(width: 12),
-                                    Expanded(child: Text('오류가 발생했습니다: $e')),
-                                  ],
-                                ),
-                                backgroundColor: const Color(0xFFEF4444),
-                                behavior: SnackBarBehavior.floating,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                              ),
-                            );
-                          }
-                        },
-                        icon: const Icon(Icons.play_arrow, size: 18),
-                        label: const Text('출발지'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF10B981),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          elevation: 2,
-                        ),
-                      ),
-                    ),
+    Expanded(
+  child: ElevatedButton.icon(
+    onPressed: () async {
+      HapticFeedback.lightImpact();
+      try {
+        final roomData = {
+          'roomId': roomInfo.id,
+          'roomName': roomInfo.name,
+          'buildingName': buildingName ?? '',
+          'floorNumber': floorNumber?.toString() ?? '',
+          'type': 'start',
+        };
+        Navigator.pop(context);
+        Navigator.pushNamed(
+          context,
+          '/directions',
+          arguments: roomData,
+        );
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.error_outline, color: Colors.white, size: 20),
+                const SizedBox(width: 12),
+                Expanded(child: Text('오류가 발생했습니다: $e')),
+              ],
+            ),
+            backgroundColor: const Color(0xFF1E3A8A),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          ),
+        );
+      }
+    },
+    label: const Text(
+      '출발지 설정',
+      style: TextStyle(color: Color(0xFF1E3A8A)), // 초록색 텍스트
+    ),
+    style: ElevatedButton.styleFrom(
+      backgroundColor: Colors.white, // 배경 흰색
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10),
+        side: const BorderSide(color: Colors.white), // 초록색 테두리 추가 (선택 사항)
+      ),
+      elevation: 2,
+    ),
+  ),
+),
                   ],
                   
                   if (onDeparture != null && onArrival != null)
@@ -370,53 +372,54 @@ class RoomInfoSheet extends StatelessWidget {
                   
                   if (onArrival != null) ...[
                     Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: () async {
-                          HapticFeedback.lightImpact();
-                          try {
-                            final roomData = {
-                              'roomId': roomInfo.id,
-                              'roomName': roomInfo.name,
-                              'buildingName': buildingName ?? '',
-                              'floorNumber': floorNumber?.toString() ?? '',
-                              'type': 'end',
-                            };
-                            Navigator.pop(context);
-                            Navigator.pushNamed(
-                              context,
-                              '/directions',
-                              arguments: roomData,
-                            );
-                          } catch (e) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Row(
-                                  children: [
-                                    const Icon(Icons.error_outline, color: Colors.white, size: 20),
-                                    const SizedBox(width: 12),
-                                    Expanded(child: Text('오류가 발생했습니다: $e')),
-                                  ],
-                                ),
-                                backgroundColor: const Color(0xFFEF4444),
-                                behavior: SnackBarBehavior.floating,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                              ),
-                            );
-                          }
-                        },
-                        icon: const Icon(Icons.flag, size: 18),
-                        label: const Text('도착지'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFEF4444),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          elevation: 2,
-                        ),
-                      ),
-                    ),
+  child: ElevatedButton.icon(
+    onPressed: () async {
+      HapticFeedback.lightImpact();
+      try {
+        final roomData = {
+          'roomId': roomInfo.id,
+          'roomName': roomInfo.name,
+          'buildingName': buildingName ?? '',
+          'floorNumber': floorNumber?.toString() ?? '',
+          'type': 'end',
+        };
+        Navigator.pop(context);
+        Navigator.pushNamed(
+          context,
+          '/directions',
+          arguments: roomData,
+        );
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.error_outline, color: Colors.white, size: 20),
+                const SizedBox(width: 12),
+                Expanded(child: Text('오류가 발생했습니다: $e')),
+              ],
+            ),
+            backgroundColor: const Color(0xFFEF4444),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          ),
+        );
+      }
+    },
+    label: const Text(
+      '도착지 설정',
+      style: TextStyle(color: Colors.white), // 흰색 텍스트
+    ),
+    style: ElevatedButton.styleFrom(
+      backgroundColor: const Color(0xFF1E3A8A),  // 우송네이비 배경
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10),
+      ),
+      elevation: 2,
+    ),
+  ),
+),
                   ],
                 ],
               ),

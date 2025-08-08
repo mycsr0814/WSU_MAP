@@ -304,6 +304,198 @@ abstract class AppLocalizations {
   /// **'{feature} feature is coming soon.\nIt will be added soon.'**
   String feature_coming_soon(String feature);
 
+  /// No description provided for @walk.
+  ///
+  /// In en, this message translates to:
+  /// **'Walk'**
+  String get walk;
+
+  /// No description provided for @minute.
+  ///
+  /// In en, this message translates to:
+  /// **'min'**
+  String get minute;
+
+  /// No description provided for @hour.
+  ///
+  /// In en, this message translates to:
+  /// **'hr'**
+  String get hour;
+
+  /// No description provided for @less_than_one_minute.
+  ///
+  /// In en, this message translates to:
+  /// **'Less than 1 min'**
+  String get less_than_one_minute;
+
+  /// No description provided for @zero_minutes.
+  ///
+  /// In en, this message translates to:
+  /// **'0 min'**
+  String get zero_minutes;
+
+  /// No description provided for @calculation_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Calculation failed'**
+  String get calculation_failed;
+
+  /// No description provided for @professor_name.
+  ///
+  /// In en, this message translates to:
+  /// **'Professor'**
+  String get professor_name;
+
+  /// No description provided for @building_name.
+  ///
+  /// In en, this message translates to:
+  /// **'Building Name'**
+  String get building_name;
+
+  /// No description provided for @floor_number.
+  ///
+  /// In en, this message translates to:
+  /// **'Floor'**
+  String get floor_number;
+
+  /// No description provided for @room_name.
+  ///
+  /// In en, this message translates to:
+  /// **'Room'**
+  String get room_name;
+
+  /// No description provided for @day_of_week.
+  ///
+  /// In en, this message translates to:
+  /// **'Day'**
+  String get day_of_week;
+
+  /// No description provided for @time.
+  ///
+  /// In en, this message translates to:
+  /// **'Time'**
+  String get time;
+
+  /// No description provided for @memo.
+  ///
+  /// In en, this message translates to:
+  /// **'Memo'**
+  String get memo;
+
+  /// No description provided for @recommend_route.
+  ///
+  /// In en, this message translates to:
+  /// **'Recommend Route'**
+  String get recommend_route;
+
+  /// No description provided for @view_location.
+  ///
+  /// In en, this message translates to:
+  /// **'View Location'**
+  String get view_location;
+
+  /// No description provided for @edit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get edit;
+
+  /// No description provided for @close.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get close;
+
+  /// No description provided for @help.
+  ///
+  /// In en, this message translates to:
+  /// **'Help'**
+  String get help;
+
+  /// No description provided for @help_intro_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Using TarauSong'**
+  String get help_intro_title;
+
+  /// No description provided for @help_intro_description.
+  ///
+  /// In en, this message translates to:
+  /// **'Make your campus life easier with Woosong University Campus Navigator.'**
+  String get help_intro_description;
+
+  /// No description provided for @help_detailed_search_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Detailed Search'**
+  String get help_detailed_search_title;
+
+  /// No description provided for @help_detailed_search_description.
+  ///
+  /// In en, this message translates to:
+  /// **'Find locations precisely and quickly including building names, room numbers, and amenities.'**
+  String get help_detailed_search_description;
+
+  /// No description provided for @help_timetable_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Timetable Integration'**
+  String get help_timetable_title;
+
+  /// No description provided for @help_timetable_description.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync your class timetable and get optimal route guidance until the next class.'**
+  String get help_timetable_description;
+
+  /// No description provided for @help_directions_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Directions'**
+  String get help_directions_title;
+
+  /// No description provided for @help_directions_description.
+  ///
+  /// In en, this message translates to:
+  /// **'Navigate accurately on campus to reach your destination easily and quickly.'**
+  String get help_directions_description;
+
+  /// No description provided for @help_building_map_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Building Floor Maps'**
+  String get help_building_map_title;
+
+  /// No description provided for @help_building_map_description.
+  ///
+  /// In en, this message translates to:
+  /// **'Use detailed floor maps to find classrooms and amenities easily.'**
+  String get help_building_map_description;
+
+  /// No description provided for @previous.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous'**
+  String get previous;
+
+  /// No description provided for @next.
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get next;
+
+  /// No description provided for @done.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get done;
+
+  /// No description provided for @image_load_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Cannot load image'**
+  String get image_load_error;
+
   /// No description provided for @start_campus_exploration.
   ///
   /// In en, this message translates to:
@@ -651,18 +843,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Tutorial'**
   String get tutorial;
-
-  /// No description provided for @previous.
-  ///
-  /// In en, this message translates to:
-  /// **'Previous'**
-  String get previous;
-
-  /// No description provided for @next.
-  ///
-  /// In en, this message translates to:
-  /// **'Next'**
-  String get next;
 
   /// No description provided for @finish.
   ///
@@ -1150,30 +1330,6 @@ abstract class AppLocalizations {
   /// **'Delete'**
   String get deleteButton;
 
-  /// No description provided for @building_name.
-  ///
-  /// In en, this message translates to:
-  /// **'Building Name'**
-  String get building_name;
-
-  /// No description provided for @floor_number.
-  ///
-  /// In en, this message translates to:
-  /// **'Floor'**
-  String get floor_number;
-
-  /// No description provided for @room_name.
-  ///
-  /// In en, this message translates to:
-  /// **'Room'**
-  String get room_name;
-
-  /// No description provided for @memo.
-  ///
-  /// In en, this message translates to:
-  /// **'Memo'**
-  String get memo;
-
   /// No description provided for @overlap_message.
   ///
   /// In en, this message translates to:
@@ -1293,12 +1449,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Show Location'**
   String get showLocation;
-
-  /// No description provided for @close.
-  ///
-  /// In en, this message translates to:
-  /// **'Close'**
-  String get close;
 
   /// No description provided for @friendLocationRemoved.
   ///
@@ -1471,7 +1621,7 @@ abstract class AppLocalizations {
   /// No description provided for @image_attachment.
   ///
   /// In en, this message translates to:
-  /// **'Image Attachment'**
+  /// **'Image Attached'**
   String get image_attachment;
 
   /// No description provided for @max_one_image.
@@ -1549,7 +1699,7 @@ abstract class AppLocalizations {
   /// No description provided for @inquiry_category_bug.
   ///
   /// In en, this message translates to:
-  /// **'Bug Report'**
+  /// **'Bug'**
   String get inquiry_category_bug;
 
   /// No description provided for @inquiry_category_feature.
@@ -1567,13 +1717,13 @@ abstract class AppLocalizations {
   /// No description provided for @inquiry_category_route_error.
   ///
   /// In en, this message translates to:
-  /// **'Route Guidance Error'**
+  /// **'Route Error'**
   String get inquiry_category_route_error;
 
   /// No description provided for @inquiry_category_place_error.
   ///
   /// In en, this message translates to:
-  /// **'Place/Info Error'**
+  /// **'Place Error'**
   String get inquiry_category_place_error;
 
   /// No description provided for @location_share_title.
@@ -1666,12 +1816,6 @@ abstract class AppLocalizations {
   /// **'Fri'**
   String get friday;
 
-  /// No description provided for @time.
-  ///
-  /// In en, this message translates to:
-  /// **'Time'**
-  String get time;
-
   /// No description provided for @add_class.
   ///
   /// In en, this message translates to:
@@ -1696,23 +1840,11 @@ abstract class AppLocalizations {
   /// **'Class Name'**
   String get class_name;
 
-  /// No description provided for @professor_name.
-  ///
-  /// In en, this message translates to:
-  /// **'Professor'**
-  String get professor_name;
-
   /// No description provided for @classroom.
   ///
   /// In en, this message translates to:
   /// **'Classroom'**
   String get classroom;
-
-  /// No description provided for @day_of_week.
-  ///
-  /// In en, this message translates to:
-  /// **'Day'**
-  String get day_of_week;
 
   /// No description provided for @start_time.
   ///
@@ -1894,12 +2026,6 @@ abstract class AppLocalizations {
   /// **'Message'**
   String get message;
 
-  /// No description provided for @view_location.
-  ///
-  /// In en, this message translates to:
-  /// **'View Location'**
-  String get view_location;
-
   /// No description provided for @call.
   ///
   /// In en, this message translates to:
@@ -1923,12 +2049,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Calling {name}'**
   String calling(String name);
-
-  /// No description provided for @edit.
-  ///
-  /// In en, this message translates to:
-  /// **'Edit'**
-  String get edit;
 
   /// No description provided for @delete.
   ///
@@ -2007,12 +2127,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{hours} hours {minutes} minutes'**
   String hours_and_minutes(Object hours, Object minutes);
-
-  /// No description provided for @calculation_failed.
-  ///
-  /// In en, this message translates to:
-  /// **'Calculation failed'**
-  String get calculation_failed;
 
   /// No description provided for @current_location_departure.
   ///
@@ -2926,23 +3040,11 @@ abstract class AppLocalizations {
   /// **'GitHub: github.com/yourid'**
   String get developer_github;
 
-  /// No description provided for @help.
-  ///
-  /// In en, this message translates to:
-  /// **'Help'**
-  String get help;
-
   /// No description provided for @no_help_images.
   ///
   /// In en, this message translates to:
   /// **'No help images'**
   String get no_help_images;
-
-  /// No description provided for @image_load_error.
-  ///
-  /// In en, this message translates to:
-  /// **'Cannot load image'**
-  String get image_load_error;
 
   /// No description provided for @description_hint.
   ///
@@ -3081,6 +3183,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Do you want to cancel the friend request sent to {name}?'**
   String cancelFriendRequestConfirm(String name);
+
+  /// No description provided for @attached_image.
+  ///
+  /// In en, this message translates to:
+  /// **'Attached Image'**
+  String get attached_image;
+
+  /// No description provided for @answer_section_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Answer'**
+  String get answer_section_title;
+
+  /// No description provided for @inquiry_default_answer.
+  ///
+  /// In en, this message translates to:
+  /// **'This is the answer to your inquiry. Please contact us if you have further questions.'**
+  String get inquiry_default_answer;
+
+  /// No description provided for @answer_date_prefix.
+  ///
+  /// In en, this message translates to:
+  /// **'Answered on:'**
+  String get answer_date_prefix;
+
+  /// No description provided for @waiting_answer_status.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for answer'**
+  String get waiting_answer_status;
+
+  /// No description provided for @waiting_answer_message.
+  ///
+  /// In en, this message translates to:
+  /// **'We are reviewing your inquiry and will reply as soon as possible.'**
+  String get waiting_answer_message;
+
+  /// No description provided for @status_pending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get status_pending;
+
+  /// No description provided for @status_answered.
+  ///
+  /// In en, this message translates to:
+  /// **'Answered'**
+  String get status_answered;
 
   /// No description provided for @cancelRequest.
   ///
@@ -3267,12 +3417,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Try a different search term'**
   String get searchTryAgain;
-
-  /// No description provided for @attached_image.
-  ///
-  /// In en, this message translates to:
-  /// **'Attached Image'**
-  String get attached_image;
 
   /// No description provided for @required.
   ///
