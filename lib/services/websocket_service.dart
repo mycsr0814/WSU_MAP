@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:web_socket_channel/status.dart' as status;
+import '../config/api_config.dart'; // 🔥 추가 필요
 
 class WebSocketService {
   static final WebSocketService _instance = WebSocketService._internal();
@@ -20,11 +21,9 @@ class WebSocketService {
   bool _isConnecting = false; // 🔥 동시 연결 시도 방지
   bool _shouldReconnect = true;
   int _reconnectAttempts = 0;
-  static const int _maxReconnectAttempts = 5;
-  static const Duration _heartbeatInterval = Duration(
-    seconds: 60,
-  ); // 🔥 30초에서 60초로 변경하여 요청 빈도 감소
-  static const Duration _reconnectDelay = Duration(seconds: 5);
+static const int _maxReconnectAttempts = ApiConfig.maxReconnectAttempts;
+static const Duration _heartbeatInterval = ApiConfig.heartbeatInterval;
+static const Duration _reconnectDelay = ApiConfig.reconnectDelay;
 
   // 이벤트 스트림 컨트롤러들
   final StreamController<Map<String, dynamic>> _messageController =
@@ -107,109 +106,110 @@ class WebSocketService {
 
   // 실제 연결 수행
   Future<void> _doConnect() async {
-    // 🔥 동시 연결 시도 방지
-    if (_isConnecting) {
-      debugPrint('⚠️ 이미 연결 중입니다. 중복 연결 시도 무시');
-      return;
-    }
-
-    _isConnecting = true;
-
-    // 🔥 연결 시도 전 서버 상태 확인
-    debugPrint('🔍 웹소켓 서버 상태 확인 중...');
-    debugPrint('🔍 서버 URL: ws://16.176.179.75:3002/friend/ws');
-    debugPrint('🔍 사용자 ID: $_userId');
-
-    try {
-      debugPrint('🔄 웹소켓 연결 시작 - 사용자 ID: $_userId');
-
-      // 기존 연결 완전 정리
-      await _cleanupConnection();
-
-      // 🔥 웹소켓 URL 확인 - 서버 포트는 3002
-      final wsUrl = 'ws://16.176.5.144:3002/friend/ws';
-      debugPrint('🔌 웹소켓 연결 시도: $wsUrl');
-      debugPrint('🔌 서버 IP: 16.176.179.75');
-      debugPrint('🔌 서버 포트: 3002');
-      debugPrint('🔌 웹소켓 경로: /friend/ws');
-
-      debugPrint('📡 WebSocketChannel 생성 시작...');
-      _channel = WebSocketChannel.connect(
-        Uri.parse(wsUrl),
-        // protocols: ['chat'], // 프로토콜 제거 - 서버에서 지원하지 않을 수 있음
-      );
-      debugPrint('📡 WebSocketChannel 생성 완료');
-      debugPrint('📡 채널 상태: ${_channel != null}');
-      debugPrint('📡 채널 준비 상태: ${_channel?.ready}');
-
-      debugPrint('⏳ 웹소켓 연결 대기 중...');
-      // 연결 확인을 위한 타임아웃
-      await _channel!.ready.timeout(
-        const Duration(seconds: 10),
-        onTimeout: () {
-          debugPrint('⏰ 웹소켓 연결 타임아웃 (10초)');
-          throw TimeoutException('웹소켓 연결 타임아웃', const Duration(seconds: 10));
-        },
-      );
-
-      debugPrint('✅ 웹소켓 연결 준비 완료');
-      debugPrint('✅ 채널 상태: ${_channel != null}');
-      debugPrint('✅ 채널 준비 상태: ${_channel?.ready}');
-
-      // 🔥 연결 직후 즉시 서버에 연결 알림 전송 (서버에서 처리하는 메시지 타입으로 변경)
-      debugPrint('📤 웹소켓 연결 직후 서버에 연결 알림 전송');
-      _sendMessageDirectly({
-        'type': 'register', // 🔥 서버에서 처리하는 타입
-        'userId': _userId,
-        'timestamp': DateTime.now().toIso8601String(),
-      });
-
-      // 서버가 메시지를 처리할 시간 확보
-      await Future.delayed(const Duration(milliseconds: 200));
-
-      // 메시지 수신 리스너 설정 - 중복 리스너 방지
-      debugPrint('👂 메시지 수신 리스너 설정 시작');
-      await _setupMessageListener();
-
-      // 초기 메시지들 전송
-      await _sendInitialMessages();
-
-      // 🔥 연결 상태를 마지막에 설정하여 완전히 준비된 후에만 연결됨으로 표시
-      _isConnected = true;
-      _reconnectAttempts = 0;
-      _connectionController.add(true);
-
-      debugPrint('✅ 웹소켓 연결 성공 - 상태: $_isConnected');
-
-      // 하트비트 시작
-      _startHeartbeat();
-      debugPrint('💓 하트비트 시작 완료');
-    } catch (e) {
-      debugPrint('❌ 웹소켓 연결 실패: $e');
-      debugPrint('❌ 오류 타입: ${e.runtimeType}');
-      debugPrint('❌ 오류 상세: ${e.toString()}');
-
-      // 연결 실패 시 더 자세한 정보 출력
-      if (e is TimeoutException) {
-        debugPrint('⏰ 타임아웃 오류 - 서버 응답 없음');
-      } else if (e.toString().contains('SocketException')) {
-        debugPrint('🌐 네트워크 오류 - 서버에 연결할 수 없음');
-      } else if (e.toString().contains('WebSocketException')) {
-        debugPrint('🔌 웹소켓 오류 - 프로토콜 또는 핸드셰이크 실패');
-      }
-
-      _isConnected = false;
-      _connectionController.add(false);
-
-      if (_shouldReconnect) {
-        debugPrint('🔄 재연결 시도 예약');
-        _scheduleReconnect();
-      }
-    } finally {
-      // 🔥 연결 시도 완료 표시
-      _isConnecting = false;
-    }
+  // 🔥 동시 연결 시도 방지
+  if (_isConnecting) {
+    debugPrint('⚠️ 이미 연결 중입니다. 중복 연결 시도 무시');
+    return;
   }
+
+  _isConnecting = true;
+
+  // 🔥 연결 시도 전 서버 상태 확인
+  debugPrint('🔍 웹소켓 서버 상태 확인 중...');
+  debugPrint('🔍 서버 URL: ${ApiConfig.websocketUrl}'); // 🔥 수정
+  debugPrint('🔍 사용자 ID: $_userId');
+
+  try {
+    debugPrint('🔄 웹소켓 연결 시작 - 사용자 ID: $_userId');
+
+    // 기존 연결 완전 정리
+    await _cleanupConnection();
+
+    // 🔥 ApiConfig에서 웹소켓 URL 가져오기 - 수정된 부분
+    final wsUrl = ApiConfig.websocketUrl;
+    debugPrint('🔌 웹소켓 연결 시도: $wsUrl');
+    debugPrint('🔌 서버 호스트: ${ApiConfig.baseWsHost}');
+    debugPrint('🔌 서버 포트: ${ApiConfig.websocketPort}');
+    debugPrint('🔌 웹소켓 경로: /friend/ws');
+
+    debugPrint('📡 WebSocketChannel 생성 시작...');
+    _channel = WebSocketChannel.connect(
+      Uri.parse(wsUrl),
+      // protocols: ['chat'], // 프로토콜 제거 - 서버에서 지원하지 않을 수 있음
+    );
+    debugPrint('📡 WebSocketChannel 생성 완료');
+    debugPrint('📡 채널 상태: ${_channel != null}');
+    debugPrint('📡 채널 준비 상태: ${_channel?.ready}');
+
+    debugPrint('⏳ 웹소켓 연결 대기 중...');
+    // 🔥 연결 확인을 위한 타임아웃 (ApiConfig에서 가져오기) - 수정된 부분
+    await _channel!.ready.timeout(
+      ApiConfig.connectionTimeout,
+      onTimeout: () {
+        debugPrint('⏰ 웹소켓 연결 타임아웃 (${ApiConfig.connectionTimeout.inSeconds}초)');
+        throw TimeoutException('웹소켓 연결 타임아웃', ApiConfig.connectionTimeout);
+      },
+    );
+
+    // ... 나머지 코드는 동일
+    debugPrint('✅ 웹소켓 연결 준비 완료');
+    debugPrint('✅ 채널 상태: ${_channel != null}');
+    debugPrint('✅ 채널 준비 상태: ${_channel?.ready}');
+
+    // 🔥 연결 직후 즉시 서버에 연결 알림 전송 (서버에서 처리하는 메시지 타입으로 변경)
+    debugPrint('📤 웹소켓 연결 직후 서버에 연결 알림 전송');
+    _sendMessageDirectly({
+      'type': 'register', // 🔥 서버에서 처리하는 타입
+      'userId': _userId,
+      'timestamp': DateTime.now().toIso8601String(),
+    });
+
+    // 서버가 메시지를 처리할 시간 확보
+    await Future.delayed(const Duration(milliseconds: 200));
+
+    // 메시지 수신 리스너 설정 - 중복 리스너 방지
+    debugPrint('👂 메시지 수신 리스너 설정 시작');
+    await _setupMessageListener();
+
+    // 초기 메시지들 전송
+    await _sendInitialMessages();
+
+    // 🔥 연결 상태를 마지막에 설정하여 완전히 준비된 후에만 연결됨으로 표시
+    _isConnected = true;
+    _reconnectAttempts = 0;
+    _connectionController.add(true);
+
+    debugPrint('✅ 웹소켓 연결 성공 - 상태: $_isConnected');
+
+    // 하트비트 시작
+    _startHeartbeat();
+    debugPrint('💓 하트비트 시작 완료');
+  } catch (e) {
+    debugPrint('❌ 웹소켓 연결 실패: $e');
+    debugPrint('❌ 오류 타입: ${e.runtimeType}');
+    debugPrint('❌ 오류 상세: ${e.toString()}');
+
+    // 연결 실패 시 더 자세한 정보 출력
+    if (e is TimeoutException) {
+      debugPrint('⏰ 타임아웃 오류 - 서버 응답 없음');
+    } else if (e.toString().contains('SocketException')) {
+      debugPrint('🌐 네트워크 오류 - 서버에 연결할 수 없음');
+    } else if (e.toString().contains('WebSocketException')) {
+      debugPrint('🔌 웹소켓 오류 - 프로토콜 또는 핸드셰이크 실패');
+    }
+
+    _isConnected = false;
+    _connectionController.add(false);
+
+    if (_shouldReconnect) {
+      debugPrint('🔄 재연결 시도 예약');
+      _scheduleReconnect();
+    }
+  } finally {
+    // 🔥 연결 시도 완료 표시
+    _isConnecting = false;
+  }
+}
 
   // 🔥 기존 연결 완전 정리
   Future<void> _cleanupConnection() async {
