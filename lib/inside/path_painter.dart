@@ -3,6 +3,8 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 
+import 'package:flutter_application_1/generated/app_localizations.dart';
+
 class PathPainter extends CustomPainter {
   final List<Offset> pathPoints;
   final double scale;
@@ -10,6 +12,7 @@ class PathPainter extends CustomPainter {
   final double? strokeWidth;
   final bool isNavigationMode;
   final bool showDirectionArrows;
+  final BuildContext context;
 
   PathPainter({
     required this.pathPoints,
@@ -18,6 +21,7 @@ class PathPainter extends CustomPainter {
     this.strokeWidth,
     this.isNavigationMode = false,
     this.showDirectionArrows = true,
+    required this.context,
   });
 
   @override
@@ -177,91 +181,88 @@ class PathPainter extends CustomPainter {
   }
 
   /// 🔥 시작점과 끝점 마커 그리기
-  void _drawStartEndMarkers(Canvas canvas, List<Offset> scaledPoints) {
-    if (scaledPoints.isEmpty) return;
-
-    // 시작점 마커 (파란색 원 + 출발 아이콘)
-    final startPoint = scaledPoints.first;
-    final startPaint = Paint()
-      ..color = const Color(0xFF3B82F6) // 파란색으로 변경
-      ..style = PaintingStyle.fill;
-    
-    final startRadius = isNavigationMode ? 12.0 : 10.0;
-    canvas.drawCircle(startPoint, startRadius, startPaint);
-    
-    // 시작점 테두리
-    final startBorderPaint = Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.0;
-    
-    canvas.drawCircle(startPoint, startRadius, startBorderPaint);
-
-    // 시작점 아이콘 (출발 표시)
-    final startIconPaint = Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.fill;
-    
-    // 출발 아이콘 그리기 (화살표 모양)
-    final startIconPath = Path()
-      ..moveTo(startPoint.dx - 4, startPoint.dy + 2)
-      ..lineTo(startPoint.dx + 4, startPoint.dy)
-      ..lineTo(startPoint.dx - 4, startPoint.dy - 2)
-      ..close();
-    
-    canvas.drawPath(startIconPath, startIconPaint);
-
-    // 끝점 마커 (빨간색 원 + 도착 아이콘)
-    final endPoint = scaledPoints.last;
-    final endPaint = Paint()
-      ..color = const Color(0xFFEF4444) // 빨간색 유지
-      ..style = PaintingStyle.fill;
-    
-    final endRadius = isNavigationMode ? 14.0 : 12.0;
-    canvas.drawCircle(endPoint, endRadius, endPaint);
-    
-    // 끝점 테두리
-    final endBorderPaint = Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.0;
-    
-    canvas.drawCircle(endPoint, endRadius, endBorderPaint);
-
-    // 끝점 아이콘 (도착 표시 - 깃발 모양)
-    final endIconPaint = Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.fill;
-    
-    // 깃발 아이콘 그리기
-    final flagPolePath = Path()
-      ..moveTo(endPoint.dx - 1, endPoint.dy - 6)
-      ..lineTo(endPoint.dx - 1, endPoint.dy + 6);
-    
-    final flagPolePaint = Paint()
-      ..color = Colors.white
-      ..strokeWidth = 2.0
-      ..style = PaintingStyle.stroke;
-    
-    canvas.drawPath(flagPolePath, flagPolePaint);
-    
-    // 깃발 부분
-    final flagPath = Path()
-      ..moveTo(endPoint.dx - 1, endPoint.dy - 6)
-      ..lineTo(endPoint.dx + 5, endPoint.dy - 4)
-      ..lineTo(endPoint.dx - 1, endPoint.dy - 2)
-      ..close();
-    
-    canvas.drawPath(flagPath, endIconPaint);
-    
-    // 🔥 출발지 텍스트 추가
-    _drawMarkerText(canvas, startPoint, '출발지', const Color(0xFF3B82F6));
-    
-    // 🔥 도착지 텍스트 추가
-    _drawMarkerText(canvas, endPoint, '도착지', const Color(0xFFEF4444));
-    
-    debugPrint('✅ 시작/끝점 마커 그리기 완료 (텍스트 포함)');
-  }
+/// 🔥 시작점과 끝점 마커 그리기
+void _drawStartEndMarkers(Canvas canvas, List<Offset> scaledPoints) {
+  if (scaledPoints.isEmpty) return;
+  
+  // 시작점 마커 (파란색 원 + 출발 아이콘)
+  final startPoint = scaledPoints.first;
+  final startPaint = Paint()
+    ..color = const Color(0xFF3B82F6) // 파란색으로 변경
+    ..style = PaintingStyle.fill;
+  final startRadius = isNavigationMode ? 12.0 : 10.0;
+  canvas.drawCircle(startPoint, startRadius, startPaint);
+  
+  // 시작점 테두리
+  final startBorderPaint = Paint()
+    ..color = Colors.white
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 2.0;
+  canvas.drawCircle(startPoint, startRadius, startBorderPaint);
+  
+  // 시작점 아이콘 (출발 표시)
+  final startIconPaint = Paint()
+    ..color = Colors.white
+    ..style = PaintingStyle.fill;
+  
+  // 출발 아이콘 그리기 (화살표 모양)
+  final startIconPath = Path()
+    ..moveTo(startPoint.dx - 4, startPoint.dy + 2)
+    ..lineTo(startPoint.dx + 4, startPoint.dy)
+    ..lineTo(startPoint.dx - 4, startPoint.dy - 2)
+    ..close();
+  canvas.drawPath(startIconPath, startIconPaint);
+  
+  // 끝점 마커 (빨간색 원 + 도착 아이콘)
+  final endPoint = scaledPoints.last;
+  final endPaint = Paint()
+    ..color = const Color(0xFFEF4444) // 빨간색 유지
+    ..style = PaintingStyle.fill;
+  final endRadius = isNavigationMode ? 14.0 : 12.0;
+  canvas.drawCircle(endPoint, endRadius, endPaint);
+  
+  // 끝점 테두리
+  final endBorderPaint = Paint()
+    ..color = Colors.white
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 2.0;
+  canvas.drawCircle(endPoint, endRadius, endBorderPaint);
+  
+  // 끝점 아이콘 (도착 표시 - 깃발 모양)
+  final endIconPaint = Paint()
+    ..color = Colors.white
+    ..style = PaintingStyle.fill;
+  
+  // 깃발 아이콘 그리기
+  final flagPolePath = Path()
+    ..moveTo(endPoint.dx - 1, endPoint.dy - 6)
+    ..lineTo(endPoint.dx - 1, endPoint.dy + 6);
+  final flagPolePaint = Paint()
+    ..color = Colors.white
+    ..strokeWidth = 2.0
+    ..style = PaintingStyle.stroke;
+  canvas.drawPath(flagPolePath, flagPolePaint);
+  
+  // 깃발 부분
+  final flagPath = Path()
+    ..moveTo(endPoint.dx - 1, endPoint.dy - 6)
+    ..lineTo(endPoint.dx + 5, endPoint.dy - 4)
+    ..lineTo(endPoint.dx - 1, endPoint.dy - 2)
+    ..close();
+  canvas.drawPath(flagPath, endIconPaint);
+  
+  // 🔥 출발지 텍스트 추가 (다국어 지원)
+  _drawMarkerText(canvas, startPoint, 
+    AppLocalizations.of(context)!.markerDeparture, 
+    const Color(0xFF3B82F6));
+  
+  // 🔥 도착지 텍스트 추가 (다국어 지원)
+  _drawMarkerText(canvas, endPoint, 
+    AppLocalizations.of(context)!.markerArrival, 
+    const Color(0xFFEF4444));
+  
+  debugPrint('✅ 시작/끝점 마커 그리기 완료 (다국어 텍스트 포함)');
+}
 
   /// 🔥 마커 텍스트 그리기
   void _drawMarkerText(Canvas canvas, Offset position, String text, Color color) {

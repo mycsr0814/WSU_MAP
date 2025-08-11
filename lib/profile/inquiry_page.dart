@@ -1484,21 +1484,60 @@ class _MyInquiriesTabState extends State<MyInquiriesTab> {
 
 String _getLocalizedCategory(String category) {
   final l10n = AppLocalizations.of(context)!;
-  final normalized = category.toLowerCase();
+  
+  // 🔥 디버깅 로그 추가
+  debugPrint('=== _getLocalizedCategory 디버깅 ===');
+  debugPrint('입력된 category: "$category"');
+  debugPrint('category 길이: ${category.length}');
+  debugPrint('category 바이트: ${category.codeUnits}');
+  
+  // 🔥 정규화: 공백 제거 및 소문자 변환
+  final normalizedCategory = category.trim().toLowerCase();
+  debugPrint('정규화된 category: "$normalizedCategory"');
 
-  switch (normalized) {
+  switch (normalizedCategory) {
     case 'place_error':
+      debugPrint('매치됨: place_error -> ${l10n.inquiry_category_place_error}');
       return l10n.inquiry_category_place_error;
     case 'bug':
+      debugPrint('매치됨: bug -> ${l10n.inquiry_category_bug}');
       return l10n.inquiry_category_bug;
     case 'feature':
+      debugPrint('매치됨: feature -> ${l10n.inquiry_category_feature}');
       return l10n.inquiry_category_feature;
     case 'route_error':
+      debugPrint('매치됨: route_error -> ${l10n.inquiry_category_route_error}');
       return l10n.inquiry_category_route_error;
     case 'other':
+      debugPrint('매치됨: other -> ${l10n.inquiry_category_other}');
       return l10n.inquiry_category_other;
     default:
-      return category; // 알 수 없는 값은 원본 반환
+      // 🔥 매치되지 않는 경우 상세 디버깅
+      debugPrint('❌ 매치되지 않음!');
+      debugPrint('예상 가능한 값들과 비교:');
+      debugPrint('  "place_error" == "$normalizedCategory": ${"place_error" == normalizedCategory}');
+      debugPrint('  "bug" == "$normalizedCategory": ${"bug" == normalizedCategory}');
+      debugPrint('  "feature" == "$normalizedCategory": ${"feature" == normalizedCategory}');
+      debugPrint('  "route_error" == "$normalizedCategory": ${"route_error" == normalizedCategory}');
+      debugPrint('  "other" == "$normalizedCategory": ${"other" == normalizedCategory}');
+      
+      // 🔥 서버에서 다른 형태로 올 가능성 체크
+      if (normalizedCategory.contains('place') || normalizedCategory.contains('장소')) {
+        debugPrint('장소 관련 키워드 감지 -> place_error로 처리');
+        return l10n.inquiry_category_place_error;
+      } else if (normalizedCategory.contains('bug') || normalizedCategory.contains('버그')) {
+        debugPrint('버그 관련 키워드 감지 -> bug로 처리');
+        return l10n.inquiry_category_bug;
+      } else if (normalizedCategory.contains('feature') || normalizedCategory.contains('기능')) {
+        debugPrint('기능 관련 키워드 감지 -> feature로 처리');
+        return l10n.inquiry_category_feature;
+      } else if (normalizedCategory.contains('route') || normalizedCategory.contains('경로')) {
+        debugPrint('경로 관련 키워드 감지 -> route_error로 처리');
+        return l10n.inquiry_category_route_error;
+      }
+      
+      debugPrint('기본값으로 "기타" 반환');
+      return l10n.inquiry_category_other; // 🔥 기본값을 "기타"로 설정
   }
 }
 }

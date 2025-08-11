@@ -2572,6 +2572,18 @@ abstract class AppLocalizations {
   /// **'Move to {place}'**
   String instructionMoveToDestination(String place);
 
+  /// No description provided for @markerDeparture.
+  ///
+  /// In en, this message translates to:
+  /// **'Departure'**
+  String get markerDeparture;
+
+  /// No description provided for @markerArrival.
+  ///
+  /// In en, this message translates to:
+  /// **'Arrival'**
+  String get markerArrival;
+
   /// No description provided for @errorCannotOpenPhoneApp.
   ///
   /// In en, this message translates to:

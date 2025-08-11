@@ -1323,6 +1323,12 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get markerDeparture => 'Departure';
+
+  @override
+  String get markerArrival => 'Arrival';
+
+  @override
   String get errorCannotOpenPhoneApp => 'Cannot open the phone app.';
 
   @override

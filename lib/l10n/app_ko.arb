@@ -356,7 +356,7 @@
   "inquiry_error_occurred": "문의 처리 중 오류가 발생했습니다",
   "inquiry_category_bug": "버그 신고",
   "inquiry_category_feature": "기능 제안",
-  "inquiry_category_other": "기타",
+  "inquiry_category_other": "기타 문의",
   "inquiry_category_route_error": "경로 안내 오류",
   "inquiry_category_place_error": "장소/정보 오류",
   "location_share_title": "위치 공유",
@@ -693,6 +693,7 @@
       }
     }
   },
+    "markerDeparture": "출발지", "markerArrival": "도착지",
     "errorCannotOpenPhoneApp": "전화앱을 열 수 없습니다.",
   "emailCopied": "이메일이 복사되었습니다.",
   "description": "설명",

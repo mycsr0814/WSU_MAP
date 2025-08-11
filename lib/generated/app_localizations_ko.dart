@@ -899,7 +899,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get inquiry_category_feature => '기능 제안';
 
   @override
-  String get inquiry_category_other => '기타';
+  String get inquiry_category_other => '기타 문의';
 
   @override
   String get inquiry_category_route_error => '경로 안내 오류';
@@ -1294,6 +1294,12 @@ class AppLocalizationsKo extends AppLocalizations {
   String instructionMoveToDestination(String place) {
     return '목적지로 이동하세요';
   }
+
+  @override
+  String get markerDeparture => '출발지';
+
+  @override
+  String get markerArrival => '도착지';
 
   @override
   String get errorCannotOpenPhoneApp => '전화앱을 열 수 없습니다.';

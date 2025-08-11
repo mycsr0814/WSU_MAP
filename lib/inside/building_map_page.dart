@@ -1470,6 +1470,7 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
                         child: CustomPaint(
                           size: Size(svgDisplayWidth, svgDisplayHeight),
                           painter: PathPainter(
+                            context: context,
                             pathPoints: _navigationPath.isNotEmpty
                                 ? _navigationPath
                                 : _currentShortestPath,

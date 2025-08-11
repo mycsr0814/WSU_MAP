@@ -557,6 +557,7 @@
       }
     }
   },
+  "markerDeparture": "Departure", "markerArrival": "Arrival",
     "errorCannotOpenPhoneApp": "Cannot open the phone app.",
   "emailCopied": "Email copied to clipboard.",
   "description": "Description",

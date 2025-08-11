@@ -432,12 +432,10 @@
     }
   },
   "edit": "编辑",
+  "markerDeparture": "出发地", "markerArrival": "到达地",
     "errorCannotOpenPhoneApp": "无法打开电话应用程序。",
   "emailCopied": "电子邮件已复制到剪贴板。",
   "description": "描述",
-  "personInCharge": "负责人",
-  "contact": "联系方式",
-  "email": "电子邮件",
   "noDetailedInfoRegistered": "未注册详细信息。",
   "setDeparture": "设置为出发地",
   "setArrival": "设置为目的地",

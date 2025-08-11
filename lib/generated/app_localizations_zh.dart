@@ -329,7 +329,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get phone => '电话';
 
   @override
-  String get email => '电子邮件';
+  String get email => '邮箱';
 
   @override
   String get student_number => '学号';
@@ -742,7 +742,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get offline => '离线';
 
   @override
-  String get contact => '联系方式';
+  String get contact => '联系';
 
   @override
   String get noContactInfo => '无联系信息';
@@ -1285,6 +1285,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String instructionMoveToDestination(String place) {
     return '移动到$place';
   }
+
+  @override
+  String get markerDeparture => '出发地';
+
+  @override
+  String get markerArrival => '到达地';
 
   @override
   String get errorCannotOpenPhoneApp => '无法打开电话应用程序。';
