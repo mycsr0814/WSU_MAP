@@ -975,6 +975,7 @@ class MapScreenController extends ChangeNotifier {
             category: category,
             icon: _getCategoryIcon(category),
             floors: floors,
+            categoryFloors: floors, // 🔥 카테고리가 존재하는 층 정보 전달
           ),
         );
         debugPrint(

@@ -182,6 +182,7 @@ class CategoryMarkerService {
               buildingName: data.buildingName,
               floors: data.floors,
               category: data.category, // 카테고리 정보 전달
+              categoryFloors: data.categoryFloors, // 🔥 카테고리 층 정보 전달
             ),
           );
         });

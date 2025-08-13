@@ -6,16 +6,23 @@ class BuildingInfoSheet extends StatelessWidget {
   final String buildingName;
   final String? category;
   final List<String> floors;
+  final List<String>? categoryFloors; // 🔥 카테고리가 존재하는 층 정보 추가
 
   const BuildingInfoSheet({
     Key? key,
     required this.buildingName,
     this.category,
     required this.floors,
+    this.categoryFloors, // 🔥 카테고리 층 정보 파라미터 추가
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    // 🔥 카테고리가 선택된 경우 해당 카테고리가 존재하는 층만 필터링
+    final displayFloors = category != null && categoryFloors != null && categoryFloors!.isNotEmpty
+        ? categoryFloors!
+        : floors;
+        
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -134,9 +141,11 @@ class BuildingInfoSheet extends StatelessWidget {
                 const SizedBox(height: 16),
                 
                 // 층 목록
-                if (floors.isNotEmpty) ...[
+                if (displayFloors.isNotEmpty) ...[
                   Text(
-                    '층별 정보',
+                    category != null && categoryFloors != null && categoryFloors!.isNotEmpty
+                        ? '${CategoryLocalization.getLabel(context, category!)}이(가) 있는 층'
+                        : '층별 정보',
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
@@ -144,7 +153,7 @@ class BuildingInfoSheet extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  ...floors.map((floor) => Padding(
+                  ...displayFloors.map((floor) => Padding(
                     padding: const EdgeInsets.only(bottom: 4),
                     child: Row(
                       children: [

@@ -9,6 +9,7 @@ class CategoryMarkerData {
   final String category;
   final IconData icon;
   final List<String> floors; // 층 정보 추가
+  final List<String>? categoryFloors; // 🔥 카테고리가 존재하는 층 정보 추가
 
   const CategoryMarkerData({
     required this.buildingName,
@@ -17,11 +18,12 @@ class CategoryMarkerData {
     required this.category,
     required this.icon,
     required this.floors, // 추가
+    this.categoryFloors, // 🔥 카테고리 층 정보 추가
   });
 
   @override
   String toString() {
-    return 'CategoryMarkerData(buildingName: $buildingName, lat: $lat, lng: $lng, category: $category, floors: $floors)';
+    return 'CategoryMarkerData(buildingName: $buildingName, lat: $lat, lng: $lng, category: $category, floors: $floors, categoryFloors: $categoryFloors)';
   }
 
   @override
@@ -33,7 +35,8 @@ class CategoryMarkerData {
         other.lng == lng &&
         other.category == category &&
         other.icon == icon &&
-        _listEquals(other.floors, floors);
+        _listEquals(other.floors, floors) &&
+        _listEquals(other.categoryFloors ?? [], categoryFloors ?? []);
   }
 
   @override
@@ -43,7 +46,8 @@ class CategoryMarkerData {
         lng.hashCode ^
         category.hashCode ^
         icon.hashCode ^
-        floors.hashCode;
+        floors.hashCode ^
+        (categoryFloors?.hashCode ?? 0);
   }
 }
 

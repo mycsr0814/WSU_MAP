@@ -150,13 +150,11 @@ class _CategoryChipsState extends State<CategoryChips> {
     try {
       debugPrint('🔍 카테고리 건물 정보 조회: $category');
       
-      final buildingNames = await CategoryApiService.getCategoryBuildingNames(category);
-      debugPrint('🏢 건물 목록: $buildingNames');
+      // 🔥 층 정보가 포함된 건물 정보 가져오기
+      final buildingInfoList = await CategoryApiService.getCategoryBuildingInfoList(category);
+      debugPrint('🏢 건물+층 정보: $buildingInfoList');
       
-      return buildingNames.map((name) => {
-        'Building_Name': name,
-        'Floor_Numbers': <String>[],
-      }).toList();
+      return buildingInfoList;
     } catch (e) {
       debugPrint('❌ 건물 정보 가져오기 실패: $e');
       return [];

@@ -10,12 +10,14 @@ class BuildingFloorSheet extends StatefulWidget {
   final String buildingName;
   final List<String> floors;
   final String? category; // 카테고리 정보 추가
+  final List<String>? categoryFloors; // 🔥 카테고리가 존재하는 층 정보 추가
 
   const BuildingFloorSheet({
     Key? key,
     required this.buildingName,
     required this.floors,
     this.category, // 카테고리 파라미터 추가
+    this.categoryFloors, // 🔥 카테고리 층 정보 파라미터 추가
   }) : super(key: key);
 
   @override
@@ -48,7 +50,12 @@ class _BuildingFloorSheetState extends State<BuildingFloorSheet> {
 
   @override
   Widget build(BuildContext context) {
-    debugPrint('🏢 BuildingFloorSheet - 건물: ${widget.buildingName}, 카테고리: ${widget.category}, 층: ${widget.floors}');
+    debugPrint('🏢 BuildingFloorSheet - 건물: ${widget.buildingName}, 카테고리: ${widget.category}, 층: ${widget.floors}, 카테고리층: ${widget.categoryFloors}');
+    
+    // 🔥 카테고리가 선택된 경우 해당 카테고리가 존재하는 층만 필터링
+    final displayFloors = widget.category != null && widget.categoryFloors != null && widget.categoryFloors!.isNotEmpty
+        ? widget.categoryFloors!
+        : widget.floors;
     
     return DraggableScrollableSheet(
       initialChildSize: 0.6, // 높이를 0.4에서 0.6으로 증가
@@ -171,6 +178,7 @@ class _BuildingFloorSheetState extends State<BuildingFloorSheet> {
                                     buildingName: widget.buildingName,
                                     category: widget.category,
                                     floors: widget.floors,
+                                    categoryFloors: widget.categoryFloors, // 🔥 카테고리 층 정보 전달
                                   ),
                                 );
                               },
@@ -270,19 +278,23 @@ class _BuildingFloorSheetState extends State<BuildingFloorSheet> {
                       size: 20,
                     ),
                     const SizedBox(width: 8),
-                                          Text(
-                                            AppLocalizations.of(context)!.floor_detail_view,
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              color: Colors.grey.shade600,
-                                            ),
-                                          ),
+                    Expanded(
+                      child: Text(
+                        widget.category != null && widget.categoryFloors != null && widget.categoryFloors!.isNotEmpty
+                            ? '${CategoryLocalization.getLabel(context, widget.category!)}이(가) 있는 층'
+                            : AppLocalizations.of(context)!.floor_detail_view,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
               
               // 🔥 층 목록 (스크롤 가능)
-              if (widget.floors.isEmpty)
+              if (displayFloors.isEmpty)
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                   child: Container(
@@ -316,10 +328,10 @@ class _BuildingFloorSheetState extends State<BuildingFloorSheet> {
                   child: ListView.builder(
                     controller: _scrollController, // 별도의 스크롤 컨트롤러 사용
                     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-                    itemCount: widget.floors.length,
+                    itemCount: displayFloors.length,
                     physics: const BouncingScrollPhysics(), // 부드러운 스크롤 효과
                     itemBuilder: (context, idx) {
-                      final floor = widget.floors[idx];
+                      final floor = displayFloors[idx];
                       return Container(
                         margin: const EdgeInsets.only(bottom: 8),
                         child: Material(
