@@ -5,6 +5,7 @@ import 'package:flutter_application_1/map/widgets/building_info_sheet.dart';
 import 'package:flutter_application_1/map/widgets/directions_screen.dart';
 import 'package:flutter_application_1/models/building.dart';
 import 'package:flutter_application_1/generated/app_localizations.dart';
+import 'package:flutter_application_1/data/category_fallback_data.dart';
 
 class BuildingFloorSheet extends StatefulWidget {
   final String buildingName;
@@ -108,7 +109,7 @@ class _BuildingFloorSheetState extends State<BuildingFloorSheet> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(
-                        Icons.category,
+                        _getCategoryIcon(widget.category),
                         color: _getCategoryColor(widget.category),
                         size: 28,
                       ),
@@ -159,71 +160,7 @@ class _BuildingFloorSheetState extends State<BuildingFloorSheet> {
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                 child: Column(
                   children: [
-                    // 🔥 첫 번째 행: 건물 정보, 도면
-                    Row(
-                      children: [
-                        // 🔥 건물 정보 보기 버튼
-                        Expanded(
-                          child: SizedBox(
-                            height: 48,
-                            child: OutlinedButton.icon(
-                              onPressed: () {
-                                Navigator.pop(context);
-                                // 건물 정보 바텀시트 표시
-                                showModalBottomSheet(
-                                  context: context,
-                                  isScrollControlled: true,
-                                  backgroundColor: Colors.transparent,
-                                  builder: (context) => BuildingInfoSheet(
-                                    buildingName: widget.buildingName,
-                                    category: widget.category,
-                                    floors: widget.floors,
-                                    categoryFloors: widget.categoryFloors, // 🔥 카테고리 층 정보 전달
-                                  ),
-                                );
-                              },
-                              icon: const Icon(Icons.info_outline, size: 18),
-                              label: Text(AppLocalizations.of(context)!.building_info),
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: const Color(0xFF1E3A8A),
-                                side: const BorderSide(color: Color(0xFF1E3A8A)),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        
-                        // 🔥 도면 버튼
-                        Expanded(
-                          child: SizedBox(
-                            height: 48,
-                            child: ElevatedButton.icon(
-                              onPressed: () {
-                                Navigator.pop(context);
-                                // 도면 버튼 클릭 시 해당 건물 아이콘을 지도에 표시
-                                _showBuildingOnMap(context);
-                              },
-                              icon: const Icon(Icons.map, size: 18),
-                              label: Text(AppLocalizations.of(context)!.floor_plan),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF10B981),
-                                foregroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    
-                    const SizedBox(height: 12),
-                    
-                    // 🔥 두 번째 행: 길찾기 버튼
+                    // 🔥 길찾기 버튼
                     SizedBox(
                       width: double.infinity,
                       height: 48,
@@ -445,6 +382,76 @@ class _BuildingFloorSheetState extends State<BuildingFloorSheet> {
       },
     );
   }
+  
+  /// 🔥 카테고리 아이콘 가져오기
+  IconData _getCategoryIcon(String? category) {
+    debugPrint('🔍 _getCategoryIcon 호출: category = "$category"');
+    if (category == null) {
+      debugPrint('🔍 category가 null이므로 기본 아이콘 반환');
+      return Icons.category;
+    }
+    
+    // 🔥 한국어 카테고리 이름을 영어 ID로 변환
+    final categoryId = _convertToEnglishId(category);
+    debugPrint('🔍 변환된 categoryId: "$categoryId"');
+    
+    final icon = CategoryFallbackData.getCategoryIcon(categoryId);
+    debugPrint('🔍 CategoryFallbackData에서 가져온 아이콘: $icon');
+    return icon;
+  }
+  
+  /// 🔥 한국어 카테고리 이름을 영어 ID로 변환
+  String _convertToEnglishId(String koreanCategory) {
+    switch (koreanCategory) {
+      case '카페':
+        return 'cafe';
+      case '식당':
+        return 'restaurant';
+      case '편의점':
+        return 'convenience';
+      case '자판기':
+        return 'vending';
+      case '화장실':
+        return 'wc';
+      case '프린터':
+        return 'printer';
+      case '복사기':
+        return 'copier';
+      case 'ATM':
+      case '은행(atm)':
+        return 'atm';
+      case '의료':
+      case '보건소':
+        return 'medical';
+      case '도서관':
+        return 'library';
+      case '체육관':
+      case '헬스장':
+        return 'fitness';
+      case '주차장':
+        return 'parking';
+      case '라운지':
+        return 'lounge';
+      case '소화기':
+        return 'extinguisher';
+      case '정수기':
+        return 'water';
+      case '서점':
+        return 'bookstore';
+      case '우체국':
+      case 'post_office':
+        return 'post';
+      default:
+        // 이미 영어 ID인 경우 그대로 반환
+        if (['cafe', 'restaurant', 'convenience', 'vending', 'printer', 'copier', 'atm', 'library', 'fitness', 'gym', 'lounge', 'extinguisher', 'water', 'bookstore', 'post'].contains(koreanCategory.toLowerCase())) {
+          return koreanCategory.toLowerCase();
+        }
+        debugPrint('⚠️ 알 수 없는 카테고리: "$koreanCategory", 기본값 반환');
+        return koreanCategory.toLowerCase();
+    }
+  }
+  
+
   
   /// 🔥 카테고리 색상 가져오기
   Color _getCategoryColor(String? category) {

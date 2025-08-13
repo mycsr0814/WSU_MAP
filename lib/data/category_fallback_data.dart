@@ -110,6 +110,10 @@ class CategoryFallbackData {
     case 'atm':
     case 'bank_atm': return Icons.atm; // ATM 아이콘
     case 'bank': return Icons.atm; // SVG의 bank ID도 ATM 아이콘
+    case 'wc':
+      return Icons.wc; // 화장실 아이콘
+    case 'medical':
+      return Icons.local_hospital; // 의료 아이콘
     case 'library':
       return Icons.local_library;
     case 'fitness':
@@ -125,6 +129,8 @@ class CategoryFallbackData {
       return Icons.menu_book;
     case 'post':
       return Icons.local_post_office;
+    case 'parking':
+      return Icons.local_parking; // 주차장 아이콘
     default:
       return Icons.category;
   }
